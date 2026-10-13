@@ -1,0 +1,17 @@
+{
+  "name": "App de Obra",
+  "short_name": "App de Obra",
+  "description": "Parte diária, fotos e registos de obra",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2B3038",
+  "theme_color": "#2B3038",
+  "lang": "pt-PT",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
