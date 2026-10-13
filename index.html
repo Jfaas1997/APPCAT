@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2B3038">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="App de Obra">
+<title>App de Obra</title>
+<style>
+:root{--ink:#2B3038;--muted:#6B717B;--paper:#F4F4F2;--sheet:#FFFFFF;--rule:#DCDDDA;--brand:#F9D115;--brandd:#C9A800;--ok:#2F7D4F;--bad:#B3392F;--amber:#B8860B;--r:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px}
+header h1{font-size:16px;margin:0;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .cc{background:var(--brand);color:var(--ink);font:600 12px ui-monospace,Menlo,monospace;padding:3px 7px;border-radius:5px}
+header button{background:transparent;border:0;color:#fff;font-size:22px;line-height:1;padding:6px 8px;border-radius:8px}
+main{padding:14px;max-width:640px;margin:0 auto}
+h2{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:20px 2px 8px;font-weight:600}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:14px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--rule);border-radius:8px;padding:11px 12px;min-height:44px}
+textarea{min-height:96px;resize:vertical}
+input:disabled,select:disabled,textarea:disabled{background:#F0F0EE;color:#555}
+button{font:inherit;min-height:44px;border-radius:8px;border:1px solid var(--rule);background:#fff;color:var(--ink);padding:0 14px}
+button.pri{background:var(--brand);border-color:var(--brand);font-weight:600}
+button.big{width:100%;min-height:54px;font-size:17px;margin-bottom:10px}
+button.lk{border:0;background:transparent;color:var(--muted);text-decoration:underline;min-height:36px;padding:0 6px}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#EEEEEA;border:1px solid var(--rule);border-radius:99px;padding:6px 10px;font-size:14px}
+.chip button{min-height:0;border:0;background:transparent;padding:0 2px;font-size:18px;line-height:1;color:var(--muted)}
+.tag{display:inline-block;font-size:11.5px;border-radius:5px;padding:2px 7px;font-weight:600}
+.tag.r{background:#FFF3C4;color:#6B5A00}.tag.e{background:#DDF1E4;color:#1F5F3A}
+.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--rule)}
+.item:last-child{border-bottom:0}
+.item .t{flex:1;min-width:0}.item .t b{display:block}.item .t span{font-size:13px;color:var(--muted)}
+.fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.fotos .f{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#ddd}
+.fotos img{width:100%;height:100%;object-fit:cover;display:block}
+.fotos .f button{position:absolute;top:4px;right:4px;min-height:0;width:26px;height:26px;border-radius:99px;border:0;background:rgba(0,0,0,.6);color:#fff;padding:0;font-size:16px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--rule);padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:6}
+.bar button{flex:1}
+.hint{font-size:13px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:26px 10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:20;max-width:90vw}
+.ovl{position:fixed;inset:0;background:rgba(43,48,56,.55);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.ovl .sh{background:#fff;width:100%;max-width:640px;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.ovl h3{margin:0 0 6px;font-size:17px}
+.ro{background:#FBFBF9}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <button id="hBack" hidden aria-label="Voltar">‹</button>
+  <span class="cc" id="hCC" hidden></span>
+  <h1 id="hT">App de Obra</h1>
+  <button id="hMenu" aria-label="Menu">⋯</button>
+</header>
+<main id="m"></main>
+<div class="bar" id="bar" hidden></div>
+<input type="file" id="fPac" accept=".json,application/json" hidden>
+<input type="file" id="fFoto" accept="image/*" capture="environment" multiple hidden>
+<input type="file" id="fGal" accept="image/*" multiple hidden>
+
+<script>
+'use strict';
+const $=(s,e)=> (e||document).querySelector(s), $$=(s,e)=>[...(e||document).querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const hojeISO=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const hhmm=d=>pad(d.getHours())+':'+pad(d.getMinutes());
+const dataPT=iso=>{const [y,m,d]=iso.split('-');const dd=new Date(+y,+m-1,+d);return ['dom','seg','ter','qua','qui','sex','sáb'][dd.getDay()]+' '+d+'/'+m+'/'+y};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+/* ---------- armazenamento (IndexedDB) ---------- */
+let _db=null;
+function idb(){ return _db||(_db=new Promise((ok,ko)=>{ const r=indexedDB.open('appobra',1);
+  r.onupgradeneeded=()=>{ const d=r.result; d.createObjectStore('kv'); d.createObjectStore('partes',{keyPath:'id'}); d.createObjectStore('fotos',{keyPath:'id'}) };
+  r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error) })) }
+async function tx(loja,modo,fn){ const d=await idb(); return new Promise((ok,ko)=>{ const t=d.transaction(loja,modo); const r=fn(t.objectStore(loja)); t.oncomplete=()=>ok(r&&r.result); t.onerror=()=>ko(t.error) }) }
+const kvGet=k=>tx('kv','readonly',s=>s.get(k)), kvSet=(k,v)=>tx('kv','readwrite',s=>s.put(v,k));
+const pGet=id=>tx('partes','readonly',s=>s.get(id)), pAll=()=>tx('partes','readonly',s=>s.getAll()), pPut=p=>tx('partes','readwrite',s=>s.put(p)), pDel=id=>tx('partes','readwrite',s=>s.delete(id));
+const fGet=id=>tx('fotos','readonly',s=>s.get(id)), fPut=f=>tx('fotos','readwrite',s=>s.put(f)), fDel=id=>tx('fotos','readwrite',s=>s.delete(id));
+
+/* ---------- estado ---------- */
+let PAC=null;          /* pacote da obra (do PC): {cc,nome,estruturas[],os[],...} */
+let P=null;            /* parte aberta */
+let vista='inicio';
+let saveT=null;
+
+function toast(t,ms){ let e=$('.toast'); if(e)e.remove(); e=document.createElement('div'); e.className='toast'; e.textContent=t; document.body.appendChild(e); setTimeout(()=>e.remove(),ms||2600) }
+function sheet(html,fn){ const o=document.createElement('div'); o.className='ovl'; o.innerHTML='<div class="sh">'+html+'</div>'; document.body.appendChild(o);
+  const fecha=v=>{ o.remove(); return v }; o.addEventListener('mousedown',e=>{ if(e.target===o)fecha() }); fn(o,fecha); return o }
+
+/* ---------- pacote da obra ---------- */
+function validaPacote(j){ return j&&j.tipo==='obra-pacote'&&j.cc&&j.nome }
+async function importaPacote(file){
+  try{ const j=JSON.parse(await file.text()); if(!validaPacote(j)){ toast('Este ficheiro não é um pacote de obra.',4000); return }
+    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],trabalhos:j.trabalhos||[],criado:j.criado||''};
+    await kvSet('pacote',PAC); toast('Obra '+PAC.cc+' carregada.'); render() }
+  catch(e){ toast('Não consegui ler o ficheiro.',4000) } }
+function semPacote(){ return !PAC }
+
+/* ---------- partes ---------- */
+function novaParte(){
+  const agora=new Date();
+  return {id:uid(),v:1,cc:PAC?PAC.cc:'',obra:PAC?PAC.nome:'',estado:'rascunho',dia:hojeISO(),criada:agora.toISOString(),hora:hhmm(agora),
+    os:'',trabalho:'',estruturas:[],descricao:'',avulsos:[],semRub:[],fotos:[]} }
+async function abrePartaDeHoje(){
+  const todas=(await pAll()).filter(p=>p.estado==='rascunho'&&p.dia===hojeISO()&&p.cc===(PAC?PAC.cc:''));
+  if(todas.length){ P=todas.sort((a,b)=>a.criada<b.criada?1:-1)[0] } else { P=novaParte(); await pPut(P) }
+  vista='parte'; render() }
+function guardaSoon(){ clearTimeout(saveT); saveT=setTimeout(guardaJa,500) }
+async function guardaJa(){ clearTimeout(saveT); if(!P||P.estado!=='rascunho')return; P.atualizada=new Date().toISOString(); await pPut(P); const e=$('#sv'); if(e)e.textContent='Guardado '+hhmm(new Date()) }
+
+/* ---------- fotos ---------- */
+function reduz(file,max,q){ return new Promise((ok,ko)=>{ const u=URL.createObjectURL(file), im=new Image();
+  im.onload=()=>{ let w=im.naturalWidth,h=im.naturalHeight; const k=Math.min(1,max/Math.max(w,h)); w=Math.round(w*k); h=Math.round(h*k);
+    const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg',q)) };
+  im.onerror=()=>{ URL.revokeObjectURL(u); ko(new Error('imagem')) }; im.src=u }) }
+async function addFotos(files){
+  if(!P){ await abrePartaDeHoje() }
+  if(P.estado!=='rascunho')return;
+  let n=0; for(const f of files){ try{ const d=await reduz(f,1600,.72); const id=uid(); await fPut({id,parte:P.id,d,t:new Date().toISOString()}); P.fotos.push({id,t:new Date().toISOString(),leg:''}); n++ }catch(e){} }
+  await guardaJa(); if(n)toast(n+(n>1?' fotos juntas':' foto junta')+' à parte de hoje.'); render() }
+
+/* ---------- envio ---------- */
+async function montaFicheiro(p){
+  const fotos=[]; for(const f of p.fotos){ const r=await fGet(f.id); if(r)fotos.push({id:f.id,t:f.t,leg:f.leg||'',d:r.d}) }
+  const corpo=Object.assign({},p,{fotos:undefined}); delete corpo.fotos;
+  const j={tipo:'parte-diaria',app:'obra-v1',parte:Object.assign({},corpo,{fotos:p.fotos.map(f=>({id:f.id,t:f.t,leg:f.leg||''}))}),fotos:fotos,enviada:new Date().toISOString()};
+  const nome='parte_'+(p.cc||'sem-obra')+'_'+p.dia+'_'+p.hora.replace(':','')+'_'+p.id.slice(-4)+'.json';
+  return new File([JSON.stringify(j)],nome,{type:'application/json'}) }
+async function envia(){
+  await guardaJa(); const f=await montaFicheiro(P); let ok=false;
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:'Parte diária '+P.dia}); ok=true }
+    else { const u=URL.createObjectURL(f), a=document.createElement('a'); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); ok=true }
+  }catch(e){ if(e&&e.name==='AbortError'){ toast('Envio cancelado. A parte continua em rascunho.'); return } toast('Não consegui enviar: '+(e&&e.message||e),5000); return }
+  if(ok){ P.estado='enviada'; P.enviada=new Date().toISOString(); P.ficheiro=f.name; await pPut(P); toast('Enviada. Já não se pode editar.'); vista='inicio'; render() } }
+async function reenvia(p){ const f=await montaFicheiro(p);
+  try{ if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]}); else{ const u=URL.createObjectURL(f),a=document.createElement('a'); a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove() } }catch(e){} }
+
+/* ---------- ecrãs ---------- */
+function cab(){ $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte de '+dataPT(P.dia):(PAC?PAC.nome:'App de Obra'); $('#hBack').hidden=(vista==='inicio') }
+async function render(){ cab(); if(vista==='parte')return rParte(); return rInicio() }
+
+async function rInicio(){
+  const bar=$('#bar'); bar.hidden=true;
+  const ps=(await pAll()).filter(p=>!PAC||p.cc===PAC.cc).sort((a,b)=>a.criada<b.criada?1:-1);
+  let h=cartaoInstalar();
+  if(semPacote()){
+    h+='<div class="card"><h3>Escolhe a obra</h3><p class="hint">No PC, na Central, gera o «pacote da obra» e abre-o aqui. Traz a lista de estruturas e as OS. Também podes trabalhar sem pacote e escrever tudo à mão.</p>'+
+       '<button class="pri big" id="bPac">Abrir pacote da obra…</button><button class="big" id="bSem">Continuar sem pacote</button></div>';
+  }
+  h+='<button class="pri big" id="bNova">'+(ps.some(p=>p.estado==='rascunho'&&p.dia===hojeISO())?'Continuar a parte de hoje':'Nova parte de hoje')+'</button>';
+  h+='<button class="big" id="bFoto">📷 Tirar foto</button>';
+  h+='<h2>Partes</h2>';
+  if(!ps.length)h+='<div class="empty">Ainda não há partes.</div>';
+  else h+='<div class="card" style="padding:4px 12px">'+ps.map(p=>'<div class="item" data-p="'+esc(p.id)+'"><div class="t"><b>'+esc(dataPT(p.dia))+' · '+esc(p.hora)+'</b><span>'+(p.os?'OS '+esc(p.os)+' · ':'')+p.estruturas.length+' estruturas · '+p.fotos.length+' fotos</span></div><span class="tag '+(p.estado==='rascunho'?'r':'e')+'">'+(p.estado==='rascunho'?'rascunho':'enviada')+'</span></div>').join('')+'</div>';
+  $('#m').innerHTML=h;
+  if($('#bPac'))$('#bPac').onclick=()=>$('#fPac').click();
+  if($('#bSem'))$('#bSem').onclick=async()=>{ PAC={cc:'',nome:'Sem pacote',estruturas:[],os:[],trabalhos:[]}; PAC.livre=true; await kvSet('pacote',PAC); render() };
+  if($('#bInst'))$('#bInst').onclick=async()=>{ instalar.prompt(); await instalar.userChoice; instalar=null; render() };
+  $('#bNova').onclick=abrePartaDeHoje;
+  $('#bFoto').onclick=()=>$('#fFoto').click();
+  $$('[data-p]').forEach(e=>e.onclick=async()=>{ P=await pGet(e.dataset.p); vista='parte'; render() });
+}
+
+function secOS(ro){
+  const L=(PAC&&PAC.os)||[];
+  if(L.length){
+    return '<div class="card"><h3>OS e trabalho</h3><label>OS</label><select id="fOS" '+(ro?'disabled':'')+'><option value="">—</option>'+L.map(o=>'<option value="'+esc(o.os)+'"'+(String(o.os)===P.os?' selected':'')+'>'+esc(o.os)+(o.semana?' · semana '+esc(o.semana):'')+'</option>').join('')+'</select>'+
+      '<label>Nosso trabalho (nº)</label><input id="fTr" inputmode="numeric" value="'+esc(P.trabalho)+'" '+(ro?'disabled':'')+'></div>' }
+  return '<div class="card"><h3>OS e trabalho</h3><div class="row"><div style="flex:1"><label>Nº da OS</label><input id="fOSt" inputmode="numeric" value="'+esc(P.os)+'" '+(ro?'disabled':'')+'></div><div style="flex:1"><label>Trabalho nº</label><input id="fTr" inputmode="numeric" value="'+esc(P.trabalho)+'" '+(ro?'disabled':'')+'></div></div></div>' }
+
+async function rParte(){
+  const ro=P.estado!=='rascunho', sug=(PAC&&PAC.estruturas)||[];
+  let h='';
+  h+='<div class="card'+(ro?' ro':'')+'"><div class="row"><div style="flex:1"><b>'+esc(dataPT(P.dia))+'</b><div class="hint">Registada às '+esc(P.hora)+' (hora do telemóvel)</div></div><span class="tag '+(ro?'e':'r')+'">'+(ro?'enviada':'rascunho')+'</span></div></div>';
+  h+=secOS(ro);
+  h+='<div class="card"><h3>Estruturas trabalhadas</h3><div class="chips" id="chE">'+P.estruturas.map((e,i)=>'<span class="chip">'+esc(e)+(ro?'':'<button data-de="'+i+'" aria-label="Tirar">×</button>')+'</span>').join('')+'</div>';
+  if(!ro){ h+='<div class="row"><input id="iE" list="dlE" placeholder="Número da estrutura" autocomplete="off" autocapitalize="characters"><button id="bE" class="pri">Juntar</button></div><datalist id="dlE">'+sug.filter(s=>!P.estruturas.includes(s)).slice(0,400).map(s=>'<option value="'+esc(s)+'">').join('')+'</datalist>' }
+  h+='</div>';
+  h+='<div class="card"><h3>O que foi feito</h3><textarea id="fD" '+(ro?'disabled':'')+' placeholder="Descreve o trabalho do dia">'+esc(P.descricao)+'</textarea></div>';
+  h+='<div class="card"><h3>Materiais avulsos</h3><p class="hint" style="margin:0 0 6px">Só o que não vem da medição (abraçadeiras, fita de sinalização…). O consumo por estrutura faz-se no PC.</p>'+
+     P.avulsos.map((a,i)=>'<div class="row" style="margin-bottom:6px"><input data-av="'+i+'" data-k="nome" placeholder="Material" value="'+esc(a.nome)+'" style="flex:2" '+(ro?'disabled':'')+'><input data-av="'+i+'" data-k="qt" inputmode="decimal" placeholder="Qtd." value="'+esc(a.qt)+'" style="flex:1" '+(ro?'disabled':'')+'>'+(ro?'':'<button data-dav="'+i+'" aria-label="Apagar">×</button>')+'</div>').join('')+
+     (ro?'':'<button id="bAv">+ Material</button>')+'</div>';
+  h+='<div class="card"><h3>Trabalhos sem rubrica</h3><p class="hint" style="margin:0 0 6px">Trabalho feito que não está no contrato. Só uma descrição.</p>'+
+     P.semRub.map((a,i)=>'<div class="row" style="margin-bottom:6px"><input data-sr="'+i+'" placeholder="Descrição" value="'+esc(a.desc)+'" '+(ro?'disabled':'')+'>'+(ro?'':'<button data-dsr="'+i+'" aria-label="Apagar">×</button>')+'</div>').join('')+
+     (ro?'':'<button id="bSr">+ Trabalho</button>')+'</div>';
+  const fts=[]; for(const f of P.fotos){ const r=await fGet(f.id); fts.push('<div class="f"><img alt="foto" src="'+(r?r.d:'')+'">'+(ro?'':'<button data-df="'+esc(f.id)+'" aria-label="Apagar foto">×</button>')+'</div>') }
+  h+='<div class="card"><h3>Fotos <span class="hint">('+P.fotos.length+')</span></h3>'+(ro?'':'<div class="row"><button class="pri" id="bFt" style="flex:1">📷 Tirar foto</button><button id="bGal" style="flex:1">Da galeria</button></div>')+'<div class="fotos">'+fts.join('')+'</div></div>';
+  if(ro){ h+='<button class="big" id="bRe">Enviar outra vez</button>'; if(P.ficheiro)h+='<p class="hint">Ficheiro: '+esc(P.ficheiro)+'</p>' }
+  else h+='<p class="hint" id="sv">Guarda sozinha.</p>';
+  $('#m').innerHTML=h;
+  const bar=$('#bar'); bar.hidden=ro; if(!ro){ bar.innerHTML='<button id="bApaga">Apagar</button><button class="pri" id="bEnv">Enviar…</button>' }
+  ligaParte(ro);
+}
+
+function ligaParte(ro){
+  if(ro){ if($('#bRe'))$('#bRe').onclick=()=>reenvia(P); return }
+  const upd=()=>guardaSoon();
+  const os=$('#fOS'); if(os)os.onchange=()=>{ P.os=os.value; const o=((PAC&&PAC.os)||[]).find(x=>String(x.os)===P.os); if(o&&o.trabalho&&!P.trabalho){ P.trabalho=String(o.trabalho); $('#fTr').value=P.trabalho } upd() };
+  const ot=$('#fOSt'); if(ot)ot.oninput=()=>{ P.os=ot.value.trim(); upd() };
+  $('#fTr').oninput=e=>{ P.trabalho=e.target.value.trim(); upd() };
+  $('#fD').oninput=e=>{ P.descricao=e.target.value; upd() };
+  const chipsE=()=>{ $('#chE').innerHTML=P.estruturas.map((e,i)=>'<span class="chip">'+esc(e)+'<button data-de="'+i+'" aria-label="Tirar">×</button></span>').join('');
+    $$('[data-de]').forEach(b=>b.onclick=()=>{ P.estruturas.splice(+b.dataset.de,1); chipsE(); guardaSoon() }) };
+  const juntaE=()=>{ const i=$('#iE'), v=i.value.trim(); if(!v)return; if(!P.estruturas.includes(v))P.estruturas.push(v); i.value=''; chipsE(); guardaSoon(); i.focus() };
+  $('#bE').onclick=juntaE; $('#iE').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); juntaE() } };
+  chipsE();
+  $('#bAv').onclick=()=>{ P.avulsos.push({nome:'',qt:''}); guardaJa().then(()=>rParte().then(()=>{ const l=$$('[data-av][data-k=nome]'); if(l.length)l[l.length-1].focus() })) };
+  $$('[data-av]').forEach(i=>i.oninput=()=>{ P.avulsos[+i.dataset.av][i.dataset.k]=i.value; upd() });
+  $$('[data-dav]').forEach(b=>b.onclick=()=>{ P.avulsos.splice(+b.dataset.dav,1); guardaJa().then(rParte) });
+  $('#bSr').onclick=()=>{ P.semRub.push({desc:''}); guardaJa().then(()=>rParte().then(()=>{ const l=$$('[data-sr]'); if(l.length)l[l.length-1].focus() })) };
+  $$('[data-sr]').forEach(i=>i.oninput=()=>{ P.semRub[+i.dataset.sr].desc=i.value; upd() });
+  $$('[data-dsr]').forEach(b=>b.onclick=()=>{ P.semRub.splice(+b.dataset.dsr,1); guardaJa().then(rParte) });
+  $('#bFt').onclick=()=>$('#fFoto').click(); $('#bGal').onclick=()=>$('#fGal').click();
+  $$('[data-df]').forEach(b=>b.onclick=()=>{ sheet('<h3>Apagar esta foto?</h3><p class="hint">A foto desta parte é removida.</p><div class="row"><button class="big" id="n">Cancelar</button><button class="big pri" id="s">Apagar</button></div>',(o,f)=>{ $('#n',o).onclick=f; $('#s',o).onclick=async()=>{ f(); P.fotos=P.fotos.filter(x=>x.id!==b.dataset.df); await fDel(b.dataset.df); await guardaJa(); rParte() } }) });
+  $('#bApaga').onclick=()=>sheet('<h3>Apagar este rascunho?</h3><p class="hint">Perde-se a parte e as fotos.</p><div class="row"><button class="big" id="n">Cancelar</button><button class="big pri" id="s">Apagar</button></div>',(o,f)=>{ $('#n',o).onclick=f; $('#s',o).onclick=async()=>{ f(); for(const x of P.fotos)await fDel(x.id); await pDel(P.id); P=null; vista='inicio'; render() } });
+  $('#bEnv').onclick=()=>{ const falta=[]; if(!P.estruturas.length)falta.push('nenhuma estrutura'); if(!P.descricao.trim())falta.push('sem descrição'); if(!P.fotos.length)falta.push('sem fotos');
+    sheet('<h3>Enviar esta parte?</h3><p class="hint">Vai abrir a partilha do telemóvel: escolhe o <b>OneDrive</b> e a pasta «Partes diarias» da obra. Depois de enviada, a equipa já não a edita; a validação faz-se no PC.</p>'+(falta.length?'<p class="hint" style="color:var(--amber)">Repara: '+falta.join(', ')+'.</p>':'')+'<div class="row"><button class="big" id="n">Voltar</button><button class="big pri" id="s">Enviar</button></div>',(o,f)=>{ $('#n',o).onclick=f; $('#s',o).onclick=()=>{ f(); envia() } }) };
+}
+
+/* ---------- cabeçalho / menu ---------- */
+$('#hBack').onclick=async()=>{ await guardaJa(); P=null; vista='inicio'; render() };
+$('#hMenu').onclick=()=>sheet('<h3>Menu</h3><button class="big" id="mP">Abrir pacote da obra…</button><button class="big" id="mT">Trocar de obra</button><p class="hint">Sem rede: tudo fica guardado neste telemóvel até enviares.</p>',(o,f)=>{
+  $('#mP',o).onclick=()=>{ f(); $('#fPac').click() };
+  $('#mT',o).onclick=async()=>{ f(); PAC=null; await kvSet('pacote',null); P=null; vista='inicio'; render() } });
+$('#fPac').onchange=e=>{ const f=e.target.files[0]; e.target.value=''; if(f)importaPacote(f) };
+$('#fFoto').onchange=e=>{ const fs=[...e.target.files]; e.target.value=''; if(fs.length)addFotos(fs) };
+$('#fGal').onchange=e=>{ const fs=[...e.target.files]; e.target.value=''; if(fs.length)addFotos(fs) };
+document.addEventListener('visibilitychange',()=>{ if(document.hidden)guardaJa() });
+
+/* ---------- instalar e funcionar sem rede ---------- */
+let instalar=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); instalar=e; render() });
+window.addEventListener('appinstalled',()=>{ instalar=null; render() });
+const emApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const ios=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+function cartaoInstalar(){ if(emApp())return '';
+  if(instalar)return '<div class="card"><h3>Instalar no telemóvel</h3><p class="hint">Fica no ecrã inicial, abre como uma app e funciona sem rede.</p><button class="pri big" id="bInst">Instalar a app</button></div>';
+  if(ios())return '<div class="card"><h3>Instalar no telemóvel</h3><p class="hint">No Safari: toca em Partilhar (□↑) e depois em «Adicionar ao ecrã principal».</p></div>';
+  return '' }
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+(async function(){ try{ PAC=await kvGet('pacote')||null }catch(e){ PAC=null } render() })();
+</script>
+</body>
+</html>
