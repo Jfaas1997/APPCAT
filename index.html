@@ -180,7 +180,7 @@ async function rInicio(){
 function secOS(ro){
   const L=(PAC&&PAC.os)||[];
   if(L.length){
-    return '<div class="card"><h3>OS e trabalho</h3><label>OS</label><select id="fOS" '+(ro?'disabled':'')+'><option value="">—</option>'+L.map(o=>'<option value="'+esc(o.os)+'"'+(String(o.os)===P.os?' selected':'')+'>'+esc(o.os)+(o.semana?' · semana '+esc(o.semana):'')+'</option>').join('')+'</select>'+
+    return '<div class="card"><h3>OS e trabalho</h3><label>OS</label><select id="fOS" '+(ro?'disabled':'')+'><option value="">—</option>'+L.map(o=>'<option value="'+esc(o.os)+'"'+(String(o.os)===P.os?' selected':'')+'>'+esc(o.os)+(o.data?' · '+esc(o.data.slice(8)+'/'+o.data.slice(5,7)):(o.semana?' · semana '+esc(o.semana):''))+(o.via?' · '+esc(o.via):'')+'</option>').join('')+'</select>'+
       '<label>Nosso trabalho (nº)</label><input id="fTr" inputmode="numeric" value="'+esc(P.trabalho)+'" '+(ro?'disabled':'')+'></div>' }
   return '<div class="card"><h3>OS e trabalho</h3><div class="row"><div style="flex:1"><label>Nº da OS</label><input id="fOSt" inputmode="numeric" value="'+esc(P.os)+'" '+(ro?'disabled':'')+'></div><div style="flex:1"><label>Trabalho nº</label><input id="fTr" inputmode="numeric" value="'+esc(P.trabalho)+'" '+(ro?'disabled':'')+'></div></div></div>' }
 
