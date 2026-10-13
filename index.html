@@ -117,7 +117,7 @@ function sheet(html,fn){ const o=document.createElement('div'); o.className='ovl
 function validaPacote(j){ return j&&j.tipo==='obra-pacote'&&j.cc&&j.nome }
 async function importaPacote(file){
   try{ const j=JSON.parse(await file.text()); if(!validaPacote(j)){ toast('Este ficheiro não é um pacote de obra.',4000); return }
-    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],trabalhos:j.trabalhos||[],criado:j.criado||''};
+    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],docs:j.docs||[],trabalhos:j.trabalhos||[],criado:j.criado||''};
     await kvSet('pacote',PAC); toast('Obra '+PAC.cc+' carregada.'); render() }
   catch(e){ toast('Não consegui ler o ficheiro.',4000) } }
 function semPacote(){ return !PAC }
@@ -163,10 +163,12 @@ async function reenvia(p){ const f=await montaFicheiro(p);
   try{ if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]}); else{ const u=URL.createObjectURL(f),a=document.createElement('a'); a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove() } }catch(e){} }
 
 /* ---------- ecrãs ---------- */
-const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário'};
+const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações'};
+const CATD={os:'Ordem de serviço',plano:'PDT',esqel:'Esquema elétrico',esqsin:'Esquema de sinalização',proj:'Peça de projeto',prep:'Preparação'};
+let catX='esqel';
 function cab(){ $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte de '+dataPT(P.dia):(TIT[vista]||(PAC?PAC.nome:'App de Obra')); $('#hBack').hidden=(vista==='inicio') }
 async function render(){ cab(); $('#bar').hidden=(vista!=='parte'); window.scrollTo(0,0);
-  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); return rInicio() }
+  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); return rInicio() }
 function abre(v){ vista=v; render() }
 
 const INTS=()=>((PAC&&PAC.ints)||[]).slice().sort((a,b)=>((a.data||'')+(a.cI||a.pI||a.ini||'')).localeCompare((b.data||'')+(b.cI||b.pI||b.ini||'')));
@@ -182,6 +184,22 @@ function aviso(){ if(!PAC||PAC.livre)return ''; const d=PAC.criado; if(!d)return
 async function fazParteOS(os){ await abrePartaDeHoje(); if(P.estado==='rascunho'){ if(!P.os){ P.os=String(os); await guardaJa(); render() } else if(P.os!==String(os))toast('A parte de hoje já é da OS '+P.os+'.',4000) } }
 function ligaFP(){ $$('[data-fp]').forEach(b=>b.onclick=()=>{ const o=$('.ovl'); if(o)o.remove(); ant=vista; fazParteOS(b.dataset.fp) }) }
 
+const DOCS=t=>((PAC&&PAC.docs)||[]).map((d,k)=>Object.assign({k},d)).filter(d=>d.tipo===t).sort((a,b)=>(b.dia||'').localeCompare(a.dia||''));
+function blobDe(d){ const [h,b]=d.d.split(','); const bin=atob(b), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return new Blob([u],{type:d.mime||((h.match(/:(.*?);/)||[])[1])||'application/octet-stream'}) }
+function abreDoc(k){ const d=PAC.docs[k]; if(!d)return; const bl=blobDe(d), url=URL.createObjectURL(bl);
+  if(/^image\//.test(bl.type)){ sheet('<h3>'+esc(d.nome)+'</h3><img src="'+url+'" style="width:100%;border-radius:8px" alt=""><button class="big" id="dx" style="margin-top:10px">Fechar</button>',(o,f)=>{ $('#dx',o).onclick=()=>{ f(); URL.revokeObjectURL(url) } }); return }
+  const w=window.open(url,'_blank'); if(!w){ const a=document.createElement('a'); a.href=url; a.download=d.nome; document.body.appendChild(a); a.click(); a.remove() }
+  setTimeout(()=>URL.revokeObjectURL(url),120000) }
+const itemDoc=(d,cat)=>'<div class="item" data-doc="'+d.k+'"><div class="t"><b>'+esc(d.nome)+'</b><span>'+(cat?esc(CATD[d.tipo]||d.tipo)+' · ':'')+esc(dm(d.dia))+(d.os?' · OS '+esc(d.os):'')+'</span></div><span class="tag e">abrir</span></div>';
+const DOCSX=()=>((PAC&&PAC.docs)||[]).map((d,k)=>Object.assign({k},d)).filter(d=>d.tipo!=='os'&&d.tipo!=='plano').sort((a,b)=>(b.dia||'').localeCompare(a.dia||''));
+const DOCS_OS=os=>((PAC&&PAC.docs)||[]).map((d,k)=>Object.assign({k},d)).filter(d=>d.os===String(os)).sort((a,b)=>(a.tipo+'').localeCompare(b.tipo+'')||(b.dia||'').localeCompare(a.dia||''));
+function rDocsX(){
+  const T=['esqel','esqsin','proj','prep'], L=DOCSX(); let h='<div class="chips" style="margin:0 0 10px">'+T.map(t=>'<button data-cx="'+t+'" class="'+(catX===t?'pri':'')+'" style="min-height:40px">'+esc(CATD[t])+' <span style="opacity:.7">'+L.filter(d=>d.tipo===t).length+'</span></button>').join('')+'</div>';
+  const lista=L.filter(d=>d.tipo===catX);
+  h+=lista.length?'<div class="card" style="padding:4px 12px">'+lista.map(d=>itemDoc(d,false)).join('')+'</div>':'<div class="empty">Sem documentos nesta categoria. No PC, na Central, adiciona-os em «OS e planos» e gera o pacote outra vez.</div>';
+  $('#m').innerHTML=aviso()+h; $$('[data-cx]').forEach(b=>b.onclick=()=>{ catX=b.dataset.cx; rDocsX() }); ligaDocs() }
+const ligaDocs=()=>$$('[data-doc]').forEach(e=>e.onclick=()=>abreDoc(+e.dataset.doc));
+
 async function rInicio(){
   const ps=(await pAll()).filter(p=>!PAC||p.cc===PAC.cc);
   const hoje=hojeISO(), ni=INTS().filter(i=>i.data>=hoje).length, nh=INTS().filter(i=>i.data===hoje).length, nos=new Set(INTS().filter(i=>i.os&&i.data>=hoje).map(i=>i.os)).size;
@@ -196,8 +214,9 @@ async function rInicio(){
   h+='<div class="tiles">'+
     '<button class="tile" data-go="partes">Partes diárias<span>'+(rasc?rasc+(rasc===1?' rascunho':' rascunhos'):ps.length+(ps.length===1?' parte':' partes'))+'</span></button>'+
     '<button class="tile" data-go="ints">Interdições<span>'+(ni?ni+' a partir de hoje':'sem próximas')+'</span></button>'+
-    '<button class="tile" data-go="os">Ordens de serviço<span>'+(nos?nos+(nos===1?' em curso':' em curso'):'sem OS')+'</span></button>'+
-    '<button class="tile" data-go="plano">Plano diário<span>hoje: '+(nh?nh+(nh===1?' interdição':' interdições'):'sem interdições')+'</span></button>'+
+    '<button class="tile" data-go="os">Ordens de serviço<span>'+(DOCS('os').length?DOCS('os').length+' documentos':(nos?nos+' em curso':'sem OS'))+'</span></button>'+
+    '<button class="tile" data-go="plano">Plano diário<span>'+(DOCS('plano').filter(d=>d.dia===hoje).length?'plano de hoje disponível':(DOCS('plano').length?DOCS('plano').length+' documentos':'sem plano'))+'</span></button>'+
+    '<button class="tile" data-go="docsx">Esquemas e preparações<span>'+(DOCSX().length?DOCSX().length+' documentos':'sem documentos')+'</span></button>'+
     ['Normas','Desenhos','Peças','Simulador de consolas','Certificados'].map(t=>'<button class="tile" disabled>'+t+'<span>em breve</span></button>').join('')+
     '</div>';
   h+='<button class="big" id="bFoto">📷 Tirar foto</button>';
@@ -233,14 +252,18 @@ function rInts(){
 async function rOS(){
   const L=INTS().filter(i=>i.os), ps=await pAll(); const m={};
   L.forEach(i=>{ (m[i.os]=m[i.os]||{os:i.os,via:i.via||'',datas:[]}).datas.push(i); if(i.via&&!m[i.os].via)m[i.os].via=i.via });
-  const lista=Object.values(m).sort((a,b)=>(b.datas[b.datas.length-1].data).localeCompare(a.datas[a.datas.length-1].data));
-  let h=aviso();
-  if(!lista.length){ $('#m').innerHTML='<div class="empty">Sem ordens de serviço no pacote.</div>'; return }
-  h+='<div class="card" style="padding:4px 12px">'+lista.map(o=>{ const feita=ps.some(p=>p.os===o.os&&p.cc===(PAC?PAC.cc:'')); const d0=o.datas[0].data, d1=o.datas[o.datas.length-1].data;
-    return '<div class="item" data-os="'+esc(o.os)+'"><div class="t"><b>OS '+esc(o.os)+(o.via?' · '+esc(o.via):'')+'</b><span>'+(d0===d1?dm(d0):dm(d0)+' a '+dm(d1))+' · '+o.datas.length+(o.datas.length===1?' dia':' dias')+'</span></div>'+(feita?'<span class="tag e">com parte</span>':'<span class="tag r">sem parte</span>')+'</div>' }).join('')+'</div>';
-  $('#m').innerHTML=h;
-  $$('[data-os]').forEach(e=>e.onclick=()=>{ const o=m[e.dataset.os];
-    sheet('<h3>OS '+esc(o.os)+'</h3>'+o.datas.map(i=>'<div class="dia" style="margin-top:10px">'+esc(dataPT(i.data))+'</div>'+cartInt(i,false)).join('')+'<div style="margin-top:12px"><button class="big pri" data-fp="'+esc(o.os)+'">Fazer parte desta OS</button><button class="big" id="fx">Fechar</button></div>',(ov,f)=>{ $('#fx',ov).onclick=f; ligaFP() }) });
+  ((PAC&&PAC.docs)||[]).forEach(d=>{ if(d.os&&!m[d.os])m[d.os]={os:d.os,via:'',datas:[],soDocs:d.dia} });
+  const ult=o=>o.datas.length?o.datas[o.datas.length-1].data:(o.soDocs||'');
+  const lista=Object.values(m).sort((a,b)=>ult(b).localeCompare(ult(a)));
+  let h=aviso(); const dd=DOCS('os');
+  if(dd.length)h+='<h2>Documentos</h2><div class="card" style="padding:4px 12px">'+dd.map(d=>itemDoc(d,false)).join('')+'</div>';
+  if(!lista.length&&!dd.length){ $('#m').innerHTML='<div class="empty">Sem ordens de serviço no pacote. No PC, põe os ficheiros na pasta «Ordens de servico» da obra e gera o pacote outra vez.</div>'; return }
+  if(lista.length)h+='<h2>Por OS</h2>';
+  if(lista.length)h+='<div class="card" style="padding:4px 12px">'+lista.map(o=>{ const feita=ps.some(p=>p.os===o.os&&p.cc===(PAC?PAC.cc:'')); const nd=DOCS_OS(o.os).length, d0=o.datas.length?o.datas[0].data:'', d1=ult(o);
+    return '<div class="item" data-os="'+esc(o.os)+'"><div class="t"><b>OS '+esc(o.os)+(o.via?' · '+esc(o.via):'')+'</b><span>'+(o.datas.length?((d0===d1?dm(d0):dm(d0)+' a '+dm(d1))+' · '+o.datas.length+(o.datas.length===1?' dia':' dias')):'sem interdição no pacote')+(nd?' · '+nd+(nd===1?' documento':' documentos'):'')+'</span></div>'+(feita?'<span class="tag e">com parte</span>':'<span class="tag r">sem parte</span>')+'</div>' }).join('')+'</div>';
+  $('#m').innerHTML=h; ligaDocs();
+  $$('[data-os]').forEach(e=>e.onclick=()=>{ const o=m[e.dataset.os]; const dsos=DOCS_OS(o.os);
+    sheet('<h3>OS '+esc(o.os)+'</h3>'+(dsos.length?'<div class="dia" style="margin-top:8px">Documentos</div>'+dsos.map(d=>itemDoc(d,true)).join(''):'')+o.datas.map(i=>'<div class="dia" style="margin-top:10px">'+esc(dataPT(i.data))+'</div>'+cartInt(i,false)).join('')+'<div style="margin-top:12px"><button class="big pri" data-fp="'+esc(o.os)+'">Fazer parte desta OS</button><button class="big" id="fx">Fechar</button></div>',(ov,f)=>{ $('#fx',ov).onclick=f; ligaFP(); $$('[data-doc]',ov).forEach(e=>e.onclick=()=>abreDoc(+e.dataset.doc)) }) });
 }
 
 function rPlano(){
@@ -248,9 +271,12 @@ function rPlano(){
   const vai=n=>{ const d=new Date(planoDia+'T12:00'); d.setDate(d.getDate()+n); planoDia=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); rPlano() };
   let h=aviso()+'<div class="nav"><button id="pA" aria-label="Dia anterior">‹</button><b>'+esc(dataPT(planoDia))+(planoDia===hoje?' · hoje':'')+'</b><button id="pN" aria-label="Dia seguinte">›</button></div>';
   if(planoDia!==hoje)h+='<button class="big" id="pH">Voltar a hoje</button>';
+  const dp=DOCS('plano').filter(d=>d.dia===planoDia);
+  if(dp.length)h+='<h2>Plano do dia</h2><div class="card" style="padding:4px 12px">'+dp.map(d=>itemDoc(d,false)).join('')+'</div>';
+  else if(DOCS('plano').length&&!L.length&&!pl.length)h+='<div class="empty">Sem plano para este dia.</div>';
   h+=pl.length?'<div class="card"><h3>Trabalho previsto</h3>'+pl.map(x=>'<div class="int"><b>'+esc(x.texto||'')+'</b>'+((x.estruturas||[]).length?'<span>Estruturas: '+esc(x.estruturas.join(', '))+'</span>':'')+'</div>').join('')+'</div>':'';
-  h+=L.length?'<div class="card" style="padding:2px 12px"><h3 style="margin:12px 0 0">Interdições do dia</h3>'+L.map(i=>cartInt(i,true)).join('')+'</div>':'<div class="empty">Sem interdições neste dia.</div>';
-  $('#m').innerHTML=h; $('#pA').onclick=()=>vai(-1); $('#pN').onclick=()=>vai(1); if($('#pH'))$('#pH').onclick=()=>{ planoDia=hoje; rPlano() }; ligaFP();
+  h+=L.length?'<div class="card" style="padding:2px 12px"><h3 style="margin:12px 0 0">Interdições do dia</h3>'+L.map(i=>cartInt(i,true)).join('')+'</div>':(dp.length||DOCS('plano').length?'':'<div class="empty">Sem plano nem interdições neste dia. No PC, põe os planos na pasta «Planos diarios» da obra e gera o pacote outra vez.</div>');
+  $('#m').innerHTML=h; ligaDocs(); $('#pA').onclick=()=>vai(-1); $('#pN').onclick=()=>vai(1); if($('#pH'))$('#pH').onclick=()=>{ planoDia=hoje; rPlano() }; ligaFP();
 }
 
 function secOS(ro){
