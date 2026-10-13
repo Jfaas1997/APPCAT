@@ -57,6 +57,17 @@ button:disabled{opacity:.5}
 .ovl h3{margin:0 0 6px;font-size:17px}
 .ro{background:#FBFBF9}
 [hidden]{display:none!important}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;min-height:92px;text-align:left;padding:12px 14px;background:#fff;border:1px solid var(--rule);border-radius:var(--r);font-weight:600;line-height:1.2}
+.tile span{font-weight:400;font-size:13px;color:var(--muted)}
+.tile:disabled{opacity:.55}
+.dia{font-size:13px;font-weight:600;color:var(--ink);margin:16px 2px 6px;display:flex;gap:8px;align-items:center}
+.dia.hoje{color:#6B5A00}
+.int{padding:10px 4px;border-bottom:1px solid var(--rule)}.int:last-child{border-bottom:0}
+.int b{display:block}.int span{display:block;font-size:13px;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:8px;margin-bottom:10px}.nav b{flex:1;text-align:center}
+.nav button{width:48px;padding:0;font-size:22px}
+details>summary{cursor:pointer;color:var(--muted);font-size:14px;padding:10px 2px}
 </style>
 </head>
 <body>
@@ -95,7 +106,7 @@ const fGet=id=>tx('fotos','readonly',s=>s.get(id)), fPut=f=>tx('fotos','readwrit
 /* ---------- estado ---------- */
 let PAC=null;          /* pacote da obra (do PC): {cc,nome,estruturas[],os[],...} */
 let P=null;            /* parte aberta */
-let vista='inicio';
+let vista='inicio', ant='inicio', planoDia=hojeISO();
 let saveT=null;
 
 function toast(t,ms){ let e=$('.toast'); if(e)e.remove(); e=document.createElement('div'); e.className='toast'; e.textContent=t; document.body.appendChild(e); setTimeout(()=>e.remove(),ms||2600) }
@@ -106,7 +117,7 @@ function sheet(html,fn){ const o=document.createElement('div'); o.className='ovl
 function validaPacote(j){ return j&&j.tipo==='obra-pacote'&&j.cc&&j.nome }
 async function importaPacote(file){
   try{ const j=JSON.parse(await file.text()); if(!validaPacote(j)){ toast('Este ficheiro não é um pacote de obra.',4000); return }
-    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],trabalhos:j.trabalhos||[],criado:j.criado||''};
+    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],trabalhos:j.trabalhos||[],criado:j.criado||''};
     await kvSet('pacote',PAC); toast('Obra '+PAC.cc+' carregada.'); render() }
   catch(e){ toast('Não consegui ler o ficheiro.',4000) } }
 function semPacote(){ return !PAC }
@@ -152,29 +163,94 @@ async function reenvia(p){ const f=await montaFicheiro(p);
   try{ if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]}); else{ const u=URL.createObjectURL(f),a=document.createElement('a'); a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove() } }catch(e){} }
 
 /* ---------- ecrãs ---------- */
-function cab(){ $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte de '+dataPT(P.dia):(PAC?PAC.nome:'App de Obra'); $('#hBack').hidden=(vista==='inicio') }
-async function render(){ cab(); if(vista==='parte')return rParte(); return rInicio() }
+const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário'};
+function cab(){ $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte de '+dataPT(P.dia):(TIT[vista]||(PAC?PAC.nome:'App de Obra')); $('#hBack').hidden=(vista==='inicio') }
+async function render(){ cab(); $('#bar').hidden=(vista!=='parte'); window.scrollTo(0,0);
+  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); return rInicio() }
+function abre(v){ vista=v; render() }
+
+const INTS=()=>((PAC&&PAC.ints)||[]).slice().sort((a,b)=>((a.data||'')+(a.cI||a.pI||a.ini||'')).localeCompare((b.data||'')+(b.cI||b.pI||b.ini||'')));
+const dm=iso=>iso?iso.slice(8)+'/'+iso.slice(5,7):'';
+function horaInt(i){ const c=(i.cI||'')&&(i.cF||'')?i.cI+'–'+i.cF:'', pv=(i.pI||'')&&(i.pF||'')?i.pI+'–'+i.pF:(i.ini&&i.fim?i.ini+'–'+i.fim:'');
+  return c?('Concedido '+c+(pv&&pv!==c?' · previsto '+pv:'')):(pv?'Previsto '+pv:'') }
+function cartInt(i,comBotao){ return '<div class="int"><b>'+(i.os?'OS '+esc(i.os):'Interdição sem OS')+(i.via?' · '+esc(i.via):'')+'</b>'+
+  ((i.de||i.ate)?'<span>Local: '+esc(i.de||'?')+' → '+esc(i.ate||'?')+'</span>':'')+(horaInt(i)?'<span>'+esc(horaInt(i))+'</span>':'')+(i.motivo?'<span>'+esc(i.motivo)+'</span>':'')+
+  (comBotao&&i.os?'<div style="margin-top:6px"><button data-fp="'+esc(i.os)+'">Fazer parte desta OS</button></div>':'')+'</div>' }
+function aviso(){ if(!PAC||PAC.livre)return ''; const d=PAC.criado; if(!d)return '';
+  const dias=Math.round((new Date(hojeISO()+'T12:00')-new Date(d+'T12:00'))/864e5);
+  return '<p class="hint" style="margin:-4px 2px 12px">Pacote de '+dm(d)+(dias>3?' · <b style="color:var(--amber)">já tem '+dias+' dias</b>: pede uma atualização no PC.':'')+'</p>' }
+async function fazParteOS(os){ await abrePartaDeHoje(); if(P.estado==='rascunho'){ if(!P.os){ P.os=String(os); await guardaJa(); render() } else if(P.os!==String(os))toast('A parte de hoje já é da OS '+P.os+'.',4000) } }
+function ligaFP(){ $$('[data-fp]').forEach(b=>b.onclick=()=>{ const o=$('.ovl'); if(o)o.remove(); ant=vista; fazParteOS(b.dataset.fp) }) }
 
 async function rInicio(){
-  const bar=$('#bar'); bar.hidden=true;
-  const ps=(await pAll()).filter(p=>!PAC||p.cc===PAC.cc).sort((a,b)=>a.criada<b.criada?1:-1);
+  const ps=(await pAll()).filter(p=>!PAC||p.cc===PAC.cc);
+  const hoje=hojeISO(), ni=INTS().filter(i=>i.data>=hoje).length, nh=INTS().filter(i=>i.data===hoje).length, nos=new Set(INTS().filter(i=>i.os&&i.data>=hoje).map(i=>i.os)).size;
+  const rasc=ps.filter(p=>p.estado==='rascunho').length;
   let h=cartaoInstalar();
   if(semPacote()){
-    h+='<div class="card"><h3>Escolhe a obra</h3><p class="hint">No PC, na Central, gera o «pacote da obra» e abre-o aqui. Traz a lista de estruturas e as OS. Também podes trabalhar sem pacote e escrever tudo à mão.</p>'+
+    h+='<div class="card"><h3>Escolhe a obra</h3><p class="hint">No PC, na Central, gera o «pacote da obra» e abre-o aqui. Traz a lista de estruturas, as OS e as interdições. Também podes trabalhar sem pacote e escrever tudo à mão.</p>'+
        '<button class="pri big" id="bPac">Abrir pacote da obra…</button><button class="big" id="bSem">Continuar sem pacote</button></div>';
   }
-  h+='<button class="pri big" id="bNova">'+(ps.some(p=>p.estado==='rascunho'&&p.dia===hojeISO())?'Continuar a parte de hoje':'Nova parte de hoje')+'</button>';
+  h+=aviso();
+  h+='<button class="pri big" id="bNova">'+(ps.some(p=>p.estado==='rascunho'&&p.dia===hoje)?'Continuar a parte de hoje':'Nova parte de hoje')+'</button>';
+  h+='<div class="tiles">'+
+    '<button class="tile" data-go="partes">Partes diárias<span>'+(rasc?rasc+(rasc===1?' rascunho':' rascunhos'):ps.length+(ps.length===1?' parte':' partes'))+'</span></button>'+
+    '<button class="tile" data-go="ints">Interdições<span>'+(ni?ni+' a partir de hoje':'sem próximas')+'</span></button>'+
+    '<button class="tile" data-go="os">Ordens de serviço<span>'+(nos?nos+(nos===1?' em curso':' em curso'):'sem OS')+'</span></button>'+
+    '<button class="tile" data-go="plano">Plano diário<span>hoje: '+(nh?nh+(nh===1?' interdição':' interdições'):'sem interdições')+'</span></button>'+
+    ['Normas','Desenhos','Peças','Simulador de consolas','Certificados'].map(t=>'<button class="tile" disabled>'+t+'<span>em breve</span></button>').join('')+
+    '</div>';
   h+='<button class="big" id="bFoto">📷 Tirar foto</button>';
-  h+='<h2>Partes</h2>';
-  if(!ps.length)h+='<div class="empty">Ainda não há partes.</div>';
-  else h+='<div class="card" style="padding:4px 12px">'+ps.map(p=>'<div class="item" data-p="'+esc(p.id)+'"><div class="t"><b>'+esc(dataPT(p.dia))+' · '+esc(p.hora)+'</b><span>'+(p.os?'OS '+esc(p.os)+' · ':'')+p.estruturas.length+' estruturas · '+p.fotos.length+' fotos</span></div><span class="tag '+(p.estado==='rascunho'?'r':'e')+'">'+(p.estado==='rascunho'?'rascunho':'enviada')+'</span></div>').join('')+'</div>';
   $('#m').innerHTML=h;
   if($('#bPac'))$('#bPac').onclick=()=>$('#fPac').click();
   if($('#bSem'))$('#bSem').onclick=async()=>{ PAC={cc:'',nome:'Sem pacote',estruturas:[],os:[],trabalhos:[]}; PAC.livre=true; await kvSet('pacote',PAC); render() };
   if($('#bInst'))$('#bInst').onclick=async()=>{ instalar.prompt(); await instalar.userChoice; instalar=null; render() };
-  $('#bNova').onclick=abrePartaDeHoje;
+  $('#bNova').onclick=()=>{ ant='inicio'; abrePartaDeHoje() };
   $('#bFoto').onclick=()=>$('#fFoto').click();
-  $$('[data-p]').forEach(e=>e.onclick=async()=>{ P=await pGet(e.dataset.p); vista='parte'; render() });
+  $$('[data-go]').forEach(b=>b.onclick=()=>abre(b.dataset.go));
+}
+
+async function rPartes(){
+  const ps=(await pAll()).filter(p=>!PAC||p.cc===PAC.cc).sort((a,b)=>a.criada<b.criada?1:-1);
+  let h='<button class="pri big" id="bNova">'+(ps.some(p=>p.estado==='rascunho'&&p.dia===hojeISO())?'Continuar a parte de hoje':'Nova parte de hoje')+'</button>';
+  if(!ps.length)h+='<div class="empty">Ainda não há partes.</div>';
+  else h+='<div class="card" style="padding:4px 12px">'+ps.map(p=>'<div class="item" data-p="'+esc(p.id)+'"><div class="t"><b>'+esc(dataPT(p.dia))+' · '+esc(p.hora)+'</b><span>'+(p.os?'OS '+esc(p.os)+' · ':'')+p.estruturas.length+' estruturas · '+p.fotos.length+' fotos</span></div><span class="tag '+(p.estado==='rascunho'?'r':'e')+'">'+(p.estado==='rascunho'?'rascunho':'enviada')+'</span></div>').join('')+'</div>';
+  $('#m').innerHTML=h;
+  $('#bNova').onclick=()=>{ ant='partes'; abrePartaDeHoje() };
+  $$('[data-p]').forEach(e=>e.onclick=async()=>{ P=await pGet(e.dataset.p); ant='partes'; vista='parte'; render() });
+}
+
+function rInts(){
+  const hoje=hojeISO(), L=INTS(); let h=aviso();
+  if(!L.length){ $('#m').innerHTML='<div class="empty">Sem interdições no pacote. No PC, na Central, gera o pacote da obra depois de gravares a Produção.</div>'; return }
+  const grupo=(lista)=>{ let d='',o=''; lista.forEach(i=>{ if(i.data!==d){ if(d)o+='</div>'; d=i.data; o+='<div class="dia'+(d===hoje?' hoje':'')+'">'+esc(dataPT(d))+(d===hoje?' · hoje':'')+'</div><div class="card" style="padding:2px 12px">' } o+=cartInt(i,true) }); return o+(d?'</div>':'') };
+  const prox=L.filter(i=>i.data>=hoje), pass=L.filter(i=>i.data<hoje).reverse();
+  h+=prox.length?grupo(prox):'<div class="empty">Sem interdições a partir de hoje.</div>';
+  if(pass.length)h+='<details><summary>Anteriores ('+pass.length+')</summary>'+grupo(pass)+'</details>';
+  $('#m').innerHTML=h; ligaFP();
+}
+
+async function rOS(){
+  const L=INTS().filter(i=>i.os), ps=await pAll(); const m={};
+  L.forEach(i=>{ (m[i.os]=m[i.os]||{os:i.os,via:i.via||'',datas:[]}).datas.push(i); if(i.via&&!m[i.os].via)m[i.os].via=i.via });
+  const lista=Object.values(m).sort((a,b)=>(b.datas[b.datas.length-1].data).localeCompare(a.datas[a.datas.length-1].data));
+  let h=aviso();
+  if(!lista.length){ $('#m').innerHTML='<div class="empty">Sem ordens de serviço no pacote.</div>'; return }
+  h+='<div class="card" style="padding:4px 12px">'+lista.map(o=>{ const feita=ps.some(p=>p.os===o.os&&p.cc===(PAC?PAC.cc:'')); const d0=o.datas[0].data, d1=o.datas[o.datas.length-1].data;
+    return '<div class="item" data-os="'+esc(o.os)+'"><div class="t"><b>OS '+esc(o.os)+(o.via?' · '+esc(o.via):'')+'</b><span>'+(d0===d1?dm(d0):dm(d0)+' a '+dm(d1))+' · '+o.datas.length+(o.datas.length===1?' dia':' dias')+'</span></div>'+(feita?'<span class="tag e">com parte</span>':'<span class="tag r">sem parte</span>')+'</div>' }).join('')+'</div>';
+  $('#m').innerHTML=h;
+  $$('[data-os]').forEach(e=>e.onclick=()=>{ const o=m[e.dataset.os];
+    sheet('<h3>OS '+esc(o.os)+'</h3>'+o.datas.map(i=>'<div class="dia" style="margin-top:10px">'+esc(dataPT(i.data))+'</div>'+cartInt(i,false)).join('')+'<div style="margin-top:12px"><button class="big pri" data-fp="'+esc(o.os)+'">Fazer parte desta OS</button><button class="big" id="fx">Fechar</button></div>',(ov,f)=>{ $('#fx',ov).onclick=f; ligaFP() }) });
+}
+
+function rPlano(){
+  const L=INTS().filter(i=>i.data===planoDia), hoje=hojeISO(); const pl=((PAC&&PAC.plano)||[]).filter(x=>x.dia===planoDia);
+  const vai=n=>{ const d=new Date(planoDia+'T12:00'); d.setDate(d.getDate()+n); planoDia=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); rPlano() };
+  let h=aviso()+'<div class="nav"><button id="pA" aria-label="Dia anterior">‹</button><b>'+esc(dataPT(planoDia))+(planoDia===hoje?' · hoje':'')+'</b><button id="pN" aria-label="Dia seguinte">›</button></div>';
+  if(planoDia!==hoje)h+='<button class="big" id="pH">Voltar a hoje</button>';
+  h+=pl.length?'<div class="card"><h3>Trabalho previsto</h3>'+pl.map(x=>'<div class="int"><b>'+esc(x.texto||'')+'</b>'+((x.estruturas||[]).length?'<span>Estruturas: '+esc(x.estruturas.join(', '))+'</span>':'')+'</div>').join('')+'</div>':'';
+  h+=L.length?'<div class="card" style="padding:2px 12px"><h3 style="margin:12px 0 0">Interdições do dia</h3>'+L.map(i=>cartInt(i,true)).join('')+'</div>':'<div class="empty">Sem interdições neste dia.</div>';
+  $('#m').innerHTML=h; $('#pA').onclick=()=>vai(-1); $('#pN').onclick=()=>vai(1); if($('#pH'))$('#pH').onclick=()=>{ planoDia=hoje; rPlano() }; ligaFP();
 }
 
 function secOS(ro){
@@ -234,7 +310,7 @@ function ligaParte(ro){
 }
 
 /* ---------- cabeçalho / menu ---------- */
-$('#hBack').onclick=async()=>{ await guardaJa(); P=null; vista='inicio'; render() };
+$('#hBack').onclick=async()=>{ await guardaJa(); const de=vista; P=null; vista=(de==='parte'?(ant&&ant!=='parte'?ant:'inicio'):'inicio'); render() };
 $('#hMenu').onclick=()=>sheet('<h3>Menu</h3><button class="big" id="mP">Abrir pacote da obra…</button><button class="big" id="mT">Trocar de obra</button><p class="hint">Sem rede: tudo fica guardado neste telemóvel até enviares.</p>',(o,f)=>{
   $('#mP',o).onclick=()=>{ f(); $('#fPac').click() };
   $('#mT',o).onclick=async()=>{ f(); PAC=null; await kvSet('pacote',null); P=null; vista='inicio'; render() } });
