@@ -1,5 +1,5 @@
 /* App de Obra: guarda a app no telemóvel para abrir sem rede. Mudar VERSAO quando a app muda. */
-const VERSAO='appobra-v1.7';
+const VERSAO='appobra-v1.8';
 const FICHEIROS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-512-mask.png','./logo.png'];
 self.addEventListener('install',e=>{ e.waitUntil(caches.open(VERSAO).then(c=>c.addAll(FICHEIROS)).then(()=>self.skipWaiting())) });
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VERSAO).map(k=>caches.delete(k)))).then(()=>self.clients.claim())) });

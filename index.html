@@ -59,7 +59,7 @@ button:disabled{opacity:.5}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 .item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--rule)}
 .item:last-child{border-bottom:0}
-.item .t{flex:1;min-width:0}.item .t b{display:block;font-weight:600}.item .t span{font-size:13px;color:var(--muted)}
+.item .t{flex:1;min-width:0}.item .t b{display:block;font-weight:600}.item .t span{display:block;font-size:13px;color:var(--muted)}
 .fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
 .fotos .f{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#1d2229}
 .fotos img{width:100%;height:100%;object-fit:cover;display:block}
@@ -157,7 +157,7 @@ function sheet(html,fn){ const o=document.createElement('div'); o.className='ovl
 function validaPacote(j){ return j&&j.tipo==='obra-pacote'&&j.cc&&j.nome }
 async function importaPacote(file){
   try{ const j=JSON.parse(await file.text()); if(!validaPacote(j)){ toast('Este ficheiro não é um pacote de obra.',4000); return }
-    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],docs:j.docs||[],trabalhos:j.trabalhos||[],criado:j.criado||''};
+    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],docs:j.docs||[],trabalhos:j.trabalhos||[],pecas:j.pecas||[],criado:j.criado||''};
     await kvSet('pacote',PAC); toast('Obra '+PAC.cc+' carregada.'); render() }
   catch(e){ toast('Não consegui ler o ficheiro.',4000) } }
 function semPacote(){ return !PAC }
@@ -203,7 +203,7 @@ async function reenvia(p){ const f=await montaFicheiro(p);
   try{ if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]}); else{ const u=URL.createObjectURL(f),a=document.createElement('a'); a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove() } }catch(e){} }
 
 /* ---------- ecrãs ---------- */
-const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações',fotos:'Fotos'};
+const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações',fotos:'Fotos',pecas:'Peças'};
 const CATD={os:'Ordem de serviço',plano:'PDT',esqel:'Esquema elétrico',esqsin:'Esquema de sinalização',proj:'Peça de projeto',prep:'Preparação'};
 let catX='esqel';
 function cab(){ const sub=!(vista==='inicio'||vista==='obra'); $('header').hidden=!sub; $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte diária':(TIT[vista]||'App de Obra'); $('#hBack').hidden=!sub }
@@ -213,7 +213,7 @@ function nav(){ const n=$('#nv'); const mostra=!!PAC&&vista!=='parte'; n.hidden=
   $$('button',n).forEach(b=>{ const c=at===b.dataset.n; if(c){ b.querySelector('svg').setAttribute('stroke','currentColor') } else if(b.dataset.n!=='p'||true){ b.querySelector('svg').setAttribute('stroke','currentColor') }
     b.onclick=()=>{ const k=b.dataset.n; if(k==='o')abre('inicio'); else if(k==='d')abre('obra'); else if(k==='f')abre('fotos'); else { ant=vista; abrePartaDeHoje() } } }) }
 async function render(){ cab(); nav(); $('#bar').hidden=(vista!=='parte'); window.scrollTo(0,0);
-  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); if(vista==='obra')return rObra(); if(vista==='fotos')return rFotos(); return rInicio() }
+  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); if(vista==='obra')return rObra(); if(vista==='fotos')return rFotos(); if(vista==='pecas')return rPecas(); return rInicio() }
 function abre(v){ vista=v; render() }
 
 const INTS=()=>((PAC&&PAC.ints)||[]).slice().sort((a,b)=>((a.data||'')+(a.cI||a.pI||a.ini||'')).localeCompare((b.data||'')+(b.cI||b.pI||b.ini||'')));
@@ -322,13 +322,28 @@ async function rObra(){
     tile('fotos','cam','Fotos',nfot+' · pode registar',true)+
     tile('os','doc','Ordens de serviço',nOS?nOS+' documentos':(nos?nos+' em curso':'sem OS'))+
     tile('docsx','bolt','Esquemas e preparações',DOCSX().length?DOCSX().length+' documentos':'sem documentos')+
-    tile('','book','Normas','em breve')+tile('','box','Peças','em breve')+tile('','chart','Simulador de consolas','em breve')+
+    tile('','book','Normas','em breve')+tile(((PAC.pecas||[]).length?'pecas':''),'box','Peças',(PAC.pecas||[]).length?(PAC.pecas.length+' · pesquisa'):'gera o pacote de novo')+tile('','chart','Simulador de consolas','em breve')+
     '</div>';
   $('#m').innerHTML=h;
   $('#bV').onclick=()=>abre('inicio');
   $('#bNova').onclick=()=>{ ant='obra'; abrePartaDeHoje() };
   $$('[data-go]').forEach(b=>b.onclick=()=>abre(b.dataset.go));
 }
+
+const FAM={'01':'Cabos e condutores','02':'Ferragens e perfis','03':'Isoladores','04':'Parafusaria','05':'Ligadores e braçadeiras','06':'Consolas e estruturas','07':'Equipamento de linha','08':'Equipamento eléctrico'};
+const norm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+let pQ='',pFam='';
+function rPecas(){
+  const L=(PAC&&PAC.pecas)||[];
+  let h=aviso()+'<input id="pq" type="search" placeholder="Código, SAP ou designação" value="'+esc(pQ)+'" autocomplete="off"><div class="chips" style="margin:10px 0"><button class="chip'+(pFam?'':' on')+'" data-pf="">Todas</button>'+Object.keys(FAM).map(k=>'<button class="chip'+(pFam===k?' on':'')+'" data-pf="'+k+'">'+esc(FAM[k])+'</button>').join('')+'</div><div id="pl"></div>';
+  $('#m').innerHTML=h;
+  const lista=()=>{ const q=norm(pQ.trim()).split(/\s+/).filter(Boolean), r=L.filter(x=>{ if(pFam&&x[0].slice(0,2)!==pFam)return false; const t=norm(x.join(' ')); return q.every(w=>t.indexOf(w)>=0) });
+    $('#pl').innerHTML='<p class="hint" style="margin:0 0 6px">'+r.length+' de '+L.length+' peças</p>'+(r.length?'<div class="card" style="padding:4px 12px">'+r.slice(0,60).map((x,i)=>'<div class="item" data-pk="'+L.indexOf(x)+'"><div class="t"><b>'+esc(x[2]||'—')+'</b><span class="mono">'+esc(x[0])+(x[1]?' · SAP '+esc(x[1]):'')+'</span><span>'+esc(FAM[x[0].slice(0,2)]||'')+(x[4]?' · desenho '+esc(x[4]):'')+'</span></div></div>').join('')+'</div>'+(r.length>60?'<p class="hint">A mostrar 60. Afina a procura.</p>':''):'<div class="empty">Nenhuma peça corresponde.</div>');
+    $$('[data-pk]').forEach(e=>e.onclick=()=>{ const x=L[+e.dataset.pk];
+      sheet('<h3>'+esc(x[2]||'—')+'</h3><div class="mono" style="margin:6px 0">'+esc(x[0])+'</div>'+(x[1]?'<p class="hint">SAP: <b class="mono">'+esc(x[1])+'</b></p>':'')+(x[3]?'<p class="hint">Código antigo: '+esc(x[3])+'</p>':'')+'<p class="hint">'+esc(FAM[x[0].slice(0,2)]||'')+(x[4]?' · desenho '+esc(x[4]):'')+'</p><button class="big" id="dx">Fechar</button>',(o,f)=>{ $('#dx',o).onclick=f }) }) };
+  $('#pq').oninput=e=>{ pQ=e.target.value; lista() };
+  $$('[data-pf]').forEach(b=>b.onclick=()=>{ pFam=b.dataset.pf; rPecas() });
+  lista() }
 
 let fFil='hoje';
 async function rFotos(){
