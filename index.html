@@ -105,6 +105,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:14px;padding:10px 2p
 .nv{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:var(--card);border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom)}
 .nv button{flex:1;min-height:64px;border:0;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--muted);background:transparent;padding:0}
 .nv button.on{color:var(--brand)}
+.vsim main{padding:0;max-width:none}.vsim{padding-bottom:0!important}
 .stk{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));padding-top:8px}
 </style>
 </head>
@@ -157,7 +158,7 @@ function sheet(html,fn){ const o=document.createElement('div'); o.className='ovl
 function validaPacote(j){ return j&&j.tipo==='obra-pacote'&&j.cc&&j.nome }
 async function importaPacote(file){
   try{ const j=JSON.parse(await file.text()); if(!validaPacote(j)){ toast('Este ficheiro não é um pacote de obra.',4000); return }
-    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],docs:j.docs||[],trabalhos:j.trabalhos||[],pecas:j.pecas||[],criado:j.criado||''};
+    PAC={cc:String(j.cc),nome:j.nome,estruturas:(j.estruturas||[]).map(String),os:j.os||[],ints:j.ints||[],plano:j.plano||[],docs:j.docs||[],trabalhos:j.trabalhos||[],pecas:j.pecas||[],sim:j.sim||null,criado:j.criado||''};
     await kvSet('pacote',PAC); toast('Obra '+PAC.cc+' carregada.'); render() }
   catch(e){ toast('Não consegui ler o ficheiro.',4000) } }
 function semPacote(){ return !PAC }
@@ -203,17 +204,17 @@ async function reenvia(p){ const f=await montaFicheiro(p);
   try{ if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]}); else{ const u=URL.createObjectURL(f),a=document.createElement('a'); a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove() } }catch(e){} }
 
 /* ---------- ecrãs ---------- */
-const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações',fotos:'Fotos',pecas:'Peças',des:'Desenhos',norm:'Normas'};
+const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações',fotos:'Fotos',pecas:'Peças',sim:'Simulador de consolas',des:'Desenhos',norm:'Normas'};
 const CATD={os:'Ordem de serviço',plano:'PDT',esqel:'Esquema elétrico',esqsin:'Esquema de sinalização',proj:'Peça de projeto',prep:'Preparação',des:'Desenho',norm:'Norma'};
 let catX='esqel';
 function cab(){ const sub=!(vista==='inicio'||vista==='obra'); $('header').hidden=!sub; $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte diária':(TIT[vista]||'App de Obra'); $('#hBack').hidden=!sub }
-function nav(){ const n=$('#nv'); const mostra=!!PAC&&vista!=='parte'; n.hidden=!mostra; document.body.classList.toggle('sem-nav',!mostra&&vista!=='parte'); if(!mostra)return;
+function nav(){ const n=$('#nv'); const mostra=!!PAC&&vista!=='parte'&&vista!=='sim'; document.body.classList.toggle('vsim',vista==='sim'); n.hidden=!mostra; document.body.classList.toggle('sem-nav',!mostra&&vista!=='parte'); if(!mostra)return;
   const at=vista==='inicio'?'o':(vista==='fotos'?'f':'d');
   n.innerHTML='<button data-n="o" class="'+(at==='o'?'on':'')+'">'+ico('home',24)+'Obras</button><button data-n="d" class="'+(at==='d'?'on':'')+'">'+ico('doc',24)+'Documentos</button><button data-n="p">'+ico('pen',24)+'Parte</button><button data-n="f" class="'+(at==='f'?'on':'')+'">'+ico('cam',24)+'Fotos</button>';
   $$('button',n).forEach(b=>{ const c=at===b.dataset.n; if(c){ b.querySelector('svg').setAttribute('stroke','currentColor') } else if(b.dataset.n!=='p'||true){ b.querySelector('svg').setAttribute('stroke','currentColor') }
     b.onclick=()=>{ const k=b.dataset.n; if(k==='o')abre('inicio'); else if(k==='d')abre('obra'); else if(k==='f')abre('fotos'); else { ant=vista; abrePartaDeHoje() } } }) }
 async function render(){ cab(); nav(); $('#bar').hidden=(vista!=='parte'); window.scrollTo(0,0);
-  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); if(vista==='obra')return rObra(); if(vista==='fotos')return rFotos(); if(vista==='pecas')return rPecas(); if(vista==='des'||vista==='norm')return rDocsCat(vista); return rInicio() }
+  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); if(vista==='obra')return rObra(); if(vista==='fotos')return rFotos(); if(vista==='pecas')return rPecas(); if(vista==='sim')return rSim(); if(vista==='des'||vista==='norm')return rDocsCat(vista); return rInicio() }
 function abre(v){ dQ=''; vista=v; render() }
 
 const INTS=()=>((PAC&&PAC.ints)||[]).slice().sort((a,b)=>((a.data||'')+(a.cI||a.pI||a.ini||'')).localeCompare((b.data||'')+(b.cI||b.pI||b.ini||'')));
@@ -322,7 +323,7 @@ async function rObra(){
     tile('fotos','cam','Fotos',nfot+' · pode registar',true)+
     tile('os','doc','Ordens de serviço',nOS?nOS+' documentos':(nos?nos+' em curso':'sem OS'))+
     tile('docsx','bolt','Esquemas e preparações',DOCSX().length?DOCSX().length+' documentos':'sem documentos')+
-    tile('norm','book','Normas',DOCS('norm').length?DOCS('norm').length+' · só leitura':'sem normas')+tile(((PAC.pecas||[]).length?'pecas':''),'box','Peças',(PAC.pecas||[]).length?(PAC.pecas.length+' · pesquisa'):'gera o pacote de novo')+tile('','chart','Simulador de consolas','em breve')+
+    tile('norm','book','Normas',DOCS('norm').length?DOCS('norm').length+' · só leitura':'sem normas')+tile(((PAC.pecas||[]).length?'pecas':''),'box','Peças',(PAC.pecas||[]).length?(PAC.pecas.length+' · pesquisa'):'gera o pacote de novo')+tile((PAC.sim&&PAC.sim.b64)?'sim':'','chart','Simulador de consolas',(PAC.sim&&PAC.sim.b64)?'verificar · sem rede':'gera o pacote de novo')+
     '</div>';
   $('#m').innerHTML=h;
   $('#bV').onclick=()=>abre('inicio');
@@ -332,6 +333,11 @@ async function rObra(){
 
 const FAM={'01':'Cabos e condutores','02':'Ferragens e perfis','03':'Isoladores','04':'Parafusaria','05':'Ligadores e braçadeiras','06':'Consolas e estruturas','07':'Equipamento de linha','08':'Equipamento eléctrico'};
 const norm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function rSim(){
+  if(!(PAC&&PAC.sim&&PAC.sim.b64)){ $('#m').innerHTML='<div class="empty">Sem simulador no pacote. Gera o pacote outra vez na Central.</div>'; return }
+  let html; try{ const bin=atob(PAC.sim.b64), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); html=new TextDecoder('utf-8').decode(u) }catch(e){ $('#m').innerHTML='<div class="empty">Não consegui abrir o simulador.</div>'; return }
+  $('#m').innerHTML='<iframe id="fsim" title="Simulador de consolas" style="display:block;width:100%;height:calc(100vh - 64px - env(safe-area-inset-top));height:calc(100dvh - 64px - env(safe-area-inset-top));border:0;background:#0e1318"></iframe>';
+  $('#fsim').srcdoc=html }
 let dQ='';
 function rDocsCat(t){
   const L=DOCS(t).slice().sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt',{numeric:true}));
