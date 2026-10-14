@@ -143,6 +143,7 @@ const pGet=id=>tx('partes','readonly',s=>s.get(id)), pAll=()=>tx('partes','reado
 const fGet=id=>tx('fotos','readonly',s=>s.get(id)), fPut=f=>tx('fotos','readwrite',s=>s.put(f)), fDel=id=>tx('fotos','readwrite',s=>s.delete(id));
 
 /* ---------- estado ---------- */
+let NOME='';
 let PAC=null;          /* pacote da obra (do PC): {cc,nome,estruturas[],os[],...} */
 let P=null;            /* parte aberta */
 let vista='inicio', ant='inicio', planoDia=hojeISO();
@@ -165,7 +166,7 @@ function semPacote(){ return !PAC }
 function novaParte(){
   const agora=new Date();
   return {id:uid(),v:1,cc:PAC?PAC.cc:'',obra:PAC?PAC.nome:'',estado:'rascunho',dia:hojeISO(),criada:agora.toISOString(),hora:hhmm(agora),
-    os:'',trabalho:'',equipa:'',pkI:'',pkF:'',pessoas:'',equip:[],feito:[],estruturas:[],descricao:'',avulsos:[],semRub:[],fotos:[]} }
+    os:'',trabalho:'',trabalhador:NOME,equipa:'',pkI:'',pkF:'',pessoas:'',equip:[],feito:[],estruturas:[],descricao:'',avulsos:[],semRub:[],fotos:[]} }
 async function abrePartaDeHoje(){
   const todas=(await pAll()).filter(p=>p.estado==='rascunho'&&p.dia===hojeISO()&&p.cc===(PAC?PAC.cc:''));
   if(todas.length){ P=todas.sort((a,b)=>a.criada<b.criada?1:-1)[0] } else { P=novaParte(); await pPut(P) }
@@ -413,14 +414,14 @@ function secOS(ro){
 const EQ_COM=['Dresina','Plataforma','Camião grua','Gerador'];
 async function rParte(){
   const ro=P.estado!=='rascunho', sug=(PAC&&PAC.estruturas)||[];
-  P.feito=P.feito||[]; P.equip=P.equip||[]; P.pessoas=P.pessoas||''; P.equipa=P.equipa||''; P.pkI=P.pkI||''; P.pkF=P.pkF||'';
+  P.trabalhador=P.trabalhador||''; if(!P.trabalhador&&NOME&&P.estado==='rascunho')P.trabalhador=NOME; P.feito=P.feito||[]; P.equip=P.equip||[]; P.pessoas=P.pessoas||''; P.equipa=P.equipa||''; P.pkI=P.pkI||''; P.pkF=P.pkF||'';
   if(!ro&&!P.feitoInit){ P.feitoInit=true; const pl=((PAC&&PAC.plano)||[]).filter(x=>x.dia===P.dia); pl.forEach(x=>{ if(x.texto)P.feito.push({n:x.texto,q:0}) }); guardaSoon() }
   const d=ro?' disabled':'';
   const it=P.os?(INTS().find(i=>String(i.os)===String(P.os)&&i.data===P.dia)||INTS().find(i=>String(i.os)===String(P.os))):null;
   let h='<div class="row" style="justify-content:space-between"><div class="sub" style="margin:0">'+esc(PAC?PAC.nome:'')+' · '+esc(dataPT(P.dia))+' · '+esc(P.hora)+'</div><span class="tag '+(ro?'e':'r')+'" style="flex:none">'+(ro?'enviada':'rascunho')+'</span></div>';
   if(it)h+='<div class="box y" style="margin-top:12px"><div class="k">Interdição</div><div style="font-weight:600">OS '+esc(it.os)+(it.via?' · '+esc(it.via):'')+'</div><div class="mono" style="font-size:13px">'+esc(dm(it.data))+(horaInt(it)?' · '+esc(horaInt(it)):'')+'</div></div>';
   h+='<div style="margin-top:12px">'+secOS(ro)+'</div>';
-  h+='<div class="card"><label style="margin-top:0">Equipa</label><input id="fEq" value="'+esc(P.equipa)+'" placeholder="Ex.: Equipa 1"'+d+'><div class="g2"><div><label>PK inicial</label><input class="mono" id="fPI" value="'+esc(P.pkI)+'" placeholder="21+200"'+d+'></div><div><label>PK final</label><input class="mono" id="fPF" value="'+esc(P.pkF)+'" placeholder="21+650"'+d+'></div></div></div>';
+  h+='<div class="card"><label style="margin-top:0">Trabalhador (quem preenche)</label><input id="fTb" value="'+esc(P.trabalhador||'')+'" placeholder="O teu nome"'+d+'><label>Equipa</label><input id="fEq" value="'+esc(P.equipa)+'" placeholder="Ex.: Equipa 1"'+d+'><div class="g2"><div><label>PK inicial</label><input class="mono" id="fPI" value="'+esc(P.pkI)+'" placeholder="21+200"'+d+'></div><div><label>PK final</label><input class="mono" id="fPF" value="'+esc(P.pkF)+'" placeholder="21+650"'+d+'></div></div></div>';
   h+='<div class="card" style="padding:0"><div style="padding:12px 14px;font-weight:600;border-bottom:1px solid var(--rule)">Trabalho feito</div><div style="padding:0 14px 8px">'+
     (P.feito.length?P.feito.map((x,i)=>'<div class="fe"><input class="n" data-fn="'+i+'" value="'+esc(x.n)+'" placeholder="Trabalho"'+d+'>'+(ro?'<span class="mono">'+esc(x.q)+'</span>':'<span class="sp"></span><button class="m" data-fm="'+i+'" data-d="-1" aria-label="Menos">−</button><input class="q" data-fq="'+i+'" inputmode="decimal" value="'+esc(x.q)+'"><button class="m" data-fm="'+i+'" data-d="1" aria-label="Mais">+</button><button class="lk" data-fx="'+i+'" aria-label="Tirar">×</button>')+'</div>').join(''):'<p class="hint" style="margin:10px 0">Ainda nada registado.</p>')+
     (ro?'':'<button id="bFe" style="margin-top:6px;color:var(--brand);border-style:dashed">+ Trabalho</button>')+'</div></div>';
@@ -454,7 +455,7 @@ function ligaParte(ro){
   $('#fTr').oninput=e=>{ P.trabalho=e.target.value.trim(); upd() };
   $('#fD').oninput=e=>{ P.descricao=e.target.value; upd() };
   const bind=(id,k)=>{ const e=$(id); if(e)e.oninput=()=>{ P[k]=e.value; upd() } };
-  bind('#fEq','equipa'); bind('#fPI','pkI'); bind('#fPF','pkF'); bind('#fPe','pessoas');
+  bind('#fEq','equipa'); { const t=$('#fTb'); if(t)t.oninput=()=>{ P.trabalhador=t.value; NOME=t.value.trim(); kvSet('nome',NOME).catch(()=>{}); upd() } } bind('#fPI','pkI'); bind('#fPF','pkF'); bind('#fPe','pessoas');
   $$('[data-fn]').forEach(i=>i.oninput=()=>{ P.feito[+i.dataset.fn].n=i.value; upd() });
   $$('[data-fq]').forEach(i=>i.oninput=()=>{ P.feito[+i.dataset.fq].q=i.value; upd() });
   $$('[data-fm]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.fm, inp=$('[data-fq="'+i+'"]'); const v=Math.max(0,(parseFloat(String(inp.value).replace(',','.'))||0)+(+b.dataset.d)); inp.value=v; P.feito[i].q=v; upd() });
@@ -505,7 +506,7 @@ function cartaoInstalar(){ if(emApp())return '';
   return '' }
 if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-(async function(){ try{ PAC=await kvGet('pacote')||null }catch(e){ PAC=null } render() })();
+(async function(){ try{ PAC=await kvGet('pacote')||null }catch(e){ PAC=null } try{ NOME=(await kvGet('nome'))||'' }catch(e){} render() })();
 </script>
 </body>
 </html>
