@@ -244,7 +244,7 @@ function rDocsX(){
   $('#m').innerHTML=aviso()+h; $$('[data-cx]').forEach(b=>b.onclick=()=>{ catX=b.dataset.cx; rDocsX() }); ligaDocs() }
 const ligaDocs=()=>$$('[data-doc]').forEach(e=>e.onclick=()=>abreDoc(+e.dataset.doc));
 
-const LOGO='<svg width="30" height="30" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#F9D115"/><path d="M6 12 Q17 20 28 12 M10 12v13 M24 12v13 M6 24h22" fill="none" stroke="#0F1216" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const LOGO='<img src="logo.png" alt="Somafel" height="34" style="display:block;border-radius:5px">';
 const sv=(c,d,w)=>'<svg width="'+(w||26)+'" height="'+(w||26)+'" viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>';
 const IC={
  cal:['#6FA8FF','<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'],
