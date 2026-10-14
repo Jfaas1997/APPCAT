@@ -203,8 +203,8 @@ async function reenvia(p){ const f=await montaFicheiro(p);
   try{ if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]}); else{ const u=URL.createObjectURL(f),a=document.createElement('a'); a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove() } }catch(e){} }
 
 /* ---------- ecrãs ---------- */
-const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações',fotos:'Fotos',pecas:'Peças'};
-const CATD={os:'Ordem de serviço',plano:'PDT',esqel:'Esquema elétrico',esqsin:'Esquema de sinalização',proj:'Peça de projeto',prep:'Preparação'};
+const TIT={partes:'Partes diárias',ints:'Interdições',os:'Ordens de serviço',plano:'Plano diário',docsx:'Esquemas e preparações',fotos:'Fotos',pecas:'Peças',des:'Desenhos',norm:'Normas'};
+const CATD={os:'Ordem de serviço',plano:'PDT',esqel:'Esquema elétrico',esqsin:'Esquema de sinalização',proj:'Peça de projeto',prep:'Preparação',des:'Desenho',norm:'Norma'};
 let catX='esqel';
 function cab(){ const sub=!(vista==='inicio'||vista==='obra'); $('header').hidden=!sub; $('#hCC').hidden=!PAC; $('#hCC').textContent=PAC?PAC.cc:''; $('#hT').textContent=vista==='parte'?'Parte diária':(TIT[vista]||'App de Obra'); $('#hBack').hidden=!sub }
 function nav(){ const n=$('#nv'); const mostra=!!PAC&&vista!=='parte'; n.hidden=!mostra; document.body.classList.toggle('sem-nav',!mostra&&vista!=='parte'); if(!mostra)return;
@@ -213,8 +213,8 @@ function nav(){ const n=$('#nv'); const mostra=!!PAC&&vista!=='parte'; n.hidden=
   $$('button',n).forEach(b=>{ const c=at===b.dataset.n; if(c){ b.querySelector('svg').setAttribute('stroke','currentColor') } else if(b.dataset.n!=='p'||true){ b.querySelector('svg').setAttribute('stroke','currentColor') }
     b.onclick=()=>{ const k=b.dataset.n; if(k==='o')abre('inicio'); else if(k==='d')abre('obra'); else if(k==='f')abre('fotos'); else { ant=vista; abrePartaDeHoje() } } }) }
 async function render(){ cab(); nav(); $('#bar').hidden=(vista!=='parte'); window.scrollTo(0,0);
-  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); if(vista==='obra')return rObra(); if(vista==='fotos')return rFotos(); if(vista==='pecas')return rPecas(); return rInicio() }
-function abre(v){ vista=v; render() }
+  if(vista==='parte')return rParte(); if(vista==='partes')return rPartes(); if(vista==='ints')return rInts(); if(vista==='os')return rOS(); if(vista==='plano')return rPlano(); if(vista==='docsx')return rDocsX(); if(vista==='obra')return rObra(); if(vista==='fotos')return rFotos(); if(vista==='pecas')return rPecas(); if(vista==='des'||vista==='norm')return rDocsCat(vista); return rInicio() }
+function abre(v){ dQ=''; vista=v; render() }
 
 const INTS=()=>((PAC&&PAC.ints)||[]).slice().sort((a,b)=>((a.data||'')+(a.cI||a.pI||a.ini||'')).localeCompare((b.data||'')+(b.cI||b.pI||b.ini||'')));
 const dm=iso=>iso?iso.slice(8)+'/'+iso.slice(5,7):'';
@@ -236,7 +236,7 @@ function abreDoc(k){ const d=PAC.docs[k]; if(!d)return; const bl=blobDe(d), url=
   const w=window.open(url,'_blank'); if(!w){ const a=document.createElement('a'); a.href=url; a.download=d.nome; document.body.appendChild(a); a.click(); a.remove() }
   setTimeout(()=>URL.revokeObjectURL(url),120000) }
 const itemDoc=(d,cat)=>'<div class="item" data-doc="'+d.k+'"><div class="t"><b>'+esc(d.nome)+'</b><span>'+(cat?esc(CATD[d.tipo]||d.tipo)+' · ':'')+esc(dm(d.dia))+(d.os?' · OS '+esc(d.os):'')+'</span></div><span class="tag e">abrir</span></div>';
-const DOCSX=()=>((PAC&&PAC.docs)||[]).map((d,k)=>Object.assign({k},d)).filter(d=>d.tipo!=='os'&&d.tipo!=='plano').sort((a,b)=>(b.dia||'').localeCompare(a.dia||''));
+const DOCSX=()=>((PAC&&PAC.docs)||[]).map((d,k)=>Object.assign({k},d)).filter(d=>['esqel','esqsin','proj','prep'].includes(d.tipo)).sort((a,b)=>(b.dia||'').localeCompare(a.dia||''));
 const DOCS_OS=os=>((PAC&&PAC.docs)||[]).map((d,k)=>Object.assign({k},d)).filter(d=>d.os===String(os)).sort((a,b)=>(a.tipo+'').localeCompare(b.tipo+'')||(b.dia||'').localeCompare(a.dia||''));
 function rDocsX(){
   const T=['esqel','esqsin','proj','prep'], L=DOCSX(); let h='<div class="chips" style="margin:0 0 10px">'+T.map(t=>'<button data-cx="'+t+'" class="'+(catX===t?'pri':'')+'" style="min-height:40px">'+esc(CATD[t])+' <span style="opacity:.7">'+L.filter(d=>d.tipo===t).length+'</span></button>').join('')+'</div>';
@@ -315,14 +315,14 @@ async function rObra(){
   const nPl=DOCS('plano').length, nOS=DOCS('os').length;
   h+='<div class="tiles">'+
     tile('plano','cal','Planos de trabalho',nPl?nPl+' · só leitura':(pl.length?'hoje · só leitura':'só leitura'))+
-    tile('','map','Desenhos','em breve')+
+    tile('des','map','Desenhos',DOCS('des').length?DOCS('des').length+' · só leitura':'sem desenhos')+
     tile('','cert','Certificados','em breve')+
     tile('ints','clock','Interdições',ni?ni+' a partir de hoje':'sem próximas')+
     tile('partes','pen','Partes diárias',(rasc?rasc+(rasc===1?' rascunho':' rascunhos'):ps.length+' · pode registar'),true)+
     tile('fotos','cam','Fotos',nfot+' · pode registar',true)+
     tile('os','doc','Ordens de serviço',nOS?nOS+' documentos':(nos?nos+' em curso':'sem OS'))+
     tile('docsx','bolt','Esquemas e preparações',DOCSX().length?DOCSX().length+' documentos':'sem documentos')+
-    tile('','book','Normas','em breve')+tile(((PAC.pecas||[]).length?'pecas':''),'box','Peças',(PAC.pecas||[]).length?(PAC.pecas.length+' · pesquisa'):'gera o pacote de novo')+tile('','chart','Simulador de consolas','em breve')+
+    tile('norm','book','Normas',DOCS('norm').length?DOCS('norm').length+' · só leitura':'sem normas')+tile(((PAC.pecas||[]).length?'pecas':''),'box','Peças',(PAC.pecas||[]).length?(PAC.pecas.length+' · pesquisa'):'gera o pacote de novo')+tile('','chart','Simulador de consolas','em breve')+
     '</div>';
   $('#m').innerHTML=h;
   $('#bV').onclick=()=>abre('inicio');
@@ -332,6 +332,14 @@ async function rObra(){
 
 const FAM={'01':'Cabos e condutores','02':'Ferragens e perfis','03':'Isoladores','04':'Parafusaria','05':'Ligadores e braçadeiras','06':'Consolas e estruturas','07':'Equipamento de linha','08':'Equipamento eléctrico'};
 const norm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+let dQ='';
+function rDocsCat(t){
+  const L=DOCS(t).slice().sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt',{numeric:true}));
+  if(!L.length){ $('#m').innerHTML=aviso()+'<div class="empty">Sem '+(t==='des'?'desenhos':'normas')+' no pacote. No PC, na Central, põe os PDF na pasta «'+(t==='des'?'Desenhos da obra':'Normas da obra')+'» (separador «OS e planos») e gera o pacote outra vez.</div>'; return }
+  $('#m').innerHTML=aviso()+'<input id="dq" type="search" placeholder="Procurar" value="'+esc(dQ)+'" autocomplete="off"><div id="dl" style="margin-top:12px"></div>';
+  const lista=()=>{ const q=norm(dQ.trim()).split(/\s+/).filter(Boolean), r=L.filter(d=>{ const x=norm(d.nome); return q.every(w=>x.indexOf(w)>=0) });
+    $('#dl').innerHTML='<p class="hint" style="margin:0 0 6px">'+r.length+' de '+L.length+'</p>'+(r.length?'<div class="card" style="padding:4px 12px">'+r.map(d=>itemDoc(d,false)).join('')+'</div>':'<div class="empty">Nada corresponde.</div>'); ligaDocs() };
+  $('#dq').oninput=e=>{ dQ=e.target.value; lista() }; lista() }
 let pQ='',pFam='';
 function rPecas(){
   const L=(PAC&&PAC.pecas)||[];
