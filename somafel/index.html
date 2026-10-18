@@ -372,21 +372,33 @@ async function lePecas(){
   const uso={};sh('montagens').forEach(m=>{const p=col(m,'cod peca'),a=col(m,'cod montagem','cod desenho');if(!p)return;(uso[p]=uso[p]||new Set()).add(a)});
   const L=sh('pecas').map(p=>{const c=col(p,'cod peca');return {cod:c,sap:col(p,'nomenclatura'),ant:col(p,'cod peca antigo'),des:col(p,'designacao'),desenho:col(p,'cod desenho'),com:col(p,'comentarios'),uso:uso[c]?uso[c].size:0}}).filter(x=>x.cod);
   PEC={L,nome:f.name};return PEC}
+function cargaBase(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx';
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;
+    try{aviso('A ler a base…');await carregaXlsx();const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
+      const nm=n=>wb.SheetNames.find(x=>x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').startsWith(n));
+      const lin=n=>nm(n)?XLSX.utils.sheet_to_json(wb.Sheets[nm(n)],{defval:''}).length:0;
+      const nd=lin('desenhos'),np=lin('pecas'),nmo=lin('montagens');
+      if(!nd||!nmo||!np){aviso('Esta base não tem as folhas Desenhos, Pecas e Montagens com dados.',true);return}
+      if(!await confirmar('Base lida: '+nd+' desenhos, '+np+' peças, '+nmo+' linhas de montagem. Substitui a base IP da organização. Continuar?','Carregar'))return;
+      aviso('A carregar…');
+      const up=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/base_dados/Base_de_dados_catenaria.xlsx',f,{upsert:true,contentType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});if(up.error)throw up.error;
+      PEC=null;aviso('Base IP carregada.');vPecas()}catch(e){aviso(erroTxt(e),true)}};inp.click()}
 async function vPecas(){
   S.vista='pecas';titulo('Catálogo de peças');$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.remove('semPad','bib');
   pg.innerHTML='<div class="vz"><p class="hint">A ler a base de dados…</p></div>';
   let D;try{D=await lePecas()}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
   if(S.vista!=='pecas')return;
-  if(D.vazio){pg.innerHTML='<div class="vz"><div class="card"><b>Ainda não há base de dados carregada.</b><p class="hint" style="margin:6px 0 0">O administrador carrega a base IP uma vez: Medição › Obra ▾ › «Carregar base IP…». O catálogo de peças lê essa base.</p></div></div>';return}
+  if(D.vazio){pg.innerHTML='<div class="vz"><div class="card"><b>Ainda não há base de dados carregada.</b><p class="hint" style="margin:6px 0 10px">A base IP (Base_de_dados_catenaria.xlsx) é carregada uma vez pelo administrador. O catálogo de peças e a Medição usam essa mesma base.</p>'+(admin()?'<button class="pri" id="pBase">Carregar base IP…</button>':'')+'</div></div>';const b0=$('#pBase');if(b0)b0.onclick=cargaBase;return}
   const fam=x=>x.cod.split('.')[0];const fams=[...new Set(D.L.map(fam))].sort();
   const q=PQ.toLowerCase();const L=D.L.filter(x=>(!PFAM||fam(x)===PFAM)&&(!q||(x.cod+' '+x.sap+' '+x.ant+' '+x.des+' '+x.desenho).toLowerCase().includes(q)));
   const MAX=300;
-  pg.innerHTML='<div class="vz"><div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input id="pQ" type="search" placeholder="Procurar código, SAP, designação…" value="'+esc(PQ)+'" style="flex:1;min-width:220px"><select id="pF"><option value="">Todas as famílias</option>'+fams.map(f=>'<option'+(f===PFAM?' selected':'')+' value="'+esc(f)+'">'+esc(f)+'</option>').join('')+'</select><button id="pCsv">Exportar CSV</button></div>'
+  pg.innerHTML='<div class="vz"><div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input id="pQ" type="search" placeholder="Procurar código, SAP, designação…" value="'+esc(PQ)+'" style="flex:1;min-width:220px"><select id="pF"><option value="">Todas as famílias</option>'+fams.map(f=>'<option'+(f===PFAM?' selected':'')+' value="'+esc(f)+'">'+esc(f)+'</option>').join('')+'</select><button id="pCsv">Exportar CSV</button>'+(admin()?'<button id="pBase">Carregar base IP…</button>':'')+'</div>'
    +'<div class="hint" style="margin-bottom:8px">'+L.length+' de '+D.L.length+' peças · base '+esc(D.nome)+(L.length>MAX?' · a mostrar as primeiras '+MAX+' (afina a pesquisa)':'')+'</div>'
    +'<div style="overflow:auto"><table><thead><tr><th>Código</th><th>SAP</th><th>Cód. antigo</th><th>Designação</th><th>Desenho</th><th class="n">Usada em</th></tr></thead><tbody>'
    +L.slice(0,MAX).map(x=>'<tr><td class="mono">'+esc(x.cod)+'</td><td class="mono">'+esc(x.sap)+'</td><td class="mono">'+esc(x.ant)+'</td><td>'+esc(x.des)+'</td><td class="mono">'+esc(x.desenho)+'</td><td class="n">'+x.uso+'</td></tr>').join('')+'</tbody></table></div></div></div>';
   let t=null;$('#pQ').oninput=e=>{PQ=e.target.value;clearTimeout(t);t=setTimeout(()=>{const p=e.target.selectionStart;vPecas().then(()=>{const n=$('#pQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}})},250)};
-  $('#pF').onchange=e=>{PFAM=e.target.value;vPecas()};
+  $('#pF').onchange=e=>{PFAM=e.target.value;vPecas()};const bb=$('#pBase');if(bb)bb.onclick=cargaBase;
   $('#pCsv').onclick=()=>{const c=v=>'"'+String(v).replace(/"/g,'""')+'"';const csv='﻿'+['Código;SAP;Código antigo;Designação;Desenho;Usada em'].concat(L.map(x=>[x.cod,x.sap,x.ant,x.des,x.desenho,x.uso].map(c).join(';'))).join('\r\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='catalogo_pecas.csv';a.click()};
 }
