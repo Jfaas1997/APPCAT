@@ -421,6 +421,7 @@ async function modulosObra(o){
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const edita=true; // gestores editam estruturas e OS
   let h='<div class="sec">Aplicações<span class="sp"></span><a class="btn" href="medicao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Medição ↗</a> <a class="btn" href="materiais.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Materiais ↗</a> <a class="btn" href="consolas.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Consolas ↗</a> <a class="btn" href="rct.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Medição RCT ↗</a> <a class="btn" href="producao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Controlo de Produção ↗</a></div>';
+  h+='<div id="resApps"></div>';
   h+='<div class="sec">Partes diárias<span class="sp"></span><button id="cf">Copiar fotos para a pasta…</button></div>';
   h+=partes.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Dia</th><th>Quem</th><th>Trabalho</th><th>Estado</th><th class="n">Fotos</th><th></th></tr></thead><tbody>'
     +partes.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];const nf=(p.fotos||[]).filter(f=>!f.ignorada).length;
@@ -433,7 +434,7 @@ async function modulosObra(o){
   h+='<div class="sec">Estruturas<span class="sp"></span><button id="ies">Importar lista…</button></div><div class="card"><p class="hint" style="margin:0"><b>'+nEst+'</b> estrutura'+(nEst===1?'':'s')+' nesta obra. É a lista que aparece no telemóvel na parte diária.</p></div>';
   h+='<div id="docs"></div>';
   el.innerHTML=h;
-  docsObra(o);
+  docsObra(o); resumoApps(o);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>verParte(partes.find(p=>p.id===b.dataset.pv),o,()=>modulosObra(o)));
   $('#cf').onclick=()=>copiaFotos(o);
   $('#los').onclick=()=>$('#losf').click();
@@ -461,6 +462,24 @@ async function modulosObra(o){
 const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',documentos:'Outros documentos'};
 function nomeSeguro(n){return n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(-120)||'ficheiro'}
 function tamTxt(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB'}
+async function resumoApps(o){
+  const el=document.getElementById('resApps'); if(!el)return;
+  let l=[]; try{ const q=await sb.from('dados_apps').select('app,versao,atualizado_em,resumo:dados->resumo').eq('obra_id',o.id); l=q.data||[] }catch(e){ return }
+  if(!l.length){ el.innerHTML=''; return }
+  const n0=(v)=>new Intl.NumberFormat('pt-PT',{maximumFractionDigits:0}).format(v||0), n1=(v)=>new Intl.NumberFormat('pt-PT',{maximumFractionDigits:1}).format(v||0);
+  const pc=(a,b)=>b?Math.round(100*a/b)+'%':'—';
+  const R={
+    medicao:['Medição',r=>[['Postes',n0(r.postes)],['Executados',n0(r.executados)+' ('+pc(r.executados,r.postes)+')']]],
+    materiais:['Materiais',r=>[['Em vigor',eur(r.vigente)],['Encomendado',eur(r.encomendado)],['Recebido',eur(r.recebidoValor)],['Stock',eur(r.stock)],['Atrasos',n0(r.atrasos)]]],
+    producao:['Produção',r=>{ const c=(r.origens||[])[0]||{}; return [['Contrato',eur(c.total)],['Executado',eur(c.executado)+' ('+pc(c.executado,c.total)+')'],['Autos',n0((r.linhas||[]).length)]] }],
+    consolas:['Consolas',r=>[['Apoios',n0(r.apoios)],['Verificam',n0(r.ok)],['Não verificam',n0(r.nok)],['Por verificar',n0(r.falta)]]],
+    rct:['Medição RCT',r=>[['Caixas',n0(r.caixas)],['Montagens',n0(r.montagensExecutadas)+' / '+n0(r.montagensPrevistas)],['Cabo a mais',n1(r.caboAMais)+' m']]]
+  };
+  const ordem=['medicao','materiais','producao','consolas','rct'];
+  const cards=ordem.map(a=>{ const x=l.find(y=>y.app===a); if(!x||!x.resumo||!R[a])return ''; let linhas=[]; try{ linhas=R[a][1](x.resumo) }catch(e){ return '' }
+    return '<div class="card" style="padding:10px 14px;min-width:200px"><b>'+R[a][0]+'</b> <span class="hint" style="font-size:11px">'+fmtDH(x.atualizado_em)+'</span><table style="margin-top:4px"><tbody>'+linhas.map(k=>'<tr><td>'+esc(k[0])+'</td><td class="n"><b>'+esc(k[1])+'</b></td></tr>').join('')+'</tbody></table></div>' }).join('');
+  el.innerHTML=cards?'<div class="sec">Estado das aplicações</div><div class="grid">'+cards+'</div>':'';
+}
 async function docsObra(o){
   const el=$('#docs');if(!el)return;
   let lista=[];
