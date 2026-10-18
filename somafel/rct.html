@@ -1383,7 +1383,7 @@ $('#obraNome').addEventListener('input',function(){ if(!NM.ob){ ST.nome=this.val
 function rRes(c){
   var b=$('#resBox');
   if(vazio()){ b.innerHTML='<div class="vazio"><b>Ainda não há caixas nesta obra</b>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois adicione-lhe as montagens.<br><br><button class="pri" id="r1">Criar a primeira caixa</button>'+
-      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem pasta de obra ligada.</b> O que fizer fica só neste navegador (rascunho). Abra a obra na Central de Obras (Obras → a obra → Medição RCT) ou use o menu «Obra» para abrir a pasta.')+'</p></div>';
+      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Central.')+'</p></div>';
     $('#r1').onclick=function(){ vai('cx'); setTimeout(function(){ $('#cAdd').focus() },50) }; return }
   var pe=c.nPrev?c.nExec/c.nPrev:0, h='<div class="cards">'+
     '<div class="card"><b>'+c.nCx+'</b><span>caixas</span></div>'+
