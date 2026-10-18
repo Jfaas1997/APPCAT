@@ -177,6 +177,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .dsec{margin:20px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}.dsec span{font-family:var(--mono);margin-left:6px}
 .dchips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-family:var(--mono);font-size:12px;padding:3px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--rule)}.chip.on{background:var(--brand);border-color:var(--brand);color:#2B3038}
+.cfam{position:sticky;top:0;z-index:1;display:flex;gap:6px;align-items:center;padding:7px 12px;background:var(--soft);border-bottom:1px solid var(--rule);font-size:12px;letter-spacing:.03em;color:var(--ink)}.cfam b{font-family:var(--mono)}.cfam span{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .ctab td{font-size:12.5px;padding:6px 8px}.ctab th{padding:6px 8px}.tag{font-size:10px;color:var(--verd);font-family:var(--sans)}
 .cfoot{margin:0}
 .cgW{padding:2vh 2vw;align-items:stretch}.cgC{background:var(--sheet);border-radius:10px;width:100%;display:flex;flex-direction:column;overflow:hidden}
@@ -324,7 +325,7 @@ function casca(){
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med" data-need hidden>'+ico('ruler')+'<span>Medição</span></button><button class="tab" data-v="cons" data-need hidden>'+ico('calc')+'<span>Software Consolas</span></button><button class="tab" data-v="rct" data-need hidden>'+ico('box')+'<span>Medição RCT</span></button>'
-     +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button><button class="tab" data-v="pecas">'+ico('book')+'<span>Catálogo de peças</span></button>':'')
+     +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Pessoas</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
    +'<header><span class="ccchip" id="hCC" hidden></span><h1 id="hT">Obras</h1><span class="hint" id="hSub"></span><span class="hsave" id="hSave" hidden><i></i><span></span></span><span class="hsp"></span><span class="quem"><b>'+esc(S.eu.nome)+'</b> <span class="pill">'+PAPEL[S.eu.papel]+'</span></span><button id="bNova" class="pri" hidden>+ Nova obra</button><button id="bAjuda" aria-label="Ajuda">?</button></header>'
@@ -358,50 +359,141 @@ async function abreBib(path,nome){
   try{const u=await urlBib(path);w.querySelector('#cgB').innerHTML=/\.(png|jpe?g)$/i.test(nome)?'<img class="pimg" src="'+esc(u)+'" alt="">':'<iframe class="pfr g" src="'+esc(u)+'#view=FitH"></iframe>'}catch(e){w.querySelector('#cgB').innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>'}}
 let BSEL={desenhos:null,normas:null};
 
-/* ---------- catálogo de peças (da base IP carregada na Medição) ---------- */
-let PEC=null,PQ='',PFAM='';
-async function lePecas(){
-  if(PEC)return PEC;
+/* ---------- Catálogo e desenhos (como na Central antiga): índice de desenhos + catálogo de peças ---------- */
+const CAT_FAM={'01':'Cabos e condutores','02':'Ferragens e perfis','03':'Isoladores','04':'Parafusaria','05':'Ligadores e braçadeiras','06':'Consolas e estruturas','07':'Equipamento de linha','08':'Equipamento eléctrico'};
+const CAT={tab:'des',q:'',fam:'',sel:null,selP:null,vMont:null,soVer:false,base:null,ix:null,n:0,nome:''};
+const cNorm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+function catLerBase(wb){
+  const acha=n=>{const k=wb.SheetNames.find(x=>cNorm(x).replace(/\s+/g,'').indexOf(n)===0);return k?XLSX.utils.sheet_to_json(wb.Sheets[k],{defval:''}):null};
+  const ld=acha('desenh'),lp=acha('peca'),lm=acha('montag');if(!ld||!lp||!lm)return {d:[],p:[],m:[]};
+  const K=o=>{const m={};for(const k in o)m[cNorm(k).trim()]=String(o[k]).trim();return m};
+  const nd=[],dix=new Map(),np=[],pix=new Map(),nm=[];
+  ld.forEach(raw=>{const r=K(raw),c=r['codigo desenho'];if(!c||dix.has(c))return;dix.set(c,nd.length);nd.push([c,r['no documento']||r['nº documento']||'',r['versao'],'',r['designacao'],r['data publicacao'],r['comentarios']])});
+  lp.forEach(raw=>{const r=K(raw),c=r['cod peca'];if(!c||pix.has(c))return;pix.set(c,np.length);np.push([c,r['cod peca antigo'],r['nomenclatura'],r['designacao'],r['ref peca desenho'],r['cod desenho'],r['comentarios']])});
+  lm.forEach(raw=>{const r=K(raw),d=r['cod desenho'];if(!dix.has(d))return;const pc=r['cod peca'],rd=r['cod desenho ref'],q=Number(String(r['quantidade']).replace(',','.'))||0;
+    nm.push([dix.get(d),r['cod montagem'],pc&&pix.has(pc)?pix.get(pc):-1,rd&&dix.has(rd)?dix.get(rd):-1,rd?r['cod montagem ref']:'',q,r['unidade']||'un'])});
+  return {d:nd,p:np,m:nm}}
+function catIndices(){
+  const B=CAT.base;CAT.desIx=new Map();B.d.forEach((r,i)=>CAT.desIx.set(r[0],i));
+  CAT.mont=new Map();B.m.forEach((r,j)=>{if(!CAT.mont.has(r[0]))CAT.mont.set(r[0],[]);CAT.mont.get(r[0]).push(j)});
+  CAT.usaP=new Map();CAT.usaD=new Map();
+  B.m.forEach((r,j)=>{if(r[2]>=0){if(!CAT.usaP.has(r[2]))CAT.usaP.set(r[2],[]);CAT.usaP.get(r[2]).push(j)}if(r[3]>=0){if(!CAT.usaD.has(r[3]))CAT.usaD.set(r[3],[]);CAT.usaD.get(r[3]).push(j)}});
+  CAT.pecDes=new Map();B.p.forEach((p,i)=>{const c=String(p[5]||'').split('/')[0].trim();if(!c)return;if(!CAT.pecDes.has(c))CAT.pecDes.set(c,[]);CAT.pecDes.get(c).push(i)})}
+function catMelhor(n,o){const pn=/\.pdf$/i.test(n),po=/\.pdf$/i.test(o||'');if(pn!==po)return pn;return String(n).localeCompare(String(o),'pt',{numeric:true})>0}
+function catRegista(f){const nome=f.nome,base=nome.replace(/\.[^.]+$/,''),ch=new Set();let m;const re=/\d{11}/g;while((m=re.exec(base)))ch.add('D'+m[0]);
+  ch.add('C'+cNorm(base).replace(/[\s_]+/g,''));const c=base.match(/((?:EC|E|C)-\d+[A-Za-z]*)/i);if(c)ch.add('C'+cNorm(c[1]).replace(/[\s_\-]+/g,''));
+  ch.forEach(k=>{const o=CAT.ix.get(k);if(!o||catMelhor(nome,o.nome))CAT.ix.set(k,f)})}
+async function catCarrega(forca){
+  if(CAT.base&&!forca)return;
   const dir='_org/'+S.eu.organizacao_id+'/base_dados';
   const l=await sb.storage.from('documentos').list(dir,{limit:50,sortBy:{column:'updated_at',order:'desc'}});if(l.error)throw l.error;
-  const f=(l.data||[]).filter(x=>x.id&&/\.xlsx$/i.test(x.name))[0];if(!f)return {vazio:true};
-  await carregaXlsx();const r=await sb.storage.from('documentos').download(dir+'/'+f.name);if(r.error)throw r.error;
-  const wb=XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'});
-  const sh=n=>{const k=wb.SheetNames.find(x=>x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').startsWith(n));return k?XLSX.utils.sheet_to_json(wb.Sheets[k],{defval:''}):[]};
-  const col=(o,...ns)=>{for(const k of Object.keys(o)){const kk=k.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();if(ns.includes(kk))return String(o[k]).trim()}return ''};
-  const uso={};sh('montagens').forEach(m=>{const p=col(m,'cod peca'),a=col(m,'cod montagem','cod desenho');if(!p)return;(uso[p]=uso[p]||new Set()).add(a)});
-  const L=sh('pecas').map(p=>{const c=col(p,'cod peca');return {cod:c,sap:col(p,'nomenclatura'),ant:col(p,'cod peca antigo'),des:col(p,'designacao'),desenho:col(p,'cod desenho'),com:col(p,'comentarios'),uso:uso[c]?uso[c].size:0}}).filter(x=>x.cod);
-  PEC={L,nome:f.name};return PEC}
+  const f=(l.data||[]).filter(x=>x.id&&/\.xlsx$/i.test(x.name))[0];
+  CAT.ix=new Map();let L=[];try{L=await listaBib('desenhos')}catch(e){}CAT.n=L.length;L.forEach(catRegista);
+  if(!f){CAT.base=null;CAT.semBase=true;return}
+  CAT.semBase=false;await carregaXlsx();const r=await sb.storage.from('documentos').download(dir+'/'+f.name);if(r.error)throw r.error;
+  CAT.base=catLerBase(XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'}));CAT.nome=f.name;catIndices()}
+function catFich(di){const d=CAT.base.d[di];return CAT.ix.get('D'+d[1])||CAT.ix.get('C'+cNorm(d[0]).replace(/[\s_\-\/]+/g,''))||CAT.ix.get('C'+cNorm(d[0]).replace(/[\s_]+/g,''))||null}
+function catTipo(di){const f=catFich(di),nm=f?f.nome:'';const e=(nm.match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();return {f,nome:nm,ext:e==='tiff'?'tif':e,ver:/^(pdf|png|jpg|jpeg|webp|gif|svg)$/.test(e)}}
+const catLabel=(di,mo)=>{const d=CAT.base.d[di];return d[0]+(mo===''?'/(base)':(mo!=='0'?'/'+mo:''))};
+async function catMostra(box,di,grande){
+  if(!box)return;const t=catTipo(di),d=CAT.base.d[di];
+  if(!t.f){box.innerHTML='<div class="pmsg"><b>Ainda sem ficheiro deste desenho</b>Procura-se um ficheiro com <code>'+esc(d[1])+'</code> no nome.'+(admin()?'<br>Carregue-o com «Carregar desenhos…».':'')+'</div>';return}
+  if(!t.ver){box.innerHTML='<div class="pmsg"><b>Este formato não abre no navegador</b><code>'+esc(t.f.nome)+'</code></div>';return}
+  try{const u=await urlBib(t.f.path);box.innerHTML=t.ext==='pdf'?'<iframe class="pfr'+(grande?' g':'')+'" src="'+esc(u)+'#view=FitH" title="'+esc(d[0])+'"></iframe>':'<img class="pimg" src="'+esc(u)+'" alt="'+esc(d[0])+'">'}catch(e){box.innerHTML='<div class="pmsg"><b>Não consegui abrir</b>'+esc(erroTxt(e))+'</div>'}}
+function catGrande(di){const w=document.createElement('div');w.className='nmW cgW';const d=CAT.base.d[di];
+  w.innerHTML='<div class="cgC"><div class="cgH"><b class="mono">'+esc(d[0])+'</b><span>'+esc(d[4]||'')+'</span><span class="hsp"></span><button id="cgX">Fechar</button></div><div class="cgB" id="cgB"></div></div>';document.body.appendChild(w);
+  const fecha=()=>{w.remove();document.removeEventListener('keydown',k)};const k=e=>{if(e.key==='Escape')fecha()};document.addEventListener('keydown',k);
+  w.addEventListener('click',e=>{if(e.target===w||e.target.id==='cgX')fecha()});catMostra($('#cgB'),di,true)}
+function catDetDes(){
+  const B=CAT.base,di=CAT.sel;if(di==null||!B.d[di])return '<div class="cvaz"><b>Escolha um desenho à esquerda</b><p>Vê a ficha, o desenho (PDF), as montagens com as peças e onde é usado.</p></div>';
+  const d=B.d[di],t=catTipo(di),js=CAT.mont.get(di)||[],mts=[];js.forEach(j=>{const m=B.m[j][1];if(mts.indexOf(m)<0)mts.push(m)});
+  mts.sort((a,b)=>a.localeCompare(b,'pt',{numeric:true}));if(CAT.vMont==null||mts.indexOf(CAT.vMont)<0)CAT.vMont=mts[0];
+  let h='<div class="dh"><div><div class="dk">Desenho</div><h2 class="mono">'+esc(d[0])+'</h2><div class="dn">'+esc(d[4]||'')+'</div><div class="dm"><span>Nº documento <b class="mono">'+esc(d[1])+'</b></span><span>Versão <b>'+esc(d[2]||'—')+'</b></span>'+(d[5]?'<span>Publicado <b>'+esc(String(d[5]).slice(0,10))+'</b></span>':'')+(d[6]?'<span>'+esc(d[6])+'</span>':'')+'</div></div><div class="da">'+(t.f&&t.ver?'<button id="cGrande" class="pri">Ver em grande</button><button id="cAbre">Abrir noutra janela</button>':'')+'</div></div><div class="dprev" id="cPrev"></div>';
+  if(mts.length){const m=CAT.vMont;h+='<div class="dsec">Montagens <span>'+mts.length+'</span></div><div class="dchips">'+mts.map(x=>'<button class="chip'+(x===m?' on':'')+'" data-cm="'+esc(x)+'">'+esc(x===''?'(base)':x==='0'?'principal':x)+'</button>').join('')+'</div>';
+    const lin=js.filter(j=>B.m[j][1]===m);
+    h+='<table class="ctab"><thead><tr><th>Peça / conjunto</th><th>Designação</th><th class="n">Qtd.</th><th>Un.</th></tr></thead><tbody>'+lin.map(j=>{const r=B.m[j],ref=r[3]>=0;const cod=ref?catLabel(r[3],r[4]):(r[2]>=0?B.p[r[2]][0]:'(vazia)'),dg=ref?B.d[r[3]][4]:(r[2]>=0?B.p[r[2]][3]:'');
+      return '<tr><td class="mono">'+(ref?'<button class="lk mono" data-ir="'+r[3]+'">'+esc(cod)+'</button> <span class="tag">conjunto</span>':(r[2]>=0?'<button class="lk mono" data-ip="'+r[2]+'">'+esc(cod)+'</button>':esc(cod)))+'</td><td>'+esc(dg)+'</td><td class="n">'+esc(String(r[5]).replace('.',','))+'</td><td>'+esc(r[6]||'')+'</td></tr>'}).join('')+'</tbody></table>'}
+  const pd=CAT.pecDes.get(String(d[0]))||[];
+  if(pd.length)h+='<div class="dsec">Peças desenhadas neste desenho <span>'+pd.length+'</span></div><table class="ctab"><thead><tr><th>Ref.</th><th>Peça</th><th>Designação</th><th>SAP</th></tr></thead><tbody>'+pd.map(i=>{const p=B.p[i];return '<tr><td class="mono">'+esc(p[4]||'')+'</td><td><button class="lk mono" data-ip="'+i+'">'+esc(p[0])+'</button></td><td>'+esc(p[3])+'</td><td class="mono">'+esc(p[2]||'')+'</td></tr>'}).join('')+'</tbody></table>';
+  let us=CAT.usaD.get(di)||[];const vis={};us=us.filter(j=>{const k=B.m[j][0]+'|'+B.m[j][1];if(vis[k])return false;vis[k]=1;return true});
+  if(us.length)h+='<div class="dsec">Usado como conjunto em <span>'+us.length+'</span></div><div class="dchips">'+us.map(j=>{const r=B.m[j];return '<button class="chip" data-ir="'+r[0]+'" data-irm="'+esc(r[1])+'">'+esc(catLabel(r[0],r[1]))+' · '+esc(String(r[5]).replace('.',','))+' '+esc(r[6]||'')+'</button>'}).join('')+'</div>';
+  return h}
+function catDetPec(){
+  const B=CAT.base,i=CAT.selP;if(i==null||!B.p[i])return '<div class="cvaz"><b>Escolha uma peça à esquerda</b><p>Vê a ficha da peça, o desenho onde está desenhada e em que montagens é usada.</p></div>';
+  const p=B.p[i],dc=String(p[5]||'').split('/')[0].trim(),di=CAT.desIx.get(dc);
+  let h='<div class="dh"><div><div class="dk">Peça · '+esc(CAT_FAM[String(p[0]).slice(0,2)]||'')+'</div><h2 class="mono">'+esc(p[0])+'</h2><div class="dn">'+esc(p[3]||'')+'</div><div class="dm"><span>SAP / nomenclatura <b class="mono">'+esc(p[2]||'—')+'</b></span><span>Código antigo <b class="mono">'+esc(p[1]||'—')+'</b></span><span>Desenho <b class="mono">'+(di!=null?'<button class="lk mono" data-ir="'+di+'">'+esc(p[5])+'</button>':esc(p[5]||'—'))+'</b></span>'+(p[4]?'<span>Ref. no desenho <b class="mono">'+esc(p[4])+'</b></span>':'')+(p[6]?'<span>'+esc(p[6])+'</span>':'')+'</div></div></div>';
+  const us=CAT.usaP.get(i)||[];
+  h+='<div class="dsec">Usada em <span>'+us.length+' montage'+(us.length===1?'m':'ns')+'</span></div>'+(us.length?'<table class="ctab"><thead><tr><th>Montagem</th><th>Designação do desenho</th><th class="n">Qtd.</th><th>Un.</th></tr></thead><tbody>'+us.map(j=>{const r=B.m[j];return '<tr><td><button class="lk mono" data-ir="'+r[0]+'" data-irm="'+esc(r[1])+'">'+esc(catLabel(r[0],r[1]))+'</button></td><td>'+esc(B.d[r[0]][4])+'</td><td class="n">'+esc(String(r[5]).replace('.',','))+'</td><td>'+esc(r[6]||'')+'</td></tr>'}).join('')+'</tbody></table>':'<p class="hint">Não aparece em nenhuma montagem da base.</p>');
+  if(di!=null){h+='<div class="dsec">Desenho '+esc(B.d[di][0])+'</div><div class="dprev" id="cPrev"></div>';CAT.prevDi=di}else CAT.prevDi=null;
+  return h}
+function catCsv(){const B=CAT.base;let rows,nome;
+  if(CAT.tab==='des'){rows=[['Código Desenho','Nº Documento','Versão','Data Publicação','Designação','Ficheiro']].concat(B.d.map((r,i)=>{const t=catTipo(i);return [r[0],r[1],r[2],String(r[5]||'').slice(0,10),r[4],t.f?t.f.nome:'']}));nome='Indice_de_desenhos.csv'}
+  else{rows=[['Cod Peca','Cod Antigo','Nomenclatura','Designação','Família','Cod Desenho','Ref no desenho']].concat(B.p.map(r=>[r[0],r[1],r[2],r[3],CAT_FAM[String(r[0]).slice(0,2)]||'',r[5],r[4]]));nome='Catalogo_de_pecas.csv'}
+  const txt='﻿'+rows.map(r=>r.map(c=>{c=String(c==null?'':c);return /[;"\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(';')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));a.download=nome;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function cargaBase(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx';
   inp.onchange=async()=>{const f=inp.files[0];if(!f)return;
-    try{aviso('A ler a base…');await carregaXlsx();const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
-      const nm=n=>wb.SheetNames.find(x=>x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').startsWith(n));
-      const lin=n=>nm(n)?XLSX.utils.sheet_to_json(wb.Sheets[nm(n)],{defval:''}).length:0;
-      const nd=lin('desenhos'),np=lin('pecas'),nmo=lin('montagens');
-      if(!nd||!nmo||!np){aviso('Esta base não tem as folhas Desenhos, Pecas e Montagens com dados.',true);return}
-      if(!await confirmar('Base lida: '+nd+' desenhos, '+np+' peças, '+nmo+' linhas de montagem. Substitui a base IP da organização. Continuar?','Carregar'))return;
+    try{aviso('A ler a base…');await carregaXlsx();const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});const b=catLerBase(wb);
+      if(!b.d.length||!b.m.length||!b.p.length){aviso('Esta base não tem as folhas Desenhos, Pecas e Montagens com dados.',true);return}
+      if(!await confirmar('Base lida: '+b.d.length+' desenhos, '+b.p.length+' peças, '+b.m.length+' linhas de montagem. Substitui a base IP da organização. Continuar?','Carregar'))return;
       aviso('A carregar…');
       const up=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/base_dados/Base_de_dados_catenaria.xlsx',f,{upsert:true,contentType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});if(up.error)throw up.error;
-      PEC=null;aviso('Base IP carregada.');vPecas()}catch(e){aviso(erroTxt(e),true)}};inp.click()}
-async function vPecas(){
-  S.vista='pecas';titulo('Catálogo de peças');$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.remove('semPad','bib');
-  pg.innerHTML='<div class="vz"><p class="hint">A ler a base de dados…</p></div>';
-  let D;try{D=await lePecas()}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
-  if(S.vista!=='pecas')return;
-  if(D.vazio){pg.innerHTML='<div class="vz"><div class="card"><b>Ainda não há base de dados carregada.</b><p class="hint" style="margin:6px 0 10px">A base IP (Base_de_dados_catenaria.xlsx) é carregada uma vez pelo administrador. O catálogo de peças e a Medição usam essa mesma base.</p>'+(admin()?'<button class="pri" id="pBase">Carregar base IP…</button>':'')+'</div></div>';const b0=$('#pBase');if(b0)b0.onclick=cargaBase;return}
-  const fam=x=>x.cod.split('.')[0];const fams=[...new Set(D.L.map(fam))].sort();
-  const q=PQ.toLowerCase();const L=D.L.filter(x=>(!PFAM||fam(x)===PFAM)&&(!q||(x.cod+' '+x.sap+' '+x.ant+' '+x.des+' '+x.desenho).toLowerCase().includes(q)));
-  const MAX=300;
-  pg.innerHTML='<div class="vz"><div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input id="pQ" type="search" placeholder="Procurar código, SAP, designação…" value="'+esc(PQ)+'" style="flex:1;min-width:220px"><select id="pF"><option value="">Todas as famílias</option>'+fams.map(f=>'<option'+(f===PFAM?' selected':'')+' value="'+esc(f)+'">'+esc(f)+'</option>').join('')+'</select><button id="pCsv">Exportar CSV</button>'+(admin()?'<button id="pBase">Carregar base IP…</button>':'')+'</div>'
-   +'<div class="hint" style="margin-bottom:8px">'+L.length+' de '+D.L.length+' peças · base '+esc(D.nome)+(L.length>MAX?' · a mostrar as primeiras '+MAX+' (afina a pesquisa)':'')+'</div>'
-   +'<div style="overflow:auto"><table><thead><tr><th>Código</th><th>SAP</th><th>Cód. antigo</th><th>Designação</th><th>Desenho</th><th class="n">Usada em</th></tr></thead><tbody>'
-   +L.slice(0,MAX).map(x=>'<tr><td class="mono">'+esc(x.cod)+'</td><td class="mono">'+esc(x.sap)+'</td><td class="mono">'+esc(x.ant)+'</td><td>'+esc(x.des)+'</td><td class="mono">'+esc(x.desenho)+'</td><td class="n">'+x.uso+'</td></tr>').join('')+'</tbody></table></div></div></div>';
-  let t=null;$('#pQ').oninput=e=>{PQ=e.target.value;clearTimeout(t);t=setTimeout(()=>{const p=e.target.selectionStart;vPecas().then(()=>{const n=$('#pQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}})},250)};
-  $('#pF').onchange=e=>{PFAM=e.target.value;vPecas()};const bb=$('#pBase');if(bb)bb.onclick=cargaBase;
-  $('#pCsv').onclick=()=>{const c=v=>'"'+String(v).replace(/"/g,'""')+'"';const csv='﻿'+['Código;SAP;Código antigo;Designação;Desenho;Usada em'].concat(L.map(x=>[x.cod,x.sap,x.ant,x.des,x.desenho,x.uso].map(c).join(';'))).join('\r\n');
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='catalogo_pecas.csv';a.click()};
-}
+      CAT.base=null;aviso('Base IP carregada.');vCat()}catch(e){aviso(erroTxt(e),true)}};inp.click()}
+function cargaDes(pasta){
+  const inp=document.createElement('input');inp.type='file';inp.multiple=true;if(pasta)inp.webkitdirectory=true;else inp.accept='application/pdf,.pdf';
+  inp.onchange=async()=>{const fs=[...inp.files].filter(f=>/\.pdf$/i.test(f.name));if(!fs.length){aviso('Não há PDF para carregar.',true);return}
+    let n=0,er=0;for(const f of fs){n++;try{aviso('A carregar '+n+' de '+fs.length+'…');const r=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/desenhos/'+nomeSeguro(f.name),f,{upsert:true,contentType:'application/pdf'});if(r.error)throw r.error}catch(e){er++;aviso(f.name+': '+erroTxt(e),true);await new Promise(r=>setTimeout(r,1200))}}
+    aviso(er?('Carregados '+(n-er)+' de '+fs.length+'; falharam '+er+'.'):'Carregados '+n+' desenhos.',!!er);vCat(true)};inp.click()}
+async function vCat(forca){
+  S.vista='desenhos';titulo('Catálogo e desenhos');$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.remove('semPad');pg.classList.add('bib');
+  if(!CAT.base||forca){pg.innerHTML='<div class="vazio"><p>A abrir o catálogo…</p></div>';try{await catCarrega(true)}catch(e){pg.classList.remove('bib');pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}}
+  if(S.vista!=='desenhos')return;catRender()}
+function catRender(){
+  const pg=$('#pg');if(!pg)return;const B=CAT.base,q=cNorm(CAT.q.trim());
+  const adm=admin()?'<button class="sm" id="cDes">Carregar desenhos…</button><button class="sm" id="cDesP">Carregar pasta…</button><button class="sm" id="cBase">'+(B?'Substituir base IP…':'Carregar base IP…')+'</button>':'';
+  if(!B){pg.innerHTML='<div class="cat"><div class="hint" style="padding:14px 16px;margin:0 0 12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--soft)"><b>Sem base de dados.</b> A base IP (Base_de_dados_catenaria.xlsx) é carregada uma vez pelo administrador, e a Medição usa a mesma.<br><br>'+(admin()?'<button class="pri sm" id="cBase">Carregar base IP…</button> ':'')+'</div><div class="cbar"><div class="cpasta">'+adm.replace(/<button class="sm" id="cBase">.*?<\/button>/,'')+'</div></div></div>';ligaCat();return}
+  let h='<div class="cat"><div class="cbar"><div class="ctabs" role="tablist"><button data-ct="des" class="'+(CAT.tab==='des'?'on':'')+'">Índice de desenhos <span>'+B.d.length+'</span></button><button data-ct="pec" class="'+(CAT.tab==='pec'?'on':'')+'">Catálogo de peças <span>'+B.p.length+'</span></button></div>'
+   +'<button id="cCsv" class="sm">'+(CAT.tab==='des'?'Exportar o índice':'Exportar o catálogo')+'</button><div class="cpasta"><span class="cdot ok"></span>'+CAT.n+' ficheiros no servidor '+adm+'</div></div>';
+  h+='<div class="cgrid"><section class="clist"><div class="cfilt"><input id="cQ" type="search" placeholder="'+(CAT.tab==='des'?'Procurar código, designação ou nº de documento…':'Procurar código, SAP, designação ou desenho…')+'" value="'+esc(CAT.q)+'" autocomplete="off">';
+  if(CAT.tab==='des')h+='<label class="chk"><input type="checkbox" id="cSoVer"'+(CAT.soVer?' checked':'')+'> só os que têm ficheiro</label>';
+  else h+='<select id="cFam"><option value="">Todas as famílias</option>'+Object.keys(CAT_FAM).map(k=>'<option value="'+k+'"'+(CAT.fam===k?' selected':'')+'>'+k+' · '+CAT_FAM[k]+'</option>').join('')+'</select>';
+  h+='</div>';
+  if(CAT.tab==='des'){
+    const L=B.d.map((r,i)=>i).filter(i=>{const r=B.d[i];if(q&&cNorm(r[0]+' '+r[4]+' '+r[1]).indexOf(q)<0)return false;if(CAT.soVer&&!catTipo(i).f)return false;return true});
+    h+='<div class="ccount">'+L.length+' de '+B.d.length+' desenhos</div><div class="crows" id="cRows">'+L.slice(0,600).map(i=>{const r=B.d[i],t=catTipo(i);
+      return '<button class="crow'+(CAT.sel===i?' on':'')+'" data-cd="'+i+'"><span class="cc mono">'+esc(r[0])+'</span><span class="cv">'+esc(r[2]||'')+'</span><span class="cn">'+esc(r[4]||'—')+'<small class="mono">'+esc(r[1])+(r[5]?' · '+esc(String(r[5]).slice(0,10)):'')+'</small></span><span class="cx '+(t.f?(t.ver?'ok':'dwf'):'falta')+'" title="'+(t.f?esc(t.f.nome):'Sem ficheiro no servidor')+'">'+(t.f?t.ext.toUpperCase():'falta')+'</span></button>'}).join('')
+      +(L.length>600?'<div class="ccount">mostrados 600 — afine a procura</div>':'')+(L.length?'':'<div class="ccount">Nenhum desenho corresponde.</div>')+'</div>';
+  }else{
+    const P=B.p.map((r,i)=>i).filter(i=>{const r=B.p[i];if(CAT.fam&&String(r[0]).slice(0,2)!==CAT.fam)return false;return !q||cNorm(r[0]+' '+r[1]+' '+r[2]+' '+r[3]+' '+r[5]).indexOf(q)>=0});
+    P.sort((x,y)=>String(B.p[x][0]).localeCompare(String(B.p[y][0]),'pt',{numeric:true}));
+    const fa=i=>String(B.p[i][0]).slice(0,2),nf={};P.forEach(i=>{nf[fa(i)]=(nf[fa(i)]||0)+1});let ult=null,corpo='';
+    P.slice(0,2000).forEach(i=>{const r=B.p[i],f=fa(i);if(f!==ult){ult=f;corpo+='<div class="cfam"><b>'+esc(f)+'</b> · '+esc(CAT_FAM[f]||'Outras')+'<span>'+nf[f]+'</span></div>'}
+      corpo+='<button class="crow'+(CAT.selP===i?' on':'')+'" data-cp="'+i+'"><span class="cc mono">'+esc(r[0])+'</span><span class="cv mono">'+esc(r[2]||'')+'</span><span class="cn">'+esc(r[3]||'—')+'<small>'+(r[5]?'desenho '+esc(r[5]):'')+'</small></span></button>'});
+    h+='<div class="ccount">'+P.length+' de '+B.p.length+' peças, por família</div><div class="crows" id="cRows">'+corpo
+      +(P.length>2000?'<div class="ccount">mostradas 2000 — afine a procura ou escolha uma família</div>':'')+(P.length?'':'<div class="ccount">Nenhuma peça corresponde.</div>')+'</div>';
+  }
+  h+='</section><section class="cdet" id="cDet">'+(CAT.tab==='des'?catDetDes():catDetPec())+'</section></div><p class="hint cfoot">Base: '+esc(CAT.nome)+'. A edição da base faz-se na Medição › Base de dados. '+B.p.length+' peças · '+B.d.length+' desenhos · '+B.m.length+' linhas de montagem.</p></div>';
+  const sc=$('#cRows')?$('#cRows').scrollTop:0;pg.innerHTML=h;if($('#cRows'))$('#cRows').scrollTop=sc;ligaCat();
+  const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null)catMostra($('#cPrev'),di,false)}
+function ligaCat(){
+  const pg=$('#pg');
+  pg.onclick=e=>{if(S.vista!=='desenhos')return;const t=e.target;let x;
+    if((x=t.closest('[data-ct]'))){CAT.tab=x.getAttribute('data-ct');CAT.q='';catRender();return}
+    if((x=t.closest('[data-cd]'))){CAT.sel=+x.getAttribute('data-cd');CAT.vMont=null;catRender();return}
+    if((x=t.closest('[data-cp]'))){CAT.selP=+x.getAttribute('data-cp');catRender();return}
+    if((x=t.closest('[data-cm]'))){CAT.vMont=x.getAttribute('data-cm');const ds=$('#cDet'),sc=ds.scrollTop;ds.innerHTML=catDetDes();ds.scrollTop=sc;catMostra($('#cPrev'),CAT.sel,false);return}
+    if((x=t.closest('[data-ir]'))){CAT.tab='des';CAT.sel=+x.getAttribute('data-ir');CAT.vMont=x.hasAttribute('data-irm')?x.getAttribute('data-irm'):null;CAT.q='';catRender();const r=$('.crow.on');if(r)r.scrollIntoView({block:'center'});return}
+    if((x=t.closest('[data-ip]'))){CAT.tab='pec';CAT.selP=+x.getAttribute('data-ip');CAT.q='';CAT.fam='';catRender();const r2=$('.crow.on');if(r2)r2.scrollIntoView({block:'center'});return}
+    if(t.closest('#cGrande')){catGrande(CAT.sel);return}
+    if(t.closest('#cAbre')){const f=catTipo(CAT.sel).f;if(f)urlBib(f.path).then(u=>window.open(u,'_blank'));return}
+    if(t.closest('#cCsv')){catCsv();return}
+    if(t.closest('#cBase')){cargaBase();return}
+    if(t.closest('#cDes')){cargaDes(false);return}
+    if(t.closest('#cDesP')){cargaDes(true);return}};
+  const qi=$('#cQ');if(qi){let tm=null;qi.oninput=e=>{CAT.q=e.target.value;clearTimeout(tm);tm=setTimeout(()=>{const p=e.target.selectionStart;catRender();const n=$('#cQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}},250)}}
+  const sv=$('#cSoVer');if(sv)sv.onchange=()=>{CAT.soVer=sv.checked;catRender()};
+  const fm=$('#cFam');if(fm)fm.onchange=()=>{CAT.fam=fm.value;catRender()}}
 async function vBib(tipo){
   const B=BIB[tipo];S.vista=tipo;titulo(B[0]);$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.add('bib');pg.innerHTML='<div class="vazio"><p>A abrir…</p></div>';
   let L=[];try{L=await listaBib(B[1])}catch(e){pg.classList.remove('bib');pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
@@ -464,7 +556,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vBib('desenhos'),pecas:vPecas,normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra,v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra,v)))();
   posiciona();
 }
 function rSide(){const o=S.obra;$('#sObra').hidden=!o;$('#sVolta').hidden=!o;if(o)$('#sObraT').textContent='Obra '+o.centro_custo;
