@@ -1067,7 +1067,7 @@ function ui(){ var ob=NM.ob; document.body.classList.toggle('obraAtiva',!!ob);
   var n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Central':''; if(ob)n.value=ob.nome; else n.value=ST.nome||'';
   $('#nFechar').hidden=!ob; semPastaUi(); ind() }
 function semPastaUi(){ var b=$('#semPasta'); if(!b)return; var lig=!!(NM.ob&&NM.fh), emC=false; try{ emC=(parent!==window) }catch(e){}
-  b.hidden=lig; if(lig)return;
+  b.hidden=lig||!!NM.ob; if(lig||NM.ob)return;
   $('#spTxt').innerHTML=emC?(NM.ob?'<b>A obra '+esc(NM.ob.cc)+' ainda não tem a pasta ligada.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador).':'<b>Esta janela não está ligada a nenhuma obra.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador). Abra a obra na Central (Obras → a obra → Medição RCT).'):'<b>Sem pasta de obra ligada.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador).';
 }
 /* ---- desfazer / refazer ---- */
@@ -1383,7 +1383,7 @@ $('#obraNome').addEventListener('input',function(){ if(!NM.ob){ ST.nome=this.val
 function rRes(c){
   var b=$('#resBox');
   if(vazio()){ b.innerHTML='<div class="vazio"><b>Ainda não há caixas nesta obra</b>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois adicione-lhe as montagens.<br><br><button class="pri" id="r1">Criar a primeira caixa</button>'+
-      '<p class="hint" style="margin-top:14px">'+((NM.ob&&NM.dir)?'Ligada à obra '+esc(NM.ob.cc)+'. Tudo o que fizer fica gravado em Dados/rct.json.':'<b>Sem pasta de obra ligada.</b> O que fizer fica só neste navegador (rascunho). Abra a obra na Central de Obras (Obras → a obra → Medição RCT) ou use o menu «Obra» para abrir a pasta.')+'</p></div>';
+      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem pasta de obra ligada.</b> O que fizer fica só neste navegador (rascunho). Abra a obra na Central de Obras (Obras → a obra → Medição RCT) ou use o menu «Obra» para abrir a pasta.')+'</p></div>';
     $('#r1').onclick=function(){ vai('cx'); setTimeout(function(){ $('#cAdd').focus() },50) }; return }
   var pe=c.nPrev?c.nExec/c.nPrev:0, h='<div class="cards">'+
     '<div class="card"><b>'+c.nCx+'</b><span>caixas</span></div>'+

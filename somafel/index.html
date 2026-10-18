@@ -229,6 +229,7 @@ async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqList
 function casca(){
   $('#raiz').innerHTML='<div id="app"><nav id="side"><div class="sbrand"><i>S</i><div class="nm">SOMAFEL<small>Central de Obras</small></div></div>'
    +'<button class="tab" data-v="obras">'+IC.obras+'<span>Obras</span></button>'
+   +(gestor()?'<button class="tab" data-v="desenhos">'+IC.obras+'<span>Catálogo e desenhos</span></button><button class="tab" data-v="normas">'+IC.obras+'<span>Normas</span></button>':'')
    +(gestor()?'<button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Pessoas</span></button>':'')
    +(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+IC.tema+'<span>Tema claro/escuro</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
@@ -238,21 +239,79 @@ function casca(){
   $('#bSair').onclick=sair;
   $('#bTema').onclick=()=>{const r=document.documentElement;const esc_=(r.getAttribute('data-tema')==='escuro')||(!r.getAttribute('data-tema')&&matchMedia('(prefers-color-scheme:dark)').matches);const n=esc_?'claro':'escuro';r.setAttribute('data-tema',n);try{localStorage.setItem('tema',n)}catch(e){}};
 }
+const BIB={desenhos:['Catálogo e desenhos','desenhos','Desenhos'],normas:['Normas','normas','Normas']};
+let BQ='',BANT=false;
+function revDe(n){const m=n.replace(/\.[^.]+$/,'').match(/[_\s-]?(?:v|rev|r)\s?0*(\d+)$/i);return m?+m[1]:0}
+function baseDe(n){return n.replace(/\.[^.]+$/,'').replace(/[_\s-]?(?:v|rev|r)\s?0*\d+$/i,'').toLowerCase()}
+async function listaBib(tipo){const raiz='_org/'+S.eu.organizacao_id+'/'+tipo;const out=[];
+  const r=await sb.storage.from('documentos').list(raiz,{limit:1000});if(r.error)throw r.error;
+  for(const x of r.data||[]){if(x.id)out.push({grupo:'',nome:x.name,path:raiz+'/'+x.name,tam:(x.metadata&&x.metadata.size)||0,quando:x.created_at});
+    else{const q=await sb.storage.from('documentos').list(raiz+'/'+x.name,{limit:1000});if(q.error)throw q.error;(q.data||[]).filter(y=>y.id).forEach(y=>out.push({grupo:x.name,nome:y.name,path:raiz+'/'+x.name+'/'+y.name,tam:(y.metadata&&y.metadata.size)||0,quando:y.created_at}))}}
+  return out}
+async function abreBib(path,nome){const w=janela(nome,true);w.corpo.innerHTML='<p class="hint">A abrir…</p>';
+  try{const r=await sb.storage.from('documentos').createSignedUrl(path,3600);if(r.error)throw r.error;const u=r.data.signedUrl;
+    w.corpo.innerHTML='<div style="display:flex;gap:8px;margin-bottom:8px"><a class="btn" href="'+esc(u)+'" target="_blank" rel="noopener">Abrir noutro separador</a><span class="sp"></span><button id="fx">Fechar</button></div><iframe src="'+esc(u)+'" style="width:100%;height:68vh;border:1px solid var(--line,#ddd);border-radius:8px"></iframe>';
+    $('#fx',w.corpo).onclick=()=>w.fecha()}catch(e){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div><div class="bt"><button id="fx">Fechar</button></div>';$('#fx',w.corpo).onclick=()=>w.fecha()}}
+async function vBib(tipo){
+  const B=BIB[tipo];S.vista=tipo;titulo(B[0]);const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
+  let L=[];try{L=await listaBib(B[1])}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  if(tipo==='desenhos'&&!BANT){const best={};L.forEach(x=>{const b=baseDe(x.nome),r=revDe(x.nome);if(!best[b]||r>best[b].r||(r===best[b].r&&x.nome>best[b].x.nome))best[b]={r,x}});L=L.filter(x=>best[baseDe(x.nome)].x===x)}
+  const nTot=L.length;if(BQ){const q=BQ.toLowerCase();L=L.filter(x=>(x.nome+' '+x.grupo).toLowerCase().includes(q))}
+  L.sort((a,b)=>(a.grupo+a.nome).localeCompare(b.grupo+b.nome,'pt',{numeric:true}));
+  const tam=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' kB';
+  const grupos=[...new Set(L.map(x=>x.grupo))];
+  let h='<div class="vz"><div class="topo"><div><h2>'+B[0]+'</h2><p class="sub" style="margin:0">'+nTot+' ficheiro'+(nTot===1?'':'s')+(tipo==='desenhos'?' (última revisão de cada desenho)':'')+'</p></div><span class="sp"></span><input id="bq" placeholder="Procurar…" value="'+esc(BQ)+'" style="width:200px">'
+    +(tipo==='desenhos'?'<label class="chk"><input type="checkbox" id="bant"'+(BANT?' checked':'')+'> revisões antigas</label>':'')
+    +(admin()?'<button class="pri" id="bup">Carregar PDF…</button>':'')+'</div><div style="height:12px"></div>';
+  if(!L.length)h+='<div class="vazio"><h2>'+(nTot?'Nada encontrado':'Ainda não há ficheiros')+'</h2><p>'+(nTot?'Experimente outra pesquisa.':(admin()?'Carregue os PDF com «Carregar PDF…».':'O administrador ainda não carregou ficheiros.'))+'</p></div>';
+  else grupos.forEach(g=>{h+=(g?'<div class="sec">'+esc(g)+'</div>':'')+'<div class="card" style="padding:4px 8px"><table><tbody>'+L.filter(x=>x.grupo===g).slice(0,400).map(x=>'<tr><td><b>'+esc(x.nome)+'</b></td><td class="n">'+tam(x.tam)+'</td><td style="text-align:right"><button data-ab="'+esc(x.path)+'" data-nm="'+esc(x.nome)+'">Abrir</button></td></tr>').join('')+'</tbody></table></div>'});
+  pg.innerHTML=h+'</div>';
+  let t=null;$('#bq').oninput=e=>{BQ=e.target.value;clearTimeout(t);t=setTimeout(()=>vBib(tipo),350)};
+  const ba=$('#bant');if(ba)ba.onchange=()=>{BANT=ba.checked;vBib(tipo)};
+  pg.querySelectorAll('[data-ab]').forEach(b=>b.onclick=()=>abreBib(b.dataset.ab,b.dataset.nm));
+  const bu=$('#bup');if(bu)bu.onclick=async()=>{
+    let grupo='';if(tipo==='normas'){const v=await formulario('Carregar normas',[{id:'g',rotulo:'Grupo (pasta)',ph:'ex.: CAT, GER, ENT'}],'Continuar');if(!v)return;grupo=nomeSeguro(v.g||'')==='ficheiro'?'':nomeSeguro(v.g)}
+    const inp=document.createElement('input');inp.type='file';inp.multiple=true;inp.accept='application/pdf,.pdf,.xlsx';
+    inp.onchange=async()=>{let n=0,er=0;for(const f of inp.files){try{aviso('A carregar '+(++n)+' de '+inp.files.length+'…');
+        const r=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/'+B[1]+'/'+(grupo?grupo+'/':'')+nomeSeguro(f.name),f,{upsert:true,contentType:f.type||'application/pdf'});if(r.error)throw r.error}catch(e){er++;aviso(f.name+': '+erroTxt(e),true)}}
+      aviso(er?('Carregados '+(n-er)+'; falharam '+er+'.'):'Carregados '+n+' ficheiro(s).',!!er);vBib(tipo)};inp.click()};
+}
+window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.data)return;
+  if(e.data.tipo==='desenho'&&e.data.cod){try{const L=await listaBib('desenhos');const c=String(e.data.cod).toLowerCase();const m=L.filter(x=>x.nome.toLowerCase().includes(c));
+    if(!m.length){aviso('O desenho '+e.data.cod+' não está no Catálogo (o administrador ainda não o carregou).',true);return}
+    m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
 function vai(v,obraId){
-  S.vista=v;$('#pg').classList.remove('semPad');
+  S.vista=v;S.fk=null;if(typeof posiciona==='function')posiciona();if(v!=='obra')largaApps(null);$('#pg').classList.remove('semPad');
   document.querySelectorAll('#side .tab').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='obra'?'obras':v)));
   const pg=$('#pg');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;pg.classList.add('entra');
   $('#hc').innerHTML='';
-  ({obras:vObras,obra:()=>vObra(obraId),pessoas:vPessoas,def:vDef}[v]||vObras)();
+  ({obras:vObras,obra:()=>vObra(obraId),pessoas:vPessoas,def:vDef,desenhos:()=>vBib('desenhos'),normas:()=>vBib('normas')}[v]||vObras)();
 }
 const APPSB=[['visao','Visão geral',null],['producao','Produção','producao.html'],['medicao','Medição','medicao.html'],['materiais','Materiais','materiais.html'],['consolas','Consolas','consolas.html'],['rct','Medição RCT','rct.html']];
 function barraObra(o,ativa){return '<div class="obtabs"><button class="voltar" data-ob="obras">← Obras</button>'+APPSB.map(a=>'<button class="otab'+(a[0]===ativa?' on':'')+'" data-ob="'+a[0]+'">'+a[1]+'</button>').join('')+'</div>'}
 function ligaBarra(o){document.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{const k=b.dataset.ob;if(k==='obras')vai('obras');else if(k==='visao')vai('obra',o.id);else vApp(o,k)})}
+const FR={},MAPA={med:'medicao',mat:'materiais',cons:'consolas',rct:'rct',prod:'producao'};
+const CSSEMB='[data-n=central],[data-n=trocar],[data-m=central],[data-m=trocar]{display:none!important}header img.logo,header .logo,header #ccChip,header #obraNome,header #obrachip,header .sep:first-of-type{display:none!important}';
+function frameApp(o,app){const k=o.id+'|'+app;let f=FR[k];if(f)return f;const a=APPSB.find(x=>x[0]===app);
+  f=document.createElement('iframe');f.className='appif';f.title=a[1];f.dataset.k=k;f.src=a[2]+'?obra='+o.id+'&emb=1';
+  f.onload=()=>{f.dataset.ok='1';try{const d=f.contentDocument,st=d.createElement('style');st.textContent=CSSEMB;d.head.appendChild(st)}catch(e){}const c=document.querySelector('.carr[data-k="'+k+'"]');if(c)setTimeout(()=>c.remove(),400)};
+  document.body.appendChild(f);FR[k]=f;ocultaF(f);return f}
+function ocultaF(f){f.style.cssText='position:fixed;left:-9999px;top:0;width:1200px;height:800px;border:0;visibility:hidden;z-index:1'}
+function posiciona(){const ph=document.querySelector('.appfr');
+  document.querySelectorAll('iframe.appif').forEach(f=>{if(ph&&f.dataset.k===S.fk){const r=ph.getBoundingClientRect();
+    f.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;border:0;background:#fff;visibility:visible;z-index:1'+(f.dataset.vis?'':';animation:fadeIn .26s');f.dataset.vis='1'}
+    else{ocultaF(f);delete f.dataset.vis}})}
+window.addEventListener('resize',()=>{if(S.fk)posiciona()});
+function largaApps(manterObra){Object.keys(FR).forEach(k=>{if(manterObra&&k.split('|')[0]===manterObra)return;const f=FR[k];try{const w=f.contentWindow;w.__nm&&w.__nm.nmAuto&&w.__nm.nmAuto()}catch(e){}f.remove();delete FR[k]})}
+async function janelaApp(id){const o=S.obra;if(!o)return null;const app=MAPA[id]||id;const f=frameApp(o,app);
+  for(let i=0;i<160;i++){try{const w=f.contentWindow;if(f.dataset.ok&&w&&(app!=='medicao'||(w.nmLigacao&&w.nmLigacao.pronto())))return w}catch(e){}await new Promise(r=>setTimeout(r,250))}
+  return null}
+window.__central={janelaApp,get S(){return{ativa:S.obra}}};
 function vApp(o,app){
-  S.vista='app';S.app=app;const a=APPSB.find(x=>x[0]===app);titulo(o.nome+' · '+a[1],o.centro_custo);
-  const pg=$('#pg');pg.classList.add('semPad');pg.innerHTML=barraObra(o,app)+'<div class="appfr"><div class="carr">A abrir '+esc(a[1])+'…</div><iframe title="'+esc(a[1])+'" src="'+a[2]+'?obra='+o.id+'&emb=1"></iframe></div>';
-  ligaBarra(o);const fr=pg.querySelector('iframe');
-  fr.onload=()=>{try{const d=fr.contentDocument,st=d.createElement('style');st.textContent='[data-n=central],[data-n=trocar],[data-m=central],[data-m=trocar]{display:none!important}header img.logo,header .logo,header #ccChip,header #obraNome,header #obrachip,header .sep:first-of-type{display:none!important}';d.head.appendChild(st)}catch(e){}const c=pg.querySelector('.carr');if(c)setTimeout(()=>c.remove(),400)};
+  largaApps(o.id);S.vista='app';S.app=app;S.fk=o.id+'|'+app;const a=APPSB.find(x=>x[0]===app);titulo(o.nome+' · '+a[1],o.centro_custo);
+  const f=frameApp(o,app);
+  const pg=$('#pg');pg.classList.add('semPad');pg.innerHTML=barraObra(o,app)+'<div class="appfr">'+(f.dataset.ok?'':'<div class="carr" data-k="'+S.fk+'">A abrir '+esc(a[1])+'…</div>')+'</div>';
+  ligaBarra(o);requestAnimationFrame(posiciona);
 }
 function titulo(t,chip){$('#ht').textContent=t;$('#hc').innerHTML=chip?'<span class="ccchip">'+esc(chip)+'</span>':''}
 
@@ -294,7 +353,7 @@ async function vObra(id){
       todas=await ok(sb.from('pessoas').select('id,nome,papel,ativo').order('nome'));
     }
   }catch(e){pg.innerHTML='<div class="vz"><button class="voltar" id="vv">← Obras</button><div class="msg e">'+esc(erroTxt(e))+'</div></div>';$('#vv').onclick=()=>vai('obras');return}
-  S.obra=o;titulo(o.nome,o.centro_custo);
+  S.obra=o;largaApps(o.id);titulo(o.nome,o.centro_custo);
   const pc=pode('contas'),po=pode('obras');
   let h=barraObra(o,'visao')+'<div class="vz"><div class="topo"><div><h2>'+esc(o.nome)+'</h2><p class="sub" style="margin:0">Centro de custo <span class="mono">'+esc(o.centro_custo)+'</span></p></div><span class="sp"></span>'
     +(po?'<label class="hint" style="display:flex;align-items:center;gap:8px">Estado <select id="est" style="width:auto"><option'+(o.estado==='ativa'?' selected':'')+'>ativa</option><option'+(o.estado==='fechada'?' selected':'')+'>fechada</option></select></label>':'<span class="pill">'+esc(o.estado)+'</span>')+'</div>';
@@ -435,12 +494,14 @@ async function modulosObra(o){
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const edita=true; // gestores editam estruturas e OS
   let h='';
-  h+='<div id="resApps"></div>';
+  h+='<div id="resApps"></div><div id="valCons"></div>';
   h+='<div class="sec">Partes diárias<span class="sp"></span><button id="cf">Copiar fotos para a pasta…</button></div>';
   h+=partes.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Dia</th><th>Quem</th><th>Trabalho</th><th>Estado</th><th class="n">Fotos</th><th></th></tr></thead><tbody>'
     +partes.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];const nf=(p.fotos||[]).filter(f=>!f.ignorada).length;
       return '<tr><td><b>'+fmtData(p.data)+'</b></td><td>'+esc(p.autor?p.autor.nome:'?')+'</td><td>'+esc(p.trabalho||'—')+'</td><td><span class="pill '+e[1]+'">'+e[0]+'</span></td><td class="n">'+nf+'</td><td class="ac"><button data-pv="'+p.id+'">Ver</button></td></tr>'}).join('')
     +'</tbody></table></div>':'<div class="card"><p class="hint" style="margin:0">Ainda não há partes diárias nesta obra.</p></div>';
+  {const SR=[];partes.forEach(p=>(p.parte_linhas||[]).filter(l=>l.tipo==='sem_rubrica').forEach(l=>SR.push({d:p.data,t:l.descricao,q:l.quantidade,e:p.estado,a:p.autor&&p.autor.nome})));
+   if(SR.length){SR.sort((x,y)=>y.d<x.d?-1:1);h+='<div class="sec">Trabalhos sem rubrica ('+SR.length+')</div><div class="card" style="padding:4px 8px"><table><thead><tr><th>Dia</th><th>Trabalho</th><th>Quem</th><th>Parte</th></tr></thead><tbody>'+SR.map(x=>'<tr><td>'+fmtData(x.d)+'</td><td>'+esc(x.t||'')+(x.q!=null?' × '+esc(x.q):'')+'</td><td>'+esc(x.a||'')+'</td><td><span class="pill '+((ESTADO[x.e]||['',''])[1])+'">'+((ESTADO[x.e]||[x.e])[0])+'</span></td></tr>').join('')+'</tbody></table></div>'}}
   h+='<div class="sec">Ordens de serviço (OS)<span class="sp"></span><button id="los">Ler OS de um PDF…</button><input type="file" id="losf" accept="application/pdf" hidden><button id="nos">+ Nova OS</button></div>';
   h+=os.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>OS</th><th>Semana</th><th class="n">Períodos</th><th></th></tr></thead><tbody>'
     +os.map(x=>'<tr><td><b>'+esc(x.numero)+'</b></td><td>'+esc(x.semana||'—')+'</td><td class="n">'+(x.os_periodos&&x.os_periodos[0]?x.os_periodos[0].count:0)+'</td><td class="ac"><button data-op="'+x.id+'">Períodos</button><button class="perigo" data-od="'+x.id+'">Apagar</button></td></tr>').join('')+'</tbody></table></div>'
@@ -448,7 +509,7 @@ async function modulosObra(o){
   h+='<div class="sec">Estruturas<span class="sp"></span><button id="ies">Importar lista…</button></div><div class="card"><p class="hint" style="margin:0"><b>'+nEst+'</b> estrutura'+(nEst===1?'':'s')+' nesta obra. É a lista que aparece no telemóvel na parte diária.</p></div>';
   h+='<div id="docs"></div>';
   el.innerHTML=h;
-  docsObra(o); resumoApps(o);
+  docsObra(o); resumoApps(o); valCons(o);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>verParte(partes.find(p=>p.id===b.dataset.pv),o,()=>modulosObra(o)));
   $('#cf').onclick=()=>copiaFotos(o);
   $('#los').onclick=()=>$('#losf').click();
@@ -499,6 +560,20 @@ async function resumoApps(o){
     if(c&&c.total){const k=[['Valor do contrato',eur(c.total)],['Executado',eur(c.executado)],['Por executar',eur(c.total-c.executado)],['% executado',pc(c.executado,c.total)]];if(M){k.push(['Materiais encomendados',eur(M.encomendado)]);k.push(['Materiais recebidos',eur(M.recebidoValor)])}
     pan='<div class="sec">Painel económico</div><div class="grid">'+k.map(x=>'<div class="card" style="padding:10px 14px"><div class="hint">'+x[0]+'</div><b style="font-size:18px">'+x[1]+'</b></div>').join('')+'</div>'}}catch(e){}
   el.innerHTML=cards?pan+'<div class="sec">Estado das aplicações</div><div class="grid">'+cards+'</div>':'';
+}
+async function valCons(o){
+  const el=document.getElementById('valCons');if(!el)return;
+  try{const q=await sb.from('dados_apps').select('app,fo:dados->doc->folhas,po:dados->st->postes').eq('obra_id',o.id).in('app',['consolas','medicao']);
+    const C=(q.data||[]).find(x=>x.app==='consolas'),M=(q.data||[]).find(x=>x.app==='medicao');const F=(C&&C.fo)||[];if(!F.length){el.innerHTML='';return}
+    const nomes=new Set(((M&&M.po)||[]).map(x=>String(x.nome).trim().toLowerCase()));const temM=nomes.size>0;
+    const sem=F.filter(f=>!String(f.estrutura||'').trim()),fora=temM?F.filter(f=>String(f.estrutura||'').trim()&&!nomes.has(String(f.estrutura).trim().toLowerCase())):[],
+      nok=F.filter(f=>f.estado==='nok'),falta=F.filter(f=>f.estado==='falta'),oks=F.filter(f=>f.estado==='ok'&&String(f.estrutura||'').trim());
+    const li=(t,l,cls)=>l.length?'<tr><td><span class="pill '+cls+'">'+l.length+'</span></td><td><b>'+t+'</b><div class="hint" style="font-size:12px">'+l.slice(0,12).map(f=>esc(f.titulo||f.estrutura||'?')+(f.estrutura?' ('+esc(f.estrutura)+')':'')).join(' · ')+(l.length>12?' …':'')+'</div></td></tr>':'';
+    el.innerHTML='<div class="sec">Consolas ↔ Medição</div><div class="card" style="padding:6px 14px"><table><tbody>'
+      +'<tr><td><span class="pill on">'+oks.length+'</span></td><td><b>Apoios que verificam e estão ligados a uma estrutura da Medição</b></td></tr>'
+      +li('Não verificam',nok,'er')+li('Por verificar',falta,'av')+li('Sem estrutura indicada (não ligam à Medição)',sem,'av')
+      +(temM?li('Estrutura não existe na Medição',fora,'er'):'<tr><td></td><td class="hint">A Medição desta obra ainda não tem estruturas para comparar.</td></tr>')
+      +'</tbody></table></div>'}catch(e){el.innerHTML=''}
 }
 async function docsObra(o){
   const el=$('#docs');if(!el)return;
@@ -652,11 +727,17 @@ async function verParte(p,o,fim){
    +'<div class="sec" style="margin-top:14px">Fotos ('+fotos.length+')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">'
    +fotos.map(f=>'<div style="position:relative;'+(f.ignorada?'opacity:.35':'')+'">'+(urls[f.caminho]?'<a href="'+esc(urls[f.caminho])+'" target="_blank" rel="noopener"><img src="'+esc(urls[f.caminho])+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block"></a>':'<div class="hint">(sem pré-visualização)</div>')+'<label class="hint" style="display:flex;gap:6px;align-items:center;margin:4px 0 0"><input type="checkbox" data-ig="'+f.id+'"'+(f.ignorada?' checked':'')+'> a ignorar</label></div>').join('')+'</div>'
    +(podeDecidir?'<label>Comentário (opcional, aparece se devolveres)</label><input id="cm">':'')
-   +'<div class="bt"><button id="fx">Fechar</button>'+(podeDecidir?'<button class="perigo" id="dv">Devolver</button><button class="pri" id="vd">Validar</button>':'')+'</div>';
+   +'<div class="bt"><button id="fx">Fechar</button>'+(podeDecidir?'<button class="perigo" id="dv">Devolver</button><button id="vd">Só validar</button>'+(est.length&&pode('app:medicao')?'<button class="pri" id="vm">Validar e marcar na Medição</button>':''):'')+'</div>';
   const sai=()=>{w.fecha();fim()};
   $('#fx',w.corpo).onclick=sai;
   w.corpo.querySelectorAll('[data-ig]').forEach(c=>c.onchange=async()=>{try{await ok(sb.from('fotos').update({ignorada:c.checked}).eq('id',c.dataset.ig));c.closest('div').style.opacity=c.checked?'.35':'1'}catch(er){aviso(erroTxt(er),true);c.checked=!c.checked}});
-  const decide=async estado=>{try{await ok(sb.from('partes_diarias').update({estado,comentario:($('#cm',w.corpo).value||'').trim()||null,validada_por:S.eu.id,validada_em:new Date().toISOString()}).eq('id',p.id));aviso(estado==='validada'?'Parte validada.':'Parte devolvida.');sai()}catch(er){aviso(erroTxt(er),true)}};
+  const decide=async (estado,quieto)=>{try{await ok(sb.from('partes_diarias').update({estado,comentario:($('#cm',w.corpo).value||'').trim()||null,validada_por:S.eu.id,validada_em:new Date().toISOString()}).eq('id',p.id));if(!quieto)aviso(estado==='validada'?'Parte validada.':'Parte devolvida.');sai()}catch(er){aviso(erroTxt(er),true)}};
+  const vm=$('#vm',w.corpo);if(vm)vm.onclick=async()=>{vm.disabled=true;vm.textContent='A abrir a Medição…';
+    try{const m=await janelaApp('med');if(!m||!m.nmLigacao)throw new Error('A Medição desta obra não abriu. Tente outra vez.');
+      const r=m.nmLigacao.executa(est,p.data);try{await m.__nm.nmAuto();await new Promise(z=>setTimeout(z,1200))}catch(e){}
+      await decide('validada',true);
+      aviso('Marcadas '+r.marcadas.length+' estruturas'+(r.jaFeitas.length?'; '+r.jaFeitas.length+' já estavam feitas':'')+(r.naoExiste.length?'; não existem na Medição: '+r.naoExiste.join(', '):'')+'.')}
+    catch(er){aviso(erroTxt(er),true);vm.disabled=false;vm.textContent='Validar e marcar na Medição'}};
   if(podeDecidir){$('#vd',w.corpo).onclick=()=>decide('validada');$('#dv',w.corpo).onclick=()=>decide('devolvida')}
 }
 
