@@ -190,6 +190,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 
 </style>
 <link rel="stylesheet" href="movimento.css">
+<style>.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}.so{transition:background .15s,border-color .15s}.pg.entra{animation:entra .18s ease-out}</style>
 <script src="movimento.js"></script>
 <link rel="manifest" href="manifest-central.json">
 <link rel="icon" href="icon-192.png">
@@ -421,7 +422,7 @@ function rSide(){const o=S.obra;$('#sObra').hidden=!o;$('#sVolta').hidden=!o;if(
 const FR={},MAPA={med:'med',mat:'mat',cons:'cons',rct:'rct',prod:'prod'};
 const ESTILO_APP={base:'header>img.logo,header>img#logo{display:none!important}header>.sep:first-of-type{display:none!important}header>.stats{min-width:0;overflow:hidden;flex-shrink:1}header>#obraNome{max-width:180px;min-width:90px}',cons:'header.top>.ttl,header.top>.ttl+.sep{display:none!important}'};
 const SVG_VOLTA='<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
-function estiloApp(f,id){try{const d=f.contentDocument;if(!d||d.getElementById('central-estilo'))return;const st=d.createElement('style');st.id='central-estilo';st.textContent=ESTILO_APP.base+(ESTILO_APP[id]||'');d.head.appendChild(st);
+function estiloApp(f,id){try{const d=f.contentDocument;if(!d||d.getElementById('central-estilo'))return;const st=d.createElement('style');st.id='central-estilo';st.textContent=ESTILO_APP.base+(ESTILO_APP[id]||'')+'.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}';d.head.appendChild(st);
   d.documentElement.setAttribute('data-side','c');if(id==='mat'){const m=d.querySelector('main');if(m)m.classList.add('fechada')}}catch(e){}}
 function injetaVoltar(d,id){try{const nav=id==='cons'?d.querySelector('nav.lado'):d.querySelector('#side');if(!nav||d.getElementById('cVoltar'))return;
   const st=d.createElement('style');st.textContent='#cVoltar{color:#F9D115!important;font-weight:500;border-bottom:1px solid rgba(255,255,255,.14);border-radius:0;margin:0 0 6px}#cVoltar svg{flex:none;width:18px;height:18px}';d.head.appendChild(st);
