@@ -420,7 +420,7 @@ async function modulosObra(o){
     partes=await ok(sb.from('partes_diarias').select('id,data,estado,trabalho,observacoes,comentario,hora_registo,autor:pessoas!autor_id(nome),fotos(id,caminho,ignorada,copiada_onedrive),parte_linhas(*)').eq('obra_id',o.id).order('data',{ascending:false}).limit(100));
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const edita=true; // gestores editam estruturas e OS
-  let h='<div class="sec">Aplicações<span class="sp"></span><a class="btn" href="medicao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Medição ↗</a> <a class="btn" href="materiais.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Materiais ↗</a> <a class="btn" href="producao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Controlo de Produção ↗</a></div>';
+  let h='<div class="sec">Aplicações<span class="sp"></span><a class="btn" href="medicao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Medição ↗</a> <a class="btn" href="materiais.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Materiais ↗</a> <a class="btn" href="consolas.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Consolas ↗</a> <a class="btn" href="producao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Controlo de Produção ↗</a></div>';
   h+='<div class="sec">Partes diárias<span class="sp"></span><button id="cf">Copiar fotos para a pasta…</button></div>';
   h+=partes.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Dia</th><th>Quem</th><th>Trabalho</th><th>Estado</th><th class="n">Fotos</th><th></th></tr></thead><tbody>'
     +partes.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];const nf=(p.fotos||[]).filter(f=>!f.ignorada).length;
