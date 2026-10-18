@@ -324,7 +324,7 @@ function casca(){
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med" data-need hidden>'+ico('ruler')+'<span>Medição</span></button><button class="tab" data-v="cons" data-need hidden>'+ico('calc')+'<span>Software Consolas</span></button><button class="tab" data-v="rct" data-need hidden>'+ico('box')+'<span>Medição RCT</span></button>'
-     +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
+     +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button><button class="tab" data-v="pecas">'+ico('book')+'<span>Catálogo de peças</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Pessoas</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
    +'<header><span class="ccchip" id="hCC" hidden></span><h1 id="hT">Obras</h1><span class="hint" id="hSub"></span><span class="hsave" id="hSave" hidden><i></i><span></span></span><span class="hsp"></span><span class="quem"><b>'+esc(S.eu.nome)+'</b> <span class="pill">'+PAPEL[S.eu.papel]+'</span></span><button id="bNova" class="pri" hidden>+ Nova obra</button><button id="bAjuda" aria-label="Ajuda">?</button></header>'
@@ -357,6 +357,39 @@ async function abreBib(path,nome){
   w.addEventListener('click',e=>{if(e.target===w||e.target.id==='cgX')fecha()});
   try{const u=await urlBib(path);w.querySelector('#cgB').innerHTML=/\.(png|jpe?g)$/i.test(nome)?'<img class="pimg" src="'+esc(u)+'" alt="">':'<iframe class="pfr g" src="'+esc(u)+'#view=FitH"></iframe>'}catch(e){w.querySelector('#cgB').innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>'}}
 let BSEL={desenhos:null,normas:null};
+
+/* ---------- catálogo de peças (da base IP carregada na Medição) ---------- */
+let PEC=null,PQ='',PFAM='';
+async function lePecas(){
+  if(PEC)return PEC;
+  const dir='_org/'+S.eu.organizacao_id+'/base_dados';
+  const l=await sb.storage.from('documentos').list(dir,{limit:50,sortBy:{column:'updated_at',order:'desc'}});if(l.error)throw l.error;
+  const f=(l.data||[]).filter(x=>x.id&&/\.xlsx$/i.test(x.name))[0];if(!f)return {vazio:true};
+  await carregaXlsx();const r=await sb.storage.from('documentos').download(dir+'/'+f.name);if(r.error)throw r.error;
+  const wb=XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'});
+  const sh=n=>{const k=wb.SheetNames.find(x=>x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').startsWith(n));return k?XLSX.utils.sheet_to_json(wb.Sheets[k],{defval:''}):[]};
+  const col=(o,...ns)=>{for(const k of Object.keys(o)){const kk=k.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();if(ns.includes(kk))return String(o[k]).trim()}return ''};
+  const uso={};sh('montagens').forEach(m=>{const p=col(m,'cod peca'),a=col(m,'cod montagem','cod desenho');if(!p)return;(uso[p]=uso[p]||new Set()).add(a)});
+  const L=sh('pecas').map(p=>{const c=col(p,'cod peca');return {cod:c,sap:col(p,'nomenclatura'),ant:col(p,'cod peca antigo'),des:col(p,'designacao'),desenho:col(p,'cod desenho'),com:col(p,'comentarios'),uso:uso[c]?uso[c].size:0}}).filter(x=>x.cod);
+  PEC={L,nome:f.name};return PEC}
+async function vPecas(){
+  S.vista='pecas';titulo('Catálogo de peças');$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.remove('semPad','bib');
+  pg.innerHTML='<div class="vz"><p class="hint">A ler a base de dados…</p></div>';
+  let D;try{D=await lePecas()}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  if(S.vista!=='pecas')return;
+  if(D.vazio){pg.innerHTML='<div class="vz"><div class="card"><b>Ainda não há base de dados carregada.</b><p class="hint" style="margin:6px 0 0">O administrador carrega a base IP uma vez: Medição › Obra ▾ › «Carregar base IP…». O catálogo de peças lê essa base.</p></div></div>';return}
+  const fam=x=>x.cod.split('.')[0];const fams=[...new Set(D.L.map(fam))].sort();
+  const q=PQ.toLowerCase();const L=D.L.filter(x=>(!PFAM||fam(x)===PFAM)&&(!q||(x.cod+' '+x.sap+' '+x.ant+' '+x.des+' '+x.desenho).toLowerCase().includes(q)));
+  const MAX=300;
+  pg.innerHTML='<div class="vz"><div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input id="pQ" type="search" placeholder="Procurar código, SAP, designação…" value="'+esc(PQ)+'" style="flex:1;min-width:220px"><select id="pF"><option value="">Todas as famílias</option>'+fams.map(f=>'<option'+(f===PFAM?' selected':'')+' value="'+esc(f)+'">'+esc(f)+'</option>').join('')+'</select><button id="pCsv">Exportar CSV</button></div>'
+   +'<div class="hint" style="margin-bottom:8px">'+L.length+' de '+D.L.length+' peças · base '+esc(D.nome)+(L.length>MAX?' · a mostrar as primeiras '+MAX+' (afina a pesquisa)':'')+'</div>'
+   +'<div style="overflow:auto"><table><thead><tr><th>Código</th><th>SAP</th><th>Cód. antigo</th><th>Designação</th><th>Desenho</th><th class="n">Usada em</th></tr></thead><tbody>'
+   +L.slice(0,MAX).map(x=>'<tr><td class="mono">'+esc(x.cod)+'</td><td class="mono">'+esc(x.sap)+'</td><td class="mono">'+esc(x.ant)+'</td><td>'+esc(x.des)+'</td><td class="mono">'+esc(x.desenho)+'</td><td class="n">'+x.uso+'</td></tr>').join('')+'</tbody></table></div></div></div>';
+  let t=null;$('#pQ').oninput=e=>{PQ=e.target.value;clearTimeout(t);t=setTimeout(()=>{const p=e.target.selectionStart;vPecas().then(()=>{const n=$('#pQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}})},250)};
+  $('#pF').onchange=e=>{PFAM=e.target.value;vPecas()};
+  $('#pCsv').onclick=()=>{const c=v=>'"'+String(v).replace(/"/g,'""')+'"';const csv='﻿'+['Código;SAP;Código antigo;Designação;Desenho;Usada em'].concat(L.map(x=>[x.cod,x.sap,x.ant,x.des,x.desenho,x.uso].map(c).join(';'))).join('\r\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='catalogo_pecas.csv';a.click()};
+}
 async function vBib(tipo){
   const B=BIB[tipo];S.vista=tipo;titulo(B[0]);$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.add('bib');pg.innerHTML='<div class="vazio"><p>A abrir…</p></div>';
   let L=[];try{L=await listaBib(B[1])}catch(e){pg.classList.remove('bib');pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
@@ -419,7 +452,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vBib('desenhos'),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra,v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vBib('desenhos'),pecas:vPecas,normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra,v)))();
   posiciona();
 }
 function rSide(){const o=S.obra;$('#sObra').hidden=!o;$('#sVolta').hidden=!o;if(o)$('#sObraT').textContent='Obra '+o.centro_custo;
