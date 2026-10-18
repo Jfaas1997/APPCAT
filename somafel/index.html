@@ -252,7 +252,7 @@ function vApp(o,app){
   S.vista='app';S.app=app;const a=APPSB.find(x=>x[0]===app);titulo(o.nome+' · '+a[1],o.centro_custo);
   const pg=$('#pg');pg.classList.add('semPad');pg.innerHTML=barraObra(o,app)+'<div class="appfr"><div class="carr">A abrir '+esc(a[1])+'…</div><iframe title="'+esc(a[1])+'" src="'+a[2]+'?obra='+o.id+'&emb=1"></iframe></div>';
   ligaBarra(o);const fr=pg.querySelector('iframe');
-  fr.onload=()=>{try{const d=fr.contentDocument,st=d.createElement('style');st.textContent='[data-n=central],[data-n=trocar],[data-m=central],[data-m=trocar]{display:none!important}header img.logo,header .logo{display:none!important}';d.head.appendChild(st)}catch(e){}const c=pg.querySelector('.carr');if(c)setTimeout(()=>c.remove(),400)};
+  fr.onload=()=>{try{const d=fr.contentDocument,st=d.createElement('style');st.textContent='[data-n=central],[data-n=trocar],[data-m=central],[data-m=trocar]{display:none!important}header img.logo,header .logo,header #ccChip,header #obraNome,header #obrachip,header .sep:first-of-type{display:none!important}';d.head.appendChild(st)}catch(e){}const c=pg.querySelector('.carr');if(c)setTimeout(()=>c.remove(),400)};
 }
 function titulo(t,chip){$('#ht').textContent=t;$('#hc').innerHTML=chip?'<span class="ccchip">'+esc(chip)+'</span>':''}
 
@@ -263,6 +263,7 @@ async function vObras(){
     const q=gestor()?'*, contratos(count)':'*';
     S.obras=await ok(sb.from('obras').select(q).order('centro_custo'));
   }catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  let PR={};if(gestor()){try{const q=await sb.from('dados_apps').select('obra_id,app,resumo:dados->resumo').eq('app','producao');(q.data||[]).forEach(x=>{const c=((x.resumo||{}).origens||[])[0];if(c&&c.total)PR[x.obra_id]=c})}catch(e){}}
   const nova=pode('obras')?'<button class="pri" id="nova">+ Nova obra</button>':'';
   let h='<div class="vz"><div class="topo"><div><h2>Obras</h2><p class="sub" style="margin:0">'+(gestor()?'Todas as obras da organização.':'As obras que te foram atribuídas.')+'</p></div><span class="sp"></span>'+nova+'</div><div style="height:14px"></div>';
   if(!S.obras.length){
@@ -270,7 +271,7 @@ async function vObras(){
   }else{
     h+='<div class="grid">'+S.obras.map(o=>{
       const nc=gestor()&&o.contratos&&o.contratos[0]?o.contratos[0].count:null;
-      return '<div class="card obra" data-id="'+o.id+'"><div><span class="ccchip">'+esc(o.centro_custo)+'</span></div><h3>'+esc(o.nome)+'</h3><div><span class="pill '+(o.estado==='ativa'?'on':'')+'">'+esc(o.estado)+'</span>'+(nc!=null?' <span class="pill">'+nc+' contrato'+(nc===1?'':'s')+'</span>':'')+'</div></div>';
+      return '<div class="card obra" data-id="'+o.id+'"><div><span class="ccchip">'+esc(o.centro_custo)+'</span></div><h3>'+esc(o.nome)+'</h3><div><span class="pill '+(o.estado==='ativa'?'on':'')+'">'+esc(o.estado)+'</span>'+(nc!=null?' <span class="pill">'+nc+' contrato'+(nc===1?'':'s')+'</span>':'')+'</div></div>'+(PR[o.id]?'<div class="hint" style="margin-top:8px;font-size:12px">Executado '+Math.round(100*PR[o.id].executado/PR[o.id].total)+'% · '+eur(PR[o.id].executado)+' de '+eur(PR[o.id].total)+'</div><div style="height:5px;background:#0001;border-radius:3px;margin-top:4px"><div style="height:5px;width:'+Math.min(100,Math.round(100*PR[o.id].executado/PR[o.id].total))+'%;background:#f5c400;border-radius:3px"></div></div>':'')+'';
     }).join('')+'</div>';
   }
   pg.innerHTML=h+'</div>';
@@ -494,7 +495,10 @@ async function resumoApps(o){
   const ordem=['medicao','materiais','producao','consolas','rct'];
   const cards=ordem.map(a=>{ const x=l.find(y=>y.app===a); if(!x||!x.resumo||!R[a])return ''; let linhas=[]; try{ linhas=R[a][1](x.resumo) }catch(e){ return '' }
     return '<div class="card" style="padding:10px 14px;min-width:200px"><b>'+R[a][0]+'</b> <span class="hint" style="font-size:11px">'+fmtDH(x.atualizado_em)+'</span><table style="margin-top:4px"><tbody>'+linhas.map(k=>'<tr><td>'+esc(k[0])+'</td><td class="n"><b>'+esc(k[1])+'</b></td></tr>').join('')+'</tbody></table></div>' }).join('');
-  el.innerHTML=cards?'<div class="sec">Estado das aplicações</div><div class="grid">'+cards+'</div>':'';
+  let pan='';try{const P=(l.find(y=>y.app==='producao')||{}).resumo,M=(l.find(y=>y.app==='materiais')||{}).resumo,c=P&&(P.origens||[])[0];
+    if(c&&c.total){const k=[['Valor do contrato',eur(c.total)],['Executado',eur(c.executado)],['Por executar',eur(c.total-c.executado)],['% executado',pc(c.executado,c.total)]];if(M){k.push(['Materiais encomendados',eur(M.encomendado)]);k.push(['Materiais recebidos',eur(M.recebidoValor)])}
+    pan='<div class="sec">Painel económico</div><div class="grid">'+k.map(x=>'<div class="card" style="padding:10px 14px"><div class="hint">'+x[0]+'</div><b style="font-size:18px">'+x[1]+'</b></div>').join('')+'</div>'}}catch(e){}
+  el.innerHTML=cards?pan+'<div class="sec">Estado das aplicações</div><div class="grid">'+cards+'</div>':'';
 }
 async function docsObra(o){
   const el=$('#docs');if(!el)return;
