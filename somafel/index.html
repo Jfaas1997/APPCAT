@@ -371,7 +371,7 @@ async function vBib(tipo){
   const ext=n=>((n.match(/\.([a-z0-9]+)$/i)||['',''])[1]||'').toUpperCase();
   const det=()=>{const d=sel();if(!d)return '<div class="cvaz"><b>Escolha '+(tipo==='normas'?'uma norma':'um desenho')+' à esquerda</b><p>Abre aqui dentro, sem sair da Central.</p></div>';
     return '<div class="dh"><div style="min-width:0"><div class="dk">'+esc(d.grupo||B[2])+'</div><h2 style="font-size:19px">'+esc(tituloBib(d.nome))+'</h2><div class="dm"><span class="mono">'+esc(d.nome)+'</span><span>'+tam(d.tam)+'</span></div></div><div class="da"><button id="bGr" class="pri">Ver em grande</button><button id="bAb">Abrir noutra janela</button>'+(admin()?'<button id="bDel" class="perigo">Apagar</button>':'')+'</div></div><div class="dprev npv" id="bPrev"></div>'};
-  let h='<div class="cat"><div class="cbar"><div style="font-weight:600;font-size:15px">'+(tipo==='normas'?'Normas e documentos de referência':'Catálogo e desenhos')+'</div><div class="cpasta">'+(admin()?'<button class="pri sm" id="bUp">Carregar PDF…</button>':'')+'</div></div>'
+  let h='<div class="cat"><div class="cbar"><div style="font-weight:600;font-size:15px">'+(tipo==='normas'?'Normas e documentos de referência':'Catálogo e desenhos')+'</div><div class="cpasta">'+(admin()?'<button class="pri sm" id="bUp">Carregar PDF…</button><button class="sm" id="bUpD">Carregar pasta…</button>':'')+'</div></div>'
    +'<div class="cgrid"><section class="clist"><div class="cfilt"><input id="bQ" type="search" placeholder="Procurar ('+(tipo==='normas'?'código ou título':'código do desenho')+')…" value="'+esc(BQ)+'" autocomplete="off">'+(tipo==='desenhos'?'<label class="chk"><input type="checkbox" id="bAnt"'+(BANT?' checked':'')+'> revisões antigas</label>':'')+'</div>'
    +'<div class="ccount">'+L.length+' de '+todos.length+' documentos</div><div class="crows" id="bRows">'
    +(nTot0?grupos.map(g=>(g.g?'<div class="ngrp">'+esc(g.g)+'</div>':'')+g.it.slice(0,500).map(d=>'<button class="crow nrow'+(BSEL[tipo]===d.path?' on':'')+'" data-bp="'+esc(d.path)+'"><span class="cn">'+esc(tituloBib(d.nome))+'</span><span class="cx '+(ext(d.nome)==='PDF'?'ok':'')+'">'+esc(ext(d.nome))+'</span></button>').join('')).join(''):'<div class="cvaz" style="margin:30px auto"><b>Ainda não há ficheiros</b><p>'+(admin()?'Carregue os PDF com «Carregar PDF…».':'O administrador ainda não carregou ficheiros.')+'</p></div>')
@@ -386,6 +386,13 @@ async function vBib(tipo){
   liga();prev();
   let t=null;$('#bQ').oninput=e=>{BQ=e.target.value;clearTimeout(t);t=setTimeout(()=>{const p=e.target.selectionStart;vBib(tipo).then(()=>{const n=$('#bQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}})},250)};
   const ba=$('#bAnt');if(ba)ba.onchange=()=>{BANT=ba.checked;vBib(tipo)};
+  const bd=$('#bUpD');if(bd)bd.onclick=()=>{
+    const inp=document.createElement('input');inp.type='file';inp.webkitdirectory=true;inp.multiple=true;
+    inp.onchange=async()=>{const fs=[...inp.files].filter(f=>/\.(pdf|xlsx)$/i.test(f.name));if(!fs.length){aviso('Nessa pasta não há PDF.',true);return}
+      let n=0,er=0;for(const f of fs){n++;try{aviso('A carregar '+n+' de '+fs.length+'…');
+        const seg=(f.webkitRelativePath||f.name).split('/').slice(1,-1).map(nomeSeguro);const grupo=tipo==='normas'?seg.join(' - '):'';
+        const r=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/'+B[1]+'/'+(grupo?grupo+'/':'')+nomeSeguro(f.name),f,{upsert:true,contentType:f.type||'application/pdf'});if(r.error)throw r.error}catch(e){er++;aviso(f.name+': '+erroTxt(e),true);await new Promise(r=>setTimeout(r,1200))}}
+      aviso(er?('Carregados '+(n-er)+' de '+fs.length+'; falharam '+er+'.'):'Carregados '+n+' ficheiro(s).',!!er);vBib(tipo)};inp.click()};
   const bu=$('#bUp');if(bu)bu.onclick=async()=>{
     let grupo='';if(tipo==='normas'){const v=await formulario('Carregar normas',[{id:'g',rotulo:'Grupo (pasta)',ph:'ex.: CAT, GER, ENT'}],'Continuar');if(!v)return;grupo=nomeSeguro(v.g||'')==='ficheiro'?'':nomeSeguro(v.g)}
     const inp=document.createElement('input');inp.type='file';inp.multiple=true;inp.accept='application/pdf,.pdf,.xlsx';
