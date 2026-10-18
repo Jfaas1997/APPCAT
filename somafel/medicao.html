@@ -6462,6 +6462,7 @@ nmAjuda=function(){ nmModal({titulo:'Ajuda · Medição de catenária v'+NM.VERS
   +'<p><b>Duas pessoas ao mesmo tempo.</b> Se outra pessoa guardar primeiro, a app avisa antes de gravar por cima.</p>'
   +'<table><tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Guardar</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Desfazer</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td><td>Barra lateral</td></tr></table>',botoes:[{t:'Fechar',v:true,p:true}]}) };
 $('#bAjuda').onclick=nmAjuda;
+window.nmLigacao.pronto=function(){ try{ return !!(NM&&NM.ob&&NM.pronto) }catch(e){ return false } };
 window.__nm={NM,get st(){return st},nmAuto,nmFlush,nmCarregaBase,ready:null,dbg:()=>JSON.stringify({base:baseOk(),ver:NM.versao,dirty:DIRTY,ob:!!NM.ob})};
 nmUi();
 window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="box"><h2>Erro</h2><p>'+esc(e.message||String(e))+'</p></div>') });
