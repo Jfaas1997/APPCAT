@@ -74,6 +74,10 @@ tbody tr{transition:background .12s}tbody tr:hover{background:var(--soft)}
 .sec{margin:26px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:10px}.sec .sp{flex:1}.sec button{text-transform:none;letter-spacing:0}
 .hint{color:var(--muted);font-size:12.5px}
 .voltar{background:none;border:0;color:var(--muted);padding:0;margin-bottom:10px}.voltar:hover{color:var(--ink)}
+.obtabs{display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line,#ddd);background:var(--card,#fff);position:sticky;top:0;z-index:5}
+.obtabs .voltar{margin:0 10px 0 0}.otab{background:none;border:0;border-radius:8px;padding:7px 12px;color:var(--muted)}.otab:hover{color:var(--ink)}.otab.on{background:var(--acc,#0b5);color:#fff}
+#pg.semPad{display:flex;flex-direction:column;overflow:hidden;padding:0}.appfr{flex:1;position:relative;min-height:0}.appfr iframe{position:absolute;inset:0;width:100%;height:100%;border:0;animation:fadeIn .26s}.carr{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--card,#fff);padding:6px 14px;border-radius:20px;box-shadow:0 2px 8px #0002;z-index:2}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .lista{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-flex;align-items:center;gap:4px;background:var(--soft);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px}
 
@@ -235,11 +239,20 @@ function casca(){
   $('#bTema').onclick=()=>{const r=document.documentElement;const esc_=(r.getAttribute('data-tema')==='escuro')||(!r.getAttribute('data-tema')&&matchMedia('(prefers-color-scheme:dark)').matches);const n=esc_?'claro':'escuro';r.setAttribute('data-tema',n);try{localStorage.setItem('tema',n)}catch(e){}};
 }
 function vai(v,obraId){
-  S.vista=v;
+  S.vista=v;$('#pg').classList.remove('semPad');
   document.querySelectorAll('#side .tab').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='obra'?'obras':v)));
   const pg=$('#pg');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;pg.classList.add('entra');
   $('#hc').innerHTML='';
   ({obras:vObras,obra:()=>vObra(obraId),pessoas:vPessoas,def:vDef}[v]||vObras)();
+}
+const APPSB=[['visao','Visão geral',null],['producao','Produção','producao.html'],['medicao','Medição','medicao.html'],['materiais','Materiais','materiais.html'],['consolas','Consolas','consolas.html'],['rct','Medição RCT','rct.html']];
+function barraObra(o,ativa){return '<div class="obtabs"><button class="voltar" data-ob="obras">← Obras</button>'+APPSB.map(a=>'<button class="otab'+(a[0]===ativa?' on':'')+'" data-ob="'+a[0]+'">'+a[1]+'</button>').join('')+'</div>'}
+function ligaBarra(o){document.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{const k=b.dataset.ob;if(k==='obras')vai('obras');else if(k==='visao')vai('obra',o.id);else vApp(o,k)})}
+function vApp(o,app){
+  S.vista='app';S.app=app;const a=APPSB.find(x=>x[0]===app);titulo(o.nome+' · '+a[1],o.centro_custo);
+  const pg=$('#pg');pg.classList.add('semPad');pg.innerHTML=barraObra(o,app)+'<div class="appfr"><div class="carr">A abrir '+esc(a[1])+'…</div><iframe title="'+esc(a[1])+'" src="'+a[2]+'?obra='+o.id+'&emb=1"></iframe></div>';
+  ligaBarra(o);const fr=pg.querySelector('iframe');
+  fr.onload=()=>{try{const d=fr.contentDocument,st=d.createElement('style');st.textContent='[data-n=central],[data-n=trocar],[data-m=central],[data-m=trocar]{display:none!important}header img.logo,header .logo{display:none!important}';d.head.appendChild(st)}catch(e){}const c=pg.querySelector('.carr');if(c)setTimeout(()=>c.remove(),400)};
 }
 function titulo(t,chip){$('#ht').textContent=t;$('#hc').innerHTML=chip?'<span class="ccchip">'+esc(chip)+'</span>':''}
 
@@ -282,7 +295,7 @@ async function vObra(id){
   }catch(e){pg.innerHTML='<div class="vz"><button class="voltar" id="vv">← Obras</button><div class="msg e">'+esc(erroTxt(e))+'</div></div>';$('#vv').onclick=()=>vai('obras');return}
   S.obra=o;titulo(o.nome,o.centro_custo);
   const pc=pode('contas'),po=pode('obras');
-  let h='<div class="vz"><button class="voltar" id="vv">← Obras</button><div class="topo"><div><h2>'+esc(o.nome)+'</h2><p class="sub" style="margin:0">Centro de custo <span class="mono">'+esc(o.centro_custo)+'</span></p></div><span class="sp"></span>'
+  let h=barraObra(o,'visao')+'<div class="vz"><div class="topo"><div><h2>'+esc(o.nome)+'</h2><p class="sub" style="margin:0">Centro de custo <span class="mono">'+esc(o.centro_custo)+'</span></p></div><span class="sp"></span>'
     +(po?'<label class="hint" style="display:flex;align-items:center;gap:8px">Estado <select id="est" style="width:auto"><option'+(o.estado==='ativa'?' selected':'')+'>ativa</option><option'+(o.estado==='fechada'?' selected':'')+'>fechada</option></select></label>':'<span class="pill">'+esc(o.estado)+'</span>')+'</div>';
   if(gestor()){
     h+='<div class="sec">Contratos<span class="sp"></span>'+(pc?'<button id="nct">+ Novo contrato</button>':'<span class="hint">Só leitura (contas bloqueadas para encarregados)</span>')+'</div>';
@@ -297,7 +310,7 @@ async function vObra(id){
   h+='<div id="mod">'+(gestor()?Mov.skel(4):'<div class="sec">Partes diárias</div><div class="card"><p class="hint" style="margin:0">As partes diárias fazem-se na app do telemóvel.</p></div>')+'</div></div>';
   pg.innerHTML=h;
   if(gestor())modulosObra(o);
-  $('#vv').onclick=()=>vai('obras');
+  ligaBarra(o);
   const se=$('#est');if(se)se.onchange=async()=>{try{await ok(sb.from('obras').update({estado:se.value}).eq('id',id));aviso('Estado atualizado.')}catch(e){aviso(erroTxt(e),true)}};
   const nct=$('#nct');if(nct)nct.onclick=()=>editaContrato(id,null);
   pg.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>editaContrato(id,ctr.find(c=>c.id===b.dataset.e)));
@@ -420,7 +433,7 @@ async function modulosObra(o){
     partes=await ok(sb.from('partes_diarias').select('id,data,estado,trabalho,observacoes,comentario,hora_registo,autor:pessoas!autor_id(nome),fotos(id,caminho,ignorada,copiada_onedrive),parte_linhas(*)').eq('obra_id',o.id).order('data',{ascending:false}).limit(100));
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const edita=true; // gestores editam estruturas e OS
-  let h='<div class="sec">Aplicações<span class="sp"></span><a class="btn" href="medicao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Medição ↗</a> <a class="btn" href="materiais.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Materiais ↗</a> <a class="btn" href="consolas.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Consolas ↗</a> <a class="btn" href="rct.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Medição RCT ↗</a> <a class="btn" href="producao.html?obra='+o.id+'" target="_blank" rel="noopener">Abrir Controlo de Produção ↗</a></div>';
+  let h='';
   h+='<div id="resApps"></div>';
   h+='<div class="sec">Partes diárias<span class="sp"></span><button id="cf">Copiar fotos para a pasta…</button></div>';
   h+=partes.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Dia</th><th>Quem</th><th>Trabalho</th><th>Estado</th><th class="n">Fotos</th><th></th></tr></thead><tbody>'
@@ -459,7 +472,10 @@ async function modulosObra(o){
 }
 
 /* ---------- desenhos e documentos (bucket «documentos») ---------- */
-const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',documentos:'Outros documentos'};
+const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
+const osDoc=n=>{const m=/\bOS\s*[-_ ]*(\d{3,5})|ordem\s+de\s+servi[cç]o\s*n?[oº.]*\s*(\d{3,5})/i.exec(n||'');return m?(m[1]||m[2]):''};
+const diaDoc=n=>{n=n||'';let m=/(\d{4})[-_.](\d{2})[-_.](\d{2})/.exec(n);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=/(\d{2})[-_.](\d{2})[-_.](\d{4})/.exec(n);if(m)return m[3]+'-'+m[2]+'-'+m[1];m=/(20\d{2})(\d{2})(\d{2})/.exec(n);return m?m[1]+'-'+m[2]+'-'+m[3]:''};
+let DOCVISTA='lista',DOCQ='',DOCCAT='';
 function nomeSeguro(n){return n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(-120)||'ficheiro'}
 function tamTxt(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB'}
 async function resumoApps(o){
@@ -488,12 +504,20 @@ async function docsObra(o){
       const r=await sb.storage.from('documentos').list(o.id+'/'+c,{limit:500,sortBy:{column:'created_at',order:'desc'}});if(r.error)throw r.error;
       (r.data||[]).filter(x=>x.id).forEach(x=>lista.push({cat:c,path:o.id+'/'+c+'/'+x.name,nome:x.name.replace(/^[0-9a-f]{8}__/,''),tam:(x.metadata&&x.metadata.size)||0,quando:x.created_at}))}
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
-  let h='<div class="sec">Desenhos e documentos<span class="sp"></span><select id="dcat">'+Object.entries(CATDOC).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select><button id="dup">+ Carregar ficheiros…</button><input type="file" id="dfi" multiple hidden></div>';
-  h+=lista.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Ficheiro</th><th>Tipo</th><th class="n">Tamanho</th><th>Data</th><th></th></tr></thead><tbody>'
-    +lista.map((x,i)=>'<tr><td><b>'+esc(x.nome)+'</b></td><td>'+CATDOC[x.cat]+'</td><td class="n">'+tamTxt(x.tam)+'</td><td>'+(x.quando?fmtData(x.quando.slice(0,10)):'')+'</td><td class="ac"><button data-da="'+i+'">Abrir</button><button class="perigo" data-dd="'+i+'">Apagar</button></td></tr>').join('')+'</tbody></table></div>'
+  const lista0=lista; if(DOCCAT)lista=lista.filter(x=>x.cat===DOCCAT); if(DOCQ){const q=DOCQ.toLowerCase();lista=lista.filter(x=>x.nome.toLowerCase().includes(q)||osDoc(x.nome)===DOCQ)}
+  let h='<div class="sec">Desenhos e documentos<span class="sp"></span><input id="dq" placeholder="Procurar…" value="'+esc(DOCQ)+'" style="width:140px"><select id="dfil"><option value="">Todas as categorias</option>'+Object.entries(CATDOC).map(([k,v])=>'<option value="'+k+'"'+(DOCCAT===k?' selected':'')+'>'+v+'</option>').join('')+'</select><button id="dvis">'+(DOCVISTA==='os'?'Ver lista':'Ver por OS')+'</button><select id="dcat">'+Object.entries(CATDOC).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select><button id="dup">+ Carregar ficheiros…</button><input type="file" id="dfi" multiple hidden></div>';
+  const linha=(x,i)=>'<tr><td><b>'+esc(x.nome)+'</b></td><td>'+CATDOC[x.cat]+'</td><td>'+(osDoc(x.nome)?'OS '+osDoc(x.nome):'')+'</td><td>'+(diaDoc(x.nome)?fmtData(diaDoc(x.nome)):(x.quando?fmtData(x.quando.slice(0,10)):''))+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+i+'">Abrir</button><button class="perigo" data-dd="'+i+'">Apagar</button></td></tr>';
+  const cab='<thead><tr><th>Ficheiro</th><th>Tipo</th><th>OS</th><th>Dia</th><th class="n">Tamanho</th><th></th></tr></thead>';
+  if(DOCVISTA==='os'&&lista.length){
+    const gr={};lista.forEach((x,i)=>{const k=osDoc(x.nome)||'—';(gr[k]=gr[k]||[]).push([x,i])});
+    h+=Object.keys(gr).sort((a,b)=>b.localeCompare(a,undefined,{numeric:true})).map(k=>'<div class="card" style="padding:4px 8px"><b style="display:block;padding:8px 6px 0">'+(k==='—'?'Sem OS identificada':'OS '+esc(k))+'</b><table>'+cab+'<tbody>'+gr[k].map(([x,i])=>linha(x,i)).join('')+'</tbody></table></div>').join('')
+  } else h+=lista.length?'<div class="card" style="padding:4px 8px"><table>'+cab+'<tbody>'+lista.map(linha).join('')+'</tbody></table></div>'
     :'<div class="card"><p class="hint" style="margin:0">Ainda não há ficheiros. Carrega aqui os desenhos (PDF, imagens), as OS e outros documentos; ficam disponíveis no telemóvel da equipa.</p></div>';
   el.innerHTML=h;
   $('#dup').onclick=()=>$('#dfi').click();
+  $('#dvis').onclick=()=>{DOCVISTA=DOCVISTA==='os'?'lista':'os';docsObra(o)};
+  $('#dfil').onchange=e=>{DOCCAT=e.target.value;docsObra(o)};
+  $('#dq').onkeydown=e=>{if(e.key==='Enter'){DOCQ=e.target.value.trim();docsObra(o)}};
   $('#dfi').onchange=async ev=>{
     const fs=[...ev.target.files];if(!fs.length)return;const cat=$('#dcat').value;let n=0;
     for(const f of fs){
@@ -655,7 +679,7 @@ async function copiaFotos(o){
   aviso(n+' foto'+(n===1?'':'s')+' copiada'+(n===1?'':'s')+(falhas?' · '+falhas+' falharam':'')+'.',falhas>0);
 }
 
-sb.auth.onAuthStateChange((ev)=>{if(ev==='PASSWORD_RECOVERY')recuperaPw()});
+if(sb.auth.onAuthStateChange)sb.auth.onAuthStateChange((ev)=>{if(ev==='PASSWORD_RECOVERY')recuperaPw()});
 async function recuperaPw(){
   const v=await formulario('Nova palavra-passe',[{id:'pw',tipo:'password',rotulo:'Palavra-passe (mínimo 8 caracteres)',obrig:true}],'Definir');
   if(v){const {error}=await sb.auth.updateUser({password:v.pw});aviso(error?error.message:'Palavra-passe alterada.',!!error)}
