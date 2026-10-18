@@ -1,0 +1,37 @@
+/* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
+   Só transições curtas (≤ 250 ms) e nada que bloqueie. Respeita «reduzir movimento». */
+:root{--mv-ease:cubic-bezier(.2,.7,.2,1);--mv-t:.22s}
+/* entrada de ecrã: os blocos aparecem em cascata */
+@keyframes mv-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.vz>*,#m.entra>*{animation:mv-in .26s var(--mv-ease) both}
+.vz>*:nth-child(2),#m.entra>*:nth-child(2){animation-delay:.03s}
+.vz>*:nth-child(3),#m.entra>*:nth-child(3){animation-delay:.06s}
+.vz>*:nth-child(4),#m.entra>*:nth-child(4){animation-delay:.09s}
+.vz>*:nth-child(5),#m.entra>*:nth-child(5){animation-delay:.12s}
+.vz>*:nth-child(n+6),#m.entra>*:nth-child(n+6){animation-delay:.15s}
+/* listas: linhas entram em sequência curta */
+tbody tr,.lin{animation:mv-in .22s var(--mv-ease) both}
+tbody tr:nth-child(2),.lin:nth-child(2){animation-delay:.02s}tbody tr:nth-child(3),.lin:nth-child(3){animation-delay:.04s}
+tbody tr:nth-child(4),.lin:nth-child(4){animation-delay:.06s}tbody tr:nth-child(n+5),.lin:nth-child(n+5){animation-delay:.08s}
+/* cartões clicáveis: pequena elevação */
+.card.obra,.obra{transition:transform var(--mv-t) var(--mv-ease),box-shadow var(--mv-t) var(--mv-ease),border-color .15s}
+.card.obra:hover,.obra:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.10)}
+.card.obra:active,.obra:active{transform:scale(.985)}
+/* janelas e avisos */
+@keyframes mv-pop{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes mv-fade{from{opacity:0}to{opacity:1}}
+.jan,.nmCard{animation:mv-pop .2s var(--mv-ease) both}
+.fundo,.nmW{animation:mv-fade .18s ease-out both}
+@keyframes mv-slide{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.aviso,.toast.on{animation:mv-slide .22s var(--mv-ease) both}
+/* estados e botões */
+.pill{transition:background .2s,color .2s}
+button,a.btn{transition:border-color .15s,background .15s,transform .1s,box-shadow .15s}
+button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
+/* a carregar: esqueleto com brilho */
+@keyframes mv-sk{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
+.skel{display:block;height:14px;border-radius:6px;margin:10px 0;background:linear-gradient(90deg,rgba(128,128,128,.14) 0,rgba(128,128,128,.26) 40px,rgba(128,128,128,.14) 80px);background-size:200px 100%;animation:mv-sk 1.2s linear infinite}
+.skel.b{height:54px;border-radius:10px}.skel.s{width:45%}.skel.m{width:70%}
+/* indicador «guardado» */
+#gst,#et{transition:color .25s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

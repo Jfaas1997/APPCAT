@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12161C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SOMAFEL · App de Obra</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t)}catch(e){}</script>
+<style>
+:root{--paper:#F1F1EF;--sheet:#FFFFFF;--ink:#2B3038;--muted:#6E7178;--rule:#D8D8D4;--soft:#EAEAE6;--brand:#F9D115;--amber:#8F5D00;--amberbg:#F7EEDC;--red:#9B2C2C;--redbg:#F7E4E4;--ok:#2F6B4F;--okbg:#E4F0E9;
+ --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--r:12px;--sh:0 1px 2px rgba(20,24,32,.05),0 4px 14px rgba(20,24,32,.05);color-scheme:light}
+@media screen and (prefers-color-scheme:dark){:root:not([data-tema="claro"]){--paper:#0F1216;--sheet:#171B21;--ink:#E7E9ED;--muted:#9AA2AE;--rule:#2A2F38;--soft:#1F242C;--amber:#F2C14E;--amberbg:#352B10;--red:#F08A8A;--redbg:#3B1E1E;--ok:#6FCF9F;--okbg:#16302A;--sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);color-scheme:dark}}
+:root[data-tema="escuro"]{--paper:#0F1216;--sheet:#171B21;--ink:#E7E9ED;--muted:#9AA2AE;--rule:#2A2F38;--soft:#1F242C;--amber:#F2C14E;--amberbg:#352B10;--red:#F08A8A;--redbg:#3B1E1E;--ok:#6FCF9F;--okbg:#16302A;--sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+button{font-family:inherit;font-size:16px;color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:12px 16px;min-height:46px;cursor:pointer;transition:transform .1s,border-color .15s}
+button:active{transform:scale(.97)}button:disabled{opacity:.4}
+button.pri{background:var(--brand);border-color:var(--brand);color:#2B3038;font-weight:600}
+button.min{min-height:36px;padding:6px 12px;font-size:14px}
+button.x{border:0;background:transparent;color:var(--muted);font-size:20px;padding:4px 10px;min-height:0}
+input,select,textarea{font-family:inherit;font-size:16px;color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:11px 12px;width:100%;min-height:46px}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+label{display:block;font-size:13px;color:var(--muted);margin:14px 0 5px}
+.mono{font-family:var(--mono)}
+
+#topo{position:sticky;top:0;z-index:20;background:#12161C;color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px}
+#topo i{width:28px;height:28px;border-radius:6px;background:var(--brand);display:grid;place-items:center;font-style:normal;font-weight:700;color:#2B3038;flex:none}
+#topo h1{font-size:16px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#topo button{background:transparent;border:1px solid #3a4250;color:#fff;min-height:34px;padding:4px 10px;font-size:13px}
+#estado{font-size:13px;padding:8px 14px;display:flex;align-items:center;gap:10px;background:var(--soft);border-bottom:1px solid var(--rule)}
+#estado.p{background:var(--amberbg);color:var(--amber)}#estado.o{background:var(--redbg);color:var(--red)}
+#estado .sp{flex:1}
+#estado .pt{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}#estado.p .pt{background:var(--amber)}#estado.o .pt{background:var(--red)}
+main{padding:16px 14px 90px;max-width:640px;margin:0 auto}
+.entra{animation:entra .22s ease-out}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2{font-size:20px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 14px;font-size:14px}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--sh);padding:14px 16px;margin-bottom:12px}
+.obra{cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:transform .15s,border-color .15s}.obra:active{transform:scale(.985)}
+.obra h3{margin:0;font-size:17px}
+.cc{font-family:var(--mono);font-size:12px;background:var(--brand);color:#2B3038;padding:1px 8px;border-radius:4px;font-weight:500;display:inline-block;width:fit-content}
+.pill{font-size:12px;padding:2px 9px;border-radius:10px;background:var(--soft);color:var(--muted);display:inline-block}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.av{background:var(--amberbg);color:var(--amber)}.pill.er{background:var(--redbg);color:var(--red)}
+.big{width:100%;padding:16px;font-size:17px;margin:6px 0 16px}
+.sec{margin:20px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.voltar{background:none;border:0;color:var(--muted);padding:0 0 8px;min-height:0;font-size:15px}
+.lin{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--rule)}.lin:last-child{border:0}.lin .t{flex:1;min-width:0}
+.lin small{color:var(--muted);display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;background:var(--soft);border-radius:999px;padding:3px 3px 3px 12px;font-size:14px;gap:2px}
+.add{display:flex;gap:8px}.add button{flex:none}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:10px}
+.fotos div{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--soft)}
+.fotos img{width:100%;height:100%;object-fit:cover;display:block}
+.fotos button{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:50%;width:26px;height:26px;min-height:0;padding:0;font-size:15px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.msg{margin-top:12px;font-size:14px;padding:10px 12px;border-radius:10px}.msg.e{background:var(--redbg);color:var(--red)}
+.hint{color:var(--muted);font-size:13px}
+.barra{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--paper);border-top:1px solid var(--rule);z-index:15}
+.barra .in{max-width:640px;margin:0 auto}.barra button{width:100%;font-size:17px;padding:14px}
+#avisos{position:fixed;left:0;right:0;bottom:84px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:60;pointer-events:none}
+.aviso{background:#181C22;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;box-shadow:var(--sh);animation:entra .2s ease-out}.aviso.e{background:#7a2323}
+.entrada{min-height:80vh;display:flex;align-items:center;justify-content:center}.entrada .card{width:100%;max-width:380px;padding:24px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<link rel="stylesheet" href="movimento.css">
+<script src="movimento.js"></script>
+</head>
+<body>
+<div id="topo"><i>S</i><h1 id="tt">App de Obra</h1><button id="bsai" hidden>Sair</button></div>
+<div id="estado" hidden><span class="pt"></span><span id="et"></span><span class="sp"></span><button class="min" id="benv" hidden>Enviar agora</button></div>
+<main id="m"></main>
+<div id="avisos" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL='https://dnllrbgzkgrerkybtjjl.supabase.co';
+const SB_KEY='sb_publishable_Hro5FepbHNEFu2_w5TbBNw_FaHywmj_';
+const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16)});
+const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtData=d=>{const [a,m,x]=String(d).split('-');return x+'/'+m+'/'+a};
+const fmtHora=t=>new Date(t).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const ESTADO={rascunho:['Rascunho',''],enviada:['Enviada','ok'],em_validacao:['Em validação','av'],validada:['Validada','ok'],devolvida:['Devolvida','er'],por_enviar:['Por enviar','av']};
+
+/* ---------- armazenamento no telemóvel (IndexedDB) ---------- */
+const DB=new Promise((res,rej)=>{const r=indexedDB.open('somafel-obra',2);
+  r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('cache'))d.createObjectStore('cache');if(!d.objectStoreNames.contains('fila'))d.createObjectStore('fila',{keyPath:'id'});if(!d.objectStoreNames.contains('docs'))d.createObjectStore('docs')};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function idb(st,modo,fn){const d=await DB;return new Promise((res,rej)=>{const t=d.transaction(st,modo);const q=fn(t.objectStore(st));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const cacheGet=k=>idb('cache','readonly',s=>s.get(k));
+const cachePut=(k,v)=>idb('cache','readwrite',s=>s.put(v,k));
+const filaAll=()=>idb('fila','readonly',s=>s.getAll());
+const filaPut=v=>idb('fila','readwrite',s=>s.put(v));
+const filaDel=id=>idb('fila','readwrite',s=>s.delete(id));
+const docGet=k=>idb('docs','readonly',s=>s.get(k));
+const docPut=(k,v)=>idb('docs','readwrite',s=>s.put(v,k));
+const docKeys=()=>idb('docs','readonly',s=>s.getAllKeys());
+const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',documentos:'Outros documentos'};
+const tamTxt=b=>b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB';
+/* lista de ficheiros da obra: vem do servidor quando há rede e fica guardada para quando não houver */
+async function listaDocs(obraId){
+  if(navigator.onLine){
+    try{const l=[];
+      for(const c of Object.keys(CATDOC)){const r=await sb.storage.from('documentos').list(obraId+'/'+c,{limit:500});if(r.error)throw r.error;
+        (r.data||[]).filter(x=>x.id).forEach(x=>l.push({cat:c,path:obraId+'/'+c+'/'+x.name,nome:x.name.replace(/^[0-9a-f]{8}__/,''),tam:(x.metadata&&x.metadata.size)||0}))}
+      await cachePut('docs:'+obraId,l);return l}catch(e){}}
+  return (await cacheGet('docs:'+obraId))||[]}
+async function abreDoc(x){
+  try{
+    let rec=await docGet(x.path);
+    if(!rec){
+      if(!navigator.onLine){aviso('Sem rede. Este ficheiro ainda não foi guardado no telemóvel.',true);return}
+      aviso('A descarregar…');
+      const u=await sb.storage.from('documentos').createSignedUrl(x.path,600);if(u.error)throw u.error;
+      const r=await fetch(u.data.signedUrl);if(!r.ok)throw new Error('Falhou o descarregamento');
+      rec={blob:await r.blob(),nome:x.nome};await docPut(x.path,rec)}
+    const url=URL.createObjectURL(rec.blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){aviso(erroTxt(e),true)}}
+
+let S={eu:null,dados:{obras:[],est:[],os:[],per:[],partes:[],em:0},fila:[],obra:null,vista:'home',envio:false,rede:navigator.onLine};
+
+function aviso(t,erro){const d=document.createElement('div');d.className='aviso'+(erro?' e':'');d.textContent=t;$('#avisos').appendChild(d);setTimeout(()=>d.remove(),erro?6000:2500)}
+async function ok(p){const r=await p;if(r.error)throw r.error;return r.data}
+function erroTxt(e){return (e&&e.message)||String(e)}
+
+/* ---------- entrada ---------- */
+function ecraEntrada(msg){
+  $('#bsai').hidden=true;$('#estado').hidden=true;$('#tt').textContent='App de Obra';
+  $('#m').innerHTML='<div class="entrada entra"><form class="card" id="fl"><h2>Entrar</h2><p class="sub">Usa o email e a palavra-passe que o administrador te deu.</p>'
+   +'<label>Email</label><input name="email" type="email" required autocomplete="username" autocapitalize="none">'
+   +'<label>Palavra-passe</label><input name="pw" type="password" required autocomplete="current-password">'
+   +'<button class="pri big" style="margin-bottom:0;margin-top:18px">Entrar</button><div id="me">'+(msg?'<div class="msg e">'+esc(msg)+'</div>':'')+'</div></form></div>';
+  $('#fl').onsubmit=async ev=>{ev.preventDefault();const f=ev.target.elements;const b=ev.target.querySelector('button');b.disabled=true;
+    try{const {error}=await sb.auth.signInWithPassword({email:f.email.value.trim(),password:f.pw.value});if(error)throw error;await arranca()}
+    catch(e){let t=erroTxt(e);if(/Invalid login/i.test(t))t='Email ou palavra-passe incorretos.';else if(/fetch|network/i.test(t))t='Sem rede. É preciso rede para entrar a primeira vez.';$('#me').innerHTML='<div class="msg e">'+esc(t)+'</div>'}
+    b.disabled=false};
+}
+async function arranca(){
+  let eu=null;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session){
+      if(navigator.onLine){
+        const {data,error}=await sb.from('pessoas').select('id,nome,papel,ativo').eq('id',session.user.id).maybeSingle();
+        if(!error&&data&&data.ativo){eu=data;await cachePut('eu',eu)}
+        else if(!error){await sb.auth.signOut();ecraEntrada('A tua conta ainda não tem acesso. Fala com o administrador.');return}
+      }
+      if(!eu){const c=await cacheGet('eu');if(c&&c.id===session.user.id)eu=c}
+    }else{const c=await cacheGet('eu');if(c&&!navigator.onLine){eu=c}}
+  }catch(e){const c=await cacheGet('eu');if(c)eu=c}
+  if(!eu){ecraEntrada();return}
+  S.eu=eu;S.dados=(await cacheGet('dados'))||S.dados;S.fila=await filaAll();
+  $('#bsai').hidden=false;
+  vai('home');
+  atualiza();sincroniza();
+}
+$('#bsai').onclick=async()=>{
+  if(S.fila.length&&!confirm('Há '+S.fila.length+' parte(s) por enviar neste telemóvel. Se saíres agora, ficam guardadas mas só seguem quando voltares a entrar. Sair?'))return;
+  await sb.auth.signOut();S.eu=null;await cachePut('eu',null);ecraEntrada()};
+
+/* ---------- dados da obra (descarregar quando há rede) ---------- */
+async function atualiza(){
+  if(!navigator.onLine||!S.eu)return;
+  try{
+    const obras=await ok(sb.from('obras').select('id,centro_custo,nome,estado').order('centro_custo'));
+    const ids=obras.map(o=>o.id);
+    let est=[],os=[],per=[];
+    if(ids.length){
+      [est,os]=await Promise.all([
+        ok(sb.from('estruturas').select('obra_id,codigo,descricao').in('obra_id',ids).order('codigo').limit(5000)),
+        ok(sb.from('os_interdicoes').select('id,obra_id,numero,semana').in('obra_id',ids))]);
+      if(os.length)per=await ok(sb.from('os_periodos').select('os_id,inicio,fim,trabalhos').in('os_id',os.map(x=>x.id)).order('inicio'));
+    }
+    const partes=await ok(sb.from('partes_diarias').select('id,obra_id,data,estado,trabalho,os_id').eq('autor_id',S.eu.id).order('data',{ascending:false}).limit(100));
+    S.dados={obras,est,os,per,partes,em:Date.now()};
+    await cachePut('dados',S.dados);
+    if(S.vista==='home'||S.vista==='obra')vai(S.vista,S.obra);
+  }catch(e){console.warn('atualiza',e)}
+  pinta();
+}
+
+/* ---------- barra de estado ---------- */
+function pinta(){
+  const n=S.fila.length;const el=$('#estado');if(!S.eu){el.hidden=true;return}
+  el.hidden=false;el.className=!navigator.onLine?'o':(n?'p':'');
+  $('#et').textContent=!navigator.onLine?('Sem rede'+(n?' · '+n+' por enviar':' · os dados já descarregados continuam disponíveis')):(S.envio?'A enviar…':(n?n+' por enviar':'Tudo enviado'));
+  $('#benv').hidden=!(n&&navigator.onLine&&!S.envio);
+}
+$('#benv').onclick=()=>sincroniza(true);
+addEventListener('online',()=>{pinta();sincroniza();atualiza()});
+addEventListener('offline',pinta);
+setInterval(()=>{if(navigator.onLine&&S.eu){sincroniza();}},30000);
+
+/* ---------- envio ---------- */
+async function enviaItem(it){
+  const meu=S.eu.id;
+  if(it.passo<1){
+    const {error}=await sb.from('partes_diarias').insert({id:it.id,obra_id:it.obra_id,autor_id:meu,data:it.data,os_id:it.os_id||null,trabalho:it.trabalho||null,estado:'rascunho',hora_registo:it.hora_registo,observacoes:it.observacoes||null});
+    if(error){
+      if(error.code==='23505'){const {data}=await sb.from('partes_diarias').select('estado').eq('id',it.id).maybeSingle();if(data&&data.estado!=='rascunho')it.passo=4}
+      else throw error;
+    }
+    if(it.passo<4)it.passo=1;await filaPut(it)}
+  if(it.passo<2){
+    if(it.linhas.length){const {error}=await sb.from('parte_linhas').upsert(it.linhas.map(l=>({id:l.id,parte_id:it.id,tipo:l.tipo,estrutura:l.estrutura||null,descricao:l.descricao||null,quantidade:l.quantidade??null,unidade:l.unidade||null})),{onConflict:'id',ignoreDuplicates:true});if(error)throw error}
+    it.passo=2;await filaPut(it)}
+  if(it.passo<3){
+    for(const f of it.fotos){
+      if(f.feita)continue;
+      const caminho=it.obra_id+'/'+it.id+'/'+f.id+'.jpg';
+      const up=await sb.storage.from('fotos').upload(caminho,f.blob,{contentType:'image/jpeg',upsert:false});
+      if(up.error&&!/exists|duplicate/i.test(up.error.message||'')&&up.error.statusCode!=='409')throw up.error;
+      const {error}=await sb.from('fotos').upsert({id:f.id,parte_id:it.id,caminho},{onConflict:'id',ignoreDuplicates:true});if(error)throw error;
+      f.feita=true;await filaPut(it)}
+    it.passo=3;await filaPut(it)}
+  if(it.passo<4){
+    const {error}=await sb.from('partes_diarias').update({estado:'enviada'}).eq('id',it.id);if(error)throw error;
+    it.passo=4;await filaPut(it)}
+  await filaDel(it.id);
+}
+async function sincroniza(manual){
+  if(S.envio||!S.eu)return;
+  S.fila=await filaAll();
+  if(!S.fila.length||!navigator.onLine){pinta();if(manual&&!navigator.onLine)aviso('Sem rede.',true);return}
+  S.envio=true;pinta();let falhou=null,n=0;
+  S.fila.sort((a,b)=>a.criado-b.criado);
+  for(const it of S.fila){try{await enviaItem(it);n++}catch(e){falhou=e;console.warn('envio',e);break}}
+  S.envio=false;S.fila=await filaAll();pinta();
+  if(n)aviso(n===1?'Parte enviada.':n+' partes enviadas.');
+  if(falhou)aviso('Não foi possível enviar tudo: '+erroTxt(falhou)+'. Vou tentar outra vez.',true);
+  if(n){await atualiza()}
+  if(S.vista==='home'||S.vista==='obra')vai(S.vista,S.obra);
+}
+
+/* ---------- ecrãs ---------- */
+function vai(v,obraId){
+  S.vista=v;if(v==='obra'||v==='nova')S.obra=obraId||S.obra;
+  const m=$('#m');m.classList.remove('entra');void m.offsetWidth;m.classList.add('entra');
+  window.scrollTo(0,0);
+  ({home:vHome,obra:vObra,nova:vNova}[v])();
+  document.querySelectorAll('.barra').forEach(b=>{if(v!=='nova')b.remove()});
+  pinta();
+}
+function vHome(){
+  $('#tt').textContent='Obras';
+  const o=S.dados.obras;
+  let h='<h2>Olá, '+esc((S.eu.nome||'').split(' ')[0])+'</h2><p class="sub">'+(S.dados.em?'Dados atualizados '+fmtHora(S.dados.em):'Ainda sem dados descarregados')+'</p>';
+  if(S.fila.length)h+='<div class="card"><b>'+S.fila.length+' parte(s) por enviar</b><p class="hint" style="margin:4px 0 0">Ficam guardadas neste telemóvel e seguem automaticamente quando houver rede.</p></div>';
+  if(!o.length)h+='<div class="card"><p style="margin:0">Ainda não tens obras atribuídas.'+(navigator.onLine?' Fala com o administrador.':' Liga-te à rede para descarregar.')+'</p></div>';
+  h+=o.map(x=>'<div class="card obra" data-id="'+x.id+'"><span class="cc">'+esc(x.centro_custo)+'</span><h3>'+esc(x.nome)+'</h3></div>').join('');
+  $('#m').innerHTML=h;
+  document.querySelectorAll('.obra').forEach(c=>c.onclick=()=>vai('obra',c.dataset.id));
+}
+function vObra(){
+  const ob=S.dados.obras.find(x=>x.id===S.obra);if(!ob){vai('home');return}
+  $('#tt').textContent=ob.centro_custo;
+  const locais=S.fila.filter(f=>f.obra_id===ob.id).map(f=>({id:f.id,data:f.data,trabalho:f.trabalho,estado:'por_enviar',nf:f.fotos.length,local:true}));
+  const ids=new Set(locais.map(x=>x.id));
+  const remotas=S.dados.partes.filter(p=>p.obra_id===ob.id&&!ids.has(p.id));
+  const todas=locais.concat(remotas).sort((a,b)=>String(b.data).localeCompare(String(a.data)));
+  let h='<button class="voltar" id="vv">← Obras</button><h2>'+esc(ob.nome)+'</h2><p class="sub">Centro de custo <span class="mono">'+esc(ob.centro_custo)+'</span></p>'
+   +'<button class="pri big" id="np">+ Nova parte diária</button><div class="sec">As minhas partes</div>';
+  h+=todas.length?'<div class="card" style="padding:4px 16px">'+todas.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];
+    return '<div class="lin"><div class="t"><b>'+fmtData(p.data)+'</b>'+(p.trabalho?' · trabalho '+esc(p.trabalho):'')+(p.nf?'<small>'+p.nf+' foto'+(p.nf===1?'':'s')+'</small>':'')+'</div><span class="pill '+e[1]+'">'+e[0]+'</span></div>'}).join('')+'</div>'
+    :'<div class="card"><p class="hint" style="margin:0">Ainda não fizeste nenhuma parte nesta obra.</p></div>';
+  h+='<div class="sec">Desenhos e documentos</div><div id="dl" class="card">'+Mov.skel(2)+'</div>';
+  $('#m').innerHTML=h;
+  $('#vv').onclick=()=>vai('home');$('#np').onclick=()=>vai('nova',ob.id);
+  pintaDocs(ob.id);
+}
+async function pintaDocs(obraId){
+  const l=await listaDocs(obraId),el=$('#dl');if(!el||S.obra!==obraId)return;
+  const tem=new Set(await docKeys());
+  if(!l.length){el.innerHTML='<p class="hint" style="margin:0">Ainda não há ficheiros nesta obra.</p>';return}
+  el.style.padding='4px 16px';
+  el.innerHTML=l.map((x,i)=>'<div class="lin" data-i="'+i+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+CATDOC[x.cat]+(x.tam?' · '+tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join('');
+  el.querySelectorAll('[data-i]').forEach(d=>d.onclick=async()=>{await abreDoc(l[+d.dataset.i]);pintaDocs(obraId)});
+}
+
+/* reduzir a foto antes de guardar */
+async function reduz(file){
+  try{
+    const bm=await createImageBitmap(file);const max=1600;const k=Math.min(1,max/Math.max(bm.width,bm.height));
+    const c=document.createElement('canvas');c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);
+    c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+    return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('Falha ao reduzir a foto')),'image/jpeg',0.72));
+  }catch(e){return file}
+}
+
+function vNova(){
+  const ob=S.dados.obras.find(x=>x.id===S.obra);if(!ob){vai('home');return}
+  $('#tt').textContent='Nova parte · '+ob.centro_custo;
+  const osObra=S.dados.os.filter(x=>x.obra_id===ob.id);
+  const est=S.dados.est.filter(x=>x.obra_id===ob.id);
+  const P={data:hoje(),os_id:'',trabalho:'',obs:'',estr:[],linhas:[],fotos:[]};
+  const perDe=id=>S.dados.per.filter(p=>p.os_id===id);
+  $('#m').innerHTML='<button class="voltar" id="vv">← '+esc(ob.nome)+'</button><h2>Nova parte diária</h2><p class="sub">Guarda no telemóvel e envia quando houver rede.</p>'
+   +'<label>Dia</label><input type="date" id="d" value="'+P.data+'">'
+   +'<label>OS</label><select id="os"><option value="">Sem OS</option>'+osObra.map(o=>'<option value="'+o.id+'">OS '+esc(o.numero)+(o.semana?' · semana '+esc(o.semana):'')+'</option>').join('')+'</select><div id="per" class="hint" style="margin-top:6px"></div>'
+   +'<label>Nº do nosso trabalho na OS</label><input id="tr" inputmode="numeric" placeholder="ex.: 3">'
+   +'<div class="sec">Estruturas trabalhadas</div><div class="add"><input id="ei" list="el" placeholder="Código da estrutura (ex.: 198-27)" autocapitalize="characters"><button id="ea">+</button></div>'
+   +'<datalist id="el">'+est.map(e=>'<option value="'+esc(e.codigo)+'">'+esc(e.descricao||'')+'</option>').join('')+'</datalist><div class="chips" id="ec"></div>'
+   +'<div class="sec">Material avulso</div><div class="add"><input id="md" placeholder="Material (ex.: abraçadeiras)"><input id="mq" inputmode="decimal" placeholder="Qtd" style="width:84px"><button id="ma">+</button></div><div id="ml"></div>'
+   +'<div class="sec">Trabalho sem rubrica</div><div class="add"><input id="sd" placeholder="Descrição do trabalho"><button id="sa">+</button></div><div id="sl"></div>'
+   +'<div class="sec">Fotos</div><div class="duas"><button id="ft">📷 Tirar foto</button><button id="fg">🖼 Galeria</button></div><div class="fotos" id="fo"></div>'
+   +'<input type="file" id="fc" accept="image/*" capture="environment" hidden><input type="file" id="fm" accept="image/*" multiple hidden>'
+   +'<label>Observações</label><textarea id="ob"></textarea>'
+   +'<div class="barra"><div class="in"><button class="pri" id="gr">Guardar e enviar</button></div></div>';
+  $('#vv').onclick=()=>{if(P.estr.length||P.linhas.length||P.fotos.length||$('#ob').value){if(!confirm('Descartar esta parte?'))return}vai('obra',ob.id)};
+  $('#d').onchange=e=>P.data=e.target.value;
+  $('#os').onchange=e=>{P.os_id=e.target.value;const p=perDe(P.os_id);
+    $('#per').innerHTML=p.length?'Períodos: '+p.map(x=>fmtHora(x.inicio)+' → '+new Date(x.fim).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})+(x.trabalhos?' · trabalho '+esc(String(x.trabalhos).replace(/[()]/g,'')):'')).join(' | '):''};
+  const pintaE=()=>{$('#ec').innerHTML=P.estr.map((e,i)=>'<span class="chip">'+esc(e)+'<button class="x" data-i="'+i+'">×</button></span>').join('');
+    document.querySelectorAll('#ec .x').forEach(b=>b.onclick=()=>{P.estr.splice(+b.dataset.i,1);pintaE()})};
+  const addE=()=>{const v=$('#ei').value.trim().toUpperCase();if(!v)return;if(!P.estr.includes(v))P.estr.push(v);$('#ei').value='';pintaE()};
+  $('#ea').onclick=addE;$('#ei').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addE()}};
+  const pintaL=()=>{
+    const lista=(tipo,el)=>{el.innerHTML=P.linhas.map((l,i)=>l.tipo===tipo?'<div class="lin"><div class="t">'+esc(l.descricao)+(l.quantidade!=null?' <b class="mono">× '+l.quantidade+'</b>':'')+'</div><button class="x" data-i="'+i+'">×</button></div>':'').join('');
+      el.querySelectorAll('.x').forEach(b=>b.onclick=()=>{P.linhas.splice(+b.dataset.i,1);pintaL()})};
+    lista('material_avulso',$('#ml'));lista('sem_rubrica',$('#sl'))};
+  $('#ma').onclick=()=>{const d=$('#md').value.trim();if(!d)return;const q=parseFloat(String($('#mq').value).replace(',','.'));P.linhas.push({id:uid(),tipo:'material_avulso',descricao:d,quantidade:isNaN(q)?null:q});$('#md').value='';$('#mq').value='';pintaL()};
+  $('#sa').onclick=()=>{const d=$('#sd').value.trim();if(!d)return;P.linhas.push({id:uid(),tipo:'sem_rubrica',descricao:d});$('#sd').value='';pintaL()};
+  const pintaF=()=>{$('#fo').innerHTML=P.fotos.map((f,i)=>'<div><img src="'+f.url+'" alt=""><button data-i="'+i+'" aria-label="Remover">×</button></div>').join('');
+    document.querySelectorAll('#fo button').forEach(b=>b.onclick=()=>{URL.revokeObjectURL(P.fotos[+b.dataset.i].url);P.fotos.splice(+b.dataset.i,1);pintaF()})};
+  const recebe=async fs=>{for(const f of fs){const b=await reduz(f);P.fotos.push({id:uid(),blob:b,url:URL.createObjectURL(b),feita:false})}pintaF()};
+  $('#ft').onclick=()=>$('#fc').click();$('#fg').onclick=()=>$('#fm').click();
+  $('#fc').onchange=async e=>{await recebe([...e.target.files]);e.target.value=''};
+  $('#fm').onchange=async e=>{await recebe([...e.target.files]);e.target.value=''};
+  $('#gr').onclick=async()=>{
+    addE();
+    if(!P.data){aviso('Indica o dia.',true);return}
+    const it={id:uid(),obra_id:ob.id,data:P.data,os_id:P.os_id||null,trabalho:$('#tr').value.trim(),observacoes:$('#ob').value.trim(),hora_registo:new Date().toISOString(),
+      linhas:P.estr.map(e=>({id:uid(),tipo:'estrutura',estrutura:e})).concat(P.linhas),
+      fotos:P.fotos.map(f=>({id:f.id,blob:f.blob,feita:false})),passo:0,criado:Date.now()};
+    $('#gr').disabled=true;
+    try{await filaPut(it)}catch(e){aviso('Não foi possível guardar no telemóvel: '+erroTxt(e),true);$('#gr').disabled=false;return}
+    P.fotos.forEach(f=>URL.revokeObjectURL(f.url));
+    S.fila=await filaAll();aviso(navigator.onLine?'Guardada. A enviar…':'Guardada no telemóvel. Segue quando houver rede.');
+    vai('obra',ob.id);sincroniza();
+  };
+}
+if(typeof navigator!=='undefined'&&'serviceWorker' in navigator&&location.protocol.startsWith('http')){try{navigator.serviceWorker.register('sw.js')}catch(e){}}
+arranca();
+</script>
+</body>
+</html>
