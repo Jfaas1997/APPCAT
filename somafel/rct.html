@@ -1828,7 +1828,8 @@ function onResumo(){ var c=calcula();
   return {app:'rct',v:2,cc:NM.ob&&NM.ob.cc,gerado:new Date().toISOString(),caixas:c.nCx,montagensPrevistas:c.nPrev,montagensExecutadas:c.nExec,trocos:c.nTroc,trocosExecutados:c.nTrocEx,cabo:Object.keys(c.porTipo).sort().map(function(t){ var x=c.porTipo[t]; return {tipo:t,previsto:r4(x.prev+x.prevT),gasto:r4(x.gasto+x.exT),aMais:x.exc} }),caboAMais:c.totExc} }
 
 ind=function(){ var g=$('#gst'); if(!g)return; var t='',c='';
-  if(ON.soLeitura&&NM.ob){t='Só leitura';c='av'}
+  if(NM.livre){t='Sem obra · só neste aparelho';c='av'}
+  else if(ON.soLeitura&&NM.ob){t='Só leitura';c='av'}
   else if(NM.gravando)t='A guardar…';
   else if(NM.conflito){t='Conflito: clique em Guardar';c='er'}
   else if(NM.erro){t=NM.erro;c='er'}
@@ -1862,6 +1863,7 @@ auto=async function(){
   NM.gravando=false; ind(); flush() };
 async function onServidor(){ var q=await sb.from('dados_apps').select('dados,versao,atualizado_em').eq('obra_id',NM.ob.id).eq('app','rct').maybeSingle(); return q.data }
 guardar=async function(){
+  if(NM.livre){ flush(); toast('Guardado neste aparelho. Para um ficheiro use o menu «…».',3500); return }
   if(!NM.ob){ descarrega(JSON.stringify(JSON.parse(conteudo()),null,1),'medicao_rct_'+chave()+'_'+nmCarimbo()+'.json','application/json'); LAST=snap(); DIRTY=false; ind(); toast('Sem obra: descarreguei uma cópia .json.'); return }
   if(ON.soLeitura){ toast('Não tem permissão para alterar esta app.'); return }
   if(!navigator.onLine){ toast('Sem rede. O rascunho está neste aparelho e segue quando houver rede.',4000); return }
@@ -1942,8 +1944,8 @@ function onLogin(){ return new Promise(function(ok){
   w.querySelector('form').onsubmit=async function(e){ e.preventDefault(); var r=await sb.auth.signInWithPassword({email:w.querySelector('#lgE').value.trim(),password:w.querySelector('#lgP').value}); if(r.error){ w.querySelector('#lgM').textContent='Email ou palavra-passe errados.'; return } ok() } }) }
 async function onListaObras(){
   var q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
-  return new Promise(function(ok){ var w=onEcra('<div class="box"><h2>Escolha a obra</h2>'+(l.length?l.map(function(o,i){ return '<button class="ob" data-i="'+i+'"><b class="mono">'+esc(o.centro_custo)+'</b> '+esc(o.nome)+'</button>' }).join(''):'<p>Não tem obras atribuídas.</p>')+'</div>');
-    w.onclick=function(e){ var b=e.target.closest('[data-i]'); if(b)ok(l[+b.dataset.i]) } }) }
+  return new Promise(function(ok){ var w=onEcra('<div class="box"><h2>Escolha a obra</h2>'+(l.length?l.map(function(o,i){ return '<button class="ob" data-i="'+i+'"><b class="mono">'+esc(o.centro_custo)+'</b> '+esc(o.nome)+'</button>' }).join(''):'<p>Não tem obras atribuídas.</p>')+'<button class="ob" data-i="-1">Usar sem obra <small>(a medição fica só neste aparelho)</small></button>'+'</div>');
+    w.onclick=function(e){ var b=e.target.closest('[data-i]'); if(b)ok(+b.dataset.i<0?'livre':l[+b.dataset.i]) } }) }
 async function onArranque(){
   for(var i=0;i<200&&!window.__rct;i++)await new Promise(function(r){ setTimeout(r,50) });
   var s=await sb.auth.getSession(); if(!s.data.session)await onLogin();
@@ -1951,8 +1953,9 @@ async function onArranque(){
   var pq=await sb.from('pessoas').select('papel,ativo,organizacao_id').eq('id',ON.uid).maybeSingle(); ON.papel=pq.data&&pq.data.papel; ON.org=pq.data&&pq.data.organizacao_id;
   if(!pq.data||!pq.data.ativo||ON.papel==='equipa'){ onEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   var id=new URLSearchParams(location.search).get('obra'), ob;
-  if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
+  if(id==='livre')ob='livre'; else if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
   if(!ob)ob=await onListaObras();
+  if(ob==='livre'){ await onArrancaLivre(); return }
   onEcra('<div class="box"><h2>A abrir a obra…</h2><p class="n">A carregar as montagens e a medição.</p></div>');
   var cq=await sb.from('contratos').select('id,nome,cliente,valor,criado_em').eq('obra_id',ob.id).order('criado_em');
   NM.ob={id:ob.id,cc:ob.centro_custo,nome:ob.nome,contratos:(cq.data||[]).map(function(c){ return {id:c.id,nome:c.nome,cliente:c.cliente||'',valor:c.valor} })};
@@ -1966,6 +1969,19 @@ async function onArranque(){
     if(await sim('Há alterações deste aparelho que ainda não foram para o servidor. Recuperá-las?','Recuperar')){ aplica(JSON.parse(rasc.json)); LAST='forcar'; DIRTY=true } }
   else if(!ON.soLeitura&&rasc&&rasc.dirty&&rasc.base!==ON.versao){ await diz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   ui(); flush(); document.title='Medição RCT · '+NM.ob.cc;
+  setTimeout(function(){ onEcraFim(); ON.pronto=true },300) }
+
+/* ---- uso sem obra: a medição fica só neste aparelho; as montagens são da organização ---- */
+async function onArrancaLivre(){
+  NM.livre=true; NM.ob=null;
+  onEcra('<div class="box"><h2>A abrir…</h2><p class="n">A carregar as montagens.</p></div>');
+  var bq=await sb.from('bloqueios').select('chave'), bl=(bq.data||[]).map(function(b){ return b.chave });
+  ON.soLeitura=!(ON.papel==='administrador'||ON.papel==='diretor'||(ON.papel==='encarregado'&&bl.indexOf('app:rct')<0));
+  await onCarregaBase(); await onCarregaEd();
+  var rasc=await idbGet('rascunho:rapido');
+  ON.carregando=true;
+  try{ if(rasc&&rasc.json)aplica(JSON.parse(rasc.json)); else aplica(null); LAST=snap(); DIRTY=false }finally{ ON.carregando=false }
+  ui(); flush(); document.title='Medição RCT · sem obra';
   setTimeout(function(){ onEcraFim(); ON.pronto=true },300) }
 
 /* ---- menu ---- */

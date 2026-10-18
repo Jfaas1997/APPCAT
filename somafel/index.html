@@ -324,7 +324,7 @@ function casca(){
    +'<button class="tab" data-v="mat">'+ico('box')+'<span>Materiais</span></button>'
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
-   +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med" data-need hidden>'+ico('ruler')+'<span>Medição</span></button><button class="tab" data-v="cons" data-need hidden>'+ico('calc')+'<span>Software Consolas</span></button><button class="tab" data-v="rct" data-need hidden>'+ico('box')+'<span>Medição RCT</span></button>'
+   +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medição de catenária</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Software Consolas</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Pessoas</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
@@ -542,11 +542,12 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.da
   if(e.data.tipo==='desenho'&&e.data.cod){try{const L=await listaBib('desenhos');const c=String(e.data.cod).toLowerCase();const m=L.filter(x=>x.nome.toLowerCase().includes(c));
     if(!m.length){aviso('O desenho '+e.data.cod+' não está no Catálogo (o administrador ainda não o carregou).',true);return}
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
+const LIVRE=['med','cons','rct'];
 const OBRAV=['visao','docs','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Software Consolas',rct:'Medição RCT'};
 async function vai(v,obraId){
   if(v==='obra')v='visao';
   if(obraId&&(!S.obra||S.obra.id!==obraId)){try{S.obra=await ok(sb.from('obras').select('*').eq('id',obraId).single());largaApps(obraId)}catch(e){aviso(erroTxt(e),true);return}}
-  if(OBRAV.includes(v)&&!S.obra)v='obras';
+  if(OBRAV.includes(v)&&!S.obra&&!LIVRE.includes(v))v='obras';
   if(v==='docs'&&!gestor())v='visao';
   if(v==='obras'&&S.obra){largaApps(null);S.obra=null}
   S.vista=v;S.fk=null;
@@ -556,7 +557,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra,v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
   posiciona();
 }
 function rSide(){const o=S.obra;$('#sObra').hidden=!o;$('#sVolta').hidden=!o;if(o)$('#sObraT').textContent='Obra '+o.centro_custo;
@@ -570,8 +571,8 @@ function estiloApp(f,id){try{const d=f.contentDocument;if(!d||d.getElementById('
   d.documentElement.setAttribute('data-side','c');if(id==='mat'){const m=d.querySelector('main');if(m)m.classList.add('fechada')}}catch(e){}}
 function injetaVoltar(d,id){try{const nav=id==='cons'?d.querySelector('nav.lado'):d.querySelector('#side');if(!nav||d.getElementById('cVoltar'))return;
   const st=d.createElement('style');st.textContent='#cVoltar{color:#F9D115!important;font-weight:500;border-bottom:1px solid rgba(255,255,255,.14);border-radius:0;margin:0 0 6px}#cVoltar svg{flex:none;width:18px;height:18px}';d.head.appendChild(st);
-  const b=d.createElement('button');b.id='cVoltar';b.type='button';b.className=id==='cons'?'ni':'tema';b.title='Voltar à obra';
-  b.innerHTML=SVG_VOLTA+'<span class="'+(id==='cons'?'tx':'tl')+'">Voltar à obra</span>';
+  const b=d.createElement('button');b.id='cVoltar';b.type='button';b.className=id==='cons'?'ni':'tema';const livre=!!(window.__vl&&window.__vl(d));b.title=livre?'Voltar às obras':'Voltar à obra';
+  b.innerHTML=SVG_VOLTA+'<span class="'+(id==='cons'?'tx':'tl')+'">'+(livre?'Voltar às obras':'Voltar à obra')+'</span>';
   b.onclick=()=>parent.postMessage({tipo:'voltar'},location.origin);
   nav.insertBefore(b,id==='cons'?nav.firstChild:(nav.querySelector('.sgrp')||(nav.querySelector('.sbrand')||{}).nextSibling||null))}catch(e){}}
 function frameApp(o,v){const k=o.id+'|'+v;let f=FR[k];if(f)return f;
@@ -588,6 +589,7 @@ function largaApps(manterObra){Object.keys(FR).forEach(k=>{if(manterObra&&k.spli
 async function janelaApp(id){const o=S.obra;if(!o)return null;const app=MAPA[id]||id;const f=frameApp(o,app);
   for(let i=0;i<160;i++){try{const w=f.contentWindow;if(f.dataset.ok&&w&&(app!=='med'||(w.nmLigacao&&w.nmLigacao.pronto())))return w}catch(e){}await new Promise(r=>setTimeout(r,250))}
   return null}
+window.__vl=d=>{try{return /[?&]obra=livre/.test(d.defaultView.location.search)}catch(e){return false}};
 window.__central={janelaApp,get S(){return{ativa:S.obra}}};
 function vApp(o,v){
   largaApps(o.id);S.fk=o.id+'|'+v;const f=frameApp(o,v);
