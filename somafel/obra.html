@@ -50,7 +50,7 @@ h2{font-size:20px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 14px;font-si
 .pill.ok{background:var(--okbg);color:var(--ok)}.pill.av{background:var(--amberbg);color:var(--amber)}.pill.er{background:var(--redbg);color:var(--red)}
 .big{width:100%;padding:16px;font-size:17px;margin:6px 0 16px}
 .sec{margin:20px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.dia{display:flex;gap:8px}.dia input{flex:1}.mos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}.mo{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px}.mo b{font-size:15px}.mo small{color:var(--muted);font-size:12px}.duas{display:flex;gap:8px}.duas input{flex:1}details.card summary{cursor:pointer;font-weight:600}
+.dia{display:flex;gap:8px}.dia input{flex:1}.mos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}.mo{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px}.mo b{font-size:15px}.mo small{color:var(--muted);font-size:12px}.mo.brev{opacity:.5;background:var(--soft);border:1px dashed var(--rule);border-radius:10px;cursor:default}.duas{display:flex;gap:8px}.duas input{flex:1}details.card summary{cursor:pointer;font-weight:600}
 .voltar{background:none;border:0;color:var(--muted);padding:0 0 8px;min-height:0;font-size:15px}
 .lin{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--rule)}.lin:last-child{border:0}.lin .t{flex:1;min-width:0}
 .lin small{color:var(--muted);display:block}
@@ -76,7 +76,7 @@ h2{font-size:20px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 14px;font-si
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
 </head>
 <body>
-<div id="topo"><i>S</i><h1 id="tt">App de Obra</h1><button id="bsai" hidden>Sair</button></div>
+<div id="topo"><img id="tlogo" src="logo-somafel.png" alt="SOMAFEL" style="height:30px;border-radius:3px;flex:none"><h1 id="tt">Central de obras</h1><button id="bsai" hidden>Sair</button></div>
 <div id="estado" hidden><span class="pt"></span><span id="et"></span><span class="sp"></span><button class="min" id="benv" hidden>Enviar agora</button></div>
 <main id="m"></main>
 <div id="avisos" aria-live="polite"></div>
@@ -266,22 +266,22 @@ function vHome(){
 }
 function vObra(){
   const ob=S.dados.obras.find(x=>x.id===S.obra);if(!ob){vai('home');return}
-  $('#tt').textContent=ob.centro_custo;
+  $('#tt').innerHTML='<span class="cc">'+esc(ob.centro_custo)+'</span> '+esc(ob.nome);$('#tlogo').hidden=true;
   const locais=S.fila.filter(f=>f.obra_id===ob.id).map(f=>({id:f.id,data:f.data,trabalho:f.trabalho,estado:'por_enviar',nf:f.fotos.length,local:true}));
   const ids=new Set(locais.map(x=>x.id));
   const remotas=S.dados.partes.filter(p=>p.obra_id===ob.id&&!ids.has(p.id));
   const todas=locais.concat(remotas).sort((a,b)=>String(b.data).localeCompare(String(a.data)));
-  let h='<button class="voltar" id="vv">← Obras</button><h2>'+esc(ob.nome)+'</h2><p class="sub">Centro de custo <span class="mono">'+esc(ob.centro_custo)+'</span></p>'
-   +'<button class="pri big" id="np">+ Nova parte diária</button>'
-   +'<div class="mos">'+[['ints','Interdições','Hoje e seguintes'],['os','Ordens de serviço','Com e sem parte'],['plano','Plano diário','Dia a dia'],['esq','Esquemas e preparações','Elétricos, sinalização, projeto']].map(t=>'<button class="mo" data-vv="'+t[0]+'"><b>'+t[1]+'</b><small>'+t[2]+'</small></button>').join('')+'</div>'
-   +'<div class="sec">As minhas partes</div>';
+  let h='<button class="voltar" id="vv">← Obras</button>'
+   +'<button class="pri big" id="np">+ Nova parte de hoje</button>'
+   +'<div class="mos"><button class="mo" id="mpt"><b>Partes diárias</b><small>'+todas.length+(todas.length===1?' parte':' partes')+'</small></button>'+[['ints','Interdições','Hoje e seguintes'],['os','Ordens de serviço','Com e sem parte'],['plano','Plano diário','Dia a dia'],['esq','Esquemas e preparações','Elétricos, sinalização, projeto']].map(t=>'<button class="mo" data-vv="'+t[0]+'"><b>'+t[1]+'</b><small>'+t[2]+'</small></button>').join('')+['Normas','Peças','Simulador de consolas','Certificados'].map(t=>'<div class="mo brev"><b>'+t+'</b><small>em breve</small></div>').join('')+'</div>'
+   +'<div class="sec" id="sPartes">As minhas partes</div>';
   h+=todas.length?'<div class="card" style="padding:4px 16px">'+todas.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];
     return '<div class="lin"><div class="t"><b>'+fmtData(p.data)+'</b>'+(p.trabalho?' · trabalho '+esc(p.trabalho):'')+(p.nf?'<small>'+p.nf+' foto'+(p.nf===1?'':'s')+'</small>':'')+'</div><span class="pill '+e[1]+'">'+e[0]+'</span></div>'}).join('')+'</div>'
     :'<div class="card"><p class="hint" style="margin:0">Ainda não fizeste nenhuma parte nesta obra.</p></div>';
   h+='<div class="sec">Desenhos e documentos</div><div id="dl" class="card">'+Mov.skel(2)+'</div>';
   $('#m').innerHTML=h;
-  $('#vv').onclick=()=>vai('home');$('#np').onclick=()=>vai('nova',ob.id);
-  document.querySelectorAll('.mo').forEach(b=>b.onclick=()=>vai(b.dataset.vv,ob.id));
+  $('#vv').onclick=()=>vai('home');$('#np').onclick=()=>vai('nova',ob.id);$('#mpt').onclick=()=>$('#sPartes').scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.mo[data-vv]').forEach(b=>b.onclick=()=>vai(b.dataset.vv,ob.id));
   pintaDocs(ob.id);
 }
 async function pintaDocs(obraId){
