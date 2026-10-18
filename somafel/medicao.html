@@ -6240,19 +6240,20 @@ const NM_PAUSA_ON=12000;
 
 /* ---- indicador, menu, gravação ---- */
 nmInd=function(){ const g=$('#gst'); if(!g)return; let t='',c='';
-  if(NM.soLeitura){t='Só leitura';c='av'}
+  if(NM.livre){t='Sem obra · só neste aparelho';c='av'}
+  else if(NM.soLeitura){t='Só leitura';c='av'}
   else if(NM.gravando)t='A guardar…';
   else if(NM.conflito){t='Conflito: clique em Guardar';c='er'}
   else if(NM.erro){t=NM.erro;c='er'}
   else if(!navigator.onLine&&DIRTY){t='Sem rede · fica no rascunho';c='av'}
   else if(DIRTY){t='Por guardar';c='av'}
   else if(NM.guardadoEm){t='Guardado às '+nmHM(NM.guardadoEm);c='ok'}
-  g.textContent=t; g.className=c; g.title=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'' };
+  g.textContent=t; g.className=c; g.title=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):(NM.livre?'Sem obra: a medição fica só neste aparelho. Para guardar noutro sítio, exporte para Excel («…»).':'') };
 nmUi=function(){ const ob=NM.ob; document.body.classList.toggle('obraAtiva',!!ob);
   const c=$('#ccChip'); c.hidden=!ob; if(ob){ c.textContent=ob.cc; c.title='Centro de custo' }
   const n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Central':'';
   $('#loteSel').setAttribute('aria-label',ob?'Contrato em que estás a trabalhar':'Lote em que estás a trabalhar');
-  const b=$('#bSave'); if(b)b.disabled=!!NM.soLeitura; nmInd() };
+  const b=$('#bSave'); if(b)b.disabled=!!NM.soLeitura&&!NM.livre; nmInd() };
 nmMudou=function(){ if(NM.carregando)return; NM.alterado=true; clearTimeout(NM.draftT); NM.draftT=setTimeout(nmFlush,400); clearTimeout(NM.saveT); NM.saveT=setTimeout(nmAuto,NM_PAUSA_ON) };
 { const _eh=estHash; estHash=function(){ let p=''; try{ p=JSON.stringify(pd) }catch(e){} return _eh()+'|'+p.length+':'+nmHash(p) } }
 { const _pg=pdGuarda; pdGuarda=function(){ _pg(); nmMudou() } }
@@ -6280,6 +6281,7 @@ nmAuto=async function(){
   NM.gravando=false; nmInd(); nmFlush() };
 async function nmServidor(){ const q=await sb.from('dados_apps').select('dados,versao,atualizado_em').eq('obra_id',NM.ob.id).eq('app','medicao').maybeSingle(); return q.data }
 guardar=async function(novo){
+  if(NM.livre&&!novo){ nmFlush(); toast('Guardado neste aparelho. Para um ficheiro Excel use o menu «…».',3500); return }
   if(novo||!NM.ob){ try{ descarrega(XLSX.write(construirLivro(),{bookType:'xlsx',type:'array'}),nomeFich().replace(/\.xlsx$/,'')+'_copia.xlsx') }catch(e){ nmDiz('Não consegui exportar: '+esc(e.message)) } return }
   if(!baseOk()){ toast('Sem base de dados: não gravo para não perder montagens.',4500); return }
   if(NM.soLeitura){ toast('Não tem permissão para alterar esta app.'); return }
@@ -6350,7 +6352,7 @@ window.nmSincroniza=async function(ip,nome,t,dl){
   }catch(e){ return {r:'erro',msg:e.message} } };
 let NM_DELTA_V=null, NM_DELTA_T=null;
 nmNotificaBase=async function(){
-  try{ if(!NM.ob||!NM.org||!nmIpStamp||NM.soLeitura||NM.carregando)return;
+  try{ if((!NM.ob&&!NM.livre)||!NM.org||!nmIpStamp||NM.soLeitura||NM.carregando)return;
     clearTimeout(NM_DELTA_T); NM_DELTA_T=setTimeout(nmGravaDelta,1500)
   }catch(e){ console.error(e) } };
 async function nmGravaDelta(){
@@ -6388,7 +6390,7 @@ async function nmCarregaBaseIP(){
     }catch(e){ nmDiz('Não consegui carregar a base: '+esc(e.message)) } };
   inp.click() }
 async function nmImportaAlteracoes(){
-  if(!NM.ob||NM.soLeitura){ nmDiz('Sem permissão.'); return }
+  if((!NM.ob&&!NM.livre)||NM.soLeitura){ nmDiz('Sem permissão.'); return }
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
   inp.onchange=async()=>{ const f=inp.files[0]; if(!f)return;
     try{ const j=JSON.parse(await f.text()); if(!j||j.tipo!=='base-alteracoes')throw new Error('não é um ficheiro de alterações próprias');
@@ -6420,16 +6422,17 @@ function nmLogin(){ return new Promise(ok=>{
   w.querySelector('form').onsubmit=async e=>{ e.preventDefault(); const r=await sb.auth.signInWithPassword({email:w.querySelector('#lgE').value.trim(),password:w.querySelector('#lgP').value}); if(r.error){ w.querySelector('#lgM').textContent='Email ou palavra-passe errados.'; return } ok() } }) }
 async function nmListaObras(){
   const q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
-  return new Promise(ok=>{ const w=nmEcra('<div class="box"><h2>Escolha a obra</h2>'+(l.length?l.map((o,i)=>'<button class="ob" data-i="'+i+'"><b class="mono">'+esc(o.centro_custo)+'</b> '+esc(o.nome)+'</button>').join(''):'<p>Não tem obras atribuídas.</p>')+'</div>');
-    w.onclick=e=>{ const b=e.target.closest('[data-i]'); if(b)ok(l[+b.dataset.i]) } }) }
+  return new Promise(ok=>{ const w=nmEcra('<div class="box"><h2>Escolha a obra</h2>'+(l.length?l.map((o,i)=>'<button class="ob" data-i="'+i+'"><b class="mono">'+esc(o.centro_custo)+'</b> '+esc(o.nome)+'</button>').join(''):'<p>Não tem obras atribuídas.</p>')+'<button class="ob" data-i="-1">Usar sem obra <small>(a medição fica só neste aparelho)</small></button></div>');
+    w.onclick=e=>{ const b=e.target.closest('[data-i]'); if(b)ok(+b.dataset.i<0?'livre':l[+b.dataset.i]) } }) }
 async function nmArranque(){
   let s=await sb.auth.getSession(); if(!s.data.session)await nmLogin();
   s=await sb.auth.getSession(); NM.uid=s.data.session.user.id;
   const pq=await sb.from('pessoas').select('papel,ativo,organizacao_id').eq('id',NM.uid).maybeSingle(); NM.papel=pq.data&&pq.data.papel; NM.org=pq.data&&pq.data.organizacao_id;
   if(!pq.data||!pq.data.ativo||NM.papel==='equipa'){ nmEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   const id=new URLSearchParams(location.search).get('obra'); let ob;
-  if(id){ const oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
+  if(id==='livre')ob='livre'; else if(id){ const oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
   if(!ob)ob=await nmListaObras();
+  if(ob==='livre'){ await nmArrancaLivre(); return }
   nmEcra('<div class="box"><h2>A abrir a obra…</h2><p class="n">A carregar a base de dados e a medição.</p></div>');
   const cq=await sb.from('contratos').select('id,nome,cliente,valor,criado_em').eq('obra_id',ob.id).order('criado_em');
   NM.ob={id:ob.id,cc:ob.centro_custo,nome:ob.nome,contratos:(cq.data||[]).map(c=>({id:c.id,nome:c.nome,cliente:c.cliente||'',valor:c.valor}))};
@@ -6445,6 +6448,20 @@ async function nmArranque(){
   else if(!NM.soLeitura&&rasc&&rasc.dirty&&rasc.base!==NM.versao){ await nmDiz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   if(!d&&!NM.soLeitura)toast('Obra nova. Comece do zero ou importe um Excel («Abrir»).',5000);
   nmUi(); nmFlush(); document.title='Medição · '+NM.ob.cc;
+  setTimeout(()=>{ nmEcraFim(); NM.pronto=true },300) }
+
+/* ---- uso sem obra: a medição fica só neste aparelho; a base IP e as alterações à base são da organização ---- */
+async function nmArrancaLivre(){
+  NM.livre=true; NM.ob=null;
+  nmEcra('<div class="box"><h2>A abrir…</h2><p class="n">A carregar a base de dados.</p></div>');
+  const bq=await sb.from('bloqueios').select('chave'), bl=(bq.data||[]).map(b=>b.chave);
+  NM.soLeitura=!(NM.papel==='administrador'||NM.papel==='diretor'||(NM.papel==='encarregado'&&bl.indexOf('app:medicao')<0));
+  await nmCarregaForn(); await nmCarregaBase();
+  const rasc=await idbGet('rascunho:rapido');
+  if(rasc&&rasc.st){ NM.carregando=true;
+    try{ st=rasc.st; if(rasc.VERS&&Array.isArray(rasc.VERS.lista))VERS=rasc.VERS; garante(); nmRestauraEstado(); nmReaplica(); $('#agrup').value=st.agrup||'troco'; rAll() }finally{ NM.carregando=false }
+    LASTHASH=estHash(); DIRTY=false }
+  nmUi(); nmFlush(); document.title='Medição · sem obra';
   setTimeout(()=>{ nmEcraFim(); NM.pronto=true },300) }
 
 /* ---- menu, botões ---- */

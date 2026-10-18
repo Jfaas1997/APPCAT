@@ -921,6 +921,8 @@ $('b-print').addEventListener('click',function(){ window.print(); });
 })();
 
 /* ===================== SOFTWARE CONSOLAS ONLINE: obra na base, modo rápido só neste aparelho ===================== */
+banner=function(){ var el=$('banner'); if(D.obra){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="banner rap"><span><b>Sem obra.</b> Serve para cálculos e testes: o que fizer fica só neste aparelho. Para guardar por obra, abra o Software Consolas dentro da obra, na Central.</span></div>'; };
 var sb=supabase.createClient('https://dnllrbgzkgrerkybtjjl.supabase.co','sb_publishable_Hro5FepbHNEFu2_w5TbBNw_FaHywmj_',{auth:{persistSession:true,autoRefreshToken:true}});
 var ON={uid:null,papel:null,org:null,versao:null,soLeitura:false,pronto:false,obraId:null};
 var PAUSA_ON=12000;
@@ -1026,7 +1028,8 @@ async function onArranque(){
   var pq=await sb.from('pessoas').select('papel,ativo,organizacao_id').eq('id',ON.uid).maybeSingle(); ON.papel=pq.data&&pq.data.papel; ON.org=pq.data&&pq.data.organizacao_id;
   if(!pq.data||!pq.data.ativo||ON.papel==='equipa'){ onEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   var id=new URLSearchParams(location.search).get('obra'), ob=null;
-  if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
+  if(id&&id!=='livre'){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
+  if(id==='livre')ob='rapido';
   if(!ob)ob=await onListaObras();
   if(ob==='rapido'){ onEcraFim(); ON.pronto=true; return }
   onEcra('<div class="box"><h2>A abrir a obra…</h2></div>');
