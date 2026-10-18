@@ -1928,11 +1928,12 @@ async function onCarregaBaseAdmin(){
   if(ON.papel!=='administrador'){ diz('Só o administrador carrega a base RCT.'); return }
   var inp=document.createElement('input'); inp.type='file'; inp.multiple=true; inp.accept='.xlsx,.json';
   inp.onchange=async function(){ var fs=Array.prototype.slice.call(inp.files); if(!fs.length)return;
-    var ok=['Montagens_RCT.xlsx','Montagens_RCT_desenhos.json','Desenhos_RCT.json'], erros=[];
-    var bons=fs.filter(function(f){ if(ok.indexOf(f.name)<0){ erros.push(f.name); return false } return true });
-    if(!bons.length){ diz('Escolha ficheiros com estes nomes: '+ok.join(', ')+'.'); return }
+    var ok=['Montagens_RCT.xlsx','Montagens_RCT_desenhos.json','Desenhos_RCT.json'], erros=[], nx=fs.filter(function(f){ return /^montagens_rct.*\.xlsx$/i.test(f.name) && !/desenhos/i.test(f.name) });
+    if(nx.length>1){ diz('Escolha só um ficheiro de montagens (Excel). Escolheu '+nx.length+': '+nx.map(function(f){ return esc(f.name) }).join(', ')+'.'); return }
+    var bons=fs.filter(function(f){ if(nx[0]===f){ f.nomeSrv='Montagens_RCT.xlsx'; return true } if(ok.indexOf(f.name)<0){ erros.push(f.name); return false } f.nomeSrv=f.name; return true });
+    if(!bons.length){ diz('Escolha o Excel das montagens (Montagens_RCT….xlsx) e os dois JSON: '+ok.slice(1).join(', ')+'.'); return }
     if(!(await sim('Vou carregar: '+bons.map(function(f){ return esc(f.name) }).join(', ')+'. Substitui os da organização.'+(erros.length?' Ignorados: '+erros.map(esc).join(', ')+'.':''),'Carregar')))return;
-    try{ for(var f of bons){ var up=await sb.storage.from('documentos').upload(DIRB()+'/'+f.name,f,{upsert:true,contentType:/json$/.test(f.name)?'application/json':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); if(up.error)throw up.error }
+    try{ for(var f of bons){ var up=await sb.storage.from('documentos').upload(DIRB()+'/'+(f.nomeSrv||f.name),f,{upsert:true,contentType:/json$/.test(f.name)?'application/json':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); if(up.error)throw up.error }
       await onCarregaBase(); toast('Base RCT carregada.',4000) }catch(e){ diz('Não consegui carregar: '+esc(e.message)) } };
   inp.click() }
 
