@@ -6328,6 +6328,7 @@ async function nmBaseIP(){
   const stamp=f.name+'|'+(f.updated_at||f.created_at);
   let c=null; try{ c=await idbGet('ipcache') }catch(e){}
   if(c&&c.stamp===stamp&&c.org===NM.org)return {ip:c.ip,nome:f.name,t:Date.parse(f.updated_at||f.created_at)};
+  try{ const w=document.getElementById('nmLogin'); const p=w&&!w.hidden&&w.querySelector('.n'); if(p)p.textContent='A preparar a base de dados IP. Só demora na primeira vez neste aparelho…' }catch(e){}
   const r=await DOCS().download(NM_BASE_DIR()+'/'+f.name); if(r.error)throw r.error;
   const wb=XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'}), {base}=lerBase([wb]);
   if(!base.d.length||!base.m.length)throw new Error('A base IP guardada está vazia.');

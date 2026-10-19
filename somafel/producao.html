@@ -6621,7 +6621,7 @@ async function nmArranque(){
     if(await nmSim('Há alterações deste aparelho que ainda não foram para o servidor. Recuperá-las?','Recuperar')){ aplicaSnap(rasc.json); LASTHASH='forcar'; DIRTY=true; mostraSujo() } }
   else if(!NM.soLeitura&&rasc&&rasc.dirty&&rasc.base!==NM.versao){ await nmDiz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   if(!d&&!NM.soLeitura)toast('Obra nova. Pode começar do zero ou importar um Excel («Abrir»).',5000);
-  nmUi(); nmFlush(); document.title='Produção · '+NM.ob.cc; setTimeout(function(){ nmEcraFim(); NM.pronto=true },300) }
+  nmUi(); nmFlush(); document.title='Produção · '+NM.ob.cc; setTimeout(function(){ nmEcraFim(); NM.pronto=true },60) }
 
 /* ---- menu Obra, ajuda ---- */
 function nmMenu(on){ var m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on)$('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'Sem obra aberta' }
