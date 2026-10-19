@@ -960,7 +960,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
   </div>
   <div class="view" id="vMon">
     <div class="pills" data-pills><button data-vv="mon">Montagens <span data-pn="mon"></span></button><button data-vv="des">Desenhos <span data-pn="des"></span></button></div>
-    <div class="bar"><input id="tQ" class="grow" placeholder="Procurar montagem (código ou nome)…"><select id="tFil" title="Filtrar montagens"><option value="">Todas</option><option value="mod">Só as alteradas ou novas</option><option value="alt">Só as alteradas (face à base IP)</option><option value="nova">Só as novas</option></select><button id="tAlt" title="Lista o que entrou, saiu e mudou face à base IP">Alterações à base IP</button><span class="n sp" id="tN"></span><span id="tSelMont"></span><button id="tNova" class="pri">+ Montagem</button><button id="tExp" title="Exporta todas as montagens (com as tuas alterações) no formato do Excel da base">Exportar montagens</button></div>
+    <div class="bar"><input id="tQ" class="grow" placeholder="Procurar montagem (código ou nome)…"><select id="tFil" title="Filtrar montagens"><option value="">Todas</option><option value="mod">Só as alteradas ou novas</option><option value="alt">Só as alteradas (face à base IP)</option><option value="nova">Só as novas</option></select><button id="tImp" title="Acrescenta montagens novas a partir de um ficheiro Montagens_RCT_novas.json">Importar montagens novas…</button><button id="tAlt" title="Lista o que entrou, saiu e mudou face à base IP">Alterações à base IP</button><span class="n sp" id="tN"></span><span id="tSelMont"></span><button id="tNova" class="pri">+ Montagem</button><button id="tExp" title="Exporta todas as montagens (com as tuas alterações) no formato do Excel da base">Exportar montagens</button></div>
     <div class="rsplit"><div class="rl"><div class="scroll lstm" id="tLista"></div></div><div class="rr"><div class="scroll"><div class="pad" id="tDet"></div></div></div></div>
   </div>
   <div class="view" id="vDes"><div class="pills" data-pills><button data-vv="mon">Montagens <span data-pn="mon"></span></button><button data-vv="des">Desenhos <span data-pn="des"></span></button></div>
@@ -1675,6 +1675,13 @@ function rMon(c){
   det.innerHTML=h }
 $('#tLista').addEventListener('click',function(e){ var b=e.target.closest('button[data-t]'); if(b){ UI.tSel=b.dataset.t; render() } });
 $('#tQ').addEventListener('input',function(){ UI.tQ=this.value; render() });
+$('#tImp').onclick=function(){ var inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=async function(){ var f=inp.files[0]; if(!f)return; try{ var j=JSON.parse(await f.text()); if(!j||j.tipo!=='montagens-novas'||!j.m)throw new Error('não é um ficheiro de montagens novas'); if(!ME)recalcME();
+      var cods=Object.keys(j.m), jaExiste=cods.filter(function(c){ return ME.mont[c] });
+      if(!(await sim('Importar '+cods.length+' montagens novas ('+cods.join(', ')+')?'+(jaExiste.length?' Já existem e serão substituídas: '+jaExiste.join(', ')+'.':''),'Importar')))return;
+      cods.forEach(function(c){ var o=j.m[c]; ST.montEd[c]={code:c,nome:o.nome||'',mats:(o.mats||[]).map(function(x){ return {ip:x.ip||'',d:x.d,q:x.q} })} });
+      UI.tSel=cods[0]; refazMon(); toast(cods.length+' montagens novas importadas.',4000)
+    }catch(e){ diz('Não consegui importar: '+esc(e.message)) } }; inp.click() };
 $('#tFil').addEventListener('change',function(){ UI.tFil=this.value; render() });
 $('#tAlt').onclick=async function(){ var L=listaAlt();
   var cor={'Entrou':'ok','Alterado':'av','Saiu':'er','Montagem nova':'ok','Nome alterado':'av'};
