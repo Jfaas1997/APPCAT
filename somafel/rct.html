@@ -1970,7 +1970,7 @@ async function onArranque(){
     if(await sim('Há alterações deste aparelho que ainda não foram para o servidor. Recuperá-las?','Recuperar')){ aplica(JSON.parse(rasc.json)); LAST='forcar'; DIRTY=true } }
   else if(!ON.soLeitura&&rasc&&rasc.dirty&&rasc.base!==ON.versao){ await diz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   ui(); flush(); document.title='Medição RCT · '+NM.ob.cc;
-  setTimeout(function(){ onEcraFim(); ON.pronto=true },300) }
+  setTimeout(function(){ onEcraFim(); ON.pronto=true },60) }
 
 /* ---- uso sem obra: a medição fica só neste aparelho; as montagens são da organização ---- */
 async function onArrancaLivre(){
@@ -1983,7 +1983,7 @@ async function onArrancaLivre(){
   ON.carregando=true;
   try{ if(rasc&&rasc.json)aplica(JSON.parse(rasc.json)); else aplica(null); LAST=snap(); DIRTY=false }finally{ ON.carregando=false }
   ui(); flush(); document.title='Medição RCT · sem obra';
-  setTimeout(function(){ onEcraFim(); ON.pronto=true },300) }
+  setTimeout(function(){ onEcraFim(); ON.pronto=true },60) }
 
 /* ---- menu ---- */
 menu=function(on){ var m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+ON.versao):'Sem obra'; $('#nBaseRct').hidden=(ON.papel!=='administrador') } };
