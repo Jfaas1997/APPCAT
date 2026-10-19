@@ -160,7 +160,8 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .ccount{font-size:12px;color:var(--muted);padding:6px 12px}
 .crows{flex:1;overflow:auto;padding:0 6px 8px}
 .crow{display:grid;grid-template-columns:86px 26px minmax(0,1fr) 44px;gap:8px;align-items:center;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-radius:6px;background:transparent;padding:7px 8px;cursor:pointer}
-.bib .crows .crow:hover{background:var(--soft)}.cman figure{margin:0 0 10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.cman img{display:block;width:100%;height:auto}.cman figcaption{font-size:11px;color:var(--muted);padding:5px 10px;border-top:1px solid var(--line)}
+.bib .crows .crow:hover{background:var(--soft)}.ptabs{margin:14px 0 4px}.cman figcaption b{color:var(--ink)}
+.cman figure{margin:0 0 10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.cman img{display:block;width:100%;height:auto}.cman figcaption{font-size:11px;color:var(--muted);padding:5px 10px;border-top:1px solid var(--line)}
 .crow.on{background:var(--verdbg)!important;border-left-color:var(--brand)}
 .crow,.cfam{content-visibility:auto;contain-intrinsic-size:auto 52px}.cfam{contain-intrinsic-size:auto 32px}
 .crow .cc{font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crow .cv{font-size:11px;color:var(--muted);text-align:center}
@@ -432,16 +433,18 @@ function catDetDes(){
 async function catManual(){const box=$('#cMan');if(!box)return;const c=box.dataset.c;
   if(CAT.man===undefined){try{const r=await fetch('manual/idx.json');CAT.man=r.ok?await r.json():null}catch(e){CAT.man=null}}
   const b=$('#cMan');if(!b||b.dataset.c!==c)return;const l=CAT.man&&CAT.man[c];
-  if(!l){b.innerHTML='<p class="hint">'+(CAT.man?'Esta peça não consta do Manual de Peças de Catenária (GR.MN.CAT.003 v02).':'Manual de peças indisponível.')+'</p>';return}
-  b.innerHTML=l.map(x=>'<figure><a href="manual/'+x.f+'" target="_blank" rel="noopener" title="Abrir em grande"><img loading="lazy" src="manual/'+x.f+'" alt="Excerto do manual: '+esc(x.t)+'"></a><figcaption>'+esc(x.t)+' · pág. '+x.p+' do manual</figcaption></figure>').join('')}
+  if(!l){b.innerHTML='<p class="hint">'+(CAT.man?'Esta peça não consta do Manual de Peças de Catenária (GR.MN.CAT.003 v02 nem v01).':'Manual de peças indisponível.')+'</p>';return}
+  b.innerHTML=l.map(x=>'<figure><a href="manual/'+x.f+'" target="_blank" rel="noopener" title="Abrir em grande"><img loading="lazy" src="manual/'+x.f+'" alt="Excerto do manual: '+esc(x.t)+'"></a><figcaption><b>GR.MN.CAT.003 '+x.v+'</b> · pág. '+x.p+' · '+esc(x.t)+(x.v==='v01'?' · <i>só consta da versão v01 (a v02 já não inclui esta peça)</i>':'')+'</figcaption></figure>').join('')}
 function catDetPec(){
   const B=CAT.base,i=CAT.selP;if(i==null||!B.p[i])return '<div class="cvaz"><b>Escolha uma peça à esquerda</b><p>Vê a ficha da peça, o desenho onde está desenhada e em que montagens é usada.</p></div>';
   const p=B.p[i],dc=String(p[5]||'').split('/')[0].trim(),di=CAT.desIx.get(dc);
   let h='<div class="dh"><div><div class="dk">Peça · '+esc(CAT_FAM[String(p[0]).slice(0,2)]||'')+'</div><h2 class="mono">'+esc(p[0])+'</h2><div class="dn">'+esc(p[3]||'')+'</div><div class="dm"><span>SAP / nomenclatura <b class="mono">'+esc(p[2]||'—')+'</b></span><span>Código antigo <b class="mono">'+esc(p[1]||'—')+'</b></span><span>Desenho <b class="mono">'+(di!=null?'<button class="lk mono" data-ir="'+di+'">'+esc(p[5])+'</button>':esc(p[5]||'—'))+'</b></span>'+(p[4]?'<span>Ref. no desenho <b class="mono">'+esc(p[4])+'</b></span>':'')+(p[6]?'<span>'+esc(p[6])+'</span>':'')+'</div></div></div>';
-  h+='<div class="dsec">Manual de peças <span>GR.MN.CAT.003 v02</span></div><div id="cMan" class="cman" data-c="'+esc(p[0])+'"><p class="hint">A procurar no manual…</p></div>';
-  const us=CAT.usaP.get(i)||[];
-  h+='<div class="dsec">Usada em <span>'+us.length+' montage'+(us.length===1?'m':'ns')+'</span></div>'+(us.length?'<table class="ctab"><thead><tr><th>Montagem</th><th>Designação do desenho</th><th class="n">Qtd.</th><th>Un.</th></tr></thead><tbody>'+us.map(j=>{const r=B.m[j];return '<tr><td><button class="lk mono" data-ir="'+r[0]+'" data-irm="'+esc(r[1])+'">'+esc(catLabel(r[0],r[1]))+'</button></td><td>'+esc(B.d[r[0]][4])+'</td><td class="n">'+esc(String(r[5]).replace('.',','))+'</td><td>'+esc(r[6]||'')+'</td></tr>'}).join('')+'</tbody></table>':'<p class="hint">Não aparece em nenhuma montagem da base.</p>');
-  if(di!=null){h+='<div class="dsec">Desenho '+esc(B.d[di][0])+'</div><div class="dprev" id="cPrev"></div>';CAT.prevDi=di}else CAT.prevDi=null;
+  const us=CAT.usaP.get(i)||[],pt=CAT.pTab||'pec';
+  h+='<div class="dchips ptabs"><button class="chip'+(pt==='pec'?' on':'')+'" data-pt="pec">Peça e norma</button><button class="chip'+(pt==='des'?' on':'')+'" data-pt="des">Desenho'+(di!=null?' <span>'+esc(B.d[di][0])+'</span>':'')+'</button><button class="chip'+(pt==='mon'?' on':'')+'" data-pt="mon">Montagens <span>'+us.length+'</span></button></div>';
+  CAT.prevDi=null;
+  if(pt==='pec')h+='<div class="dsec">Norma · Manual de Peças de Catenária <span>GR.MN.CAT.003</span></div><div id="cMan" class="cman" data-c="'+esc(p[0])+'"><p class="hint">A procurar no manual…</p></div>';
+  else if(pt==='des'){if(di!=null){h+='<div class="dsec">Desenho '+esc(B.d[di][0])+' <span>'+esc(B.d[di][4]||'')+'</span></div><div class="dprev" id="cPrev"></div>';CAT.prevDi=di}else h+='<p class="hint">Esta peça não tem desenho associado na base.</p>'}
+  else h+='<div class="dsec">Usada em <span>'+us.length+' montage'+(us.length===1?'m':'ns')+'</span></div>'+(us.length?'<table class="ctab"><thead><tr><th>Montagem</th><th>Designação do desenho</th><th class="n">Qtd.</th><th>Un.</th></tr></thead><tbody>'+us.map(j=>{const r=B.m[j];return '<tr><td><button class="lk mono" data-ir="'+r[0]+'" data-irm="'+esc(r[1])+'">'+esc(catLabel(r[0],r[1]))+'</button></td><td>'+esc(B.d[r[0]][4])+'</td><td class="n">'+esc(String(r[5]).replace('.',','))+'</td><td>'+esc(r[6]||'')+'</td></tr>'}).join('')+'</tbody></table>':'<p class="hint">Não aparece em nenhuma montagem da base.</p>');
   return h}
 function catCsv(){const B=CAT.base;let rows,nome;
   if(CAT.tab==='des'){rows=[['Código Desenho','Nº Documento','Versão','Data Publicação','Designação','Ficheiro']].concat(B.d.map((r,i)=>{const t=catTipo(i);return [r[0],r[1],r[2],String(r[5]||'').slice(0,10),r[4],t.f?t.f.nome:'']}));nome='Indice_de_desenhos.csv'}
@@ -492,15 +495,17 @@ function catRender(){
   }
   h+='</section><section class="cdet" id="cDet">'+(CAT.tab==='des'?catDetDes():catDetPec())+'</section></div><p class="hint cfoot">Base: '+esc(CAT.nome)+'. A edição da base faz-se na Medição › Base de dados. '+B.p.length+' peças · '+B.d.length+' desenhos · '+B.m.length+' linhas de montagem.</p></div>';
   const sc=$('#cRows')?$('#cRows').scrollTop:0;pg.innerHTML=h;if($('#cRows'))$('#cRows').scrollTop=sc;ligaCat();
-  const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null)catMostra($('#cPrev'),di,false);if(CAT.tab!=='des')catManual()}
+  catPos()}
+function catPos(){const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null&&$('#cPrev'))catMostra($('#cPrev'),di,false);if(CAT.tab!=='des')catManual()}
 function catSel(x){const rows=$('#cRows');if(rows)rows.querySelectorAll('.crow.on').forEach(r=>r.classList.remove('on'));x.classList.add('on');
-  const ds=$('#cDet');ds.innerHTML=CAT.tab==='des'?catDetDes():catDetPec();ds.scrollTop=0;const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null)catMostra($('#cPrev'),di,false);if(CAT.tab!=='des')catManual()}
+  const ds=$('#cDet');ds.innerHTML=CAT.tab==='des'?catDetDes():catDetPec();ds.scrollTop=0;catPos()}
 function ligaCat(){
   const pg=$('#pg');
   pg.onclick=e=>{if(S.vista!=='desenhos')return;const t=e.target;let x;
     if((x=t.closest('[data-ct]'))){CAT.tab=x.getAttribute('data-ct');CAT.q='';catRender();return}
     if((x=t.closest('[data-cd]'))){CAT.sel=+x.getAttribute('data-cd');CAT.vMont=null;catSel(x);return}
     if((x=t.closest('[data-cp]'))){CAT.selP=+x.getAttribute('data-cp');catSel(x);return}
+    if((x=t.closest('[data-pt]'))){CAT.pTab=x.getAttribute('data-pt');const ds=$('#cDet');ds.innerHTML=catDetPec();catPos();return}
     if((x=t.closest('[data-cm]'))){CAT.vMont=x.getAttribute('data-cm');const ds=$('#cDet'),sc=ds.scrollTop;ds.innerHTML=catDetDes();ds.scrollTop=sc;catMostra($('#cPrev'),CAT.sel,false);return}
     if((x=t.closest('[data-ir]'))){CAT.tab='des';CAT.sel=+x.getAttribute('data-ir');CAT.vMont=x.hasAttribute('data-irm')?x.getAttribute('data-irm'):null;CAT.q='';catRender();const r=$('.crow.on');if(r)r.scrollIntoView({block:'center'});return}
     if((x=t.closest('[data-ip]'))){CAT.tab='pec';CAT.selP=+x.getAttribute('data-ip');CAT.q='';CAT.fam='';catRender();const r2=$('.crow.on');if(r2)r2.scrollIntoView({block:'center'});return}
