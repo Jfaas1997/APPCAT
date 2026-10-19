@@ -913,6 +913,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
       <small id="nInfo">Sem pasta de obra</small>
       <button data-n="trocar">Trocar de obra</button>
       <button data-n="central">Central de Obras</button>
+      <button data-n="passa" id="nPassa" hidden>Passar para uma obra…</button>
       <button data-n="reabrir" id="nReabrir" hidden style="display:none">.</button>
       <button data-n="json">Abrir um ficheiro .json…</button>
       <button data-n="saveas">Guardar uma cópia .json…</button>
@@ -2021,10 +2022,32 @@ async function onArrancaLivre(){
   ui(); flush(); document.title='Medição RCT · sem obra';
   setTimeout(function(){ onEcraFim(); ON.pronto=true },60) }
 
+/* ---- passar a medição «sem obra» para uma obra ---- */
+async function onPassaObra(){
+  if(!NM.livre||ON.soLeitura)return;
+  if(vazio()){ await diz('Ainda não há nada para passar. Faça primeiro a medição sem obra.'); return }
+  var q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
+  if(!l.length){ await diz('Não há obras. Crie primeiro a obra na Central.'); return }
+  var r=await modal({titulo:'Passar para uma obra',corpo:'<p>A medição feita sem obra passa para a obra que escolher. O rascunho sem obra fica vazio.</p><label>Obra</label><select id="pObra">'+l.map(function(o,i){ return '<option value="'+i+'">'+esc(o.centro_custo)+' · '+esc(o.nome)+'</option>' }).join('')+'</select>',
+    botoes:[{t:'Cancelar',v:null},{t:'Passar',p:true,v:function(c){ return +c.querySelector('#pObra').value }}],cancela:null});
+  if(r==null)return; var ob=l[r];
+  var ex=await sb.from('dados_apps').select('versao,atualizado_em').eq('obra_id',ob.id).eq('app','rct').maybeSingle();
+  if(ex.data&&!(await sim('A obra '+esc(ob.centro_custo)+' já tem uma Medição RCT (guardada em '+new Date(ex.data.atualizado_em).toLocaleDateString('pt-PT')+'). Substituí-la pela medição sem obra? A que lá está deixa de estar na obra.','Substituir')))return;
+  try{
+    var keep=NM.ob, p; NM.ob={id:ob.id,cc:ob.centro_custo,nome:ob.nome};
+    try{ p={esq:2,st:JSON.parse(conteudo()),resumo:onResumo()} }finally{ NM.ob=keep }
+    var w=ex.data?await sb.from('dados_apps').update({dados:p,atualizado_por:ON.uid}).eq('obra_id',ob.id).eq('app','rct').select('versao'):await sb.from('dados_apps').insert({obra_id:ob.id,app:'rct',dados:p,atualizado_por:ON.uid}).select('versao');
+    if(w.error)throw w.error;
+    await idbSet('rascunho:rapido',null); clearTimeout(NM.draftT); ON.carregando=true;
+    toast('Medição passada para a obra '+ob.centro_custo+'.',4000);
+    parent.postMessage({tipo:'abreObra',obraId:ob.id,app:'rct'},location.origin);
+    setTimeout(function(){ location.reload() },150)
+  }catch(e){ await diz('Não consegui passar para a obra: '+esc(e.message)) } }
+
 /* ---- menu ---- */
-menu=function(on){ var m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+ON.versao):'Sem obra'; $('#nBaseRct').hidden=(ON.papel!=='administrador') } };
+menu=function(on){ var m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+ON.versao):'Sem obra'; $('#nBaseRct').hidden=(ON.papel!=='administrador'); $('#nPassa').hidden=!(NM.livre&&!ON.soLeitura) } };
 $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b)return; menu(false); var a=b.getAttribute('data-n');
-  if(a==='trocar')location.href=location.pathname; else if(a==='central')location.href='index.html'; else if(a==='copias')restauraCopia(); else if(a==='baseRct')onCarregaBaseAdmin();
+  if(a==='trocar')location.href=location.pathname; else if(a==='central')location.href='index.html'; else if(a==='copias')restauraCopia(); else if(a==='baseRct')onCarregaBaseAdmin(); else if(a==='passa')onPassaObra();
   else if(a==='json')$('#fJson').click(); else if(a==='saveas')descarrega(JSON.stringify(JSON.parse(conteudo()),null,1),'medicao_rct_'+chave()+'_'+nmCarimbo()+'.json','application/json') };
 $('#bAjuda').onclick=function(){ modal({titulo:'Ajuda · Medição de RCT v'+VERSAO+' online',corpo:
   '<p><b>Dados online.</b> A medição de cada obra fica no servidor. Grava sozinha 12 segundos depois da última alteração. Sem rede, fica no rascunho deste aparelho e segue quando a rede voltar.</p>'

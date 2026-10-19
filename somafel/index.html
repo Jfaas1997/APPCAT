@@ -615,6 +615,7 @@ async function vBib(tipo){
 }
 window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.data)return;
   if(e.data.tipo==='voltar'){vai('visao');return}
+  if(e.data.tipo==='abreObra'&&e.data.obraId&&APPV[e.data.app]){const k=e.data.obraId+'|'+e.data.app;if(FR[k]){FR[k].remove();delete FR[k]}vai(e.data.app,e.data.obraId);return}
   if(e.data.tipo==='desenho'&&e.data.cod){try{const L=await listaBib('desenhos');const c=String(e.data.cod).toLowerCase();const m=L.filter(x=>x.nome.toLowerCase().includes(c));
     if(!m.length){aviso('O desenho '+e.data.cod+' não está no Catálogo (o administrador ainda não o carregou).',true);return}
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
