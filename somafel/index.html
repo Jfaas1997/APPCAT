@@ -162,6 +162,17 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .crow{display:grid;grid-template-columns:86px 26px minmax(0,1fr) 44px;gap:8px;align-items:center;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-radius:6px;background:transparent;padding:7px 8px;cursor:pointer}
 .bib .crows .crow:hover{background:var(--soft)}.ptabs{margin:14px 0 4px}.cman figcaption b{color:var(--ink)}
 .cman figure{margin:0 0 10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.cman img{display:block;width:100%;height:auto}.cman figcaption{font-size:11px;color:var(--muted);padding:5px 10px;border-top:1px solid var(--line)}
+#splash{position:fixed;inset:0;z-index:9999;background:#14181d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .4s}
+#splash.fim{opacity:0;pointer-events:none}
+#splash img{width:150px;height:auto}
+#splash .sb{width:280px;height:4px;background:rgba(255,255,255,.14);border-radius:4px;overflow:hidden}
+#splash .sb{position:relative}#splash .sb::after{content:'';position:absolute;top:0;left:0;height:100%;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:spB 1.4s linear infinite}@keyframes spB{from{transform:translateX(-100%)}to{transform:translateX(300%)}}
+#splash .sb i{display:block;height:100%;width:0;background:#F9D115;border-radius:4px;transition:width .35s ease}
+#splash p{margin:0;font-size:13px;color:rgba(255,255,255,.72);min-height:18px}
+#splash button{background:none;border:0;color:rgba(255,255,255,.5);font:inherit;font-size:12px;cursor:pointer;padding:6px 10px;border-radius:6px;opacity:0;animation:spX .3s 4s forwards}
+#splash button:hover{color:#fff;background:rgba(255,255,255,.08)}
+@keyframes spX{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#splash,#splash .sb i{transition:none}}
 .crow.on{background:var(--verdbg)!important;border-left-color:var(--brand)}
 .crow,.cfam{content-visibility:auto;contain-intrinsic-size:auto 52px}.cfam{contain-intrinsic-size:auto 32px}
 .crow .cc{font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crow .cv{font-size:11px;color:var(--muted);text-align:center}
@@ -314,18 +325,42 @@ async function arranca(){
   if(!eu||!eu.ativo){$('#raiz').innerHTML='<div id="entrada"><div class="cx"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Sem acesso</h1></div></div><p>A tua conta existe, mas ainda não foi associada a uma organização. Pede ao administrador para te dar acesso.</p><div class="acoes"><button id="sai">Sair</button></div></div></div>';$('#sai').onclick=sair;return}
   S.eu=eu;S.vista='obras';S.obra=null;
   if(gestor()){const b=await sb.from('bloqueios').select('chave,descricao');S.bloqLista=b.data||[];S.bloq=new Set(S.bloqLista.map(x=>x.chave))}
-  casca();vai('obras');aquece();
+  preparar();casca();vai('obras');
 }
 /* aquece a cache: descarrega em segundo plano o HTML e os scripts das apps, para abrirem mais depressa */
-function aquece(){const go=async()=>{try{const vistos=new Set();for(const k of Object.keys(APPV)){const u=APPV[k]+'.html';const t=await (await fetch(u)).text();
-  for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}}catch(e){}};
-  (window.requestIdleCallback||setTimeout)(()=>setTimeout(async()=>{await go();
-    /* pré-abre, escondidas, as apps que se usam sem obra, para abrirem logo */
-    for(const v of ['med','rct','cons']){await new Promise(r=>setTimeout(r,2500));
-      /* espera que o utilizador esteja parado (2,5 s sem rato/teclado) e que nada esteja a abrir, para não competir com ele */
-      for(let i=0;i<40&&S.eu&&(Date.now()-ULT<2500||document.querySelector('.carr,.pcarr'));i++)await new Promise(r=>setTimeout(r,700));
-      if(!S.eu)return;try{frameApp({id:'livre'},v)}catch(e){}}},1500))}
-let ULT=0;['pointerdown','keydown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{ULT=Date.now()},{passive:true,capture:true}));
+/* ===== ecrã de arranque: prepara tudo (apps, base do catálogo, apps «sem obra») e só depois mostra a Central ===== */
+let ULT=0;
+function preparar(){
+  if(window.__prep||!gestor())return;window.__prep=1;
+  const el=document.createElement('div');el.id='splash';
+  el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="sb"><i></i></div><p id="spT">A preparar a Central…</p><button type="button" id="spX">Entrar já</button>';
+  document.body.appendChild(el);
+  let pct=0,fechado=false,fim;
+  const barra=(p,t)=>{if(fechado)return;pct=Math.max(pct,p);el.querySelector('.sb i').style.width=pct+'%';if(t)el.querySelector('#spT').textContent=t};
+  const fecha=()=>{if(fechado)return;fechado=true;barra(100);el.classList.add('fim');setTimeout(()=>el.remove(),450)};
+  el.querySelector('#spX').onclick=fecha;
+  const dorme=ms=>new Promise(r=>setTimeout(r,ms));
+  const pronto=async(f,ms)=>{for(let i=0;i<ms/200&&!fechado;i++){try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');if(f.dataset.ok&&((l&&l.hidden)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)))return true}catch(e){}await dorme(200)}return false};
+  setTimeout(fecha,40000); /* nunca prende o utilizador */
+  (async()=>{
+    try{
+      barra(4,'A preparar as aplicações…');
+      const vistos=new Set(),ks=Object.keys(APPV);let n=0;
+      await Promise.all(ks.map(async k=>{try{const t=await (await fetch(APPV[k]+'.html')).text();
+        for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}catch(e){}
+        barra(4+(++n/ks.length)*26)}));
+      barra(32,'A abrir o catálogo…');
+      try{await catCarrega()}catch(e){}
+      barra(48);
+      const NOMES={med:'Medição',rct:'Medição RCT',cons:'Software Consolas'};let i=0;
+      for(const v of ['med','rct','cons']){
+        if(fechado)break;barra(48+i*16,'A abrir '+NOMES[v]+'…');
+        try{const f=frameApp({id:'livre'},v);await pronto(f,25000)}catch(e){}
+        i++;barra(48+i*16)}
+      barra(98,'Pronto');await dorme(150)
+    }catch(e){console.error(e)}
+    fecha()
+  })()}
 async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};ecraEntrada()}
 
 function ico(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
