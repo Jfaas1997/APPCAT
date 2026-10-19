@@ -194,6 +194,9 @@ button.sm{padding:4px 10px;font-size:12.5px}
 <style>.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}.so{transition:background .15s,border-color .15s}.pg.entra{animation:entra .18s ease-out}</style>
 <script src="movimento.js"></script>
 <link rel="manifest" href="manifest-central.json">
+<script>/* janela própria (atalho): abre maximizada, uma vez por sessão */
+(function(){try{if(parent!==window||sessionStorage.getItem('mx'))return;sessionStorage.setItem('mx','1');var w=screen.availWidth,h=screen.availHeight;
+if(window.outerWidth<w-40||window.outerHeight<h-40){window.moveTo(screen.availLeft||0,screen.availTop||0);window.resizeTo(w,h)}}catch(e){}})();</script>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#FBD015">
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
