@@ -161,6 +161,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .crows{flex:1;overflow:auto;padding:0 6px 8px}
 .crow{display:grid;grid-template-columns:86px 26px minmax(0,1fr) 44px;gap:8px;align-items:center;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-radius:6px;background:transparent;padding:7px 8px;cursor:pointer}
 .bib .crows .crow:hover{background:var(--soft)}.crow.on{background:var(--verdbg)!important;border-left-color:var(--brand)}
+.crow,.cfam{content-visibility:auto;contain-intrinsic-size:auto 52px}.cfam{contain-intrinsic-size:auto 32px}
 .crow .cc{font-weight:600;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crow .cv{font-size:11px;color:var(--muted);text-align:center}
 .crow .cn{font-size:13px;line-height:1.3;overflow:hidden}.crow .cn small{display:block;color:var(--muted);font-size:11px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crow .cx{font-family:var(--mono);font-size:10px;text-align:center;border-radius:4px;padding:2px 0;background:var(--soft);color:var(--muted)}
@@ -311,8 +312,12 @@ async function arranca(){
   if(!eu||!eu.ativo){$('#raiz').innerHTML='<div id="entrada"><div class="cx"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Sem acesso</h1></div></div><p>A tua conta existe, mas ainda não foi associada a uma organização. Pede ao administrador para te dar acesso.</p><div class="acoes"><button id="sai">Sair</button></div></div></div>';$('#sai').onclick=sair;return}
   S.eu=eu;S.vista='obras';S.obra=null;
   if(gestor()){const b=await sb.from('bloqueios').select('chave,descricao');S.bloqLista=b.data||[];S.bloq=new Set(S.bloqLista.map(x=>x.chave))}
-  casca();vai('obras');
+  casca();vai('obras');aquece();
 }
+/* aquece a cache: descarrega em segundo plano o HTML e os scripts das apps, para abrirem mais depressa */
+function aquece(){const go=async()=>{try{const vistos=new Set();for(const k of Object.keys(APPV)){const u=APPV[k]+'.html';const t=await (await fetch(u)).text();
+  for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}}catch(e){}};
+  (window.requestIdleCallback||setTimeout)(()=>setTimeout(go,1500))}
 async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};ecraEntrada()}
 
 function ico(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
@@ -479,12 +484,14 @@ function catRender(){
   h+='</section><section class="cdet" id="cDet">'+(CAT.tab==='des'?catDetDes():catDetPec())+'</section></div><p class="hint cfoot">Base: '+esc(CAT.nome)+'. A edição da base faz-se na Medição › Base de dados. '+B.p.length+' peças · '+B.d.length+' desenhos · '+B.m.length+' linhas de montagem.</p></div>';
   const sc=$('#cRows')?$('#cRows').scrollTop:0;pg.innerHTML=h;if($('#cRows'))$('#cRows').scrollTop=sc;ligaCat();
   const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null)catMostra($('#cPrev'),di,false)}
+function catSel(x){const rows=$('#cRows');if(rows)rows.querySelectorAll('.crow.on').forEach(r=>r.classList.remove('on'));x.classList.add('on');
+  const ds=$('#cDet');ds.innerHTML=CAT.tab==='des'?catDetDes():catDetPec();ds.scrollTop=0;const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null)catMostra($('#cPrev'),di,false)}
 function ligaCat(){
   const pg=$('#pg');
   pg.onclick=e=>{if(S.vista!=='desenhos')return;const t=e.target;let x;
     if((x=t.closest('[data-ct]'))){CAT.tab=x.getAttribute('data-ct');CAT.q='';catRender();return}
-    if((x=t.closest('[data-cd]'))){CAT.sel=+x.getAttribute('data-cd');CAT.vMont=null;catRender();return}
-    if((x=t.closest('[data-cp]'))){CAT.selP=+x.getAttribute('data-cp');catRender();return}
+    if((x=t.closest('[data-cd]'))){CAT.sel=+x.getAttribute('data-cd');CAT.vMont=null;catSel(x);return}
+    if((x=t.closest('[data-cp]'))){CAT.selP=+x.getAttribute('data-cp');catSel(x);return}
     if((x=t.closest('[data-cm]'))){CAT.vMont=x.getAttribute('data-cm');const ds=$('#cDet'),sc=ds.scrollTop;ds.innerHTML=catDetDes();ds.scrollTop=sc;catMostra($('#cPrev'),CAT.sel,false);return}
     if((x=t.closest('[data-ir]'))){CAT.tab='des';CAT.sel=+x.getAttribute('data-ir');CAT.vMont=x.hasAttribute('data-irm')?x.getAttribute('data-irm'):null;CAT.q='';catRender();const r=$('.crow.on');if(r)r.scrollIntoView({block:'center'});return}
     if((x=t.closest('[data-ip]'))){CAT.tab='pec';CAT.selP=+x.getAttribute('data-ip');CAT.q='';CAT.fam='';catRender();const r2=$('.crow.on');if(r2)r2.scrollIntoView({block:'center'});return}
