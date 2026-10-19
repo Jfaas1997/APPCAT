@@ -1924,15 +1924,22 @@ restauraCopia=async function(){
 
 /* ---- base de montagens, referências e alterações às montagens (da organização) ---- */
 var DIRB=function(){ return '_org/'+ON.org+'/base_rct' };
+async function onFich(nome,x){ var stamp=nome+'|'+(x.updated_at||x.created_at)+'|'+(x.metadata&&x.metadata.size||0), key='rctf:'+nome, c=null;
+  try{ c=await idbGet(key) }catch(e){}
+  if(c&&c.stamp===stamp&&c.org===ON.org&&c.d)return c.d;
+  var r=await sb.storage.from('documentos').download(DIRB()+'/'+nome); if(r.error)throw r.error;
+  var d=nome.slice(-5)==='.json'?JSON.parse(await r.data.text()):await r.data.arrayBuffer();
+  try{ await idbSet(key,{stamp:stamp,org:ON.org,d:d}) }catch(e){}
+  return d }
 async function onCarregaBase(){
   try{
     var l=await sb.storage.from('documentos').list(DIRB(),{limit:50}), nomes={}; (l.data||[]).forEach(function(x){ if(x.id)nomes[x.name]=x });
     var x=nomes['Montagens_RCT.xlsx'];
     if(!x){ onAviso('Sem base de montagens RCT. O administrador carrega-a em Obra ▾ › Carregar base RCT…'); return }
-    var t=Date.parse(x.updated_at||x.created_at), r=await sb.storage.from('documentos').download(DIRB()+'/Montagens_RCT.xlsx'); if(r.error)throw r.error;
-    window.postMessage({cmd:'montagensRct',nome:'Montagens_RCT.xlsx',t:t,buf:await r.data.arrayBuffer(),lista:[]},'*');
-    var md=null, dr=null;
-    for(var k of ['Montagens_RCT_desenhos.json','Desenhos_RCT.json']){ if(!nomes[k])continue; var j=await sb.storage.from('documentos').download(DIRB()+'/'+k); if(!j.error){ var v=JSON.parse(await j.data.text()); if(k[0]==='M')md=v; else dr=v } }
+    var t=Date.parse(x.updated_at||x.created_at);
+    var rs=await Promise.all([onFich('Montagens_RCT.xlsx',x), nomes['Montagens_RCT_desenhos.json']?onFich('Montagens_RCT_desenhos.json',nomes['Montagens_RCT_desenhos.json']):null, nomes['Desenhos_RCT.json']?onFich('Desenhos_RCT.json',nomes['Desenhos_RCT.json']):null]);
+    window.postMessage({cmd:'montagensRct',nome:'Montagens_RCT.xlsx',t:t,buf:rs[0].slice(0),lista:[]},'*');
+    var md=rs[1], dr=rs[2];
     if(md||dr)window.postMessage({cmd:'rctRef',md:md,dr:dr},'*');
     onAviso('')
   }catch(e){ console.error(e); onAviso('Não consegui carregar a base RCT: '+e.message) } }

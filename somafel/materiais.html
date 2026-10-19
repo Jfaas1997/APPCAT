@@ -8762,8 +8762,10 @@ async function nmCarregaLivro(){
     var stamp=f.name+'|'+(f.updated_at||f.created_at), c=null; try{ c=await idbGet('livrocache') }catch(e){}
     var p;
     if(c&&c.stamp===stamp&&c.org===NM.org)p=c.p;
-    else { var r=await sb.storage.from('documentos').download(dir+'/'+f.name); if(r.error)throw r.error;
-      p=nmPecasDoWb(XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'}));
+    else { try{ var w0=document.getElementById('nmLogin'),p0=w0&&!w0.hidden&&w0.querySelector('.n'); if(p0)p0.textContent='A preparar o livro de peças. Só demora na primeira vez neste aparelho…' }catch(e){}
+      var r=await sb.storage.from('documentos').download(dir+'/'+f.name); if(r.error)throw r.error;
+      var u8=new Uint8Array(await r.data.arrayBuffer()), nomesF=XLSX.read(u8,{type:'array',bookSheets:true}).SheetNames.filter(function(n){ return nmSemAcento(n)==='pecas' });
+      p=nmPecasDoWb(XLSX.read(u8,{type:'array',sheets:nomesF.length?nomesF:undefined}));
       if(p.length>=50){ try{ await idbSet('livrocache',{stamp:stamp,org:NM.org,p:p}) }catch(e){} } }
     var res=window.nmLivro(p,f.name); if(res==='vazio')nmAvisoLivro('A base IP não tem folha «Pecas» com peças.'); else nmAvisoLivro('')
   }catch(e){ console.error(e); nmAvisoLivro('Não consegui carregar o livro de peças: '+e.message) } }
@@ -8825,7 +8827,7 @@ async function nmArranque(){
   else if(!NM.soLeitura&&rasc&&rasc.dirty&&rasc.base!==NM.versao){ await nmDiz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   if(!d&&!NM.soLeitura)toast('Obra nova. Comece do zero ou importe um Excel («Abrir»).',5000);
   nmUi(); nmFlush(); document.title='Materiais · '+NM.ob.cc;
-  setTimeout(function(){ nmEcraFim(); NM.pronto=true },300) }
+  setTimeout(function(){ nmEcraFim(); NM.pronto=true },60) }
 
 /* ---- menu e botões ---- */
 nmMenu=function(on){ var m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'Sem obra'; $('#nExtraRef').hidden=(NM.papel!=='administrador') } };

@@ -321,7 +321,11 @@ function aquece(){const go=async()=>{try{const vistos=new Set();for(const k of O
   for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}}catch(e){}};
   (window.requestIdleCallback||setTimeout)(()=>setTimeout(async()=>{await go();
     /* pré-abre, escondidas, as apps que se usam sem obra, para abrirem logo */
-    for(const v of ['med','rct','cons']){await new Promise(r=>setTimeout(r,1200));if(!S.eu)return;try{frameApp({id:'livre'},v)}catch(e){}}},1500))}
+    for(const v of ['med','rct','cons']){await new Promise(r=>setTimeout(r,2500));
+      /* espera que o utilizador esteja parado (2,5 s sem rato/teclado) e que nada esteja a abrir, para não competir com ele */
+      for(let i=0;i<40&&S.eu&&(Date.now()-ULT<2500||document.querySelector('.carr,.pcarr'));i++)await new Promise(r=>setTimeout(r,700));
+      if(!S.eu)return;try{frameApp({id:'livre'},v)}catch(e){}}},1500))}
+let ULT=0;['pointerdown','keydown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{ULT=Date.now()},{passive:true,capture:true}));
 async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};ecraEntrada()}
 
 function ico(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
@@ -356,11 +360,16 @@ const BIB={desenhos:['Catálogo e desenhos','desenhos','Desenhos'],normas:['Norm
 let BQ='',BANT=false;
 function revDe(n){const m=n.replace(/\.[^.]+$/,'').match(/[_\s-]?(?:v|rev|r)\s?0*(\d+)$/i);return m?+m[1]:0}
 function baseDe(n){return n.replace(/\.[^.]+$/,'').replace(/[_\s-]?(?:v|rev|r)\s?0*\d+$/i,'').toLowerCase()}
-async function listaBib(tipo){const raiz='_org/'+S.eu.organizacao_id+'/'+tipo;const out=[];
+const LBC={};function limpaLB(){for(const k in LBC)delete LBC[k]}
+async function listaBib(tipo){const raiz='_org/'+S.eu.organizacao_id+'/'+tipo,c=LBC[raiz];if(c&&Date.now()-c.t<120000)return c.p.then(l=>l.slice());
+  const p=(async()=>{const out=[];
   const r=await sb.storage.from('documentos').list(raiz,{limit:1000});if(r.error)throw r.error;
-  for(const x of r.data||[]){if(x.id)out.push({grupo:'',nome:x.name,path:raiz+'/'+x.name,tam:(x.metadata&&x.metadata.size)||0,quando:x.created_at});
-    else{const q=await sb.storage.from('documentos').list(raiz+'/'+x.name,{limit:1000});if(q.error)throw q.error;(q.data||[]).filter(y=>y.id).forEach(y=>out.push({grupo:x.name,nome:y.name,path:raiz+'/'+x.name+'/'+y.name,tam:(y.metadata&&y.metadata.size)||0,quando:y.created_at}))}}
-  return out}
+  const pastas=(r.data||[]).filter(x=>!x.id);
+  (r.data||[]).filter(x=>x.id).forEach(x=>out.push({grupo:'',nome:x.name,path:raiz+'/'+x.name,tam:(x.metadata&&x.metadata.size)||0,quando:x.created_at}));
+  const qs=await Promise.all(pastas.map(x=>sb.storage.from('documentos').list(raiz+'/'+x.name,{limit:1000}).then(q=>({x,q}))));
+  qs.forEach(({x,q})=>{if(q.error)throw q.error;(q.data||[]).filter(y=>y.id).forEach(y=>out.push({grupo:x.name,nome:y.name,path:raiz+'/'+x.name+'/'+y.name,tam:(y.metadata&&y.metadata.size)||0,quando:y.created_at}))});
+  return out})();
+  LBC[raiz]={t:Date.now(),p};p.catch(()=>{if(LBC[raiz]&&LBC[raiz].p===p)delete LBC[raiz]});return p.then(l=>l.slice())}
 async function urlBib(path){const r=await sb.storage.from('documentos').createSignedUrl(path,3600);if(r.error)throw r.error;return r.data.signedUrl}
 function tituloBib(n){return n.replace(/\.[^.]+$/,'').replace(/_/g,' ')}
 async function abreBib(path,nome){
@@ -395,15 +404,23 @@ function catMelhor(n,o){const pn=/\.pdf$/i.test(n),po=/\.pdf$/i.test(o||'');if(p
 function catRegista(f){const nome=f.nome,base=nome.replace(/\.[^.]+$/,''),ch=new Set();let m;const re=/\d{11}/g;while((m=re.exec(base)))ch.add('D'+m[0]);
   ch.add('C'+cNorm(base).replace(/[\s_]+/g,''));const c=base.match(/((?:EC|E|C)-\d+[A-Za-z]*)/i);if(c)ch.add('C'+cNorm(c[1]).replace(/[\s_\-]+/g,''));
   ch.forEach(k=>{const o=CAT.ix.get(k);if(!o||catMelhor(nome,o.nome))CAT.ix.set(k,f)})}
+const CIDB=()=>new Promise((ok,ko)=>{try{const r=indexedDB.open('somafel-central',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}catch(e){ko(e)}});
+const cGet=k=>CIDB().then(db=>new Promise(ok=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>ok(null)})).catch(()=>null);
+const cSet=(k,v)=>CIDB().then(db=>new Promise(ok=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>ok()})).catch(()=>{});
 async function catCarrega(forca){
   if(CAT.base&&!forca)return;
   const dir='_org/'+S.eu.organizacao_id+'/base_dados';
-  const l=await sb.storage.from('documentos').list(dir,{limit:50,sortBy:{column:'updated_at',order:'desc'}});if(l.error)throw l.error;
+  const [l,L]=await Promise.all([sb.storage.from('documentos').list(dir,{limit:50,sortBy:{column:'updated_at',order:'desc'}}),listaBib('desenhos').catch(()=>[])]);
+  if(l.error)throw l.error;
   const f=(l.data||[]).filter(x=>x.id&&/\.xlsx$/i.test(x.name))[0];
-  CAT.ix=new Map();let L=[];try{L=await listaBib('desenhos')}catch(e){}CAT.n=L.length;L.forEach(catRegista);
+  CAT.ix=new Map();CAT.n=L.length;L.forEach(catRegista);
   if(!f){CAT.base=null;CAT.semBase=true;return}
-  CAT.semBase=false;await carregaXlsx();const r=await sb.storage.from('documentos').download(dir+'/'+f.name);if(r.error)throw r.error;
-  CAT.base=catLerBase(XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'}));CAT.nome=f.name;catIndices()}
+  CAT.semBase=false;
+  const stamp=f.name+'|'+(f.updated_at||f.created_at),c=await cGet('catbase');
+  if(c&&c.stamp===stamp&&c.org===S.eu.organizacao_id&&c.base&&c.base.d&&c.base.d.length){CAT.base=c.base;CAT.nome=f.name;catIndices();return}
+  await carregaXlsx();const r=await sb.storage.from('documentos').download(dir+'/'+f.name);if(r.error)throw r.error;
+  CAT.base=catLerBase(XLSX.read(new Uint8Array(await r.data.arrayBuffer()),{type:'array'}));CAT.nome=f.name;catIndices();
+  if(CAT.base.d.length)cSet('catbase',{stamp,org:S.eu.organizacao_id,base:CAT.base})}
 function catFich(di){const d=CAT.base.d[di];return CAT.ix.get('D'+d[1])||CAT.ix.get('C'+cNorm(d[0]).replace(/[\s_\-\/]+/g,''))||CAT.ix.get('C'+cNorm(d[0]).replace(/[\s_]+/g,''))||null}
 function catTipo(di){const f=catFich(di),nm=f?f.nome:'';const e=(nm.match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();return {f,nome:nm,ext:e==='tiff'?'tif':e,ver:/^(pdf|png|jpg|jpeg|webp|gif|svg)$/.test(e)}}
 const catLabel=(di,mo)=>{const d=CAT.base.d[di];return d[0]+(mo===''?'/(base)':(mo!=='0'?'/'+mo:''))};
@@ -464,7 +481,7 @@ function cargaDes(pasta){
   const inp=document.createElement('input');inp.type='file';inp.multiple=true;if(pasta)inp.webkitdirectory=true;else inp.accept='application/pdf,.pdf';
   inp.onchange=async()=>{const fs=[...inp.files].filter(f=>/\.pdf$/i.test(f.name));if(!fs.length){aviso('Não há PDF para carregar.',true);return}
     let n=0,er=0;for(const f of fs){n++;try{aviso('A carregar '+n+' de '+fs.length+'…');const r=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/desenhos/'+nomeSeguro(f.name),f,{upsert:true,contentType:'application/pdf'});if(r.error)throw r.error}catch(e){er++;aviso(f.name+': '+erroTxt(e),true);await new Promise(r=>setTimeout(r,1200))}}
-    aviso(er?('Carregados '+(n-er)+' de '+fs.length+'; falharam '+er+'.'):'Carregados '+n+' desenhos.',!!er);vCat(true)};inp.click()}
+    aviso(er?('Carregados '+(n-er)+' de '+fs.length+'; falharam '+er+'.'):'Carregados '+n+' desenhos.',!!er);limpaLB();vCat(true)};inp.click()}
 async function vCat(forca){
   S.vista='desenhos';titulo('Catálogo e desenhos');$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.remove('semPad');pg.classList.add('bib');
   if(!CAT.base||forca){pg.innerHTML='<div class="vazio"><p>A abrir o catálogo…</p></div>';try{await catCarrega(true)}catch(e){pg.classList.remove('bib');pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}}
@@ -542,7 +559,7 @@ async function vBib(tipo){
     if(!/\.(pdf|png|jpe?g)$/i.test(d.nome)){box.innerHTML='<div class="pmsg"><b>Este documento não abre no navegador</b>Use «Abrir noutra janela» para o descarregar.</div>';return}
     try{const u=await urlBib(d.path);if(sel()!==d)return;box.innerHTML=/\.pdf$/i.test(d.nome)?'<iframe class="pfr" style="height:calc(100vh - 230px)" src="'+esc(u)+'#view=FitH" title="'+esc(d.nome)+'"></iframe>':'<img class="pimg" src="'+esc(u)+'" alt="">'}catch(e){box.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>'}};
   const liga=()=>{const g=$('#bGr');if(g)g.onclick=()=>{const d=sel();if(d)abreBib(d.path,d.nome)};const a=$('#bAb');if(a)a.onclick=async()=>{const d=sel();if(d)try{window.open(await urlBib(d.path),'_blank','noopener')}catch(e){aviso(erroTxt(e),true)}};
-    const x=$('#bDel');if(x)x.onclick=async()=>{const d=sel();if(!d||!await confirmar('Apagar «'+d.nome+'»?','Apagar'))return;const r=await sb.storage.from('documentos').remove([d.path]);if(r.error){aviso(erroTxt(r.error),true);return}BSEL[tipo]=null;vBib(tipo)}};
+    const x=$('#bDel');if(x)x.onclick=async()=>{const d=sel();if(!d||!await confirmar('Apagar «'+d.nome+'»?','Apagar'))return;const r=await sb.storage.from('documentos').remove([d.path]);if(r.error){aviso(erroTxt(r.error),true);return}BSEL[tipo]=null;limpaLB();vBib(tipo)}};
   pg.querySelectorAll('[data-bp]').forEach(b=>b.onclick=()=>{BSEL[tipo]=b.dataset.bp;pg.querySelectorAll('#bRows .crow').forEach(r=>r.classList.toggle('on',r===b));$('#bDet').innerHTML=det();liga();prev()});
   liga();prev();
   let t=null;$('#bQ').oninput=e=>{BQ=e.target.value;clearTimeout(t);t=setTimeout(()=>{const p=e.target.selectionStart;vBib(tipo).then(()=>{const n=$('#bQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}})},250)};
@@ -553,13 +570,13 @@ async function vBib(tipo){
       let n=0,er=0;for(const f of fs){n++;try{aviso('A carregar '+n+' de '+fs.length+'…');
         const seg=(f.webkitRelativePath||f.name).split('/').slice(1,-1).map(nomeSeguro);const grupo=tipo==='normas'?seg.join(' - '):'';
         const r=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/'+B[1]+'/'+(grupo?grupo+'/':'')+nomeSeguro(f.name),f,{upsert:true,contentType:f.type||'application/pdf'});if(r.error)throw r.error}catch(e){er++;aviso(f.name+': '+erroTxt(e),true);await new Promise(r=>setTimeout(r,1200))}}
-      aviso(er?('Carregados '+(n-er)+' de '+fs.length+'; falharam '+er+'.'):'Carregados '+n+' ficheiro(s).',!!er);vBib(tipo)};inp.click()};
+      aviso(er?('Carregados '+(n-er)+' de '+fs.length+'; falharam '+er+'.'):'Carregados '+n+' ficheiro(s).',!!er);limpaLB();vBib(tipo)};inp.click()};
   const bu=$('#bUp');if(bu)bu.onclick=async()=>{
     let grupo='';if(tipo==='normas'){const v=await formulario('Carregar normas',[{id:'g',rotulo:'Grupo (pasta)',ph:'ex.: CAT, GER, ENT'}],'Continuar');if(!v)return;grupo=nomeSeguro(v.g||'')==='ficheiro'?'':nomeSeguro(v.g)}
     const inp=document.createElement('input');inp.type='file';inp.multiple=true;inp.accept='application/pdf,.pdf,.xlsx';
     inp.onchange=async()=>{let n=0,er=0;for(const f of inp.files){try{aviso('A carregar '+(++n)+' de '+inp.files.length+'…');
         const r=await sb.storage.from('documentos').upload('_org/'+S.eu.organizacao_id+'/'+B[1]+'/'+(grupo?grupo+'/':'')+nomeSeguro(f.name),f,{upsert:true,contentType:f.type||'application/pdf'});if(r.error)throw r.error}catch(e){er++;aviso(f.name+': '+erroTxt(e),true)}}
-      aviso(er?('Carregados '+(n-er)+'; falharam '+er+'.'):'Carregados '+n+' ficheiro(s).',!!er);vBib(tipo)};inp.click()};
+      aviso(er?('Carregados '+(n-er)+'; falharam '+er+'.'):'Carregados '+n+' ficheiro(s).',!!er);limpaLB();vBib(tipo)};inp.click()};
 }
 window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.data)return;
   if(e.data.tipo==='voltar'){vai('visao');return}
