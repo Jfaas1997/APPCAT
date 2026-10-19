@@ -1037,7 +1037,7 @@ async function onArranque(){
   var bq=await sb.from('bloqueios').select('chave'), bl=(bq.data||[]).map(function(b){ return b.chave });
   ON.soLeitura=!(ON.papel==='administrador'||ON.papel==='diretor'||(ON.papel==='encarregado'&&bl.indexOf('app:consolas')<0));
   await abreObraOnline({id:ob.id,cc:ob.centro_custo,nome:ob.nome,contratos:(cq.data||[]).map(function(c){ return {id:c.id,nome:c.nome,cliente:c.cliente||'',valor:c.valor} })});
-  setTimeout(function(){ onEcraFim(); ON.pronto=true },300) }
+  setTimeout(function(){ onEcraFim(); ON.pronto=true },60) }
 
 /* ---- menu ---- */
 menu=function(on){ $('menu').hidden=!on; $('bFich').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('mFechar').hidden=!D.obra; $('mInfo').textContent=D.obra?('Obra '+D.obra.cc+' · versão '+ON.versao):'Modo rápido: sem obra' } };

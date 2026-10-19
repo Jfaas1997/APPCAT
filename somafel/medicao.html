@@ -6448,7 +6448,7 @@ async function nmArranque(){
   else if(!NM.soLeitura&&rasc&&rasc.dirty&&rasc.base!==NM.versao){ await nmDiz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   if(!d&&!NM.soLeitura)toast('Obra nova. Comece do zero ou importe um Excel («Abrir»).',5000);
   nmUi(); nmFlush(); document.title='Medição · '+NM.ob.cc;
-  setTimeout(()=>{ nmEcraFim(); NM.pronto=true },300) }
+  setTimeout(()=>{ nmEcraFim(); NM.pronto=true },60) }
 
 /* ---- uso sem obra: a medição fica só neste aparelho; a base IP e as alterações à base são da organização ---- */
 async function nmArrancaLivre(){
@@ -6462,7 +6462,7 @@ async function nmArrancaLivre(){
     try{ st=rasc.st; if(rasc.VERS&&Array.isArray(rasc.VERS.lista))VERS=rasc.VERS; garante(); nmRestauraEstado(); nmReaplica(); $('#agrup').value=st.agrup||'troco'; rAll() }finally{ NM.carregando=false }
     LASTHASH=estHash(); DIRTY=false }
   nmUi(); nmFlush(); document.title='Medição · sem obra';
-  setTimeout(()=>{ nmEcraFim(); NM.pronto=true },300) }
+  setTimeout(()=>{ nmEcraFim(); NM.pronto=true },60) }
 
 /* ---- menu, botões ---- */
 nmMenu=function(on){ const m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'Sem obra'; const a=NM.papel==='administrador'; $('#nBaseIP').hidden=!a; $('#nAltProp').hidden=NM.soLeitura } };

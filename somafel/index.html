@@ -317,7 +317,9 @@ async function arranca(){
 /* aquece a cache: descarrega em segundo plano o HTML e os scripts das apps, para abrirem mais depressa */
 function aquece(){const go=async()=>{try{const vistos=new Set();for(const k of Object.keys(APPV)){const u=APPV[k]+'.html';const t=await (await fetch(u)).text();
   for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}}catch(e){}};
-  (window.requestIdleCallback||setTimeout)(()=>setTimeout(go,1500))}
+  (window.requestIdleCallback||setTimeout)(()=>setTimeout(async()=>{await go();
+    /* pré-abre, escondidas, as apps que se usam sem obra, para abrirem logo */
+    for(const v of ['med','rct','cons']){await new Promise(r=>setTimeout(r,1200));if(!S.eu)return;try{frameApp({id:'livre'},v)}catch(e){}}},1500))}
 async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};ecraEntrada()}
 
 function ico(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
