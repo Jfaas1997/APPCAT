@@ -698,6 +698,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
     <div class="nmenu" id="nmenu" hidden>
       <button data-n="trocar">Trocar de obra</button>
       <button data-n="central">Central de Obras</button>
+      <button data-n="passa" id="nPassa" hidden>Passar para uma obra…</button>
       <button data-n="contratos">Contratos da obra…</button>
       <button data-n="verifTodas">Verificar todas as consolas</button>
       <button data-n="copias">Restaurar uma cópia…</button>
@@ -6465,10 +6466,32 @@ async function nmArrancaLivre(){
   nmUi(); nmFlush(); document.title='Medição · sem obra';
   setTimeout(()=>{ nmEcraFim(); NM.pronto=true },60) }
 
+/* ---- passar a medição «sem obra» para uma obra ---- */
+async function nmPassaObra(){
+  if(!NM.livre||NM.soLeitura)return;
+  if(!st.postes||!st.postes.length){ await nmDiz('Ainda não há nada para passar. Faça primeiro a medição sem obra.'); return }
+  const q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
+  if(!l.length){ await nmDiz('Não há obras. Crie primeiro a obra na Central.'); return }
+  const r=await nmModal({titulo:'Passar para uma obra',corpo:'<p>A medição feita sem obra passa para a obra que escolher. O rascunho sem obra fica vazio.</p><label>Obra</label><select id="pObra">'+l.map((o,i)=>'<option value="'+i+'">'+esc(o.centro_custo)+' · '+esc(o.nome)+'</option>').join('')+'</select>',
+    botoes:[{t:'Cancelar',v:null},{t:'Passar',p:true,v:c=>+c.querySelector('#pObra').value}],cancela:null});
+  if(r==null)return; const ob=l[r];
+  const ex=await sb.from('dados_apps').select('versao,atualizado_em').eq('obra_id',ob.id).eq('app','medicao').maybeSingle();
+  if(ex.data&&!(await nmSim('A obra '+esc(ob.centro_custo)+' já tem uma Medição (guardada em '+new Date(ex.data.atualizado_em).toLocaleDateString('pt-PT')+'). Substituí-la pela medição sem obra? A que lá está deixa de estar na obra.','Substituir')))return;
+  try{
+    const keep=NM.ob; let p; NM.ob={id:ob.id,cc:ob.centro_custo,nome:ob.nome};
+    try{ p=nmPayload() }finally{ NM.ob=keep }
+    const w=ex.data?await sb.from('dados_apps').update({dados:p,atualizado_por:NM.uid}).eq('obra_id',ob.id).eq('app','medicao').select('versao'):await sb.from('dados_apps').insert({obra_id:ob.id,app:'medicao',dados:p,atualizado_por:NM.uid}).select('versao');
+    if(w.error)throw w.error;
+    await idbSet('rascunho:rapido',null); clearTimeout(NM.draftT); NM.carregando=true;
+    toast('Medição passada para a obra '+ob.centro_custo+'.',4000);
+    parent.postMessage({tipo:'abreObra',obraId:ob.id,app:'med'},location.origin);
+    setTimeout(()=>location.reload(),150)
+  }catch(e){ await nmDiz('Não consegui passar para a obra: '+esc(e.message)) } }
+
 /* ---- menu, botões ---- */
-nmMenu=function(on){ const m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'Sem obra'; const a=NM.papel==='administrador'; $('#nBaseIP').hidden=!a; $('#nAltProp').hidden=NM.soLeitura } };
+nmMenu=function(on){ const m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('aria-expanded',on?'true':'false'); if(on){ $('#nInfo').textContent=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'Sem obra'; const a=NM.papel==='administrador'; $('#nBaseIP').hidden=!a; $('#nAltProp').hidden=NM.soLeitura; $('#nPassa').hidden=!(NM.livre&&!NM.soLeitura) } };
 $('#nmenu').addEventListener('click',e=>{ const b=e.target.closest('button[data-n]'); if(!b)return; const a=b.getAttribute('data-n');
-  if(a==='trocar')location.href=location.pathname; else if(a==='central')location.href='index.html'; else if(a==='excel')guardar(true); else if(a==='baseIP')nmCarregaBaseIP(); else if(a==='altProp')nmImportaAlteracoes() });
+  if(a==='trocar')location.href=location.pathname; else if(a==='central')location.href='index.html'; else if(a==='excel')guardar(true); else if(a==='baseIP')nmCarregaBaseIP(); else if(a==='altProp')nmImportaAlteracoes(); else if(a==='passa')nmPassaObra() });
 $('#nmenu').onclick=e=>{ const b=e.target.closest('button[data-n]'); if(!b)return; nmMenu(false); const a=b.getAttribute('data-n');
   if(a==='copias')nmRestauraCopia(); else if(a==='contratos'){ abreLotes() } };
 $('#bOpen').onclick=async()=>{ if(NM.soLeitura){ toast('Não tem permissão para alterar esta app.'); return } if(st.postes.length&&!(await nmSim('Importar um Excel substitui a medição aberta desta obra. Continuar?','Importar')))return; $('#fOpen').click() };
