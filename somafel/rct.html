@@ -767,6 +767,7 @@ table.mt{width:100%;border-collapse:collapse;font-size:12.5px}table.mt td,table.
 .lb{display:block;font-size:11.5px;color:var(--muted);margin:0 0 3px}
 .cxa{display:flex;align-items:center;gap:8px;margin:18px 0 8px;flex-wrap:wrap}
 tr.add td{background:var(--paper)}
+tr.cm-alt>td{background:var(--amberbg)}tr.cm-novo>td{background:var(--okbg)}tr.cm-saiu>td{background:#fdecec}tr.cm-saiu .sai{text-decoration:line-through;color:var(--muted)}.tg.er{background:#fdecec;color:#b3261e}.antes{font-size:11px;color:var(--muted);display:block}.legMon{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;font-size:12px;align-items:center}
 tr.tot td{border-top:2px solid var(--rule)}
 /* grelha de medição */
 table.gr{border-collapse:separate;border-spacing:0;width:auto;font-size:12.5px}
@@ -959,7 +960,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
   </div>
   <div class="view" id="vMon">
     <div class="pills" data-pills><button data-vv="mon">Montagens <span data-pn="mon"></span></button><button data-vv="des">Desenhos <span data-pn="des"></span></button></div>
-    <div class="bar"><input id="tQ" class="grow" placeholder="Procurar montagem (código ou nome)…"><span class="n sp" id="tN"></span><span id="tSelMont"></span><button id="tNova" class="pri">+ Montagem</button><button id="tExp" title="Exporta todas as montagens (com as tuas alterações) no formato do Excel da base">Exportar montagens</button></div>
+    <div class="bar"><input id="tQ" class="grow" placeholder="Procurar montagem (código ou nome)…"><select id="tFil" title="Filtrar montagens"><option value="">Todas</option><option value="mod">Só as alteradas ou novas</option><option value="alt">Só as alteradas (face à base IP)</option><option value="nova">Só as novas</option></select><button id="tAlt" title="Lista o que entrou, saiu e mudou face à base IP">Alterações à base IP</button><span class="n sp" id="tN"></span><span id="tSelMont"></span><button id="tNova" class="pri">+ Montagem</button><button id="tExp" title="Exporta todas as montagens (com as tuas alterações) no formato do Excel da base">Exportar montagens</button></div>
     <div class="rsplit"><div class="rl"><div class="scroll lstm" id="tLista"></div></div><div class="rr"><div class="scroll"><div class="pad" id="tDet"></div></div></div></div>
   </div>
   <div class="view" id="vDes"><div class="pills" data-pills><button data-vv="mon">Montagens <span data-pn="mon"></span></button><button data-vv="des">Desenhos <span data-pn="des"></span></button></div>
@@ -1029,7 +1030,7 @@ function idbDel(k){ return idb().then(function(d){ return new Promise(function(o
 var ST=novo();
 function novo(){ return {v:2,obra:'',nome:'',seq:0,caixas:[],cabos:[],montEd:{},cfg:{}} }
 function nid(p){ ST.seq=(ST.seq||0)+1; return p+ST.seq }
-var UI={vista:'res',cQ:'',cGr:'',cSel:'',bQ:'',tQ:'',tSel:'',xQ:'',xVer:'all',xEsc:'cx',xQ2:'',eSel:{},eCx:{},eEx:{},eEl:'__tudo',eSub:'massa',ultTipo:'',taI:0,taL:[]};
+var UI={vista:'res',cQ:'',cGr:'',cSel:'',bQ:'',tQ:'',tFil:'',tSel:'',xQ:'',xVer:'all',xEsc:'cx',xQ2:'',eSel:{},eCx:{},eEx:{},eEl:'__tudo',eSub:'massa',ultTipo:'',taI:0,taL:[]};
 var MB=null;          /* base de montagens (lida de fora) */
 var NM={ob:null,dir:null,fh:null,lastMod:0,saveT:null,draftT:null,gravando:false,conflito:false,semPerm:false,erro:'',guardadoEm:null,ultimaCopia:0,alterado:false};
 var NM_MAXCOP=20, NM_PAUSA=5000, NM_COPIA=30*60*1000;
@@ -1636,11 +1637,21 @@ $('#bQ').addEventListener('input',function(){ UI.bQ=this.value; render() });
 /* ================= montagens (base de dados, editável) ================= */
 function edMont(code){ var o=ST.montEd[code]; if(!o){ var m=ME.mont[code]; o=ST.montEd[code]={code:code,nome:m.nome,mats:m.mats.map(function(p){ var x=ME.mats[p[0]]; return {ip:x.ip,d:x.d,q:p[1]} })} } return o }
 function refazMon(){ recalcME(); rMonDl(); mudou(); render() }
+function diffMont(k){ var m=ME.mont[k], o=MB&&MB.mont[k]; if(!o||m.ed!=='editada')return null;
+  var om={}, cur={}, est={}, saiu=[], nA=0, nN=0; o.mats.forEach(function(p){ om[p[0]]=p[1] }); m.mats.forEach(function(p){ cur[p[0]]=p[1] });
+  m.mats.forEach(function(p){ if(om[p[0]]==null){ est[p[0]]='novo'; nN++ } else if(r4(om[p[0]])!==r4(p[1])){ est[p[0]]='alt'; nA++ } });
+  o.mats.forEach(function(p){ if(cur[p[0]]==null)saiu.push(p) });
+  return {est:est,om:om,saiu:saiu,nome:(o.nome!==m.nome?o.nome:null),nA:nA,nN:nN,nS:saiu.length,tot:nA+nN+saiu.length+(o.nome!==m.nome?1:0)} }
+function listaAlt(){ if(!ME)recalcME(); var r=[]; ME.ordem.forEach(function(k){ var m=ME.mont[k];
+  if(m.ed==='nova'){ r.push([k,'Montagem nova','','','',m.nome]); m.mats.forEach(function(p){ var x=ME.mats[p[0]]; r.push([k,'Entrou',x.ip,x.d,'',p[1]]) }); return }
+  var d=diffMont(k); if(!d)return; if(d.nome)r.push([k,'Nome alterado','','',d.nome,m.nome]);
+  m.mats.forEach(function(p){ var x=ME.mats[p[0]], e=d.est[p[0]]; if(e==='novo')r.push([k,'Entrou',x.ip,x.d,'',p[1]]); else if(e==='alt')r.push([k,'Alterado',x.ip,x.d,d.om[p[0]],p[1]]) });
+  d.saiu.forEach(function(p){ var x=ME.mats[p[0]]; r.push([k,'Saiu',x.ip,x.d,p[1],'']) }) }); return r }
 function rMon(c){
-  if(!ME)recalcME(); var lista=$('#tLista'), det=$('#tDet'); $('#tQ').value=UI.tQ; rMonDl();
-  var q=UI.tQ.trim().toLowerCase(), cods=ME.ordem.filter(function(k){ var m=ME.mont[k]; return !q||(k+' '+m.nome).toLowerCase().indexOf(q)>=0 });
+  if(!ME)recalcME(); var lista=$('#tLista'), det=$('#tDet'); $('#tQ').value=UI.tQ; $('#tFil').value=UI.tFil||''; rMonDl();
+  var q=UI.tQ.trim().toLowerCase(), cods=ME.ordem.filter(function(k){ var m=ME.mont[k]; if(UI.tFil==='alt'&&m.ed!=='editada')return false; if(UI.tFil==='nova'&&m.ed!=='nova')return false; if(UI.tFil==='mod'&&!m.ed)return false; return !q||(k+' '+m.nome).toLowerCase().indexOf(q)>=0 });
   var usos={}; ST.caixas.forEach(function(x){ (x.ms||[]).forEach(function(m){ var k=codM(m.code); usos[k]=(usos[k]||0)+1 }) });
-  lista.innerHTML=cods.map(function(k){ var m=ME.mont[k]; return '<button data-t="'+esc(k)+'" class="'+(UI.tSel===k?'on':'')+'"><b>'+esc(k)+'</b>'+(m.ed?'<span class="tg av">'+m.ed+'</span>':'')+(usos[k]?'<span class="tg ok">'+usos[k]+' usos</span>':'')+'<small>'+esc(m.nome)+'</small></button>' }).join('');
+  lista.innerHTML=cods.map(function(k){ var m=ME.mont[k]; return '<button data-t="'+esc(k)+'" class="'+(UI.tSel===k?'on':'')+'"><b>'+esc(k)+'</b>'+(m.ed?'<span class="tg av">'+m.ed+(function(){ var d=m.ed==='editada'?diffMont(k):null; return d?' · '+d.tot+' alt.':'' })()+'</span>':'')+(usos[k]?'<span class="tg ok">'+usos[k]+' usos</span>':'')+'<small>'+esc(m.nome)+'</small></button>' }).join('');
   $('#tN').textContent=cods.length+' montagens · '+ME.mats.length+' materiais'+(MB&&MB.nome?' · '+MB.nome:''); rSelMont();
   if(!MB&&!ME.ordem.length){ det.innerHTML='<div class="vazio"><b>A procurar a base de montagens…</b>A app lê sozinha o ficheiro <span class="mono">Base de dados\\Montagens_RCT.xlsx</span>. Dentro da Central pede-o à Central; fora dela, ligue uma vez a pasta <b>Base de dados</b> e fica sempre ligada.<div class="hint" id="tSt" style="margin-top:10px">'+esc(BD.cmsg||BD.msg||'À espera da resposta da Central…')+'</div><p class="hint" style="margin-top:10px">Dentro da Central o ficheiro vem da pasta <b>Base de dados</b> ao lado das obras. Se o aviso acima disser que falta acesso, resolva-o lá e esta página atualiza-se sozinha.</p></div>';
     return }
@@ -1650,9 +1661,13 @@ function rMon(c){
   var h='<div class="cxa"><div style="flex:1"><label class="lb">Montagem <span class="mono">'+esc(m.code)+'</span>'+(m.ed?' <span class="tg av">'+m.ed+'</span>':'')+'</label><input data-en="1" value="'+esc(m.nome)+'" style="width:100%;font-weight:600"></div>'+
     (m.ed==='editada'?'<button data-rep="1">Repor original</button>':'')+((m.ed==='nova'&&!usos[k])?'<button class="x" data-apaga="1">Apagar montagem</button>':'')+'</div>';
   var dm=desMont(k), dmH=(dm?'<div class="dtMon"><img src="'+dm+'" alt="Desenho esquemático da montagem '+esc(k)+'"><small>Desenho esquemático · GR.IT.GER.002 Parte 15, Anexo B</small></div>':'');
+  var DF=diffMont(k);
   h+='<div class="dtBox"><div class="dtT">';
+  if(m.ed==='nova')h+='<div class="legMon"><span class="tg ok">montagem nova</span> Não consta da base IP.</div>';
+  if(DF)h+='<div class="legMon"><span class="tg av">alterada face à base IP</span>'+(DF.nome?'<span>Nome IP: <b>'+esc(DF.nome)+'</b></span>':'')+(DF.nN?'<span class="tg ok">'+DF.nN+' entrou</span>':'')+(DF.nA?'<span class="tg av">'+DF.nA+' alterado'+(DF.nA>1?'s':'')+'</span>':'')+(DF.nS?'<span class="tg er">'+DF.nS+' saiu</span>':'')+(DF.tot===0?'<span class="hint">sem diferenças reais</span>':'')+'</div>';
   h+='<p class="hint">Quantidades por unidade de montagem. Altere as quantidades, retire materiais ou junte novos. Os materiais cuja descrição começa por «cabo» são os tipos de cabo da execução.</p>';
-  h+='<div class="tablewrap"><table class="ed"><thead><tr><th>Cód. IP</th><th>Material</th><th class="num">Qtd</th><th>Un.</th><th></th></tr></thead><tbody>'+(m.mats.length?m.mats.map(function(p,i){ var x=ME.mats[p[0]]; return '<tr><td class="mono">'+esc(x.ip)+'</td><td>'+esc(x.d)+(x.cabo?' <span class="tg">cabo</span>':'')+'</td><td class="num"><input data-eq="'+i+'" value="'+esc(nin(p[1]))+'" style="width:70px;text-align:right" inputmode="decimal"></td><td class="un0">'+esc(uniMat(x.d))+'</td><td class="w1"><button class="x" data-er="'+i+'" title="Retirar material">✕</button></td></tr>' }).join(''):'<tr><td colspan="5" class="hint">Esta montagem ainda não tem materiais.</td></tr>')+
+  h+='<div class="tablewrap"><table class="ed"><thead><tr><th>Cód. IP</th><th>Material</th><th class="num">Qtd</th><th>Un.</th><th></th></tr></thead><tbody>'+(m.mats.length?m.mats.map(function(p,i){ var x=ME.mats[p[0]]; return '<tr'+(DF&&DF.est[p[0]]?' class="cm-'+DF.est[p[0]]+'"':(m.ed==='nova'?' class="cm-novo"':''))+'><td class="mono">'+esc(x.ip)+'</td><td>'+esc(x.d)+(x.cabo?' <span class="tg">cabo</span>':'')+(DF&&DF.est[p[0]]==='novo'?' <span class="tg ok">entrou</span>':'')+(DF&&DF.est[p[0]]==='alt'?' <span class="tg av">alterado</span>':'')+'</td><td class="num"><input data-eq="'+i+'" value="'+esc(nin(p[1]))+'" style="width:70px;text-align:right" inputmode="decimal">'+(DF&&DF.est[p[0]]==='alt'?'<span class="antes">era '+esc(nin(DF.om[p[0]]))+'</span>':'')+'</td><td class="un0">'+esc(uniMat(x.d))+'</td><td class="w1"><button class="x" data-er="'+i+'" title="Retirar material">✕</button></td></tr>' }).join(''):'<tr><td colspan="5" class="hint">Esta montagem ainda não tem materiais.</td></tr>')+
+    (DF?DF.saiu.map(function(p){ var x=ME.mats[p[0]]; return '<tr class="cm-saiu"><td class="mono sai">'+esc(x.ip)+'</td><td><span class="sai">'+esc(x.d)+'</span> <span class="tg er">saiu</span></td><td class="num"><span class="sai">'+esc(nin(p[1]))+'</span></td><td class="un0">'+esc(uniMat(x.d))+'</td><td class="w1"><button data-rs="'+p[0]+'" title="Voltar a pôr este material">↺</button></td></tr>' }).join(''):'')+
     '<tr class="add"><td><input id="nmIp" placeholder="cód. IP (opcional)" style="width:120px"></td><td><input id="nmD" list="dlMat" placeholder="Juntar material: escreva para procurar ou crie um novo" style="width:100%"></td><td class="num"><input id="nmQ" placeholder="qtd" style="width:70px;text-align:right" inputmode="decimal"></td><td></td><td class="w1"><button id="nmAdd" class="pri">Juntar</button></td></tr></tbody></table></div>';
   h+='</div>'+dmH+'</div>';
   var as=[]; ST.caixas.forEach(function(x){ (x.ms||[]).forEach(function(mm){ if(codM(mm.code)===k)as.push(x) }) });
@@ -1660,11 +1675,18 @@ function rMon(c){
   det.innerHTML=h }
 $('#tLista').addEventListener('click',function(e){ var b=e.target.closest('button[data-t]'); if(b){ UI.tSel=b.dataset.t; render() } });
 $('#tQ').addEventListener('input',function(){ UI.tQ=this.value; render() });
+$('#tFil').addEventListener('change',function(){ UI.tFil=this.value; render() });
+$('#tAlt').onclick=async function(){ var L=listaAlt();
+  var cor={'Entrou':'ok','Alterado':'av','Saiu':'er','Montagem nova':'ok','Nome alterado':'av'};
+  var corpo=L.length?'<p class="hint">Diferenças face à base IP (que nunca é alterada). '+L.length+' linhas.</p><div class="tablewrap" style="max-height:55vh;overflow:auto"><table class="ed"><thead><tr><th>Montagem</th><th></th><th>Cód. IP</th><th>Material / nome</th><th class="num">Antes</th><th class="num">Depois</th></tr></thead><tbody>'+L.map(function(r){ return '<tr><td class="mono">'+esc(r[0])+'</td><td><span class="tg '+(cor[r[1]]||'')+'">'+r[1]+'</span></td><td class="mono">'+esc(r[2])+'</td><td>'+esc(r[3]||(r[1]==='Nome alterado'?'':r[5]))+'</td><td class="num">'+esc(r[4]===''?'':nin(r[4]))+'</td><td class="num">'+esc(r[1]==='Montagem nova'||r[1]==='Nome alterado'?(r[1]==='Nome alterado'?r[5]:''):(r[5]===''?'':nin(r[5])))+'</td></tr>' }).join('')+'</tbody></table></div>':'<p>Sem alterações face à base IP.</p>';
+  var r=await modal({titulo:'Alterações à base IP',corpo:corpo,botoes:L.length?[{t:'Fechar',v:null},{t:'Exportar CSV',p:true,v:function(){ return 'csv' }}]:[{t:'Fechar',p:true,v:null}],cancela:null});
+  if(r==='csv')csvDown([['Montagem','Tipo','Cód. IP','Material','Antes','Depois']].concat(L.map(function(x){ return [x[0],x[1],x[2],x[3],x[4],x[5]] })),'Alteracoes_base_RCT.csv') };
 $('#tDet').addEventListener('change',function(e){ var i=e.target, k=UI.tSel; if(!k||!ME.mont[k])return;
   if(i.dataset.en){ var o=edMont(k); o.nome=i.value.trim(); refazMon(); return }
   if(i.dataset.eq!=null){ var o2=edMont(k), r=o2.mats[+i.dataset.eq]; if(!r)return; var v=num(i.value); if(v>0)r.q=v; else o2.mats.splice(+i.dataset.eq,1); refazMon() } });
 $('#tDet').addEventListener('click',async function(e){ var b=e.target.closest('button'); if(!b)return; var k=UI.tSel; if(!k||!ME.mont[k])return;
   if(b.dataset.er!=null){ edMont(k).mats.splice(+b.dataset.er,1); refazMon(); return }
+  if(b.dataset.rs!=null){ var xs=ME.mats[+b.dataset.rs], dfs=diffMont(k), qs=dfs&&dfs.om[+b.dataset.rs]; if(xs&&qs){ edMont(k).mats.push({ip:xs.ip,d:xs.d,q:qs}); refazMon() } return }
   if(b.id==='nmAdd'){ var d=$('#nmD').value.trim(), q=num($('#nmQ').value), ip=$('#nmIp').value.trim(); if(!d||!(q>0)){ toast('Escreva o material e a quantidade.'); return }
     var ex=ME.mats.filter(function(x){ return x.d.toLowerCase()===d.toLowerCase() })[0]; var o3=edMont(k);
     if(!ex&&!(await sim('O material «'+esc(d)+'» não existe na base. Criá-lo como material novo?','Criar'))) return;
