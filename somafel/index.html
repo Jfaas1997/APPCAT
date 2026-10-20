@@ -487,7 +487,22 @@ async function catManual(){const box=$('#cMan');if(!box)return;const c=box.datas
   if(CAT.man===undefined){try{const r=await fetch('manual/idx.json');CAT.man=r.ok?await r.json():null}catch(e){CAT.man=null}}
   const b=$('#cMan');if(!b||b.dataset.c!==c)return;const l=CAT.man&&CAT.man[c];
   if(!l){b.innerHTML='<p class="hint">'+(CAT.man?'Esta peça não consta do Manual de Peças de Catenária (GR.MN.CAT.003 v02 nem v01).':'Manual de peças indisponível.')+'</p>';return}
-  b.innerHTML=l.map(x=>'<figure><a href="manual/'+x.f+'" target="_blank" rel="noopener" title="Abrir em grande"><img loading="lazy" src="manual/'+x.f+'" alt="Excerto do manual: '+esc(x.t)+'"></a><figcaption><b>GR.MN.CAT.003 '+x.v+'</b> · pág. '+x.p+' · '+esc(x.t)+(x.v==='v01'?' · <i>só consta da versão v01 (a v02 já não inclui esta peça)</i>':'')+'</figcaption></figure>').join('')}
+  const pb=CAT.base&&CAT.base.p.find(q=>q[0]===c),tbB=catTubos(pb&&pb[3]);
+  const aviso=l.map(x=>{const tm=catTubos(x.t),dif=tbB.length&&tm.length&&(tm.some(t=>!tbB.includes(t))||tbB.some(t=>!tm.includes(t)));
+    const mesma=Object.keys(CAT.man||{}).filter(k=>k!==c&&CAT.man[k].some(y=>y.p===x.p&&y.v===x.v));
+    return (dif?'<p class="hint" style="color:var(--amber)">O título do excerto («'+esc(x.t)+'») não coincide com a designação da base («'+esc(pb[3])+'»). A base (desenho '+esc(pb[5])+', '+esc(pb[4])+') manda: tubos '+esc(tbB.join(' e '))+'.'+(mesma.length?' A mesma página do manual reúne também '+esc(mesma.join(', '))+': o desenho do excerto pode ser o de outra peça.':'')+'</p>':(mesma.length?'<p class="hint">A mesma página do manual mostra também '+esc(mesma.join(', '))+'.</p>':''))}).join('');
+  b.innerHTML=aviso+l.map(x=>'<figure><a href="manual/'+x.f+'" target="_blank" rel="noopener" title="Abrir em grande"><img loading="lazy" src="manual/'+x.f+'" alt="Excerto do manual: '+esc(x.t)+'"></a><figcaption><b>GR.MN.CAT.003 '+x.v+'</b> · pág. '+x.p+' · '+esc(x.t)+(x.v==='v01'?' · <i>só consta da versão v01 (a v02 já não inclui esta peça)</i>':'')+'</figcaption></figure>').join('')}
+
+const catTubos=t=>{const m=String(t||'').match(/\d{2}x\d{2}/g);return m?[...new Set(m)]:[]};
+function catFicha(i){
+  const B=CAT.base,p=B.p[i],dc=String(p[5]||'').split('/')[0].trim(),di=CAT.desIx.get(dc),tb=catTubos(p[3]);
+  let h='<div class="dsec">Ficha da peça</div><div class="dm" style="flex-wrap:wrap">'+(tb.length?'<span>Tubos <b class="mono">'+esc(tb.join(' · '))+'</b></span>':'')+(di!=null?'<span>Desenho <b>'+esc(B.d[di][0])+'</b> · '+esc(B.d[di][4]||'')+'</span>':'')+(p[4]?'<span>Variante <b class="mono">'+esc(p[4])+'</b></span>':'')+'</div>';
+  const irm=(CAT.pecDes.get(dc)||[]).filter(x=>x!==i);
+  if(irm.length)h+='<div class="dsec">Outras peças do mesmo desenho <span>'+irm.length+'</span></div><table class="ctab"><thead><tr><th>Ref.</th><th>Peça</th><th>Designação</th></tr></thead><tbody>'+irm.map(x=>{const q=B.p[x];return '<tr><td class="mono">'+esc(q[4]||'')+'</td><td><button class="lk mono" data-ip="'+x+'">'+esc(q[0])+'</button></td><td>'+esc(q[3]||'')+'</td></tr>'}).join('')+'</tbody></table>';
+  const us=CAT.usaP.get(i)||[],g=new Map();
+  us.forEach(j=>{const r=B.m[j],k=r[0];if(!g.has(k))g.set(k,[]);g.get(k).push(r)});
+  if(g.size)h+='<div class="dsec">Onde é usada <span>'+g.size+' desenho'+(g.size===1?'':'s')+'</span></div><table class="ctab"><thead><tr><th>Desenho</th><th>Designação</th><th>Montagens (quantidade)</th></tr></thead><tbody>'+[...g].map(([d,rs])=>'<tr><td><button class="lk mono" data-ir="'+d+'">'+esc(B.d[d][0])+'</button></td><td>'+esc(B.d[d][4]||'')+'</td><td class="mono">'+rs.map(r=>esc((r[1]===''?'(base)':r[1]==='0'?'principal':r[1])+' ×'+String(r[5]).replace('.',','))).join(' · ')+'</td></tr>').join('')+'</tbody></table>';
+  return h}
 function catDetPec(){
   const B=CAT.base,i=CAT.selP;if(i==null||!B.p[i])return '<div class="cvaz"><b>Escolha uma peça à esquerda</b><p>Vê a ficha da peça, o desenho onde está desenhada e em que montagens é usada.</p></div>';
   const p=B.p[i],dc=String(p[5]||'').split('/')[0].trim(),di=CAT.desIx.get(dc);
@@ -495,10 +510,63 @@ function catDetPec(){
   const us=CAT.usaP.get(i)||[],pt=CAT.pTab||'pec';
   h+='<div class="dchips ptabs"><button class="chip'+(pt==='pec'?' on':'')+'" data-pt="pec">Peça e norma</button><button class="chip'+(pt==='des'?' on':'')+'" data-pt="des">Desenho'+(di!=null?' <span>'+esc(B.d[di][0])+'</span>':'')+'</button><button class="chip'+(pt==='mon'?' on':'')+'" data-pt="mon">Montagens <span>'+us.length+'</span></button></div>';
   CAT.prevDi=null;
-  if(pt==='pec')h+='<div class="dsec">Norma · Manual de Peças de Catenária <span>GR.MN.CAT.003</span></div><div id="cMan" class="cman" data-c="'+esc(p[0])+'"><p class="hint">A procurar no manual…</p></div>';
+  if(pt==='pec')h+=catFicha(i)+'<div class="dsec">Norma · Manual de Peças de Catenária <span>GR.MN.CAT.003</span></div><div id="cMan" class="cman" data-c="'+esc(p[0])+'"><p class="hint">A procurar no manual…</p></div>';
   else if(pt==='des'){if(di!=null){h+='<div class="dsec">Desenho '+esc(B.d[di][0])+' <span>'+esc(B.d[di][4]||'')+'</span></div><div class="dprev" id="cPrev"></div>';CAT.prevDi=di}else h+='<p class="hint">Esta peça não tem desenho associado na base.</p>'}
   else h+='<div class="dsec">Usada em <span>'+us.length+' montage'+(us.length===1?'m':'ns')+'</span></div>'+(us.length?'<table class="ctab"><thead><tr><th>Montagem</th><th>Designação do desenho</th><th class="n">Qtd.</th><th>Un.</th></tr></thead><tbody>'+us.map(j=>{const r=B.m[j];return '<tr><td><button class="lk mono" data-ir="'+r[0]+'" data-irm="'+esc(r[1])+'">'+esc(catLabel(r[0],r[1]))+'</button></td><td>'+esc(B.d[r[0]][4])+'</td><td class="n">'+esc(String(r[5]).replace('.',','))+'</td><td>'+esc(r[6]||'')+'</td></tr>'}).join('')+'</tbody></table>':'<p class="hint">Não aparece em nenhuma montagem da base.</p>');
   return h}
+
+/* ---------- Montagens RCT no catálogo: Montagens_RCT.xlsx + Montagens_RCT_desenhos.json + Desenhos_RCT.json (pasta base_rct) ---------- */
+async function catRctCarrega(){
+  CAT.rct={a:true};catRender();
+  try{
+    const dir='_org/'+S.eu.organizacao_id+'/base_rct',l=await sb.storage.from('documentos').list(dir,{limit:50});if(l.error)throw l.error;
+    const nomes={};(l.data||[]).forEach(x=>{if(x.id)nomes[x.name]=x});
+    if(!nomes['Montagens_RCT.xlsx']){CAT.rct={m:[],des:[],img:{},sem:true};catRender();return}
+    const ler=async n=>{const x=nomes[n];if(!x)return null;const stamp=n+'|'+(x.updated_at||x.created_at)+'|'+(x.metadata&&x.metadata.size||0),k='rctc:'+n,c=await cGet(k);
+      if(c&&c.stamp===stamp&&c.org===S.eu.organizacao_id)return c.d;
+      const r=await sb.storage.from('documentos').download(dir+'/'+n);if(r.error)throw r.error;
+      const d=/\.json$/i.test(n)?JSON.parse(await r.data.text()):catRctXlsx(await r.data.arrayBuffer());cSet(k,{stamp,org:S.eu.organizacao_id,d});return d};
+    await carregaXlsx();
+    const [m,img,des]=await Promise.all([ler('Montagens_RCT.xlsx'),ler('Montagens_RCT_desenhos.json'),ler('Desenhos_RCT.json')]);
+    CAT.rct={m:m||[],img:img||{},des:des||[]};
+  }catch(e){CAT.rct={m:[],des:[],img:{},erro:erroTxt(e)}}
+  if(CAT.tab==='rct'&&S.vista==='desenhos')catRender()}
+function catRctXlsx(buf){
+  const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+  const nm=wb.SheetNames.find(n=>/tipos/i.test(n))||wb.SheetNames[0],rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null});
+  let hr=rows.findIndex(r=>r&&String(r[1]||'').trim().toLowerCase()==='materiais');if(hr<0)return [];
+  const tit=rows[hr-1]||[],cod=rows[hr],out=[];
+  for(let c=2;c<cod.length;c++){const k=cod[c];if(k==null||String(k).trim()==='')continue;
+    const mats=[];for(let r=hr+1;r<rows.length;r++){const q=rows[r]&&rows[r][c];if(q==null||q===''||isNaN(+String(q).replace(',','.')))continue;mats.push([String(rows[r][0]||'').trim(),String(rows[r][1]||'').trim(),+String(q).replace(',','.')])}
+    out.push({c:String(k).trim(),t:String(tit[c]||'').trim(),mats})}
+  return out}
+const catRctNum=v=>String(Math.round(v*1000)/1000).replace('.',',');
+function catRctLista(q){
+  const R=CAT.rct;
+  if(!R||R.a)return '<div class="ccount">A carregar as montagens RCT…</div>';
+  if(R.erro)return '<div class="ccount" style="color:var(--red)">'+esc(R.erro)+'</div>';
+  if(R.sem)return '<div class="ccount">Ainda não há base RCT carregada (Medição RCT › Obra ▾ › Carregar base RCT…).</div>';
+  const M=R.m.filter(x=>!q||cNorm(x.c+' '+x.t+' '+x.mats.map(y=>y[0]+' '+y[1]).join(' ')).indexOf(q)>=0).sort((a,b)=>a.c.localeCompare(b.c,'pt',{numeric:true}));
+  const D=R.des.filter(x=>!q||cNorm(x.ref+' '+x.des+' '+x.sap).indexOf(q)>=0);
+  return '<div class="ccount">'+M.length+' de '+R.m.length+' montagens · '+D.length+' de '+R.des.length+' desenhos RCT</div><div class="crows" id="cRows"><div class="cfam"><b>Montagens</b><span>'+M.length+'</span></div>'
+   +M.map(x=>'<button class="crow'+(CAT.selR==='m:'+x.c?' on':'')+'" data-cr="m:'+esc(x.c)+'"><span class="cc mono">'+esc(x.c)+'</span><span class="cv">'+(R.img[x.c]?'▣':'')+'</span><span class="cn">'+esc(x.t||'—')+'<small>'+x.mats.length+' materiais</small></span></button>').join('')
+   +'<div class="cfam"><b>Desenhos RCT</b><span>'+D.length+'</span></div>'
+   +D.map(x=>'<button class="crow'+(CAT.selR==='d:'+x.ref?' on':'')+'" data-cr="d:'+esc(x.ref)+'"><span class="cc mono">'+esc(x.ref)+'</span><span class="cv">'+esc(x.ver||'')+'</span><span class="cn">'+esc(x.des||'—')+'<small class="mono">'+esc(x.sap||'')+(x.data?' · '+esc(String(x.data).slice(0,10)):'')+'</small></span></button>').join('')+'</div>'}
+function catRctDet(){
+  const R=CAT.rct,k=CAT.selR||'';
+  if(!R||R.a||!R.m)return '<div class="cvaz"><b>Montagens RCT</b><p>A carregar…</p></div>';
+  if(k.slice(0,2)==='m:'){const x=R.m.find(y=>y.c===k.slice(2));if(x){
+    return '<div class="dh"><div><div class="dk">Montagem RCT</div><h2 class="mono">'+esc(x.c)+'</h2><div class="dn">'+esc(x.t||'')+'</div></div></div>'
+     +(R.img[x.c]?'<div class="dsec">Desenho da montagem</div><div class="dprev"><a href="'+esc(R.img[x.c])+'" target="_blank" rel="noopener"><img class="pimg" src="'+esc(R.img[x.c])+'" alt="Montagem '+esc(x.c)+'"></a></div>':'<p class="hint">Esta montagem não tem desenho na base RCT.</p>')
+     +'<div class="dsec">Materiais <span>'+x.mats.length+'</span></div><table class="ctab"><thead><tr><th>Código</th><th>Material</th><th class="n">Qtd.</th></tr></thead><tbody>'+x.mats.map(m=>'<tr><td class="mono">'+esc(m[0]||'—')+'</td><td>'+esc(m[1])+'</td><td class="n">'+catRctNum(m[2])+'</td></tr>').join('')+'</tbody></table>'}}
+  if(k.slice(0,2)==='d:'){const x=R.des.find(y=>y.ref===k.slice(2));if(x)
+    return '<div class="dh"><div><div class="dk">Desenho RCT</div><h2 class="mono">'+esc(x.ref)+'</h2><div class="dn">'+esc(x.des||'')+'</div><div class="dm"><span>SAP <b class="mono">'+esc(x.sap||'—')+'</b></span><span>Versão <b>'+esc(x.ver||'—')+'</b></span>'+(x.data?'<span>Publicado <b>'+esc(String(x.data).slice(0,10))+'</b></span>':'')+'</div></div></div>'
+     +(x.img?'<div class="dprev"><a href="'+esc(x.img)+'" target="_blank" rel="noopener"><img class="pimg" src="'+esc(x.img)+'" alt="'+esc(x.ref)+'"></a></div>':'')}
+  return '<div class="cvaz"><b>Escolha uma montagem ou um desenho à esquerda</b><p>Vê os materiais de cada montagem RCT e o desenho respetivo.</p></div>'}
+function catRctCsv(){const R=CAT.rct;if(!R||!R.m)return;const rows=[['Montagem','Título','Cód. material','Material','Quantidade']];
+  R.m.forEach(x=>x.mats.forEach(m=>rows.push([x.c,x.t,m[0],m[1],catRctNum(m[2])])));
+  const txt='﻿'+rows.map(r=>r.map(c=>{c=String(c==null?'':c);return /[;"\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(';')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));a.download='Montagens_RCT.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function catCsv(){const B=CAT.base;let rows,nome;
   if(CAT.tab==='des'){rows=[['Código Desenho','Nº Documento','Versão','Data Publicação','Designação','Ficheiro']].concat(B.d.map((r,i)=>{const t=catTipo(i);return [r[0],r[1],r[2],String(r[5]||'').slice(0,10),r[4],t.f?t.f.nome:'']}));nome='Indice_de_desenhos.csv'}
   else{rows=[['Cod Peca','Cod Antigo','Nomenclatura','Designação','Família','Cod Desenho','Ref no desenho']].concat(B.p.map(r=>[r[0],r[1],r[2],r[3],CAT_FAM[String(r[0]).slice(0,2)]||'',r[5],r[4]]));nome='Catalogo_de_pecas.csv'}
@@ -526,17 +594,18 @@ function catRender(){
   const pg=$('#pg');if(!pg)return;const B=CAT.base,q=cNorm(CAT.q.trim());
   const adm=admin()?'<button class="sm" id="cDes">Carregar desenhos…</button><button class="sm" id="cDesP">Carregar pasta…</button><button class="sm" id="cBase">'+(B?'Substituir base IP…':'Carregar base IP…')+'</button>':'';
   if(!B){pg.innerHTML='<div class="cat"><div class="hint" style="padding:14px 16px;margin:0 0 12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--soft)"><b>Sem base de dados.</b> A base IP (Base_de_dados_catenaria.xlsx) é carregada uma vez pelo administrador, e a Medição usa a mesma.<br><br>'+(admin()?'<button class="pri sm" id="cBase">Carregar base IP…</button> ':'')+'</div><div class="cbar"><div class="cpasta">'+adm.replace(/<button class="sm" id="cBase">.*?<\/button>/,'')+'</div></div></div>';ligaCat();return}
-  let h='<div class="cat"><div class="cbar"><div class="ctabs" role="tablist"><button data-ct="des" class="'+(CAT.tab==='des'?'on':'')+'">Índice de desenhos <span>'+B.d.length+'</span></button><button data-ct="pec" class="'+(CAT.tab==='pec'?'on':'')+'">Catálogo de peças <span>'+B.p.length+'</span></button></div>'
-   +'<button id="cCsv" class="sm">'+(CAT.tab==='des'?'Exportar o índice':'Exportar o catálogo')+'</button><div class="cpasta"><span class="cdot ok"></span>'+CAT.n+' ficheiros no servidor '+adm+'</div></div>';
-  h+='<div class="cgrid"><section class="clist"><div class="cfilt"><input id="cQ" type="search" placeholder="'+(CAT.tab==='des'?'Procurar código, designação ou nº de documento…':'Procurar código, SAP, designação ou desenho…')+'" value="'+esc(CAT.q)+'" autocomplete="off">';
+  let h='<div class="cat"><div class="cbar"><div class="ctabs" role="tablist"><button data-ct="des" class="'+(CAT.tab==='des'?'on':'')+'">Índice de desenhos <span>'+B.d.length+'</span></button><button data-ct="pec" class="'+(CAT.tab==='pec'?'on':'')+'">Catálogo de peças <span>'+B.p.length+'</span></button><button data-ct="rct" class="'+(CAT.tab==='rct'?'on':'')+'">Montagens RCT'+(CAT.rct&&CAT.rct.m?' <span>'+CAT.rct.m.length+'</span>':'')+'</button></div>'
+   +'<button id="cCsv" class="sm">'+(CAT.tab==='des'?'Exportar o índice':CAT.tab==='rct'?'Exportar montagens RCT':'Exportar o catálogo')+'</button><div class="cpasta"><span class="cdot ok"></span>'+CAT.n+' ficheiros no servidor '+adm+'</div></div>';
+  h+='<div class="cgrid"><section class="clist"><div class="cfilt"><input id="cQ" type="search" placeholder="'+(CAT.tab==='des'?'Procurar código, designação ou nº de documento…':CAT.tab==='rct'?'Procurar montagem, material ou desenho…':'Procurar código, SAP, designação ou desenho…')+'" value="'+esc(CAT.q)+'" autocomplete="off">';
   if(CAT.tab==='des')h+='<label class="chk"><input type="checkbox" id="cSoVer"'+(CAT.soVer?' checked':'')+'> só os que têm ficheiro</label>';
-  else h+='<select id="cFam"><option value="">Todas as famílias</option>'+Object.keys(CAT_FAM).map(k=>'<option value="'+k+'"'+(CAT.fam===k?' selected':'')+'>'+k+' · '+CAT_FAM[k]+'</option>').join('')+'</select>';
+  else if(CAT.tab==='pec')h+='<select id="cFam"><option value="">Todas as famílias</option>'+Object.keys(CAT_FAM).map(k=>'<option value="'+k+'"'+(CAT.fam===k?' selected':'')+'>'+k+' · '+CAT_FAM[k]+'</option>').join('')+'</select>';
   h+='</div>';
   if(CAT.tab==='des'){
     const L=B.d.map((r,i)=>i).filter(i=>{const r=B.d[i];if(q&&cNorm(r[0]+' '+r[4]+' '+r[1]).indexOf(q)<0)return false;if(CAT.soVer&&!catTipo(i).f)return false;return true});
     h+='<div class="ccount">'+L.length+' de '+B.d.length+' desenhos</div><div class="crows" id="cRows">'+L.slice(0,600).map(i=>{const r=B.d[i],t=catTipo(i);
       return '<button class="crow'+(CAT.sel===i?' on':'')+'" data-cd="'+i+'"><span class="cc mono">'+esc(r[0])+'</span><span class="cv">'+esc(r[2]||'')+'</span><span class="cn">'+esc(r[4]||'—')+'<small class="mono">'+esc(r[1])+(r[5]?' · '+esc(String(r[5]).slice(0,10)):'')+'</small></span><span class="cx '+(t.f?(t.ver?'ok':'dwf'):'falta')+'" title="'+(t.f?esc(t.f.nome):'Sem ficheiro no servidor')+'">'+(t.f?t.ext.toUpperCase():'falta')+'</span></button>'}).join('')
       +(L.length>600?'<div class="ccount">mostrados 600 — afine a procura</div>':'')+(L.length?'':'<div class="ccount">Nenhum desenho corresponde.</div>')+'</div>';
+  }else if(CAT.tab==='rct'){ h+=catRctLista(q);
   }else{
     const P=B.p.map((r,i)=>i).filter(i=>{const r=B.p[i];if(CAT.fam&&String(r[0]).slice(0,2)!==CAT.fam)return false;return !q||cNorm(r[0]+' '+r[1]+' '+r[2]+' '+r[3]+' '+r[5]).indexOf(q)>=0});
     P.sort((x,y)=>String(B.p[x][0]).localeCompare(String(B.p[y][0]),'pt',{numeric:true}));
@@ -546,16 +615,17 @@ function catRender(){
     h+='<div class="ccount">'+P.length+' de '+B.p.length+' peças, por família</div><div class="crows" id="cRows">'+corpo
       +(P.length>2000?'<div class="ccount">mostradas 2000 — afine a procura ou escolha uma família</div>':'')+(P.length?'':'<div class="ccount">Nenhuma peça corresponde.</div>')+'</div>';
   }
-  h+='</section><section class="cdet" id="cDet">'+(CAT.tab==='des'?catDetDes():catDetPec())+'</section></div><p class="hint cfoot">Base: '+esc(CAT.nome)+'. A edição da base faz-se na Medição › Base de dados. '+B.p.length+' peças · '+B.d.length+' desenhos · '+B.m.length+' linhas de montagem.</p></div>';
+  h+='</section><section class="cdet" id="cDet">'+(CAT.tab==='des'?catDetDes():CAT.tab==='rct'?catRctDet():catDetPec())+'</section></div><p class="hint cfoot">Base: '+esc(CAT.nome)+'. A edição da base faz-se na Medição › Base de dados. '+B.p.length+' peças · '+B.d.length+' desenhos · '+B.m.length+' linhas de montagem.</p></div>';
   const sc=$('#cRows')?$('#cRows').scrollTop:0;pg.innerHTML=h;if($('#cRows'))$('#cRows').scrollTop=sc;ligaCat();
   catPos()}
-function catPos(){const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null&&$('#cPrev'))catMostra($('#cPrev'),di,false);if(CAT.tab!=='des')catManual()}
+function catPos(){const di=CAT.tab==='des'?CAT.sel:CAT.prevDi;if(di!=null&&$('#cPrev'))catMostra($('#cPrev'),di,false);if(CAT.tab==='pec')catManual()}
 function catSel(x){const rows=$('#cRows');if(rows)rows.querySelectorAll('.crow.on').forEach(r=>r.classList.remove('on'));x.classList.add('on');
-  const ds=$('#cDet');ds.innerHTML=CAT.tab==='des'?catDetDes():catDetPec();ds.scrollTop=0;catPos()}
+  const ds=$('#cDet');ds.innerHTML=CAT.tab==='des'?catDetDes():CAT.tab==='rct'?catRctDet():catDetPec();ds.scrollTop=0;catPos()}
 function ligaCat(){
   const pg=$('#pg');
   pg.onclick=e=>{if(S.vista!=='desenhos')return;const t=e.target;let x;
-    if((x=t.closest('[data-ct]'))){CAT.tab=x.getAttribute('data-ct');CAT.q='';catRender();return}
+    if((x=t.closest('[data-ct]'))){CAT.tab=x.getAttribute('data-ct');CAT.q='';catRender();if(CAT.tab==='rct'&&!CAT.rct)catRctCarrega();return}
+    if((x=t.closest('[data-cr]'))){CAT.selR=x.getAttribute('data-cr');catSel(x);return}
     if((x=t.closest('[data-cd]'))){CAT.sel=+x.getAttribute('data-cd');CAT.vMont=null;catSel(x);return}
     if((x=t.closest('[data-cp]'))){CAT.selP=+x.getAttribute('data-cp');catSel(x);return}
     if((x=t.closest('[data-pt]'))){CAT.pTab=x.getAttribute('data-pt');const ds=$('#cDet');ds.innerHTML=catDetPec();catPos();return}
@@ -564,7 +634,7 @@ function ligaCat(){
     if((x=t.closest('[data-ip]'))){CAT.tab='pec';CAT.selP=+x.getAttribute('data-ip');CAT.q='';CAT.fam='';catRender();const r2=$('.crow.on');if(r2)r2.scrollIntoView({block:'center'});return}
     if(t.closest('#cGrande')){catGrande(CAT.sel);return}
     if(t.closest('#cAbre')){const f=catTipo(CAT.sel).f;if(f)urlBib(f.path).then(u=>window.open(u,'_blank'));return}
-    if(t.closest('#cCsv')){catCsv();return}
+    if(t.closest('#cCsv')){if(CAT.tab==='rct')catRctCsv();else catCsv();return}
     if(t.closest('#cBase')){cargaBase();return}
     if(t.closest('#cDes')){cargaDes(false);return}
     if(t.closest('#cDesP')){cargaDes(true);return}};
