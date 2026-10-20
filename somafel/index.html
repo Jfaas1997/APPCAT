@@ -203,6 +203,19 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .npv{align-items:stretch}.npv .pfr{width:100%}
 
 
+
+.pskpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.pskpi button{text-align:left;padding:12px;border:1px solid var(--line,#ddd);border-radius:10px;background:var(--card,#fff);cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.pskpi button b{font-size:26px;line-height:1}.pskpi button.er{border-color:#c0392b}.pskpi button.av{border-color:#d68910}
+.pstabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px;border-bottom:1px solid var(--line,#ddd)}
+.pstabs button{border:0;background:none;padding:10px 12px;cursor:pointer;border-bottom:3px solid transparent;font:inherit}
+.pstabs button[aria-selected=true]{border-bottom-color:var(--acc,#0b5cad);font-weight:600}
+.psbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.psbar input[type=search]{flex:1;min-width:200px}
+.psdois{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.pslista{list-style:none;margin:0;padding:0}.pslista li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line,#eee);flex-wrap:wrap}
+.psh{margin:16px 0 6px}.psv{display:inline-flex;gap:6px;align-items:center;margin:0 14px 6px 0}
+tr.lnk{cursor:pointer}tr.lnk:focus-visible{outline:2px solid var(--acc,#0b5cad)}
+#sPessN{background:#c0392b;color:#fff;border-radius:10px;padding:0 6px;font-size:11px;margin-left:auto}
 </style>
 <link rel="stylesheet" href="movimento.css">
 <style>.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}.so{transition:background .15s,border-color .15s}.pg.entra{animation:entra .18s ease-out}</style>
@@ -378,7 +391,7 @@ function casca(){
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medição de catenária</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
-   +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Pessoas</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
+   +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
    +'<header><span class="ccchip" id="hCC" hidden></span><h1 id="hT">Obras</h1><span class="hint" id="hSub"></span><span class="hsave" id="hSave" hidden><i></i><span></span></span><span class="hsp"></span><span class="quem"><b>'+esc(S.eu.nome)+'</b> <span class="pill">'+PAPEL[S.eu.papel]+'</span></span><button id="bNova" class="pri" hidden>+ Nova obra</button><button id="bAjuda" aria-label="Ajuda">?</button></header>'
    +'<main><div class="pg" id="pg"></div></main></div>';
@@ -705,7 +718,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
   posiciona();
   if(S.obra&&gestor()&&!app&&S.obra.id!=='livre'){const oid=S.obra.id;clearTimeout(window.__pw);window.__pw=setTimeout(()=>{if(S.obra&&S.obra.id===oid&&!APPV[S.vista]){frameApp(S.obra,'med');setTimeout(()=>{if(S.obra&&S.obra.id===oid)frameApp(S.obra,'rct')},2500)}},700)}
 }
@@ -943,6 +956,139 @@ async function rubricas(c,fim){
   desenha();
 }
 
+/* ---------- pessoal (fora da obra): pessoas, valências e certificados ---------- */
+const PS={sep:'pessoas',q:'',est:'ativos',val:'todas',dados:null};
+const VAL_SUG=['Eletricista de catenária','Montador de postes e consolas','Operador de PEMP / plataforma','Trabalhos em altura','Condutor de veículo de via','Segurança ferroviária (piloto, vigia)','Topografia','Soldadura','Eletricista BT/MT','Encarregado de obra'];
+const TIPO_SUG=['Aptidão médica','Formação de segurança ferroviária','Trabalhos em altura','Operador de PEMP','Primeiros socorros','Habilitação elétrica','Carta de condução'];
+const dPT=d=>{if(!d)return '—';const p=String(d).slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0]};
+function diasAte(d){if(!d)return null;const p=String(d).slice(0,10).split('-').map(Number);const hoje=new Date();const a=Date.UTC(p[0],p[1]-1,p[2]),b=Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());return Math.round((a-b)/864e5)}
+/* estado de um certificado: caducado, a caducar (30/60/90 dias), válido ou sem prazo */
+function estCert(c){const n=diasAte(c.validade);
+  if(n===null)return {k:'sem',cl:'',t:'sem prazo',n:null,ord:1e9};
+  if(n<0)return {k:'cad',cl:'er',t:'caducado há '+(-n)+' d',n,ord:n};
+  if(n<=30)return {k:'30',cl:'er',t:n===0?'caduca hoje':'caduca em '+n+' d',n,ord:n};
+  if(n<=60)return {k:'60',cl:'av',t:'caduca em '+n+' d',n,ord:n};
+  if(n<=90)return {k:'90',cl:'av',t:'caduca em '+n+' d',n,ord:n};
+  return {k:'ok',cl:'on',t:'válido',n,ord:n}}
+/* por pessoa e tipo conta só o certificado mais recente (o resto são anteriores) */
+function vigentes(certs){const m={};certs.forEach(c=>{const k=c.pessoal_id+'|'+(c.tipo_id||('t:'+c.titulo.toLowerCase()));const a=m[k];
+  if(!a||(c.validade||'9999-12-31')>(a.validade||'9999-12-31')||((c.validade||'')===(a.validade||'')&&(c.emissao||'')>(a.emissao||'')))m[k]=c});return Object.values(m)}
+async function pessoalCarrega(){
+  const [pessoal,val,pv,tipos,certs]=await Promise.all([ok(sb.from('pessoal').select('*').order('nome')),ok(sb.from('valencias').select('*').order('nome')),ok(sb.from('pessoal_valencias').select('*')),ok(sb.from('tipos_certificado').select('*').order('nome')),ok(sb.from('certificados').select('*'))]);
+  PS.dados={pessoal,val,pv,tipos,certs};return PS.dados}
+function pessoalResumo(D){
+  const ativos=new Set(D.pessoal.filter(p=>p.estado==='ativo').map(p=>p.id)), vig=vigentes(D.certs).filter(c=>ativos.has(c.pessoal_id));
+  const r={cad:0,d30:0,d90:0,falta:0,porPessoa:{}};
+  vig.forEach(c=>{const e=estCert(c);const o=r.porPessoa[c.pessoal_id]||(r.porPessoa[c.pessoal_id]={pior:null,prox:null,n:0});o.n++;
+    if(!o.pior||e.ord<o.pior.ord)o.pior=Object.assign({c},e);
+    if(e.k==='cad')r.cad++;else if(e.k==='30')r.d30++;else if(e.k==='60'||e.k==='90')r.d90++});
+  const obrig=D.tipos.filter(t=>t.obrigatorio);
+  ativos.forEach(id=>{const tem=new Set(D.certs.filter(c=>c.pessoal_id===id&&c.tipo_id).map(c=>c.tipo_id));const f=obrig.filter(t=>!tem.has(t.id));if(f.length){r.falta++;(r.porPessoa[id]||(r.porPessoa[id]={pior:null,prox:null,n:0})).faltam=f}});
+  return r}
+async function pessoalBadge(){try{const D=await pessoalCarrega();const r=pessoalResumo(D);const n=r.cad+r.d30;const b=document.getElementById('sPessN');if(b){b.textContent=n||'';b.hidden=!n;b.title=n?n+' certificado(s) caducado(s) ou a caducar em 30 dias':''}}catch(e){}}
+const pillC=e=>'<span class="pill '+e.cl+'">'+esc(e.t)+'</span>';
+async function vPessoal(){
+  titulo('Pessoal');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
+  let D;try{D=await pessoalCarrega()}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  const R=pessoalResumo(D),adm=admin();
+  const tabs=[['pessoas','Pessoas'],['validades','Validades'],['catalogo','Valências e tipos de formação']];
+  let h='<div class="vz"><div class="topo"><div><h2>Pessoal</h2><p class="sub" style="margin:0">Quem somos, o que sabemos fazer e o que está em dia. Fora das obras.</p></div><span class="sp"></span>'+(adm?'<button class="pri" id="psNova">+ Nova pessoa</button>':'')+'</div>'
+   +'<div class="pskpi" role="group" aria-label="Alertas de certificados">'
+   +[['cad','Caducados',R.cad,'er'],['30','Caducam em 30 dias',R.d30,'er'],['90','Caducam em 31 a 90 dias',R.d90,'av'],['falta','Com obrigatórios em falta',R.falta,'av']].map(k=>'<button type="button" data-k="'+k[0]+'" class="'+(k[2]?k[3]:'')+'"><b>'+k[2]+'</b><span>'+k[1]+'</span></button>').join('')+'</div>'
+   +'<div class="pstabs" role="tablist">'+tabs.map(t=>'<button role="tab" type="button" data-sep="'+t[0]+'" aria-selected="'+(PS.sep===t[0])+'">'+t[1]+'</button>').join('')+'</div><div id="psCorpo"></div></div>';
+  pg.innerHTML=h;
+  const corpo=()=>{const c=$('#psCorpo');({pessoas:psPessoas,validades:psValidades,catalogo:psCatalogo}[PS.sep])(c,D,R,adm,()=>vPessoal())};
+  pg.querySelectorAll('[data-sep]').forEach(b=>b.onclick=()=>{PS.sep=b.dataset.sep;pg.querySelectorAll('[data-sep]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));corpo()});
+  pg.querySelectorAll('.pskpi [data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==='falta'){PS.sep='pessoas';PS.q='';PS.est='falta'}else{PS.sep='validades';PS.val=k==='90'?'90':k}pg.querySelectorAll('[data-sep]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.sep===PS.sep)));corpo()});
+  const bn=$('#psNova');if(bn)bn.onclick=()=>psFichaPessoa(null,D,()=>vPessoal());
+  corpo();pessoalBadge()}
+function psPessoas(c,D,R,adm,rec){
+  const nomeV=id=>(D.val.find(v=>v.id===id)||{}).nome;
+  let L=D.pessoal.filter(p=>PS.est==='todos'||(PS.est==='falta'?(R.porPessoa[p.id]&&R.porPessoa[p.id].faltam&&p.estado==='ativo'):(PS.est==='inativos'?p.estado==='inativo':p.estado==='ativo')));
+  const q=PS.q.trim().toLowerCase();if(q)L=L.filter(p=>(p.nome+' '+(p.numero||'')+' '+(p.funcao||'')+' '+D.pv.filter(x=>x.pessoal_id===p.id).map(x=>nomeV(x.valencia_id)).join(' ')).toLowerCase().includes(q));
+  c.innerHTML='<div class="psbar"><input type="search" id="psQ" aria-label="Procurar por nome, número, função ou valência" placeholder="Procurar por nome, n.º, função ou valência" value="'+esc(PS.q)+'"><select id="psE" aria-label="Estado"><option value="ativos">Ativos</option><option value="inativos">Inativos</option><option value="todos">Todos</option><option value="falta">Com obrigatórios em falta</option></select><span class="hint">'+L.length+' pessoa'+(L.length===1?'':'s')+'</span></div>'
+   +(L.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>N.º</th><th>Nome e função</th><th>Valências</th><th>Certificados</th><th>Estado</th></tr></thead><tbody>'
+   +L.map(p=>{const vs=D.pv.filter(x=>x.pessoal_id===p.id).map(x=>nomeV(x.valencia_id)).filter(Boolean),o=R.porPessoa[p.id];
+     return '<tr class="lnk" tabindex="0" data-p="'+p.id+'"><td class="n"><b>'+esc(p.numero||'—')+'</b></td><td><b>'+esc(p.nome)+'</b><div class="hint">'+esc(p.funcao||'')+'</div></td><td>'+(vs.slice(0,3).map(v=>'<span class="chip">'+esc(v)+'</span>').join(' ')+(vs.length>3?' <span class="hint">+'+(vs.length-3)+'</span>':'')||'<span class="hint">—</span>')+'</td>'
+      +'<td>'+(o&&o.pior?pillC(o.pior)+'<div class="hint">'+esc(o.pior.c.titulo)+' · '+dPT(o.pior.c.validade)+'</div>':'<span class="hint">sem certificados</span>')+(o&&o.faltam?'<div><span class="pill av">falta: '+esc(o.faltam.map(t=>t.nome).join(', '))+'</span></div>':'')+'</td>'
+      +'<td><span class="pill '+(p.estado==='ativo'?'on':'')+'">'+p.estado+'</span></td></tr>'}).join('')+'</tbody></table></div>'
+    :'<div class="vazio"><h2>Ainda não há ninguém aqui</h2><p>'+(adm?'Comece por «+ Nova pessoa». Depois acrescente valências e certificados na ficha de cada um.':'O administrador ainda não registou pessoal.')+'</p></div>')
+   +'<p class="hint" style="margin-top:12px">Dados pessoais: só os gestores veem e só o administrador edita. Não guarde NIF, número de cartão de cidadão nem dados de saúde; para a aptidão médica registe apenas a validade e o ficheiro.</p>';
+  $('#psE').value=PS.est;$('#psE').onchange=e=>{PS.est=e.target.value;psPessoas(c,D,R,adm,rec)};
+  const qi=$('#psQ');qi.oninput=e=>{PS.q=e.target.value;const pos=qi.selectionStart;psPessoas(c,D,R,adm,rec);const n=$('#psQ');n.focus();n.setSelectionRange(pos,pos)};
+  c.querySelectorAll('tr[data-p]').forEach(r=>{const ab=()=>psFicha(r.dataset.p,D,rec);r.onclick=ab;r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ab()}}})}
+function psValidades(c,D,R,adm,rec){
+  const ativos=new Set(D.pessoal.filter(p=>p.estado==='ativo').map(p=>p.id)),nome=id=>(D.pessoal.find(p=>p.id===id)||{}).nome||'?';
+  let L=vigentes(D.certs).filter(x=>ativos.has(x.pessoal_id)).map(x=>Object.assign({c:x},estCert(x)));
+  const filtros=[['todas','Todos'],['cad','Caducados'],['30','Até 30 dias'],['60','Até 60 dias'],['90','Até 90 dias'],['sem','Sem prazo']];
+  const f=PS.val;if(f==='30')L=L.filter(e=>e.k==='cad'||e.k==='30');else if(f==='60')L=L.filter(e=>e.k==='cad'||e.k==='30'||e.k==='60');else if(f==='90')L=L.filter(e=>['cad','30','60','90'].includes(e.k));else if(f==='cad'||f==='sem')L=L.filter(e=>e.k===f);
+  L.sort((a,b)=>a.ord-b.ord);
+  c.innerHTML='<div class="psbar"><select id="psV" aria-label="Filtrar validades">'+filtros.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join('')+'</select><span class="hint">'+L.length+' certificado'+(L.length===1?'':'s')+' em vigor, só de pessoal ativo</span><span class="sp" style="flex:1"></span><button type="button" id="psCsv">Exportar CSV</button></div>'
+   +(L.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Pessoa</th><th>Certificado</th><th>Entidade</th><th>Validade</th><th>Estado</th></tr></thead><tbody>'
+    +L.map(e=>{const x=e.c;return '<tr class="lnk" tabindex="0" data-p="'+x.pessoal_id+'"><td><b>'+esc(nome(x.pessoal_id))+'</b></td><td>'+esc(x.titulo)+'</td><td>'+esc(x.entidade||'')+'</td><td class="n">'+dPT(x.validade)+'</td><td>'+pillC(e)+'</td></tr>'}).join('')+'</tbody></table></div>'
+    :'<div class="vazio"><h2>Nada por aqui</h2><p>Não há certificados neste filtro.</p></div>');
+  $('#psV').value=PS.val;$('#psV').onchange=e=>{PS.val=e.target.value;psValidades(c,D,R,adm,rec)};
+  c.querySelectorAll('tr[data-p]').forEach(r=>{const ab=()=>psFicha(r.dataset.p,D,rec);r.onclick=ab;r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ab()}}});
+  $('#psCsv').onclick=()=>{const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';const lin=[['Pessoa','Função','Certificado','Entidade','Número','Emissão','Validade','Estado'].map(q).join(';')].concat(L.map(e=>{const x=e.c,p=D.pessoal.find(z=>z.id===x.pessoal_id)||{};return [p.nome,p.funcao,x.titulo,x.entidade,x.numero,x.emissao,x.validade,e.t].map(q).join(';')}));
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+lin.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='validades_pessoal.csv';document.body.appendChild(a);a.click();a.remove()}}
+function psCatalogo(c,D,R,adm,rec){
+  const nv=id=>D.pv.filter(x=>x.valencia_id===id).length,nc=id=>D.certs.filter(x=>x.tipo_id===id).length;
+  c.innerHTML='<div class="psdois"><div class="card"><h3 style="margin:0 0 4px">Valências</h3><p class="hint" style="margin:0 0 10px">O que cada pessoa sabe fazer (competências).</p>'
+   +(D.val.length?'<ul class="pslista">'+D.val.map(v=>'<li><span><b>'+esc(v.nome)+'</b> <span class="hint">· '+nv(v.id)+' pessoa'+(nv(v.id)===1?'':'s')+'</span></span>'+(adm?'<span><button type="button" data-ev="'+v.id+'">Renomear</button> <button type="button" data-dv="'+v.id+'">Retirar</button></span>':'')+'</li>').join('')+'</ul>':'<p class="hint">Ainda não há valências.</p>')
+   +(adm?'<div class="bt2"><button class="pri" type="button" id="psNv">+ Valência</button>'+(VAL_SUG.some(s=>!D.val.some(v=>v.nome===s))?' <button type="button" id="psSv">Adicionar sugestões</button>':'')+'</div>':'')+'</div>'
+   +'<div class="card"><h3 style="margin:0 0 4px">Tipos de formação / certificado</h3><p class="hint" style="margin:0 0 10px">A validade por defeito preenche a data de validade ao registar. «Obrigatório» faz aparecer o alerta de em falta.</p>'
+   +(D.tipos.length?'<ul class="pslista">'+D.tipos.map(t=>'<li><span><b>'+esc(t.nome)+'</b> <span class="hint">· '+(t.validade_meses?t.validade_meses+' meses':'sem validade por defeito')+(t.obrigatorio?' · obrigatório':'')+' · '+nc(t.id)+' registo'+(nc(t.id)===1?'':'s')+'</span></span>'+(adm?'<span><button type="button" data-et="'+t.id+'">Editar</button> <button type="button" data-dt="'+t.id+'">Retirar</button></span>':'')+'</li>').join('')+'</ul>':'<p class="hint">Ainda não há tipos.</p>')
+   +(adm?'<div class="bt2"><button class="pri" type="button" id="psNt">+ Tipo</button>'+(TIPO_SUG.some(s=>!D.tipos.some(t=>t.nome===s))?' <button type="button" id="psSt">Adicionar sugestões</button>':'')+'</div>':'')+'</div></div>';
+  const org=S.eu.organizacao_id,go=async f=>{try{await f();rec()}catch(e){aviso(erroTxt(e),true)}};
+  const bnv=$('#psNv');if(bnv)bnv.onclick=async()=>{const v=await formulario('Nova valência',[{id:'nome',rotulo:'Nome',obrig:true},{id:'descricao',rotulo:'Descrição (opcional)'}],'Criar');if(v)go(()=>ok(sb.from('valencias').insert({organizacao_id:org,nome:v.nome,descricao:v.descricao||null})))};
+  const bsv=$('#psSv');if(bsv)bsv.onclick=async()=>{if(!await confirmar('Acrescentar as valências sugeridas que ainda não existem? Pode renomear ou retirar depois.','Acrescentar'))return;go(()=>ok(sb.from('valencias').insert(VAL_SUG.filter(s=>!D.val.some(v=>v.nome===s)).map(n=>({organizacao_id:org,nome:n})))))};
+  const bnt=$('#psNt');if(bnt)bnt.onclick=async()=>{const v=await formulario('Novo tipo de certificado',[{id:'nome',rotulo:'Nome',obrig:true},{id:'m',tipo:'number',rotulo:'Validade por defeito, em meses (opcional)'},{id:'o',tipo:'select',rotulo:'Obrigatório para todo o pessoal ativo?',valor:'n',opcoes:[{v:'n',t:'Não'},{v:'s',t:'Sim'}]}],'Criar');if(v)go(()=>ok(sb.from('tipos_certificado').insert({organizacao_id:org,nome:v.nome,validade_meses:v.m?parseInt(v.m,10):null,obrigatorio:v.o==='s'})))};
+  const bst=$('#psSt');if(bst)bst.onclick=async()=>{if(!await confirmar('Acrescentar os tipos sugeridos que ainda não existem? Não trazem validade nem obrigatoriedade: defina-as depois em «Editar».','Acrescentar'))return;go(()=>ok(sb.from('tipos_certificado').insert(TIPO_SUG.filter(s=>!D.tipos.some(t=>t.nome===s)).map(n=>({organizacao_id:org,nome:n})))))};
+  c.querySelectorAll('[data-ev]').forEach(b=>b.onclick=async()=>{const x=D.val.find(z=>z.id===b.dataset.ev);const v=await formulario('Renomear valência',[{id:'nome',rotulo:'Nome',valor:x.nome,obrig:true},{id:'descricao',rotulo:'Descrição',valor:x.descricao||''}],'Guardar');if(v)go(()=>ok(sb.from('valencias').update({nome:v.nome,descricao:v.descricao||null}).eq('id',x.id)))});
+  c.querySelectorAll('[data-dv]').forEach(b=>b.onclick=async()=>{const x=D.val.find(z=>z.id===b.dataset.dv);if(!await confirmar('Retirar a valência «'+x.nome+'»? Deixa de constar nas '+nv(x.id)+' ficha(s) onde estava.','Retirar'))return;go(()=>ok(sb.from('valencias').delete().eq('id',x.id)))});
+  c.querySelectorAll('[data-et]').forEach(b=>b.onclick=async()=>{const x=D.tipos.find(z=>z.id===b.dataset.et);const v=await formulario('Editar tipo de certificado',[{id:'nome',rotulo:'Nome',valor:x.nome,obrig:true},{id:'m',tipo:'number',rotulo:'Validade por defeito, em meses',valor:x.validade_meses||''},{id:'o',tipo:'select',rotulo:'Obrigatório para todo o pessoal ativo?',valor:x.obrigatorio?'s':'n',opcoes:[{v:'n',t:'Não'},{v:'s',t:'Sim'}]}],'Guardar');if(v)go(()=>ok(sb.from('tipos_certificado').update({nome:v.nome,validade_meses:v.m?parseInt(v.m,10):null,obrigatorio:v.o==='s'}).eq('id',x.id)))});
+  c.querySelectorAll('[data-dt]').forEach(b=>b.onclick=async()=>{const x=D.tipos.find(z=>z.id===b.dataset.dt);if(!await confirmar('Retirar o tipo «'+x.nome+'»? Os '+nc(x.id)+' certificado(s) ficam, mas sem tipo.','Retirar'))return;go(()=>ok(sb.from('tipos_certificado').delete().eq('id',x.id)))})}
+async function psFichaPessoa(p,D,rec){
+  const v=await formulario(p?'Dados da pessoa':'Nova pessoa',[{id:'nome',rotulo:'Nome',valor:p?p.nome:'',obrig:true},{id:'numero',rotulo:'N.º de trabalhador',valor:p?p.numero||'':'',obrig:true},{id:'funcao',rotulo:'Função',valor:p?p.funcao||'':'',obrig:true},{id:'contacto',rotulo:'Telefone',valor:p?p.contacto||'':'',tipo:'tel'},{id:'email',rotulo:'Email',tipo:'email',valor:p?p.email||'':''},{id:'adm',rotulo:'Data de admissão',tipo:'date',valor:p?p.data_admissao||'':''},{id:'estado',tipo:'select',rotulo:'Estado',valor:p?p.estado:'ativo',opcoes:[{v:'ativo',t:'Ativo'},{v:'inativo',t:'Inativo'}]},{id:'notas',rotulo:'Notas',valor:p?p.notas||'':''}],'Guardar');
+  if(!v)return;const row={nome:v.nome,funcao:v.funcao||null,numero:v.numero||null,contacto:v.contacto||null,email:v.email||null,data_admissao:v.adm||null,estado:v.estado,notas:v.notas||null};
+  try{if(p)await ok(sb.from('pessoal').update(row).eq('id',p.id));else{const r=await ok(sb.from('pessoal').insert(Object.assign({organizacao_id:S.eu.organizacao_id},row)).select('id').single());PS.abrir=r.id}aviso('Guardado.');rec()}catch(e){aviso(erroTxt(e),true)}}
+async function psFicha(id,D,rec){
+  const p=D.pessoal.find(x=>x.id===id);if(!p)return;const adm=admin(),w=janela(p.nome,true);
+  const desenha=()=>{
+    const mine=D.certs.filter(c=>c.pessoal_id===id).sort((a,b)=>(b.validade||'9999').localeCompare(a.validade||'9999')),vig=new Set(vigentes(mine).map(c=>c.id)),tem=new Set(D.pv.filter(x=>x.pessoal_id===id).map(x=>x.valencia_id));
+    w.corpo.innerHTML='<p class="hint" style="margin:0 0 8px">'+[p.funcao,p.numero&&('trabalhador n.º '+p.numero),p.contacto,p.email,p.data_admissao&&('admitido em '+dPT(p.data_admissao))].filter(Boolean).map(esc).join(' · ')+' <span class="pill '+(p.estado==='ativo'?'on':'')+'">'+p.estado+'</span></p>'+(p.notas?'<p style="margin:0 0 8px">'+esc(p.notas)+'</p>':'')
+     +'<h4 class="psh">Valências</h4><div>'+(D.val.length?D.val.map(v=>'<label class="chk psv"><input type="checkbox" data-v="'+v.id+'"'+(tem.has(v.id)?' checked':'')+(adm?'':' disabled')+'> '+esc(v.nome)+'</label>').join(''):'<p class="hint">Defina primeiro as valências em «Valências e tipos».</p>')+'</div>'
+     +'<h4 class="psh">Formações e certificados</h4>'+(mine.length?'<table><thead><tr><th>Certificado</th><th>Validade</th><th>Estado</th><th></th></tr></thead><tbody>'+mine.map(c=>{const e=estCert(c),atual=vig.has(c.id);return '<tr><td><b>'+esc(c.titulo)+'</b><div class="hint">'+esc([c.entidade,c.numero&&('n.º '+c.numero),c.emissao&&('emitido em '+dPT(c.emissao))].filter(Boolean).join(' · '))+'</div></td><td class="n">'+dPT(c.validade)+'</td><td>'+(atual?pillC(e):'<span class="pill">anterior</span>')+'</td><td class="ac">'+(c.ficheiro?'<button type="button" data-f="'+c.id+'">Ver ficheiro</button> ':'')+(adm?'<button type="button" data-ec="'+c.id+'">Editar</button> <button type="button" data-dc="'+c.id+'">Retirar</button>':'')+'</td></tr>'}).join('')+'</tbody></table>':'<p class="hint">Ainda sem formações nem certificados registados.</p>')
+     +'<div class="bt">'+(adm?'<button type="button" id="fE">Editar dados</button><button type="button" id="fC" class="pri">+ Formação / certificado</button>':'')+'<button type="button" id="fX">Fechar</button></div>';
+    $('#fX',w.corpo).onclick=()=>{w.fecha();rec()};
+    w.corpo.querySelectorAll('input[data-v]').forEach(i=>i.onchange=async()=>{try{if(i.checked){const r=await ok(sb.from('pessoal_valencias').insert({pessoal_id:id,valencia_id:i.dataset.v,organizacao_id:S.eu.organizacao_id}).select().single());D.pv.push(r)}else{await ok(sb.from('pessoal_valencias').delete().eq('pessoal_id',id).eq('valencia_id',i.dataset.v));D.pv=D.pv.filter(x=>!(x.pessoal_id===id&&x.valencia_id===i.dataset.v))}}catch(e){aviso(erroTxt(e),true);i.checked=!i.checked}});
+    w.corpo.querySelectorAll('[data-f]').forEach(b=>b.onclick=async()=>{const c=D.certs.find(x=>x.id===b.dataset.f);try{const r=await sb.storage.from('documentos').createSignedUrl(c.ficheiro,600);if(r.error)throw r.error;window.open(r.data.signedUrl,'_blank','noopener')}catch(e){aviso(erroTxt(e),true)}});
+    const eC=$('#fE',w.corpo);if(eC)eC.onclick=()=>{w.fecha();psFichaPessoa(p,D,rec)};
+    const nC=$('#fC',w.corpo);if(nC)nC.onclick=()=>psCert(null,id,D,()=>{desenha()});
+    w.corpo.querySelectorAll('[data-ec]').forEach(b=>b.onclick=()=>psCert(D.certs.find(x=>x.id===b.dataset.ec),id,D,()=>desenha()));
+    w.corpo.querySelectorAll('[data-dc]').forEach(b=>b.onclick=async()=>{const c=D.certs.find(x=>x.id===b.dataset.dc);if(!await confirmar('Retirar o certificado «'+c.titulo+'»? O ficheiro anexo também é apagado.','Retirar'))return;try{if(c.ficheiro){await sb.storage.from('documentos').remove([c.ficheiro])}await ok(sb.from('certificados').delete().eq('id',c.id));D.certs=D.certs.filter(x=>x.id!==c.id);aviso('Certificado retirado.');desenha()}catch(e){aviso(erroTxt(e),true)}})};
+  desenha()}
+function psCert(c,pid,D,feito){
+  const w=janela(c?'Editar formação / certificado':'Nova formação / certificado');const f=document.createElement('form');
+  f.innerHTML='<label for="cT">Tipo</label><select id="cT"><option value="">Outro (indicar o título)</option>'+D.tipos.map(t=>'<option value="'+t.id+'"'+(c&&c.tipo_id===t.id?' selected':'')+'>'+esc(t.nome)+'</option>').join('')+'</select>'
+   +'<label for="cN">Título</label><input id="cN" required value="'+esc(c?c.titulo:'')+'"><label for="cE">Entidade emissora</label><input id="cE" value="'+esc(c?c.entidade||'':'')+'"><label for="cU">Número</label><input id="cU" value="'+esc(c?c.numero||'':'')+'">'
+   +'<label for="cI">Data de emissão</label><input id="cI" type="date" value="'+esc(c?c.emissao||'':'')+'"><label for="cV">Data de validade (vazio = não caduca)</label><input id="cV" type="date" value="'+esc(c?c.validade||'':'')+'">'
+   +'<label for="cF">Ficheiro (PDF ou imagem)'+(c&&c.ficheiro?' — já tem um; escolher outro substitui-o':'')+'</label><input id="cF" type="file" accept="application/pdf,image/*"><label for="cO">Notas</label><input id="cO" value="'+esc(c?c.notas||'':'')+'">'
+   +'<div class="bt"><button type="button" class="cancela">Cancelar</button><button class="pri" type="submit">Guardar</button></div>';
+  w.corpo.appendChild(f);
+  const T=id=>D.tipos.find(t=>t.id===id),G=id=>f.querySelector('#'+id);
+  G('cT').onchange=()=>{const t=T(G('cT').value);if(t&&!G('cN').value)G('cN').value=t.nome;auto()};
+  const auto=()=>{const t=T(G('cT').value);if(t&&t.validade_meses&&G('cI').value&&!G('cV').dataset.m){const d=new Date(G('cI').value+'T00:00:00');d.setMonth(d.getMonth()+t.validade_meses);G('cV').value=d.toISOString().slice(0,10)}};
+  G('cI').onchange=auto;G('cV').oninput=()=>{G('cV').dataset.m='1'};
+  f.querySelector('.cancela').onclick=()=>w.fecha();
+  f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('.pri');b.disabled=true;
+    try{const file=G('cF').files[0];let caminho=c?c.ficheiro:null;
+      if(file){const novo='_org/'+S.eu.organizacao_id+'/pessoal/'+pid+'/'+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(file.name);const up=await sb.storage.from('documentos').upload(novo,file,{contentType:file.type||'application/octet-stream'});if(up.error)throw up.error;if(caminho)await sb.storage.from('documentos').remove([caminho]);caminho=novo}
+      const row={tipo_id:G('cT').value||null,titulo:G('cN').value.trim(),entidade:G('cE').value.trim()||null,numero:G('cU').value.trim()||null,emissao:G('cI').value||null,validade:G('cV').value||null,notas:G('cO').value.trim()||null,ficheiro:caminho};
+      if(c){const r=await ok(sb.from('certificados').update(row).eq('id',c.id).select().single());Object.assign(c,r)}else{const r=await ok(sb.from('certificados').insert(Object.assign({organizacao_id:S.eu.organizacao_id,pessoal_id:pid},row)).select().single());D.certs.push(r)}
+      w.fecha();aviso('Certificado guardado.');feito();pessoalBadge()}catch(er){b.disabled=false;aviso(erroTxt(er),true)}};
+  G('cT').focus()}
+
 /* ---------- pessoas ---------- */
 async function chamaAdmin(body){
   const {data,error}=await sb.functions.invoke('pessoas-admin',{body});
@@ -1136,7 +1282,7 @@ async function docsObra(o){
 }
 
 /* ---------- exportar tudo ---------- */
-const TAB_EXP=['organizacoes','pessoas','obras','obra_pessoas','contratos','rubricas','estruturas','os_interdicoes','os_periodos','partes_diarias','parte_linhas','fotos','dados_apps','dados_copias','bloqueios','historico'];
+const TAB_EXP=['organizacoes','pessoas','obras','obra_pessoas','contratos','rubricas','estruturas','os_interdicoes','os_periodos','partes_diarias','parte_linhas','fotos','dados_apps','dados_copias','pessoal','valencias','pessoal_valencias','tipos_certificado','certificados','bloqueios','historico'];
 function carregaXlsx(){return window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar o gerador de Excel (sem rede?).'));document.head.appendChild(s)})}
 async function tabelaTodas(t){const out=[];for(let i=0;;i+=1000){const r=await sb.from(t).select('*').range(i,i+999);if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}return out}
 async function ficheirosBucket(b,prefixo,acc){
