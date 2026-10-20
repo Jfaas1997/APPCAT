@@ -577,6 +577,9 @@ main.colapsado{grid-template-columns:var(--sw) 34px minmax(0,1fr) 372px}
 .ncAc button{font:inherit;font-size:12px;padding:4px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);cursor:pointer;color:var(--ink)}
 .ncT{font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:10px;white-space:nowrap}
 .ncT.ok{background:var(--okbg);color:var(--okfg)}.ncT.nok{background:var(--redbg);color:var(--redfg)}.ncT.fl{background:var(--amberbg);color:var(--amber)}
+.nxEq{display:flex;flex-wrap:wrap;gap:6px}.nxEqI{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--sub,#eef1f5);border:1px solid var(--line,#d9dee5)}.nxEqI.ok{opacity:.65}.nxEqI.sem{border-style:dashed;color:#9a6700}
+.nmCard:has(.cdT){width:min(1000px,94vw);max-width:none}.cdP{margin:0 0 8px;font-size:13px}.cdN{font-size:11px;opacity:.65}.cdW{color:#9a6700;font-weight:500}.cdOk{color:#1a7f37;font-weight:500}.cdD{font-size:11px;color:#9a6700;margin-top:2px}
+.cdScroll{max-height:46vh;overflow:auto;border:1px solid var(--line,#d9dee5);border-radius:8px;margin:8px 0}.cdT{border-collapse:collapse;width:100%;font-size:12.5px}.cdT th,.cdT td{padding:6px 8px;border-bottom:1px solid var(--line,#e6e9ee);text-align:left;vertical-align:top}.cdT th{position:sticky;top:0;background:var(--card,#fff);font-weight:600}
 .nxBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.nxBar b{font-size:14px}.nxSp{flex:1}
 .nxSw{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}.nxSw button{border:0;border-radius:0;background:var(--sheet);padding:5px 12px;font-weight:600}.nxSw .on{background:var(--ink);color:var(--sheet)}
 .nxTabs{display:inline-flex;gap:6px;flex-wrap:wrap}.nxTab{border-radius:16px;padding:4px 12px;font-weight:600}.nxTab.on{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
@@ -5985,7 +5988,7 @@ window.__norma={NM,nmAuto,nmCopia,nmAbrePasta,nmFlush,get st(){return st}};
 
 
 /* ================= v26: verificação de consolas por peças (motor do Software Consolas embebido) ================= */
-NM.VERSAO='26'; NM.ESQ=4;
+NM.VERSAO='27'; NM.ESQ=4;
 const NC={f:null,pr:null,ok:null,n:0,reqs:new Map(),t:new Map(),VER:'1'};
 const NC_BRACOS=[['I','Mont. I, 1150, LP10/12 normal'],['II','Mont. II, 1150, LP10/12 S.L.A.'],['III','Mont. III, 1400, compressão'],['IV','Mont. IV, 1300, LP300 normal'],['V','Mont. V, 1300, LP300 S.L.A.'],['IV6','EC-369 corte Ie, 1300, LP300 antibalançante a 0,60 m'],['E1','E-6184 Mont. I, 721, normal'],['E7','E-6184 Mont. VII, 1140, alongado'],['E3','E-6184 Mont. III, 914, curvo S.L.A. (B deduzido)'],['E8','E-6184 Mont. VIII, 1168, alongado curvo S.L.A. (B deduzido)'],['Z1','EC-381 Mont. XII, 1200, ZN seccionada'],['Z2','EC-381 Mont. XIII, 800, ZN seccionada'],['T4','EC-382 Mont. XX, 1300, AMV tangencial'],['T2','EC-382 Mont. XVI, 1000, AMV curvo'],['T3a','EC-382 Mont. XVa, 1000, AMV curvo'],['T3b','EC-382 Mont. XVb, 1300, AMV curvo'],['T3c','EC-382 Mont. XVc, 1750, AMV curvo'],['T3d','EC-382 Mont. XVd, 2000, AMV curvo'],['T1a','EC-382 Mont. XIVa, 1010 a 1100, AMV regulável'],['T1b','EC-382 Mont. XIVb, 1070 a 1430, AMV regulável'],['T1c','EC-382 Mont. XIVc, 1370 a 1790, AMV regulável'],['T1d','EC-382 Mont. XIVd, 1740 a 2160, AMV regulável']];
 const NC_TUBOS={tuboTir:['19x26','30x38'],tubo:['30x38','40x49'],tuboAntib:['24x32','34x42','30x38','40x49']};
@@ -6015,13 +6018,13 @@ function ncVerif(caso){ return ncMotor().then(ok=>{ if(!ok)return {estado:'erro'
 /* --- dados: cada poste tem p.dc (poste e linha) e p.consolas (uma por consola, com as montagens das peças) --- */
 const NC_B381={X:'I',XI:'II',XVII:'III',XVIII:'IV',XIX:'V',XII:'Z1',XIII:'Z2'};          /* braço de chamada EC-381 → braço do Software Consolas (EC-114 / EC-119) */
 const NC_PECAS=[   /* peças da consola: cada uma é uma montagem de um desenho da base IP */
-  {k:'fixTir',t:'Fixação do tirante',des:['E-6179']},
-  {k:'tir',t:'Tirante',des:['E-6181','EC-362']},
-  {k:'fixPe',t:'Fixação do pé',des:['E-6161']},
-  {k:'cons',t:'Consola',des:['E-6182','EC-358']},
+  {k:'fixTir',t:'Fixação do tirante',des:['E-6179','E-6180','EC-106']},
+  {k:'tir',t:'Tirante',des:['E-6181','EC-362','E-6152']},
+  {k:'fixPe',t:'Fixação do pé',des:['E-6161','E-6180','EC-106']},
+  {k:'cons',t:'Consola',des:['E-6182','EC-358','E-6152']},
   {k:'antib',t:'Antibalançante',des:['E-6183','EC-365']},
   {k:'pend',t:'Pêndulo',des:['E-6188']},
-  {k:'brach',t:'Braço de chamada',des:['EC-381','E-6184','EC-382']},
+  {k:'brach',t:'Braço de chamada',des:['EC-381','E-6184','EC-382','EC-383','EC-384']},
   {k:'sobr',t:'Sobreelevado',des:['E-6185'],opc:true}];
 const NC_DEF2={perfil:'',nperf:'1',alt:'',niv:'',cf:''};
 const ncStr=v=>String(v==null?'':v).trim();
@@ -6068,7 +6071,7 @@ function ncResHtml(p,c){ const r=c.res; if(!r||r.k!==ncChave(p,c)){ const f=ncFa
   else if(r.estado==='fora')h='<span class="ncT fl" title="A mecânica deste caso ainda não está no Software Consolas">geometria ok · mecânica fora de âmbito</span>';
   else if(r.estado==='falta'){ const f=ncFaltas(p,c); h='<span class="ncT fl">'+esc(f.length?'falta: '+f.join(', '):(r.erro||'faltam dados'))+'</span>' }
   else h='<span class="ncT fl">'+esc(r.erro||'sem resultado')+'</span>';
-  const av=[]; [['tt','tirante (TT)','tirante'],['k','tubo da consola (K)','tubo'],['la','antibalançante (L)','antib']].forEach(([f,nome,k])=>{ const pv=ncNum(c[f]), cv=r.cortes&&r.cortes[k];
+  const av=[]; [['tt','tirante (TT)','tirante'],['k','tubo da consola (K)','tubo'],['la','antibalançante (L)','antib']].forEach(([f,nome,k])=>{ const pv=ncNum(c[f]), cv=r.cortes&&r.cortes[k]; if(f==='la'&&c.pecas&&c.pecas.sobr&&!c.pecas.antib)return;
     if(pv!=null&&cv!=null&&Math.abs(pv-cv)>0.0100001)av.push(nome+': projeto '+ncF2(pv)+' m, calculado '+ncF2(cv)+' m') });
   if(av.length)h+=' <span class="ncT fl" title="Tolerância 10 mm">comprimentos: '+esc(av.join(' · '))+'</span>';
   return h }
@@ -6099,13 +6102,13 @@ function nxPecaHtml(p,c,s){ const r=c.pecas[s.k]; let sub='';
   return '<button type="button" class="nxP'+(r?' set':'')+'" data-nxpeca="'+s.k+'"><span class="l">'+s.t+(s.opc?' <i>(opcional)</i>':'')+'</span><span class="v">'+(r?esc(r.di+' · '+r.mo):'Escolher…')+'</span>'
     +(sub?'<span class="d">'+(typeof sub==='string'&&sub.startsWith('<')?sub:esc(sub))+'</span>':'')+(falta?'<span class="nxM" title="Esta montagem ainda não está na medição do poste">não está na medição</span>':'')+'</button>' }
 function nxRender(){ const sec=$('#nxSect'), box=$('#nx'); if(!sec)return; const p=poste();
-  if(!p||st.postes.length===0){ sec.style.display='none'; box.innerHTML=''; return } sec.style.display='';
+  if(!p||st.postes.length===0){ sec.style.display=''; box.innerHTML='<div class="nxBar"><b>Consolas</b><span class="n">Importa o caderno de montagem para criar os postes com as consolas.</span><span class="nxSp"></span><button type="button" data-nximp>Importar cadernos…</button></div>'; return } sec.style.display='';
   const L=p.consolas||[], on=p.verif!==false&&(p.verif===true||L.length>0);
-  if(!on){ box.innerHTML='<div class="nxBar"><b>Consolas</b><span class="n">Modo simples: só a medição das montagens.</span><span class="nxSp"></span><button type="button" data-nxon>Verificar consolas deste poste</button></div>'; return }
+  if(!on){ box.innerHTML='<div class="nxBar"><b>Consolas</b><span class="n">Modo simples: só a medição das montagens.</span><span class="nxSp"></span><button type="button" data-nximp title="Ler o caderno de montagem (PDF) e a piquetagem">Importar cadernos…</button><button type="button" data-nxon>Verificar consolas deste poste</button></div>'; return }
   const c=nxSel(p), d=ncDc(p), h=p.dc?null:ncDcHerda(p);
   let html='<div class="nxBar"><b>Consolas</b>'
     +'<span class="nxSw"><button type="button" data-nxoff>Simples</button><button type="button" class="on">Com verificação</button></span><span class="nxSp"></span>'
-    +'<span class="nxTabs">'+L.map((x,i)=>'<button type="button" class="nxTab'+(c&&x.id===c.id?' on':'')+'" data-nxtab="'+x.id+'">Consola '+(i+1)+'</button>').join('')+'<button type="button" class="nxTab" data-nxnova title="Nova consola">＋</button></span></div>';
+    +'<button type="button" data-nximp title="Ler o caderno de montagem (PDF) e a piquetagem">Importar cadernos…</button><span class="nxTabs">'+L.map((x,i)=>'<button type="button" class="nxTab'+(c&&x.id===c.id?' on':'')+'" data-nxtab="'+x.id+'">Consola '+(i+1)+'</button>').join('')+'<button type="button" class="nxTab" data-nxnova title="Nova consola">＋</button></span></div>';
   /* dados do poste e da linha */
   const resumo=[d.perfil?((+d.nperf>1?d.nperf+'×':'')+d.perfil):'', d.alt?d.alt+' m':'', d.macico?'maciço '+d.macico:'', d.csis, 'vento '+d.vento, d.lado==='ext'?'exterior':'interior', (d.va||d.vb)?'vãos '+(d.va||'?')+' / '+(d.vb||'?'):''].filter(Boolean).join(' · ');
   const ab=NX.dados[p.id]===true;
@@ -6123,7 +6126,7 @@ function nxRender(){ const sec=$('#nxSect'), box=$('#nx'); if(!sec)return; const
     +nxIn('data-nxdc',['va','Vão anterior','m'],d.va,80)+nxIn('data-nxdc',['vb','Vão seguinte','m'],d.vb,80)
     +'</div><div class="nxAc"><button type="button" data-nxaplica title="Copia a catenária, o vento, o lado e a zona para os postes seguintes">Aplicar catenária, vento, lado e zona aos postes seguintes</button></div>' }
   html+='</div>';
-  if(!c){ box.innerHTML=html+'<div class="nxVazio"><b>Este poste ainda não tem consolas.</b><span>Acrescenta a primeira, ou copia de outro poste.</span><div><button type="button" class="nxGo" data-nxnova>＋ Consola</button> <button type="button" data-nxcopiaoutro>Copiar de outro poste…</button></div></div>'; return }
+  if(!c){ box.innerHTML=html+'<div class="nxVazio"><b>Este poste ainda não tem consolas.</b><span>Acrescenta a primeira, ou copia de outro poste.</span><div><button type="button" class="nxGo" data-nxnova>＋ Consola</button> <button type="button" data-nxcopiaoutro>Copiar de outro poste…</button></div></div>'+nxEqHtml(p); return }
   const i=ncIdx(p,c);
   html+='<div class="nxRes" data-nxres="'+c.id+'"><span class="nxRt"><b>Consola '+i+'</b></span><span class="ncRes">'+ncResHtml(p,c)+'</span><span class="nxSp"></span>'
     +'<button type="button" data-nxcopiaant'+(i>1?'':' disabled')+'>Copiar da anterior</button><button type="button" data-nxcopiaoutro>Copiar de outro poste…</button><button type="button" data-nxcola>Colar linha da tabela</button><button type="button" data-ncabrir="'+c.id+'">Abrir no Software Consolas ↗</button><button type="button" class="nxX" data-nxtirar="'+c.id+'" title="Apagar esta consola" aria-label="Apagar consola">×</button></div>';
@@ -6136,7 +6139,7 @@ function nxRender(){ const sec=$('#nxSect'), box=$('#nx'); if(!sec)return; const
     +['H','D','E','F','A','C','B','HFT'].map(k=>nxIn('data-nxf',[k,k],c[k],0)).join('')+'</div></div>';
   const falta=NC_PECAS.filter(s=>{ const r=c.pecas[s.k]; return r&&!(p.itens||[]).some(it=>DES[it.di][0]===r.di&&it.mo===r.mo) }).length;
   if(falta)html+='<div class="nxFoot"><span>'+falta+(falta>1?' peças desta consola ainda não estão':' peça desta consola ainda não está')+' nas montagens do poste.</span><button type="button" data-nxjunta>Adicionar à medição</button></div>';
-  box.innerHTML=html }
+  box.innerHTML=html+nxEqHtml(p) }
 function nxPintaRes(p,c){ const el=document.querySelector('#nx [data-nxres="'+c.id+'"] .ncRes'); if(el)el.innerHTML=ncResHtml(p,c) }
 function nxAlterou(p,c,remonta){ registaHistorico(); atualizaBotoesUndo(); nmMudou(); if(c)ncAgenda(p.id,c.id); else for(const x of p.consolas||[])ncAgenda(p.id,x.id); if(remonta)nxRender(); else if(c)nxPintaRes(p,c) }
 const _rItens=rItens;
@@ -6205,8 +6208,9 @@ $('#bDup').onclick=async()=>{ const p=poste(); if(!p)return;
 
 /* --- eventos --- */
 function nxContexto(el){ const p=poste(); if(!p)return null; return {p,c:nxSel(p)} }
-$('#nx').addEventListener('click',async e=>{ const x=nxContexto(e.target); if(!x)return; const {p}=x; let {c}=x;
+$('#nx').addEventListener('click',async e=>{ if(e.target.closest('[data-nximp]')){ cadImportarUI(); return } const x=nxContexto(e.target); if(!x)return; const {p}=x; let {c}=x;
   const t=(s)=>e.target.closest(s);
+  if(t('[data-nxeq]')){ nxJuntaEq(p); return }
   if(t('[data-nxon]')){ p.verif=true; if(!(p.consolas||[]).length){ const n=ncCons0(p); p.consolas=[n]; NX.sel[p.id]=n.id } nxAlterou(p,null,true); return }
   if(t('[data-nxoff]')){ p.verif=false; registaHistorico(); atualizaBotoesUndo(); nmMudou(); nxRender(); rPostes(); return }
   const tab=t('[data-nxtab]'); if(tab){ NX.sel[p.id]=tab.getAttribute('data-nxtab'); nxRender(); return }
@@ -6298,6 +6302,232 @@ importar0=function(buf,f,s){ const wb=buf&&buf.SheetNames?buf:XLSX.read(buf,{typ
   return r };
 /* o resultado da verificação não conta para "por guardar" nem para o desfazer: recalcula-se sozinho */
 snapUndo=function(){ const c={...st}; delete c.sel; delete c.agrup; return JSON.stringify(c,(k,v)=>k==='res'?undefined:v) };
+
+/* ===================== v27 · importar os cadernos de montagem e a piquetagem ===================== */
+function cadLePagina(items){
+  const it=items.filter(i=>String(i.s).trim()).map(i=>({x:i.x,y:i.y,w:i.w||0,s:String(i.s).trim()}));
+  const num=s=>/^-?\d+(\.\d+)?$/.test(s);
+  const cx=i=>i.x+(i.w||0)/2;
+  const out={tipo:'poste',nomes:[],zona:'',postes:[],consolas:[],equip:[],avisos:[]};
+  let m;
+  for(const i of it){ if((m=/^(POSTE|PORTICO|PÓRTICO)\s*:\s*(.+)$/i.exec(i.s))){ out.tipo=/^POSTE/i.test(m[1])?'poste':'portico'; out.nomeBruto=m[2].trim().replace(/\//g,'-') }
+    if((m=/^ZONA\s*:\s*(.+)$/i.exec(i.s)))out.zona=m[1].trim() }
+  if(!out.nomeBruto)return null;
+  /* nomes dos postes: "199-29_30" -> 199-29 e 199-30 ; "2017A_1017A" -> os dois */
+  const partes=out.nomeBruto.split(/[_\/]/).map(s=>s.trim()).filter(Boolean);
+  if(out.tipo==='portico'&&partes.length===2&&partes[1].indexOf('-')<0&&/^\d+\w*$/.test(partes[1])&&/^(.+-)\d+\w*$/.test(partes[0])) partes[1]=/^(.+-)\d+\w*$/.exec(partes[0])[1]+partes[1];
+  out.nomes=out.tipo==='poste'?[out.nomeBruto]:partes;
+  /* ---- rodapé: perfil / R / maciço / CF / NIV, um grupo por perfil ---- */
+  const perfis=it.filter(i=>i.y<200&&/^(\d+\s*x\s*)?H[EDL]?[AB]?\s?\d{2,3}[AB]?\s*\/\s*\d+/i.test(i.s)).sort((a,b)=>b.y-a.y);
+  const grupos=[];
+  for(const pf of perfis){ if(grupos.some(g=>Math.abs(g.y-pf.y)<3&&Math.abs(g.x-pf.x)<5))continue; grupos.push(pf) }
+  for(const g of grupos){
+    const near=it.filter(i=>i!==g&&i.y<=g.y+3&&i.y>=g.y-24&&i.x>=g.x-5&&(i.x<g.x+700));
+    const txt=near.map(i=>i.s).join(' ');
+    const pm=/^(?:(\d+)\s*x\s*)?([A-Z]+\s?\d+[A-Z]?)\s*\/\s*(\d+(?:[.,]\d+)?)/.exec(g.s);
+    const nperf=pm&&pm[1]?pm[1]:'1';
+    const r=/\(\s*R\s*=?\s*\(?([\d.]+)\)?\s*\)|R\(\s*([\d.]+)\s*\)/.exec(g.s+' '+txt);
+    const mc=/MACI[ÇC]O\s+(?!ESPIA)([^\s]+)/.exec(txt);
+    const cf=/CF\s*=\s*(-?[\d.]+)/.exec(txt), nv=/NIV\s*=\s*(-?[\d.]+)/.exec(txt);
+    out.postes.push({perfil:pm?pm[2].replace(/\s/g,''):g.s, nperf, altura:pm?pm[3].replace(',','.'):'', bruto:g.s,
+      R:r?(r[1]||r[2]):'', macico:mc?mc[1]:'', cf:cf?cf[1]:'', niv:nv?nv[1]:''});
+  }
+  /* i= e Esc= (por poste: no pórtico, pela metade esquerda/direita) */
+  const ies=it.filter(i=>/^i\s*=/.test(i.s)||/Esc\s*=/.test(i.s));
+  const ival=[];
+  for(const i of ies){ const a=/i\s*=\s*(-?[\d.]+)/.exec(i.s), e=/Esc\s*=\s*(-?[\d.]+)/.exec(i.s); if(a)ival.push({x:i.x,y:i.y,i:a[1]}); if(e)ival.push({x:i.x,y:i.y,esc:e[1]}); }
+  if(out.tipo==='poste'){ const a=ival.find(v=>v.i!=null),e=ival.find(v=>v.esc!=null); if(out.postes[0]){ out.postes[0].i=a?a.i:''; out.postes[0].esc=e?e.esc:'' } }
+  else { const is=ival.filter(v=>v.i!=null).sort((p,q)=>p.x-q.x); out.postes.forEach((p,k)=>{ if(is.length===out.postes.length)p.i=is[k].i }); out.iBruto=is.map(v=>v.i) }
+  /* ---- consolas: âncoras = palavra TIRANTE ---- */
+  const anc=it.filter(i=>i.s==='TIRANTE').sort((a,b)=>Math.round(a.x/200)-Math.round(b.x/200)||b.y-a.y);
+  const outros=it.filter(i=>/OUTROS EQUIPAMENTOS|^EQUIPAMENTOS$/.test(i.s));
+  const yPerfil=grupos.length?Math.max(...grupos.map(g=>g.y)):60;
+  for(let k=0;k<anc.length;k++){
+    const a=anc[k], prox=anc.slice(k+1).find(z=>Math.abs(z.x-a.x)<120)||null;
+    const top=a.y+8; let bot;
+    if(prox)bot=prox.y+8; else { const ant=anc.slice(0,k).reverse().find(z=>Math.abs(z.x-a.x)<120); const pitch=ant?ant.y-a.y:180;
+      bot=Math.max(a.y-pitch+8,yPerfil+20); const o=outros.filter(o=>o.y<a.y).map(o=>o.y); if(o.length)bot=Math.max(bot,Math.max(...o)-1) }
+    const bl=it.filter(i=>i.y<=top&&i.y>bot&&i.x>=a.x-62&&(out.tipo==='poste'?true:i.x<a.x+420));
+    /* para um bloco, os da mesma coluna: se há várias colunas (A4), só os x próximos */
+    const c={n:k+1,mont:'',pecas:{},extras:[],tubo:'',tuboAntib:'',tl:'',tt:'',kl:'',k:'',la:'',H:'',D:'',E:'',F:'',A:'',C:'',B:'',HFT:'',vao:'',_x:a.x,_y:a.y};
+    const lab=bl.find(i=>/MONT\.\s*\w+/.test(i.s)&&/CONSOLA/.test(i.s)); if(lab){ const mm=/MONT\.\s*([A-Za-z0-9]+)/.exec(lab.s); if(mm)c.mont=mm[1] }
+    /* cabeçalhos de coluna */
+    const hdr={}; const H=(nome,fn)=>{ hdr[nome]=bl.filter(i=>fn(i.s)) };
+    H('TL',s=>s==='TL');H('TT',s=>s==='TT');H('KL',s=>s==='KL');H('K',s=>s==='K');H('L',s=>s==='L');
+    ['H','D','E','F','A','C','B','HFT','VÃO'].forEach(n=>H('c'+n,s=>s===n));
+    /* cabeçalho de cota só conta na linha onde há H (ou B) */
+    const colunas=[]; // {nome, cx, y}
+    const addCols=(nome,lista)=>lista.forEach(h=>colunas.push({nome,cx:cx(h),y:h.y}));
+    ['TL','TT','KL','K','L'].forEach(n=>addCols(n,hdr[n]));
+    ['H','D','E','F','A','C','B','HFT','VÃO'].forEach(n=>addCols('c'+n,hdr['c'+n]));
+    const nums=bl.filter(i=>num(i.s));
+    for(const v of nums){
+      let best=null,bd=1e9;
+      for(const col of colunas){ const dy=col.y-v.y; if(dy<2||dy>45)continue; const dx=Math.abs(cx(v)-col.cx); if(dx>13)continue; const d=dy+dx*2; if(d<bd){ bd=d;best=col } }
+      if(!best)continue; const nome=best.nome; const val=v.s;
+      const key={TL:'tl',TT:'tt',KL:'kl',K:'k',L:'la'}[nome]||(nome.startsWith('c')?(nome==='cVÃO'?'vao':nome.slice(1)):null);
+      if(key&&!c[key])c[key]=val;
+    }
+    /* peças: códigos de desenho + referência à direita na mesma linha */
+    const cod=bl.filter(i=>/^(E-\d{4}|EC-\d{3}|C-\d{4})$/.test(i.s)).sort((p,q)=>(Math.abs(p.y-q.y)<3?p.x-q.x:q.y-p.y));
+    const refDe=d=>{ const c2=bl.filter(i=>Math.abs(i.y-d.y)<4&&i.x>d.x+d.w-2&&i.x<d.x+d.w+70&&/^[A-Za-z]{1,5}$/.test(i.s)).sort((p,q)=>p.x-q.x)[0]; return c2?c2.s:'' };
+    const fixas=[];
+    for(const d of cod){ const ref=refDe(d); const code=d.s;
+      if(code==='E-6181'){ c.pecas.tir={di:code,mo:ref}; continue }
+      if(code==='E-6182'){ c.pecas.cons={di:code,mo:ref}; const t=bl.filter(i=>Math.abs(i.y-d.y)<5&&i.x<d.x&&/\d+x\d+/i.test(i.s)).sort((p,q)=>q.x-p.x)[0]; if(t)c.tubo=((/(\d+x\d+)/i.exec(t.s)||[])[1]||'').toLowerCase(); continue }
+      if(code==='E-6183'){ c.pecas.antib={di:code,mo:ref}; const t=bl.filter(i=>Math.abs(i.y-d.y)<5&&i.x<d.x&&/\d+x\d+/i.test(i.s)).sort((p,q)=>q.x-p.x)[0]; if(t)c.tuboAntib=((/(\d+x\d+)/i.exec(t.s)||[])[1]||'').toLowerCase(); continue }
+      if(code==='E-6188'){ c.pecas.pend={di:code,mo:ref}; continue }
+      if(/^(EC-381|E-6184|EC-382|EC-383|EC-384)$/.test(code)){ c.pecas.brach={di:code,mo:ref}; continue }
+      if(code==='E-6152'){ const lb=bl.filter(i=>Math.abs(i.y-d.y)<5&&i.x<d.x).sort((p,q)=>q.x-p.x)[0]; if(lb&&/^TUBO/i.test(lb.s))c.pecas.tir={di:code,mo:ref}; else if(lb&&/\d+x\d+/i.test(lb.s)){ c.pecas.cons={di:code,mo:ref}; c.tubo=(/(\d+x\d+)/i.exec(lb.s)||[])[1].toLowerCase() } else c.extras.push({di:code,mo:ref}); continue }
+      if(code==='E-6185'){ c.pecas.sobr={di:code,mo:ref}; continue }
+      if(/^(E-6179|E-6180|E-6161|EC-106)$/.test(code)){ fixas.push({d,code,ref}); continue }
+      c.extras.push({di:code,mo:ref});
+    }
+    /* fixações: 1.ª = tirante, 2.ª = pé; E-6161 é sempre do pé, E-6179 sempre do tirante */
+    let ft=null,fp=null; const amb=[];
+    for(const f of fixas){ if(f.code==='E-6179'&&!ft)ft=f; else if(f.code==='E-6161'&&!fp)fp=f; else amb.push(f) }
+    for(const f of amb){ if(!ft&&!(fp&&amb.length===1&&false))ft=f; else if(!fp)fp=f; else c.extras.push({di:f.code,mo:f.ref}) }
+    if(ft)c.pecas.fixTir={di:ft.code,mo:ft.ref}; if(fp)c.pecas.fixPe={di:fp.code,mo:fp.ref};
+    /* i da consola (pórtico) */
+    c._its=new Set(bl); c.col=Math.round(a.x/200); if(!cod.length&&!nums.length)continue; c.n=out.consolas.length+1; out.consolas.push(c);
+  }
+  /* ---- equipamentos: códigos de desenho fora dos blocos das consolas ---- */
+  const dentro=new Set(); out.consolas.forEach(c=>c._its.forEach(i=>dentro.add(i)));
+  const eqCods=it.filter(i=>/^(E-\d{4}|EC-\d{3}|C-\d{4})$/.test(i.s)&&!dentro.has(i)&&i.y>yPerfil+8).sort((p,q)=>q.y-p.y||p.x-q.x);
+  for(const d of eqCods){
+    const lin=it.filter(i=>Math.abs(i.y-d.y)<4);
+    const ref=lin.filter(i=>i.x>d.x+d.w-2&&i.x<d.x+d.w+70&&/^[A-Za-z]{1,5}\d?$/.test(i.s)).sort((p,q)=>p.x-q.x)[0];
+    const lab=lin.filter(i=>i.x+i.w<=d.x+2&&/[A-ZÇÃÕ]{4}/.test(i.s)&&!/^(DES|REF)/.test(i.s)).sort((p,q)=>q.x-p.x)[0];
+    const ex=lin.filter(i=>i.x>d.x&&/^(H|L)\s*=/.test(i.s)).map(i=>i.s).join(' ');
+    out.equip.push({di:d.s,mo:ref?ref.s:'',desc:lab?lab.s:'',obs:ex});
+  }
+  return out;
+}
+/* atribui as consolas a cada poste: poste simples = todas; pórtico = metade/metade por ordem (a confirmar) */
+function cadAtribui(pg){
+  const r=[];
+  if(pg.tipo==='poste'){ r.push({nome:pg.nomes[0],poste:pg.postes[0]||{},consolas:pg.consolas.slice()}); }
+  else { const n=pg.consolas.length, h=Math.ceil(n/2);
+    pg.nomes.forEach((nm,i)=>r.push({nome:nm,poste:pg.postes[i]||{},consolas:pg.consolas.slice(i?h:0,i?n:h),aConfirmar:true})) }
+  return r;
+}
+const PDFJS_V='3.11.174', PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_V+'/';
+function carregaPdfJs(){ return window.pdfjsLib?Promise.resolve():new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=PDFJS_URL+'pdf.min.js';
+  s.onload=()=>{ pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_URL+'pdf.worker.min.js'; res() }; s.onerror=()=>rej(new Error('Não consegui carregar o leitor de PDF (sem rede?).')); document.head.appendChild(s) }) }
+/* lê os PDFs: devolve [{ficheiro, pagina, pg}] e os que não deram nada */
+async function cadLePdfs(files,prog){ await carregaPdfJs(); const ok=[], falhas=[];
+  for(let i=0;i<files.length;i++){ const f=files[i]; if(prog)prog(i+1,files.length,f.name);
+    try{ const buf=await f.arrayBuffer(); const doc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise; let achou=0, texto=0;
+      for(let n=1;n<=doc.numPages;n++){ const pg=await doc.getPage(n); const tc=await pg.getTextContent(); texto+=tc.items.length;
+        const r=cadLePagina(tc.items.map(t=>({x:t.transform[4],y:t.transform[5],w:t.width,s:t.str}))); if(r){ ok.push({ficheiro:f.name,pagina:n,pg:r}); achou++ } }
+      if(!achou)falhas.push({ficheiro:f.name,motivo:texto?'não reconheci o formato do caderno':'o PDF não tem texto (letras convertidas em desenho)'}) }
+    catch(e){ falhas.push({ficheiro:f.name,motivo:'não consegui abrir: '+(e&&e.message||e)}) } }
+  return {ok,falhas} }
+/* ---- piquetagem (Excel): coordenadas -> vãos ; maciços/pórticos -> dados do poste para cruzar ---- */
+const cadN=s=>String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]+/g,'');
+function cadPerfilNorm(s){ s=String(s||'').trim(); let n=1; const m=/^(\d+)\s*x?\s*(H.*)$/i.exec(s); if(m){ n=+m[1]; s=m[2] }
+  s=s.split('/')[0].replace(/\s+/g,''); let h=/^H(E)?([AB])-?(\d{2,3})/i.exec(s); if(h)return {perfil:'HE'+h[3]+h[2].toUpperCase(),nperf:n};
+  h=/^HE-?(\d{2,3})([AB])/i.exec(s); if(h)return {perfil:'HE'+h[1]+h[2].toUpperCase(),nperf:n}; return {perfil:s.toUpperCase(),nperf:n} }
+function cadLePiq(wb){ const out={coords:[],dados:new Map(),vias:new Map(),avisos:[]};
+  const folha=nome=>{ const n=wb.SheetNames.find(x=>cadN(x)===cadN(nome)); return n?XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null}):null };
+  const cab=(rows,pred)=>{ for(let i=0;i<Math.min(rows.length,12);i++){ if(rows[i]&&rows[i].some(pred))return i } return -1 };
+  const col=(h,nome)=>h.findIndex(c=>c!=null&&cadN(c)===cadN(nome));
+  const co=folha('Coordenadas');
+  if(co){ const hi=cab(co,c=>cadN(c)==='poste'); if(hi>=0){ const h=co[hi], cp=col(h,'POSTE'), cv=col(h,'VIA'), cx=col(h,'EIXO DO POSTE');
+      for(let i=hi+1;i<co.length;i++){ const r=co[i]; if(!r||r[cp]==null)continue; const x=+r[cx], y=+r[cx+1]; if(!isFinite(x)||!isFinite(y))continue; out.coords.push({nome:String(r[cp]).trim(),via:String(r[cv]||''),x,y}) } } }
+  else out.avisos.push('A folha "Coordenadas" não existe: não consigo sugerir os vãos.');
+  /* vãos: distância ao poste anterior/seguinte da mesma via (na ordem da folha) */
+  const porVia=new Map(); out.coords.forEach(c=>{ if(!porVia.has(c.via))porVia.set(c.via,[]); porVia.get(c.via).push(c) });
+  for(const l of porVia.values())l.forEach((c,i)=>{ const d=o=>Math.hypot(c.x-o.x,c.y-o.y).toFixed(2); out.vias.set(c.nome,{via:c.via,va:i>0?d(l[i-1]):'',vb:i+1<l.length?d(l[i+1]):''}) });
+  const dadosDe=(rows,pc)=>{ if(!rows)return; const hi=cab(rows,c=>cadN(c)==='poste'); if(hi<0)return; const h=rows[hi]; const I=n=>col(h,n);
+    const cP=I('POSTE'), cV=I('VIGA'), cA=I('ALTURA'), ci=h.findIndex(c=>c!=null&&/^imp.*\(i\)$/i.test(String(c).replace(/\s+/g,'')))||-1, cCF=I('CF'), cT=I('TIPO'), cN=h.findIndex(c=>c!=null&&/^niv\.?$/i.test(String(c).trim()));
+    const cM=I('Maciço'), cP2=I('Poste2'), cA2=I('Altura Poste'), cUP=h.findIndex(c=>c!=null&&/Ultimas Altera..es\s*Poste/i.test(String(c))), cUM=h.findIndex(c=>c!=null&&/Ultimas Altera..es\s*Maci.o/i.test(String(c)));
+    for(let i=hi+1;i<rows.length;i++){ const r=rows[i]; if(!r||r[cP]==null||r[cP]==='')continue; const nome=String(r[cP]).trim(); const v=k=>(k>=0&&r[k]!=null&&r[k]!=='')?r[k]:null;
+      let perf=null, alt=null, mac=null;
+      if(pc){ if(v(cP2)&&!/^n[ãa]o$/i.test(String(v(cP2)))){ perf=v(cP2); alt=v(cA2) } else { perf=v(cV); alt=v(cA) } mac=v(cM)||v(cT) }
+      else { perf=v(cUP)||v(cV); alt=v(cA); mac=v(cUM)||v(cT) }
+      if(!pc&&out.dados.has(nome))continue;
+      const pn=cadPerfilNorm(perf);
+      out.dados.set(nome,{perfil:pn.perfil,nperf:String(pn.nperf),altura:alt==null?'':String(Math.round(+alt*100)/100),macico:mac==null?'':String(mac),cf:v(cCF)==null?'':String(v(cCF)),i:v(ci)==null?'':String(v(ci)),niv:v(cN)==null?'':String(v(cN)),fonte:pc?'Porticos':'Maciço'}) } };
+  dadosDe(folha('Maciço'),false); dadosDe(folha('Porticos'),true);
+  if(!out.dados.size)out.avisos.push('Não encontrei dados dos postes (folhas "Maciço"/"Porticos").');
+  return out }
+/* cruza o que o caderno diz de um poste com a piquetagem */
+function cadCruza(pc,dp){ const d=[]; if(!dp)return d; const num=s=>{ const x=parseFloat(String(s).replace(',','.')); return isFinite(x)?x:null };
+  const cmp=(rot,a,b,tol)=>{ if(a===''||a==null||b===''||b==null||String(a).length<2)return; if(tol!=null){ const x=num(a),y=num(b); if(x!=null&&y!=null){ if(Math.abs(x-y)>tol)d.push(rot+': caderno '+a+' · piquetagem '+b); return } } if(cadN(a)!==cadN(b))d.push(rot+': caderno '+a+' · piquetagem '+b) };
+  cmp('perfil',pc.perfil,dp.perfil); cmp('n.º de perfis',pc.nperf,dp.nperf); cmp('altura',pc.altura,dp.altura,0.011); cmp('maciço',pc.macico,dp.macico); return d }
+/* base IP: acha a montagem (sem distinguir maiúsculas) */
+function cadAchaMo(code,mo){ const di=desIx.get(code); if(di===undefined)return null; const l=String(mo||'').toLowerCase();
+  const f=pairList.find(x=>x.di===di&&String(x.mo).toLowerCase()===l); return f?{di:code,mo:f.mo}:null }
+/* constrói as consolas (formato da Medição) a partir das lidas no PDF; devolve também os avisos */
+function cadConsolas(lista){ const av=[]; const cs=lista.map(k=>{ const c=ncCons0({consolas:[]}); c.pecas={}; const nm='consola '+k.n;
+  for(const [slot,r] of Object.entries(k.pecas)){ const a=cadAchaMo(r.di,r.mo); if(a)c.pecas[slot]=a; else av.push(nm+': '+r.di+(r.mo?' '+r.mo:'')+' não existe na base IP') }
+  for(const r of k.extras||[])av.push(nm+': peça fora da lista habitual ('+r.di+(r.mo?' '+r.mo:'')+')');
+  c.tl=k.tl;c.tt=k.tt;c.kl=k.kl;c.k=k.k;c.la=k.la;['H','D','E','F','A','C','B','HFT'].forEach(x=>c[x]=k[x]||'');
+  c.antivento=false; c.bracoMan=false; c.montMan=false; ncSync(c);
+  if(k.tubo&&c.pecas.cons&&ncTuboDe(c.pecas.cons)&&ncTuboDe(c.pecas.cons)!==k.tubo)av.push(nm+': o caderno diz tubo '+k.tubo+' e a base IP dá '+ncTuboDe(c.pecas.cons));
+  if(k.tuboAntib&&c.pecas.antib&&ncTuboDe(c.pecas.antib)&&ncTuboDe(c.pecas.antib)!==k.tuboAntib)av.push(nm+': o caderno diz antibalançante '+k.tuboAntib+' e a base IP dá '+ncTuboDe(c.pecas.antib));
+  return c }); return {cs,av} }
+/* junta tudo num plano por poste */
+function cadPlano(ok,piq){ const plano=new Map();
+  for(const o of ok){ for(const e of cadAtribui(o.pg)){ const nome=e.nome; if(plano.has(nome))continue;
+    const ex=st.postes.find(p=>cadN(p.nome)===cadN(nome)); const dp=piq?piq.dados.get(nome)||[...piq.dados].find(([k])=>cadN(k)===cadN(nome))?.[1]:null;
+    const vs=piq&&(piq.vias.get(nome)||[...piq.vias].find(([k])=>cadN(k)===cadN(nome))?.[1]);
+    const cc=cadConsolas(e.consolas);
+    const pc=e.poste||{}; const dif=cadCruza(pc,dp);
+    const eq=(o.pg.tipo==='poste'||nome===o.pg.nomes[0])?(o.pg.equip||[]):[];
+    plano.set(nome,{nome,ficheiro:o.ficheiro,tipo:o.pg.tipo,aConfirmar:!!e.aConfirmar,poste:pc,consolas:cc.cs,avisos:cc.av,dif,dp,vaos:vs||null,equip:eq,existe:ex||null,
+      sem:!dp&&!!piq}) } }
+  return [...plano.values()] }
+function cadAplicaPlano(l,opt){ let np=0,nc=0,novos=0;
+  for(const q of l){ let p=q.existe; if(!p){ if(!opt.criar)continue; p={id:st.seq++,nome:q.nome,itens:[],estr:[],pecas:[],consolas:[]}; st.postes.push(p); novos++ }
+    if((p.consolas||[]).length&&!opt.subst)continue;
+    const pc=q.poste, d=Object.assign({},ncDc(p));
+    if(pc.perfil)d.perfil=pc.perfil; d.nperf=pc.nperf||'1'; if(pc.altura)d.alt=pc.altura; if(pc.R)d.raio=pc.R; if(pc.macico)d.macico=pc.macico; if(pc.niv)d.niv=pc.niv; if(pc.cf)d.cf=pc.cf; if(pc.i)d.I=pc.i; if(pc.esc!=null&&pc.esc!=='')d.d=pc.esc;
+    if(q.vaos){ d.va=q.vaos.va||d.va; d.vb=q.vaos.vb||d.vb }
+    p.dc=d; p.consolas=q.consolas.map(c=>({...c,pecas:{...c.pecas}})); p.verif=true; if(p.consolas.length)NX.sel[p.id]=p.consolas[0].id;
+    if(q.equip.length)p.equipCad=q.equip.map(e=>({...e})); np++; nc+=p.consolas.length }
+  return {np,nc,novos} }
+/* ---- interface ---- */
+async function cadImportarUI(){
+  const r=await nmModal({titulo:'Importar cadernos de montagem',corpo:'<p class="cdP">Escolhe os PDFs do <b>caderno de montagem</b> (um por poste ou pórtico, vários de uma vez) e, se quiseres cruzar e sugerir os vãos, o Excel da <b>piquetagem</b>. Só leio; nada é alterado antes de confirmares.</p>'
+    +'<div class="nxF"><label>PDFs do caderno</label><input type="file" id="cdPdf" accept=".pdf,application/pdf" multiple></div>'
+    +'<div class="nxF" style="margin-top:8px"><label>Piquetagem (Excel, opcional)</label><input type="file" id="cdXl" accept=".xlsx,.xlsm,.xls"></div>',
+    botoes:[{t:'Cancelar',v:null},{t:'Ler',v:c=>({pdf:[...c.querySelector('#cdPdf').files],xl:c.querySelector('#cdXl').files[0]||null}),p:true}],cancela:null});
+  if(!r)return; if(!r.pdf.length){ toast('Não escolheste nenhum PDF.'); return }
+  let piq=null; try{ if(r.xl){ const wb=XLSX.read(await r.xl.arrayBuffer(),{type:'array'}); piq=cadLePiq(wb) } }catch(e){ toast('Não consegui ler o Excel da piquetagem: '+(e&&e.message||e)) }
+  const pr=n=>toast('A ler o caderno… '+n); let lido;
+  try{ lido=await cadLePdfs(r.pdf,(i,n,f)=>pr(i+'/'+n)) }catch(e){ toast(String(e&&e.message||e)); return }
+  const plano=cadPlano(lido.ok,piq);
+  if(!plano.length){ await nmDiz('Não encontrei nenhum poste nos PDFs.'+(lido.falhas.length?' '+lido.falhas.slice(0,5).map(f=>esc(f.ficheiro)+': '+esc(f.motivo)).join(' · '):'')); return }
+  const linha=(q,i)=>{ const nd=q.dif.length, tem=q.existe&&(q.existe.consolas||[]).length;
+    const cr=!piq?'<span class="cdN">sem piquetagem</span>':q.sem?'<span class="cdW">não está na piquetagem</span>':nd?'<span class="cdW" title="'+esc(q.dif.join('\n'))+'">'+nd+' diferença'+(nd>1?'s':'')+'</span><div class="cdD">'+q.dif.map(esc).join('<br>')+'</div>':'<span class="cdOk">confere</span>';
+    const falta=q.consolas.length?[]:['sem consolas lidas'];
+    const av=q.avisos.concat(q.aConfirmar?['pórtico: as consolas foram repartidas pelos dois postes por ordem; confirma na Medição']:[]).concat(q.consolas.length&&q.poste&&!q.poste.R?['raio R não consta do caderno']:[]);
+    return '<tr><td><input type="checkbox" data-cdi="'+i+'" '+(q.consolas.length?'checked':'disabled')+'></td><td><b>'+esc(q.nome)+'</b>'+(q.tipo==='portico'?' <span class="cdN">pórtico</span>':'')+'<div class="cdN">'+esc(q.ficheiro.replace(/\.pdf$/i,''))+'</div></td><td>'+q.consolas.length+'</td><td>'+cr+'</td><td>'+(q.vaos?esc(q.vaos.va||'–')+' / '+esc(q.vaos.vb||'–'):'<span class="cdN">–</span>')+'</td>'
+      +'<td>'+(q.existe?(tem?'<span class="cdW">já tem consolas</span>':'na medição'):'<span class="cdN">não está na medição</span>')+(av.length?'<div class="cdD">'+av.map(esc).join('<br>')+'</div>':'')+'</td></tr>' };
+  const ne=plano.filter(q=>q.dif.length).length, nf=plano.filter(q=>!q.existe).length;
+  const corpo='<p class="cdP"><b>'+plano.length+'</b> poste'+(plano.length>1?'s':'')+' lido'+(plano.length>1?'s':'')+' em '+lido.ok.length+' folha'+(lido.ok.length>1?'s':'')+'.'+(piq?(ne?' <span class="cdW">'+ne+' com diferenças em relação à piquetagem.</span>':' Tudo confere com a piquetagem.'):'')+'</p>'
+    +(lido.falhas.length?'<p class="cdP cdW">Não consegui ler: '+lido.falhas.slice(0,8).map(f=>esc(f.ficheiro.replace(/\.pdf$/i,''))+' ('+esc(f.motivo)+')').join(' · ')+(lido.falhas.length>8?' …':'')+'</p>':'')
+    +(piq&&piq.avisos.length?'<p class="cdP cdW">'+piq.avisos.map(esc).join(' ')+'</p>':'')
+    +'<div class="cdScroll"><table class="cdT"><thead><tr><th></th><th>Poste</th><th>Consolas</th><th>Piquetagem</th><th>Vãos (ant. / seg.)</th><th>Na medição</th></tr></thead><tbody>'+plano.map(linha).join('')+'</tbody></table></div>'
+    +'<label class="chk"><input type="checkbox" id="cdCria"'+(nf&&nf===plano.length?' checked':'')+'> criar os postes que ainda não estão na medição ('+nf+')</label>'
+    +'<label class="chk"><input type="checkbox" id="cdSub"> substituir as consolas dos postes que já as têm</label>';
+  const esc2=await nmModal({titulo:'Caderno lido',corpo,botoes:[{t:'Cancelar',v:null},{t:'Importar os marcados',v:c=>({sel:[...c.querySelectorAll('[data-cdi]:checked')].map(x=>+x.dataset.cdi),criar:c.querySelector('#cdCria').checked,subst:c.querySelector('#cdSub').checked}),p:true}],cancela:null});
+  if(!esc2)return; const sel=esc2.sel.map(i=>plano[i]); if(!sel.length){ toast('Nada marcado.'); return }
+  const o=cadAplicaPlano(sel,esc2);
+  nxAlterou(poste()||st.postes[0],null,true); if(o.novos){ garante(); apply() }
+  toast('Importados '+o.np+' poste'+(o.np===1?'':'s')+' com '+o.nc+' consola'+(o.nc===1?'':'s')+(o.novos?' ('+o.novos+' novo'+(o.novos>1?'s':'')+')':'')+'.'); nxRender() }
+
+
+/* equipamentos que o caderno indica (só uma lista, sem verificação) */
+function nxEqHtml(p){ const L=p.equipCad||[]; if(!L.length)return '';
+  const tem=e=>{ const a=cadAchaMo(e.di,e.mo); return a&&(p.itens||[]).some(it=>DES[it.di][0]===a.di&&it.mo===a.mo) };
+  const falta=L.filter(e=>cadAchaMo(e.di,e.mo)&&!tem(e)).length;
+  return '<div class="nxCard"><div class="nxCt"><b>Equipamentos do caderno</b><span class="n">só a lista · não há verificação</span>'+(falta?'<button type="button" data-nxeq>Juntar '+falta+' à medição</button>':'')+'</div><div class="nxEq">'
+    +L.map(e=>{ const a=cadAchaMo(e.di,e.mo); return '<span class="nxEqI'+(a?(tem(e)?' ok':''):' sem')+'" title="'+(a?(tem(e)?'já está na medição':'ainda não está na medição'):'esta montagem não existe na base IP')+'">'+esc((e.desc?e.desc+' · ':'')+e.di+(e.mo?' '+e.mo:'')+(e.obs?' '+e.obs:''))+'</span>' }).join('')+'</div></div>' }
+function nxJuntaEq(p){ let n=0; for(const e of p.equipCad||[]){ const a=cadAchaMo(e.di,e.mo); if(!a)continue; if((p.itens||[]).some(it=>DES[it.di][0]===a.di&&it.mo===a.mo))continue; p.itens.push({di:desIx.get(a.di),mo:a.mo,qtd:1}); n++ }
+  nxAlterou(p,null,true); apply(); toast(n?'Juntei '+n+' equipamento'+(n>1?'s':'')+' à medição.':'Nada a juntar.') }
 window.__nc={NC,ncVerif,ncCaso,ncRoda,ncChave,ncDc,ncTodas,ncMigra,ncSync,ncTuboDe,nxRender,NX};
 
 
