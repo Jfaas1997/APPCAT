@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t)}catch(e){}</script>
 <style>
-:root{--paper:#F1F1EF;--sheet:#FFFFFF;--ink:#2B3038;--muted:#6E7178;--rule:#D8D8D4;--soft:#EAEAE6;--brand:#F9D115;--verd:#7A5E00;--verdbg:#FDF3CE;--amber:#8F5D00;--amberbg:#F7EEDC;--red:#9B2C2C;--redbg:#F7E4E4;--ok:#2F6B4F;--okbg:#E4F0E9;
+:root{--paper:#F1F1EF;--sheet:#FFFFFF;--ink:#2B3038;--muted:#5A5E66;--rule:#D8D8D4;--soft:#EAEAE6;--brand:#F9D115;--verd:#7A5E00;--verdbg:#FDF3CE;--amber:#8F5D00;--amberbg:#F7EEDC;--red:#9B2C2C;--redbg:#F7E4E4;--ok:#2F6B4F;--okbg:#E4F0E9;
  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;--r:8px;--sw:228px;--sh:0 1px 2px rgba(20,24,32,.05),0 4px 14px rgba(20,24,32,.05);color-scheme:light}
 @media screen and (prefers-color-scheme:dark){:root:not([data-tema="claro"]){--paper:#0F1216;--sheet:#171B21;--ink:#E7E9ED;--muted:#9AA2AE;--rule:#2A2F38;--soft:#1F242C;--verd:#E9C64A;--verdbg:#3A3213;--amber:#F2C14E;--amberbg:#352B10;--red:#F08A8A;--redbg:#3B1E1E;--ok:#6FCF9F;--okbg:#16302A;--sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);color-scheme:dark}}
 :root[data-tema="escuro"]{--paper:#0F1216;--sheet:#171B21;--ink:#E7E9ED;--muted:#9AA2AE;--rule:#2A2F38;--soft:#1F242C;--verd:#E9C64A;--verdbg:#3A3213;--amber:#F2C14E;--amberbg:#352B10;--red:#F08A8A;--redbg:#3B1E1E;--ok:#6FCF9F;--okbg:#16302A;--sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);color-scheme:dark}
@@ -237,7 +237,7 @@ const IC={
  tema:'<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
 };
 const PAPEL={administrador:'Administrador',diretor:'Diretor de obra',encarregado:'Encarregado',equipa:'Equipa',convidado:'Convidado'};
-const APPS=[['app:medicao','Medição'],['app:materiais','Materiais'],['app:producao','Produção'],['app:consolas','Software Consolas'],['app:rct','Medição RCT']];
+const APPS=[['app:medicao','Medição'],['app:materiais','Materiais'],['app:producao','Produção'],['app:consolas','Dimensionamento CAT'],['app:rct','Medição RCT']];
 
 let S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};
 const gestor=()=>S.eu&&['administrador','diretor','encarregado'].includes(S.eu.papel);
@@ -353,7 +353,7 @@ function preparar(){
       barra(32,'A abrir o catálogo…');
       try{await catCarrega()}catch(e){}
       barra(48);
-      const NOMES={med:'Medição',rct:'Medição RCT',cons:'Software Consolas'};let i=0;
+      const NOMES={med:'Medição',rct:'Medição RCT',cons:'Dimensionamento CAT'};let i=0;
       for(const v of ['med','rct','cons']){
         if(fechado)break;barra(48+i*16,'A abrir '+NOMES[v]+'…');
         try{const f=frameApp({id:'livre'},v);await pronto(f,25000)}catch(e){}
@@ -376,7 +376,7 @@ function casca(){
    +'<button class="tab" data-v="mat">'+ico('box')+'<span>Materiais</span></button>'
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
-   +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medição de catenária</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Software Consolas</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
+   +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medição de catenária</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Pessoas</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
@@ -691,7 +691,7 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.da
     if(!m.length){aviso('O desenho '+e.data.cod+' não está no Catálogo (o administrador ainda não o carregou).',true);return}
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
 const LIVRE=['med','cons','rct'];
-const OBRAV=['visao','docs','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Software Consolas',rct:'Medição RCT'};
+const OBRAV=['visao','docs','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
 async function vai(v,obraId){
   if(v==='obra')v='visao';
   if(obraId&&(!S.obra||S.obra.id!==obraId)){try{S.obra=await ok(sb.from('obras').select('*').eq('id',obraId).single());largaApps(obraId)}catch(e){aviso(erroTxt(e),true);return}}
@@ -1074,7 +1074,7 @@ const diaDoc=n=>{n=n||'';let m=/(\d{4})[-_.](\d{2})[-_.](\d{2})/.exec(n);if(m)re
 async function resumoApps(o){
   const el=document.getElementById('resApps');if(!el)return;
   await carregaRes(o.id);const R=(S.RES[o.id]||{}).apps||{};
-  const L=[['mat','materiais','Materiais'],['prod','producao','Produção'],['med','medicao','Medição'],['cons','consolas','Software Consolas'],['rct','rct','Medição RCT']];
+  const L=[['mat','materiais','Materiais'],['prod','producao','Produção'],['med','medicao','Medição'],['cons','consolas','Dimensionamento CAT'],['rct','rct','Medição RCT']];
   el.innerHTML='<div class="sec">As apps desta obra</div><div class="card" style="padding:0"><table><thead><tr><th>App</th><th>Última gravação</th><th class="n">Versão</th><th></th></tr></thead><tbody>'
    +L.map(a=>{const d=R[a[1]];return '<tr><td><b>'+a[2]+'</b></td><td>'+(d?quandoT(d.t):'<span class="hint">sem dados</span>')+'</td><td class="n">'+(d?d.v:'—')+'</td><td style="text-align:right"><button data-app="'+a[0]+'">Abrir</button></td></tr>'}).join('')+'</tbody></table></div>';
   el.querySelectorAll('[data-app]').forEach(b=>b.onclick=()=>vai(b.dataset.app));atualizaSave();
