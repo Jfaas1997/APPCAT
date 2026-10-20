@@ -577,6 +577,30 @@ main.colapsado{grid-template-columns:var(--sw) 34px minmax(0,1fr) 372px}
 .ncAc button{font:inherit;font-size:12px;padding:4px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);cursor:pointer;color:var(--ink)}
 .ncT{font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:10px;white-space:nowrap}
 .ncT.ok{background:var(--okbg);color:var(--okfg)}.ncT.nok{background:var(--redbg);color:var(--redfg)}.ncT.fl{background:var(--amberbg);color:var(--amber)}
+.nxBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.nxBar b{font-size:14px}.nxSp{flex:1}
+.nxSw{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}.nxSw button{border:0;border-radius:0;background:var(--sheet);padding:5px 12px;font-weight:600}.nxSw .on{background:var(--ink);color:var(--sheet)}
+.nxTabs{display:inline-flex;gap:6px;flex-wrap:wrap}.nxTab{border-radius:16px;padding:4px 12px;font-weight:600}.nxTab.on{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.nxCard{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.nxCt{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}.nxCt b{font-size:13.5px}.nxCt .n{color:var(--muted);font-size:12px;flex:1}
+.nxG{display:flex;flex-wrap:wrap;gap:10px 12px}.nxG8{display:grid;grid-template-columns:repeat(8,minmax(0,1fr))}
+.nxF label{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:2px}.nxF label i{font-style:normal;font-weight:400}
+.nxF input,.nxF select{font-size:16px;font-weight:600;padding:8px 10px;border:1.5px solid var(--rule);border-radius:8px;width:100%}.nxG8 .nxF input{width:100%}
+.nxF input:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px rgba(249,209,21,.45)}
+.nxPs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.nxP{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:1px;padding:9px 12px;border:1.5px solid var(--rule);border-radius:10px;background:var(--sheet);position:relative;min-height:62px}
+.nxP.set{background:var(--hl);border-color:var(--verdbd)}.nxP .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}.nxP .l i{font-style:normal;text-transform:none;font-weight:400}
+.nxP .v{font-size:15px;font-weight:700}.nxP .d{font-size:11.5px;color:var(--okfg)}.nxP .nxM{font-size:10.5px;color:var(--amber);background:var(--amberbg);border-radius:8px;padding:0 6px;margin-top:2px}
+.nxW{color:var(--redfg)}
+.nxOp{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px;font-size:12.5px;color:var(--muted)}.nxOp select{font-size:13px;padding:4px 6px}
+.nxRes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--soft);border-radius:10px;padding:8px 12px;margin-bottom:10px}.nxRt{font-size:14px}
+.nxX{font-size:16px;line-height:1;padding:3px 9px}.nxVazio{padding:18px;text-align:center;background:var(--sheet);border:1px dashed var(--rule);border-radius:10px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.nxGo{background:var(--brand);border-color:var(--brand);font-weight:700}.nxFoot{display:flex;gap:10px;align-items:center;background:var(--amberbg);color:var(--amber);border-radius:10px;padding:8px 12px;margin-bottom:10px}
+.nxAc{margin-top:10px}.nxChk{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0}.chk{display:flex;align-items:center;gap:5px}
+.nxPick{max-width:720px}.nxPt{display:flex;gap:10px;align-items:center;margin-bottom:10px}.nxPt h3{margin:0;font-size:15px}.nxPt input{flex:1}
+.nxPg{margin-bottom:10px}.nxPh{font-size:12.5px;color:var(--muted);margin-bottom:4px}.nxPb{display:flex;flex-wrap:wrap;gap:8px}
+.nxPm{display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px;border:1.5px solid var(--rule);border-radius:10px;min-width:70px}.nxPm b{font-size:15px}.nxPm small{font-size:11px;color:var(--okfg)}.nxPm.on{background:var(--hl);border-color:var(--ink)}
+.nxPa{margin-top:8px;text-align:right}
+@media (max-width:720px){.nxG8{grid-template-columns:repeat(4,minmax(0,1fr))}.nxPs{grid-template-columns:1fr 1fr}}
 .ncd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;flex:none}
 .ncd.ok{background:var(--okfg)}.ncd.nok{background:var(--redfg)}.ncd.fl{background:var(--muted);opacity:.6}
 .ncCard{max-width:1280px;width:100%;height:calc(100vh - 92px);display:flex;flex-direction:column;padding:10px 12px}
@@ -804,7 +828,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
           <div class="hint"><kbd>↑</kbd><kbd>↓</kbd> percorrer · <kbd>Enter</kbd> juntar · <kbd>Esc</kbd> limpar · <kbd>Ctrl+K</kbd> procurar em tudo</div>
           <div id="results" role="listbox" aria-label="Resultados"></div>
         </div>
-        <div class="sect" id="ncDcSect" style="display:none"><h3>Dados da estrutura <span class="n" id="ncDcNota" style="font-weight:400"></span></h3><div id="ncDc"></div></div>
+        <div class="sect" id="nxSect" style="display:none"><div id="nx"></div></div>
         <div class="sect"><h3>Montagens nesta estrutura</h3><div id="itens"></div></div>
         <div id="loteOutros"></div>
         <div class="sect" id="exSect" style="display:none">
@@ -5960,8 +5984,8 @@ setTimeout(async()=>{
 window.__norma={NM,nmAuto,nmCopia,nmAbrePasta,nmFlush,get st(){return st}};
 
 
-/* ================= v25: verificação de consolas (motor do Software Consolas embebido) ================= */
-NM.VERSAO='25'; NM.ESQ=3;
+/* ================= v26: verificação de consolas por peças (motor do Software Consolas embebido) ================= */
+NM.VERSAO='26'; NM.ESQ=4;
 const NC={f:null,pr:null,ok:null,n:0,reqs:new Map(),t:new Map(),VER:'1'};
 const NC_BRACOS=[['I','Mont. I, 1150, LP10/12 normal'],['II','Mont. II, 1150, LP10/12 S.L.A.'],['III','Mont. III, 1400, compressão'],['IV','Mont. IV, 1300, LP300 normal'],['V','Mont. V, 1300, LP300 S.L.A.'],['IV6','EC-369 corte Ie, 1300, LP300 antibalançante a 0,60 m'],['E1','E-6184 Mont. I, 721, normal'],['E7','E-6184 Mont. VII, 1140, alongado'],['E3','E-6184 Mont. III, 914, curvo S.L.A. (B deduzido)'],['E8','E-6184 Mont. VIII, 1168, alongado curvo S.L.A. (B deduzido)'],['Z1','EC-381 Mont. XII, 1200, ZN seccionada'],['Z2','EC-381 Mont. XIII, 800, ZN seccionada'],['T4','EC-382 Mont. XX, 1300, AMV tangencial'],['T2','EC-382 Mont. XVI, 1000, AMV curvo'],['T3a','EC-382 Mont. XVa, 1000, AMV curvo'],['T3b','EC-382 Mont. XVb, 1300, AMV curvo'],['T3c','EC-382 Mont. XVc, 1750, AMV curvo'],['T3d','EC-382 Mont. XVd, 2000, AMV curvo'],['T1a','EC-382 Mont. XIVa, 1010 a 1100, AMV regulável'],['T1b','EC-382 Mont. XIVb, 1070 a 1430, AMV regulável'],['T1c','EC-382 Mont. XIVc, 1370 a 1790, AMV regulável'],['T1d','EC-382 Mont. XIVd, 1740 a 2160, AMV regulável']];
 const NC_TUBOS={tuboTir:['19x26','30x38'],tubo:['30x38','40x49'],tuboAntib:['24x32','34x42','30x38','40x49']};
@@ -5988,127 +6012,293 @@ function ncVerif(caso){ return ncMotor().then(ok=>{ if(!ok)return {estado:'erro'
   return new Promise(res=>{ const id=++NC.n; NC.reqs.set(id,res); NC.f.contentWindow.postMessage({cmd:'verif',reqId:id,caso},'*');
     setTimeout(()=>{ if(NC.reqs.has(id)){ NC.reqs.delete(id); res({estado:'erro',erro:'Sem resposta do motor.'}) } },10000) }) }) }
 
-/* --- dados --- */
+/* --- dados: cada poste tem p.dc (poste e linha) e p.consolas (uma por consola, com as montagens das peças) --- */
+const NC_B381={X:'I',XI:'II',XVII:'III',XVIII:'IV',XIX:'V',XII:'Z1',XIII:'Z2'};          /* braço de chamada EC-381 → braço do Software Consolas (EC-114 / EC-119) */
+const NC_PECAS=[   /* peças da consola: cada uma é uma montagem de um desenho da base IP */
+  {k:'fixTir',t:'Fixação do tirante',des:['E-6179']},
+  {k:'tir',t:'Tirante',des:['E-6181','EC-362']},
+  {k:'fixPe',t:'Fixação do pé',des:['E-6161']},
+  {k:'cons',t:'Consola',des:['E-6182','EC-358']},
+  {k:'antib',t:'Antibalançante',des:['E-6183','EC-365']},
+  {k:'pend',t:'Pêndulo',des:['E-6188']},
+  {k:'brach',t:'Braço de chamada',des:['EC-381','E-6184','EC-382']},
+  {k:'sobr',t:'Sobreelevado',des:['E-6185'],opc:true}];
+const NC_DEF2={perfil:'',nperf:'1',alt:'',niv:'',cf:''};
+const ncStr=v=>String(v==null?'':v).trim();
 function ncDcHerda(p){ const i=st.postes.indexOf(p); for(let j=i-1;j>=0;j--)if(st.postes[j].dc)return {d:st.postes[j].dc,de:st.postes[j].nome}; return null }
-function ncDc(p){ const h=p.dc?null:ncDcHerda(p); return Object.assign({},NC_DEF,p.dc||(h&&h.d)||{}) }
-function ncCons0(){ let u=null; for(const q of st.postes)for(const it of q.itens)if(it.cons)u=it.cons;
-  return {id:'k'+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36),mont:u?u.mont:'tracao',braco:u?u.braco:'I',antivento:u?!!u.antivento:false,H:'',D:'',E:'',A:'',F:'',
-    tubo:u?u.tubo:'30x38',tuboTir:u?u.tuboTir:'19x26',tuboAntib:u?u.tuboAntib:'24x32',lt:'',lk:'',la:'',res:null} }
-function ncChave(p,it){ const d=ncDc(p),c=it.cons; return JSON.stringify([NC.VER,d.csis,d.vento,d.zona,d.raio,d.lado,d.va,d.vb,d.I,d.d,c.mont,c.braco,!!c.antivento,c.H,c.D,c.E,c.A,c.F,c.tubo,c.tuboTir,c.tuboAntib]) }
-function ncCaso(p,it){ const d=ncDc(p),c=it.cons;
-  return {nome:p.nome+' · '+label(it.di,it.mo),I:d.I,d:d.d,H:c.H,D:c.D,E:c.E,A:c.A,F:c.F,P:'',S:'',C:'',li:'',lbr:'',zona:d.zona,montagem:c.mont,braco:c.braco,cat:'LP10',antivento:!!c.antivento,
+function ncDc(p){ const h=p.dc?null:ncDcHerda(p); return Object.assign({},NC_DEF,NC_DEF2,p.dc||(h&&h.d)||{}) }
+function ncNovoId(){ return 'k'+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36) }
+function ncCons0(p){ let u=null; if(p&&p.consolas&&p.consolas.length)u=p.consolas[p.consolas.length-1];
+  const c={id:ncNovoId(),pecas:{},braco:'I',bracoMan:false,mont:'tracao',montMan:false,antivento:false,
+    tubo:'30x38',tuboTir:'19x26',tuboAntib:'24x32',tl:'',tt:'',kl:'',k:'',la:'',H:'',D:'',E:'',F:'',A:'',C:'',B:'',HFT:'',res:null};
+  if(u){ for(const k in u.pecas)c.pecas[k]=u.pecas[k]?{...u.pecas[k]}:null; c.braco=u.braco; c.bracoMan=u.bracoMan; c.mont=u.mont; c.montMan=u.montMan; c.antivento=u.antivento }
+  else c.pecas.brach={di:'EC-381',mo:'X'};
+  ncSync(c); return c }
+/* o que a base IP diz de uma montagem: o tubo é a peça "Tubo de aço AxB" com mais quantidade */
+function ncTuboDe(ref){ if(!ref)return null; const di=desIx.get(ref.di); if(di===undefined)return null; let b=null,q=0;
+  for(const l of bomU(di,ref.mo)){ const m=/^Tubo de aço (\d+x\d+)/i.exec(PEC[l.pi][3]||''); if(m&&l.qty>q){ b=m[1]; q=l.qty } } return b }
+function ncSync(c){
+  const t1=ncTuboDe(c.pecas.cons), t2=ncTuboDe(c.pecas.tir), t3=ncTuboDe(c.pecas.antib);
+  if(t1)c.tubo=t1; if(t2)c.tuboTir=t2; if(t3)c.tuboAntib=t3;
+  const b=c.pecas.brach; if(b&&!c.bracoMan&&NC_B381[b.mo])c.braco=NC_B381[b.mo];
+  if(!c.montMan)c.mont=c.pecas.sobr?'sobrelevado':(c.braco==='III'?'compressao':'tracao') }
+function ncIdx(p,c){ return (p.consolas||[]).indexOf(c)+1 }
+function ncChave(p,c){ const d=ncDc(p); return JSON.stringify([NC.VER,d.csis,d.vento,d.zona,d.raio,d.lado,d.va,d.vb,d.I,d.d,c.mont,c.braco,!!c.antivento,c.H,c.D,c.E,c.A,c.F,c.tubo,c.tuboTir,c.tuboAntib]) }
+function ncCaso(p,c){ const d=ncDc(p);
+  return {nome:p.nome+' · consola '+ncIdx(p,c),I:d.I,d:d.d,H:c.H,D:c.D,E:c.E,A:c.A,F:c.F,P:'',S:'',C:'',li:'',lbr:'',zona:d.zona,montagem:c.mont,braco:c.braco,cat:'LP10',antivento:!!c.antivento,
     tubo:c.tubo,tuboTir:c.tuboTir,tuboAntib:c.tuboAntib,auto:false,cg:true,csis:d.csis,cva:d.va,cvb:d.vb,craio:d.raio,clado:d.lado,cxa:'',cxb:'',cvz:d.vento} }
-function ncAcha(pid,cid){ const p=st.postes.find(x=>x.id===pid); const it=p&&p.itens.find(i=>i.cons&&i.cons.id===cid); return it?{p,it}:null }
+function ncAcha(pid,cid){ const p=st.postes.find(x=>x.id===pid); const c=p&&(p.consolas||[]).find(i=>i.id===cid); return c?{p,c}:null }
+/* o que ainda falta para o motor poder calcular */
+function ncFaltas(p,c){ const d=ncDc(p), f=[];
+  [['raio','raio R'],['va','vão anterior'],['vb','vão seguinte'],['I','i']].forEach(([k,n])=>{ if(ncNum(d[k])==null)f.push(n) });
+  [['H','H'],['D','D'],['E','E'],['A','A'],['F','F']].forEach(([k,n])=>{ if(ncNum(c[k])==null)f.push(n) });
+  return f }
 
 /* --- verificação --- */
 function ncAgenda(pid,cid){ const k=pid+':'+cid; clearTimeout(NC.t.get(k)); NC.t.set(k,setTimeout(()=>{ NC.t.delete(k); ncRoda(pid,cid) },350)) }
 async function ncRoda(pid,cid){
-  let a=ncAcha(pid,cid); if(!a)return; const k=ncChave(a.p,a.it); let r;
-  try{ r=await ncVerif(ncCaso(a.p,a.it)) }catch(e){ r={estado:'erro',erro:String(e&&e.message||e)} }
-  a=ncAcha(pid,cid); if(!a||ncChave(a.p,a.it)!==k)return;
-  a.it.cons.res=Object.assign({k},r); ncPintaRes(a.p,a.it); ncPontos(); nmMudou() }
-function ncResHtml(p,it){ const c=it.cons,r=c.res; if(!r||r.k!==ncChave(p,it))return '<span class="ncT fl">a verificar…</span>';
+  let a=ncAcha(pid,cid); if(!a)return; const k=ncChave(a.p,a.c); let r;
+  try{ r=await ncVerif(ncCaso(a.p,a.c)) }catch(e){ r={estado:'erro',erro:String(e&&e.message||e)} }
+  a=ncAcha(pid,cid); if(!a||ncChave(a.p,a.c)!==k)return;
+  a.c.res=Object.assign({k},r); nxPintaRes(a.p,a.c); ncPontos(); nmMudou() }
+function ncResHtml(p,c){ const r=c.res; if(!r||r.k!==ncChave(p,c)){ const f=ncFaltas(p,c); return f.length?'<span class="ncT fl">falta: '+esc(f.join(', '))+'</span>':'<span class="ncT fl">a verificar…</span>' }
   let h; const nok=r.nok||[];
   if(nok.length)h='<span class="ncT nok" title="'+esc(nok.map(x=>x.desc+': '+x.valor+' (limite '+x.lim+')').join('\n'))+'">não ok · '+esc(nok[0].desc)+(nok.length>1?' (+'+(nok.length-1)+')':'')+'</span>';
   else if(r.estado==='ok')h='<span class="ncT ok">ok · '+r.n+' verificações</span>';
   else if(r.estado==='fora')h='<span class="ncT fl" title="A mecânica deste caso ainda não está no Software Consolas">geometria ok · mecânica fora de âmbito</span>';
-  else if(r.estado==='falta')h='<span class="ncT fl">'+esc(r.erro||'faltam dados')+'</span>';
+  else if(r.estado==='falta'){ const f=ncFaltas(p,c); h='<span class="ncT fl">'+esc(f.length?'falta: '+f.join(', '):(r.erro||'faltam dados'))+'</span>' }
   else h='<span class="ncT fl">'+esc(r.erro||'sem resultado')+'</span>';
-  const av=[]; [['lt','tirante','tirante'],['lk','tubo','tubo da consola'],['la','antib','antibalançante']].forEach(([f,k,nome])=>{ const pv=ncNum(c[f]), cv=r.cortes&&r.cortes[k];
+  const av=[]; [['tt','tirante (TT)','tirante'],['k','tubo da consola (K)','tubo'],['la','antibalançante (L)','antib']].forEach(([f,nome,k])=>{ const pv=ncNum(c[f]), cv=r.cortes&&r.cortes[k];
     if(pv!=null&&cv!=null&&Math.abs(pv-cv)>0.0100001)av.push(nome+': projeto '+ncF2(pv)+' m, calculado '+ncF2(cv)+' m') });
   if(av.length)h+=' <span class="ncT fl" title="Tolerância 10 mm">comprimentos: '+esc(av.join(' · '))+'</span>';
   return h }
-function ncPintaRes(p,it){ const el=document.querySelector('#itens [data-ci="'+it.cons.id+'"] .ncRes'); if(el)el.innerHTML=ncResHtml(p,it) }
-function ncEstadoPoste(p){ let n=0,nok=0,ok=0; for(const it of p.itens)if(it.cons){ n++; const r=it.cons.res; if(!r||r.k!==ncChave(p,it))continue; if((r.nok||[]).length)nok++; else if(r.estado==='ok')ok++ } return {n,nok,ok} }
+function ncEstadoPoste(p){ let n=0,nok=0,ok=0; if(p.verif===false)return {n,nok,ok}; for(const c of p.consolas||[]){ n++; const r=c.res; if(!r||r.k!==ncChave(p,c))continue; if((r.nok||[]).length)nok++; else if(r.estado==='ok')ok++ } return {n,nok,ok} }
 function ncPontos(){ clearTimeout(NC.pt); NC.pt=setTimeout(()=>{ try{ rPostes() }catch(e){} },120) }
 const _dotExec=dotExec;
 dotExec=function(p){ let h=_dotExec(p); const e=ncEstadoPoste(p); if(e.n)h+='<span class="ncd '+(e.nok?'nok':(e.ok===e.n?'ok':'fl'))+'" title="'+(e.nok?e.nok+' consola(s) não ok':(e.ok===e.n?'consolas verificadas':'consolas por verificar'))+'"></span>'; return h };
 
-/* --- ecrã: dados da estrutura e faixas das consolas --- */
-function ncRDc(p){ const sec=$('#ncDcSect'), box=$('#ncDc'); if(!sec)return;
-  const tem=!!(p&&p.itens.some(i=>i.cons)); sec.style.display=tem?'':'none'; if(!tem){ box.innerHTML=''; return }
-  const d=ncDc(p), h=p.dc?null:ncDcHerda(p);
-  $('#ncDcNota').textContent=p.dc?'':(h?'· valores da estrutura '+h.de+'; corrija o que mudar':'· preencha uma vez');
-  box.innerHTML='<div class="ncDc">'+NC_DCF.map(([k,lab,t,o])=>'<div class="f"><label>'+lab+'</label>'+(t==='s'?'<select data-dc="'+k+'">'+ncOpt(o,d[k])+'</select>':'<input data-dc="'+k+'" value="'+esc(d[k])+'" style="width:'+o+'px"'+(k==='poste'||k==='macico'?'':' inputmode="decimal"')+'>')+'</div>').join('')+'</div>' }
-function ncStrip(p,it,i){ const c=it.cons;
-  const inp=(f,lab,w)=>'<div class="f"><label>'+lab+'</label><input data-nc="'+f+'" value="'+esc(c[f])+'" style="width:'+w+'px" inputmode="decimal"></div>';
-  const sel=(f,lab,ops)=>'<div class="f"><label>'+lab+'</label><select data-nc="'+f+'">'+ncOpt(ops,c[f])+'</select></div>';
-  return '<tr class="ncRow" data-ci="'+c.id+'"><td colspan="5"><div class="ncStrip"><div class="ncL1">'
-    +sel('mont','Montagem',NC_MONT)+sel('braco','Braço',NC_BRACOS)+'<label class="chk"><input type="checkbox" data-nc="antivento"'+(c.antivento?' checked':'')+'> antivento</label>'
-    +inp('H','H (m)',54)+inp('D','D (m)',54)+inp('E','E (m)',54)+inp('A','A (m)',54)+inp('F','F (m)',54)
-    +sel('tubo','Tubo consola',NC_TUBOS.tubo)+sel('tuboTir','Tirante',NC_TUBOS.tuboTir)+sel('tuboAntib','Antibalançante',NC_TUBOS.tuboAntib)
-    +'</div><div class="ncL2"><span class="n">Comprimentos do projeto (m, opcional):</span>'+inp('lt','tirante',54)+inp('lk','tubo',54)+inp('la','antibal.',54)
-    +'<span class="ncRes"></span><span class="ncAc"><button type="button" data-ncabrir="'+c.id+'">Abrir no Software Consolas ↗</button><button type="button" data-nctirar="'+c.id+'" title="Deixar de verificar esta montagem como consola" aria-label="Tirar verificação">×</button></span></div></div></td></tr>' }
+/* --- migração: o que a v25 guardava dentro das montagens passa a ser consolas do poste --- */
+function ncMigra(){ for(const p of st.postes){ if(!p.consolas)p.consolas=[];
+    for(const it of p.itens){ if(!it.cons)continue; const o=it.cons, c=ncCons0(null);
+      c.id=o.id||c.id; c.pecas={cons:{di:DES[it.di][0],mo:it.mo}}; c.braco=o.braco||'I'; c.bracoMan=true; c.mont=o.mont||'tracao'; c.montMan=true; c.antivento=!!o.antivento;
+      c.tubo=o.tubo||'30x38'; c.tuboTir=o.tuboTir||'19x26'; c.tuboAntib=o.tuboAntib||'24x32';
+      ['H','D','E','A','F'].forEach(k=>c[k]=ncStr(o[k])); c.tt=ncStr(o.lt); c.k=ncStr(o.lk); c.la=ncStr(o.la);
+      p.consolas.push(c); delete it.cons; if(p.verif===undefined)p.verif=true } } }
+const _garante=garante;
+garante=function(){ _garante(); try{ ncMigra() }catch(e){ console.error(e) } };
+
+/* --- ecrã: painel das consolas --- */
+const NX={sel:{},dados:{},aberto:true};
+function nxSel(p){ const L=p.consolas||[]; let c=L.find(x=>x.id===NX.sel[p.id]); if(!c&&L.length){ c=L[0]; NX.sel[p.id]=c.id } return c||null }
+function nxIn(attr,k,v,w,ph){ return '<div class="nxF"><label>'+k[1]+(k[2]?' <i>'+k[2]+'</i>':'')+'</label><input '+attr+'="'+k[0]+'" value="'+esc(v)+'" inputmode="decimal" autocomplete="off" '+(ph?'placeholder="'+ph+'"':'')+(w?' style="width:'+w+'px"':'')+'></div>' }
+function nxPecaHtml(p,c,s){ const r=c.pecas[s.k]; let sub='';
+  if(r){ const di=desIx.get(r.di); sub=di===undefined?'<span class="nxW">desenho não existe na base</span>':(DES[di][4]||'');
+    if(s.k==='cons'||s.k==='tir'||s.k==='antib'){ const t=ncTuboDe(r); if(t)sub='tubo '+t.replace('x','×') }
+    if(s.k==='brach'){ sub='braço '+c.braco+(c.bracoMan&&NC_B381[r.mo]&&NC_B381[r.mo]!==c.braco?' · escolhido por ti':'') } }
+  const falta=r&&!(p.itens||[]).some(i=>DES[i.di][0]===r.di&&i.mo===r.mo);
+  return '<button type="button" class="nxP'+(r?' set':'')+'" data-nxpeca="'+s.k+'"><span class="l">'+s.t+(s.opc?' <i>(opcional)</i>':'')+'</span><span class="v">'+(r?esc(r.di+' · '+r.mo):'Escolher…')+'</span>'
+    +(sub?'<span class="d">'+(typeof sub==='string'&&sub.startsWith('<')?sub:esc(sub))+'</span>':'')+(falta?'<span class="nxM" title="Esta montagem ainda não está na medição do poste">não está na medição</span>':'')+'</button>' }
+function nxRender(){ const sec=$('#nxSect'), box=$('#nx'); if(!sec)return; const p=poste();
+  if(!p||st.postes.length===0){ sec.style.display='none'; box.innerHTML=''; return } sec.style.display='';
+  const L=p.consolas||[], on=p.verif!==false&&(p.verif===true||L.length>0);
+  if(!on){ box.innerHTML='<div class="nxBar"><b>Consolas</b><span class="n">Modo simples: só a medição das montagens.</span><span class="nxSp"></span><button type="button" data-nxon>Verificar consolas deste poste</button></div>'; return }
+  const c=nxSel(p), d=ncDc(p), h=p.dc?null:ncDcHerda(p);
+  let html='<div class="nxBar"><b>Consolas</b>'
+    +'<span class="nxSw"><button type="button" data-nxoff>Simples</button><button type="button" class="on">Com verificação</button></span><span class="nxSp"></span>'
+    +'<span class="nxTabs">'+L.map((x,i)=>'<button type="button" class="nxTab'+(c&&x.id===c.id?' on':'')+'" data-nxtab="'+x.id+'">Consola '+(i+1)+'</button>').join('')+'<button type="button" class="nxTab" data-nxnova title="Nova consola">＋</button></span></div>';
+  /* dados do poste e da linha */
+  const resumo=[d.perfil?((+d.nperf>1?d.nperf+'×':'')+d.perfil):'', d.alt?d.alt+' m':'', d.macico?'maciço '+d.macico:'', d.csis, 'vento '+d.vento, d.lado==='ext'?'exterior':'interior', (d.va||d.vb)?'vãos '+(d.va||'?')+' / '+(d.vb||'?'):''].filter(Boolean).join(' · ');
+  const ab=NX.dados[p.id]===true;
+  html+='<div class="nxCard"><div class="nxCt"><b>Poste e linha</b><span class="n">'+esc(resumo||'por preencher')+(h?' · herdado de '+esc(h.de):'')+'</span><button type="button" data-nxdados>'+(ab?'Fechar':'Editar')+'</button></div>';
+  if(ab){ html+='<div class="nxG">'
+    +'<div class="nxF"><label>Zona</label><select data-nxdc="zona">'+ncOpt([['ZT','Terrestre'],['ZM','Marítima']],d.zona)+'</select></div>'
+    +'<div class="nxF"><label>Perfil</label><input data-nxdc="perfil" value="'+esc(d.perfil)+'" placeholder="HE300B" style="width:96px" autocomplete="off"></div>'
+    +'<div class="nxF"><label>N.º de perfis</label><select data-nxdc="nperf">'+ncOpt([['1','1'],['2','2 (geminado)']],String(d.nperf||'1'))+'</select></div>'
+    +nxIn('data-nxdc',['alt','Altura','m'],d.alt,70)+nxIn('data-nxdc',['raio','Raio R','m'],d.raio,70)
+    +'<div class="nxF"><label>Maciço</label><input data-nxdc="macico" value="'+esc(d.macico)+'" placeholder="2 Ne" style="width:80px" autocomplete="off"></div>'
+    +nxIn('data-nxdc',['niv','Nível'],d.niv,70)+nxIn('data-nxdc',['cf','CF'],d.cf,70)+nxIn('data-nxdc',['I','i','m'],d.I,70)+nxIn('data-nxdc',['d','d','m'],d.d,70)
+    +'<div class="nxF"><label>Catenária</label><select data-nxdc="csis">'+ncOpt([['LP10','LP10'],['LP12','LP12'],['LP300','LP300']],d.csis)+'</select></div>'
+    +'<div class="nxF"><label>Vento</label><select data-nxdc="vento">'+ncOpt([['A','A'],['B','B']],d.vento)+'</select></div>'
+    +'<div class="nxF"><label>Poste no lado</label><select data-nxdc="lado">'+ncOpt([['ext','exterior'],['int','interior']],d.lado)+'</select></div>'
+    +nxIn('data-nxdc',['va','Vão anterior','m'],d.va,80)+nxIn('data-nxdc',['vb','Vão seguinte','m'],d.vb,80)
+    +'</div><div class="nxAc"><button type="button" data-nxaplica title="Copia a catenária, o vento, o lado e a zona para os postes seguintes">Aplicar catenária, vento, lado e zona aos postes seguintes</button></div>' }
+  html+='</div>';
+  if(!c){ box.innerHTML=html+'<div class="nxVazio"><b>Este poste ainda não tem consolas.</b><span>Acrescenta a primeira, ou copia de outro poste.</span><div><button type="button" class="nxGo" data-nxnova>＋ Consola</button> <button type="button" data-nxcopiaoutro>Copiar de outro poste…</button></div></div>'; return }
+  const i=ncIdx(p,c);
+  html+='<div class="nxRes" data-nxres="'+c.id+'"><span class="nxRt"><b>Consola '+i+'</b></span><span class="ncRes">'+ncResHtml(p,c)+'</span><span class="nxSp"></span>'
+    +'<button type="button" data-nxcopiaant'+(i>1?'':' disabled')+'>Copiar da anterior</button><button type="button" data-nxcopiaoutro>Copiar de outro poste…</button><button type="button" data-nxcola>Colar linha da tabela</button><button type="button" data-ncabrir="'+c.id+'">Abrir no Software Consolas ↗</button><button type="button" class="nxX" data-nxtirar="'+c.id+'" title="Apagar esta consola" aria-label="Apagar consola">×</button></div>';
+  html+='<div class="nxCard"><div class="nxCt"><b>1 · Peças</b><span class="n">cada peça é uma montagem da base IP · o tubo e o braço deduzem-se daqui</span></div><div class="nxPs">'+NC_PECAS.map(s=>nxPecaHtml(p,c,s)).join('')+'</div>'
+    +'<div class="nxOp"><label>Braço <select data-nxf="braco">'+ncOpt(NC_BRACOS,c.braco)+'</select></label><label>Tipo <select data-nxf="mont">'+ncOpt(NC_MONT,c.mont)+'</select></label><label class="chk"><input type="checkbox" data-nxf="antivento"'+(c.antivento?' checked':'')+'> antivento</label>'
+    +(c.bracoMan?'<button type="button" data-nxbracoauto title="Voltar ao braço que corresponde ao braço de chamada">braço automático</button>':'')+'</div></div>';
+  html+='<div class="nxCard"><div class="nxCt"><b>2 · Comprimentos</b><span class="n">os do projeto · TT, K e L são comparados com os que o motor calcula</span></div><div class="nxG">'
+    +nxIn('data-nxf',['tl','Tirante TL','m'],c.tl,86)+nxIn('data-nxf',['tt','Tirante TT','m'],c.tt,86)+nxIn('data-nxf',['kl','Consola KL','m'],c.kl,86)+nxIn('data-nxf',['k','Consola K','m'],c.k,86)+nxIn('data-nxf',['la','Antibal. L','m'],c.la,86)+'</div></div>';
+  html+='<div class="nxCard"><div class="nxCt"><b>3 · Cotas</b><span class="n">Enter passa ao seguinte · ou cola uma linha da tabela</span></div><div class="nxG nxG8">'
+    +['H','D','E','F','A','C','B','HFT'].map(k=>nxIn('data-nxf',[k,k],c[k],0)).join('')+'</div></div>';
+  const falta=NC_PECAS.filter(s=>{ const r=c.pecas[s.k]; return r&&!(p.itens||[]).some(it=>DES[it.di][0]===r.di&&it.mo===r.mo) }).length;
+  if(falta)html+='<div class="nxFoot"><span>'+falta+(falta>1?' peças desta consola ainda não estão':' peça desta consola ainda não está')+' nas montagens do poste.</span><button type="button" data-nxjunta>Adicionar à medição</button></div>';
+  box.innerHTML=html }
+function nxPintaRes(p,c){ const el=document.querySelector('#nx [data-nxres="'+c.id+'"] .ncRes'); if(el)el.innerHTML=ncResHtml(p,c) }
+function nxAlterou(p,c,remonta){ registaHistorico(); atualizaBotoesUndo(); nmMudou(); if(c)ncAgenda(p.id,c.id); else for(const x of p.consolas||[])ncAgenda(p.id,x.id); if(remonta)nxRender(); else if(c)nxPintaRes(p,c) }
 const _rItens=rItens;
-rItens=function(){ _rItens(); const p=poste(); ncRDc(p); if(!p)return;
-  const trs=document.querySelectorAll('#itens tr.mt'); const frag=[];
-  trs.forEach(tr=>{ const i=+tr.getAttribute('data-mt'), it=p.itens[i]; if(!it)return;
-    if(it.cons){ tr.insertAdjacentHTML('afterend',ncStrip(p,it,i)); const row=tr.nextElementSibling; ncPintaRes(p,it);
-      const r=it.cons.res; if(!r||r.k!==ncChave(p,it))ncAgenda(p.id,it.cons.id) }
-    else { const td=tr.querySelector('td'); if(td)td.insertAdjacentHTML('beforeend',' <button type="button" class="ncBtn" data-ncnovo="'+i+'" title="Verificar esta montagem como consola no Software Consolas">consola</button>') } }) };
+rItens=function(){ _rItens(); nxRender(); const p=poste(); if(!p||p.verif===false)return;
+  for(const c of p.consolas||[]){ const r=c.res; if(!r||r.k!==ncChave(p,c))ncAgenda(p.id,c.id) } };
+
+/* --- escolher a montagem de uma peça --- */
+function nxEscolhe(p,c,slot){
+  const s=NC_PECAS.find(x=>x.k===slot); if(!s)return;
+  const w=document.createElement('div'); w.className='modalWrap'; const card=document.createElement('div'); card.className='modalCard nxPick'; w.appendChild(card);
+  const grupo=code=>{ const di=desIx.get(code); if(di===undefined)return ''; const ms=pairList.filter(x=>x.di===di&&x.mo!==''&&x.mo!=='0');
+    if(!ms.length)return '';
+    return '<div class="nxPg"><div class="nxPh"><b>'+esc(code)+'</b> '+esc(DES[di][4]||'')+'</div><div class="nxPb">'+ms.map(m=>{ const t=ncTuboDe({di:code,mo:m.mo}); const sel=c.pecas[slot]&&c.pecas[slot].di===code&&c.pecas[slot].mo===m.mo;
+        return '<button type="button" class="nxPm'+(sel?' on':'')+'" data-d="'+esc(code)+'" data-m="'+esc(m.mo)+'"><b>'+esc(m.mo)+'</b>'+(t?'<small>tubo '+t.replace('x','×')+'</small>':'')+'</button>' }).join('')+'</div></div>' };
+  const corpo=q=>{ if(!q)return s.des.map(grupo).join('')||'<p class="n">Sem montagens para estes desenhos na base.</p>';
+    const nq=norm(q); const r=pairList.filter(x=>x.hay.includes(nq)&&x.mo!==''&&x.mo!=='0').slice(0,40);
+    return r.length?'<div class="nxPb nxPb2">'+r.map(m=>'<button type="button" class="nxPm" data-d="'+esc(DES[m.di][0])+'" data-m="'+esc(m.mo)+'"><b>'+esc(m.code)+'</b><small>'+esc((DES[m.di][4]||'').slice(0,50))+'</small></button>').join('')+'</div>':'<p class="n">Nada encontrado.</p>' };
+  card.innerHTML='<div class="nxPt"><h3>'+esc(s.t)+'</h3><input type="search" placeholder="Procurar noutro desenho (código ou nome)" autocomplete="off"><button type="button" data-x>Fechar</button></div><div class="nxPl">'+corpo('')+'</div>'
+    +'<div class="nxPa"><button type="button" data-nenhuma>Sem esta peça</button></div>';
+  document.body.appendChild(w); const lista=card.querySelector('.nxPl'), inp=card.querySelector('input');
+  const fim=()=>{ document.removeEventListener('keydown',tec,true); w.remove() };
+  const tec=e=>{ if(e.key==='Escape'){ e.stopPropagation(); fim() } };
+  document.addEventListener('keydown',tec,true);
+  inp.oninput=()=>{ lista.innerHTML=corpo(inp.value.trim()) };
+  card.addEventListener('click',e=>{ if(e.target.closest('[data-x]')){ fim(); return }
+    if(e.target.closest('[data-nenhuma]')){ c.pecas[slot]=null; if(slot==='brach')c.bracoMan=c.bracoMan; ncSync(c); fim(); nxAlterou(p,c,true); return }
+    const b=e.target.closest('.nxPm'); if(!b)return; c.pecas[slot]={di:b.getAttribute('data-d'),mo:b.getAttribute('data-m')};
+    if(slot==='brach'&&!c.bracoMan&&!NC_B381[c.pecas[slot].mo]&&c.pecas[slot].di==='EC-381'){ /* sem equivalência: escolhes tu */ }
+    ncSync(c); fim(); nxAlterou(p,c,true) });
+  w.addEventListener('mousedown',e=>{ if(e.target===w)fim() }); setTimeout(()=>inp.focus(),30) }
+
+/* --- colar uma linha da tabela do caderno --- */
+const NX_ORDEM=['H','D','E','F','A','C','B','HFT'];
+function nxDistribui(p,c,txt){ const t=String(txt||'').replace(/,/g,'.').match(/-?\d+(?:\.\d+)?/g)||[]; if(t.length<4)return false;
+  t.slice(0,8).forEach((v,i)=>{ c[NX_ORDEM[i]]=v.replace('.',',') }); nxAlterou(p,c,true); toast('Cotas coladas: '+t.slice(0,8).map((v,i)=>NX_ORDEM[i]+' '+v).join(' · '),4500); return true }
+async function nxCola(p,c){ let ini=''; try{ ini=await Promise.race([navigator.clipboard.readText(),new Promise(r=>setTimeout(()=>r(''),350))]) }catch(e){}
+  const r=await nmModal({titulo:'Colar linha da tabela',corpo:'<p class="n">Cola os valores pela ordem da folha: <b>H D E F A C</b> (e B, HFT se vierem). Pode ser o texto copiado do PDF.</p><textarea id="nxTxt" rows="3" style="width:100%;font-family:var(--mono)">'+esc(ini)+'</textarea>',botoes:[{t:'Cancelar',v:null},{t:'Aplicar',v:cc=>cc.querySelector('#nxTxt').value,p:true}],cancela:null});
+  if(r!=null&&!nxDistribui(p,c,r))toast('Não encontrei pelo menos 4 números.') }
+
+/* --- cópias --- */
+function nxClona(c){ const n=JSON.parse(JSON.stringify(c,(k,v)=>k==='res'?undefined:v)); n.id=ncNovoId(); n.res=null; return n }
+function nxCopiaPara(p,c){ const n=nxClona(c); (p.consolas=p.consolas||[]).push(n); p.verif=true; NX.sel[p.id]=n.id; return n }
+async function nxCopiaOutro(p){ const cand=st.postes.filter(x=>x!==p&&(x.consolas||[]).length); if(!cand.length){ toast('Ainda não há consolas noutros postes.'); return }
+  const r=await nmModal({titulo:'Copiar consola de outro poste',corpo:'<div class="nxF"><label>Poste</label><select id="nxOp">'+cand.map(x=>'<option value="'+x.id+'">'+esc(x.nome)+' · '+x.consolas.length+' consola'+(x.consolas.length>1?'s':'')+'</option>').join('')+'</select></div><div class="nxF"><label>Consola</label><select id="nxOc"></select></div><label class="chk" style="margin-top:8px"><input type="checkbox" id="nxOt"> copiar todas as consolas desse poste</label>',
+    botoes:[{t:'Cancelar',v:null},{t:'Copiar',v:cc=>({p:+cc.querySelector('#nxOp').value,c:cc.querySelector('#nxOc').value,t:cc.querySelector('#nxOt').checked}),p:true}],cancela:null});
+  if(!r)return; const o=st.postes.find(x=>x.id===r.p); if(!o)return; const lista=r.t?o.consolas:o.consolas.filter(x=>x.id===r.c);
+  for(const c of lista)nxCopiaPara(p,c); nxAlterou(p,null,true); toast('Copiadas '+lista.length+' consola'+(lista.length>1?'s':'')+' de '+o.nome+'.') }
+function nxOpcoesCopia(){ const sel=$('#nxOp'), cs=$('#nxOc'); return {sel,cs} }
+document.addEventListener('change',e=>{ if(e.target&&e.target.id==='nxOp'){ const o=st.postes.find(x=>x.id===+e.target.value), cs=$('#nxOc'); if(o&&cs)cs.innerHTML=o.consolas.map((x,i)=>'<option value="'+x.id+'">Consola '+(i+1)+'</option>').join('') } });
+new MutationObserver(()=>{ const s=$('#nxOp'); if(s&&s.value&&!$('#nxOc').innerHTML)s.dispatchEvent(new Event('change',{bubbles:true})) }).observe(document.body,{childList:true,subtree:true});
+
+/* duplicar poste: montagens, consolas e dados do poste (a execução nunca se copia) */
+$('#bDup').onclick=async()=>{ const p=poste(); if(!p)return;
+  const r=await nmModal({titulo:'Duplicar '+p.nome,corpo:'<div class="nxF"><label>Nomes das estruturas novas (separa por vírgula)</label><input id="nxDn" style="width:100%" placeholder="200-33, 200-35" autocomplete="off"></div>'
+    +'<div class="nxChk"><label class="chk"><input type="checkbox" id="nxDm" checked> montagens ('+p.itens.length+')</label><label class="chk"><input type="checkbox" id="nxDc" '+((p.consolas||[]).length?'checked':'disabled')+'> consolas ('+(p.consolas||[]).length+')</label><label class="chk"><input type="checkbox" id="nxDd" '+(p.dc?'checked':'disabled')+'> dados do poste e da linha</label></div><p class="n">A execução registada não se copia.</p>',
+    botoes:[{t:'Cancelar',v:null},{t:'Duplicar',v:cc=>({n:cc.querySelector('#nxDn').value,m:cc.querySelector('#nxDm').checked,c:cc.querySelector('#nxDc').checked,d:cc.querySelector('#nxDd').checked}),p:true}],cancela:null});
+  if(!r||!r.n.trim())return; let ult=null;
+  for(const nome of r.n.split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean)){
+    let t=st.postes.find(x=>x.nome===nome);
+    if(!t){ t={id:st.seq++,nome,itens:[],estr:[],pecas:[],consolas:[]}; st.postes.push(t) }
+    if(r.m)for(const it of p.itens){ const e=t.itens.find(x=>x.di===it.di&&x.mo===it.mo); if(e)e.qtd+=it.qtd; else t.itens.push({di:it.di,mo:it.mo,qtd:it.qtd}) }
+    if(r.d&&p.dc)t.dc=JSON.parse(JSON.stringify(p.dc));
+    if(r.c&&(p.consolas||[]).length){ for(const c of p.consolas)nxCopiaPara(t,c) }
+    ult=t }
+  apply(); toast('Duplicado.'); if(ult&&r.c)for(const c of ult.consolas||[])ncAgenda(ult.id,c.id) };
 
 /* --- eventos --- */
-function ncItem(el){ const p=poste(); if(!p)return null; const row=el.closest('[data-ci]'); if(!row)return null; const it=p.itens.find(i=>i.cons&&i.cons.id===row.getAttribute('data-ci')); return it?{p,it}:null }
-function ncAlterou(p,it){ registaHistorico(); atualizaBotoesUndo(); nmMudou(); ncAgenda(p.id,it.cons.id) }
-$('#itens').addEventListener('click',e=>{
-  const n=e.target.closest('[data-ncnovo]'); if(n){ const p=poste(), it=p&&p.itens[+n.getAttribute('data-ncnovo')]; if(it&&!it.cons){ it.cons=ncCons0(); apply() } return }
-  const t=e.target.closest('[data-nctirar]'); if(t){ const a=ncItem(t); if(a){ delete a.it.cons; apply() } return }
-  const ab=e.target.closest('[data-ncabrir]'); if(ab){ const a=ncItem(ab); if(a)ncAbrir(a.p,a.it) } });
-$('#itens').addEventListener('change',e=>{ const f=e.target.closest('[data-nc]'); if(!f)return; const a=ncItem(f); if(!a)return;
-  const k=f.getAttribute('data-nc'); a.it.cons[k]=(f.type==='checkbox')?f.checked:f.value.trim();
-  if(k==='lt'||k==='lk'||k==='la'){ registaHistorico(); atualizaBotoesUndo(); nmMudou(); ncPintaRes(a.p,a.it) } else ncAlterou(a.p,a.it) });
-$('#ncDc').addEventListener('change',e=>{ const f=e.target.closest('[data-dc]'); if(!f)return; const p=poste(); if(!p)return;
-  if(!p.dc)p.dc=Object.assign({},ncDc(p)); p.dc[f.getAttribute('data-dc')]=f.value.trim(); $('#ncDcNota').textContent='';
-  registaHistorico(); atualizaBotoesUndo(); nmMudou(); for(const it of p.itens)if(it.cons)ncAgenda(p.id,it.cons.id) });
+function nxContexto(el){ const p=poste(); if(!p)return null; return {p,c:nxSel(p)} }
+$('#nx').addEventListener('click',async e=>{ const x=nxContexto(e.target); if(!x)return; const {p}=x; let {c}=x;
+  const t=(s)=>e.target.closest(s);
+  if(t('[data-nxon]')){ p.verif=true; if(!(p.consolas||[]).length){ const n=ncCons0(p); p.consolas=[n]; NX.sel[p.id]=n.id } nxAlterou(p,null,true); return }
+  if(t('[data-nxoff]')){ p.verif=false; registaHistorico(); atualizaBotoesUndo(); nmMudou(); nxRender(); rPostes(); return }
+  const tab=t('[data-nxtab]'); if(tab){ NX.sel[p.id]=tab.getAttribute('data-nxtab'); nxRender(); return }
+  if(t('[data-nxnova]')){ const n=ncCons0(p); (p.consolas=p.consolas||[]).push(n); p.verif=true; NX.sel[p.id]=n.id; nxAlterou(p,n,true); return }
+  if(t('[data-nxdados]')){ NX.dados[p.id]=!(NX.dados[p.id]===true); nxRender(); return }
+  if(t('[data-nxaplica]')){ const d=ncDc(p), i=st.postes.indexOf(p); let n=0;
+    for(const q of st.postes.slice(i+1)){ q.dc=Object.assign({},ncDc(q),{csis:d.csis,vento:d.vento,lado:d.lado,zona:d.zona}); n++ }
+    registaHistorico(); atualizaBotoesUndo(); nmMudou(); for(const q of st.postes.slice(i+1))for(const k of q.consolas||[])ncAgenda(q.id,k.id); toast('Aplicado a '+n+' poste'+(n===1?'':'s')+' seguintes.'); return }
+  if(!c)return;
+  const pk=t('[data-nxpeca]'); if(pk){ nxEscolhe(p,c,pk.getAttribute('data-nxpeca')); return }
+  if(t('[data-nxbracoauto]')){ c.bracoMan=false; ncSync(c); nxAlterou(p,c,true); return }
+  if(t('[data-nxcopiaant]')){ const i=p.consolas.indexOf(c); if(i>0){ const n=nxCopiaPara(p,p.consolas[i-1]); nxAlterou(p,n,true); toast('Consola copiada da anterior: muda só o que for diferente.') } return }
+  if(t('[data-nxcopiaoutro]')){ nxCopiaOutro(p); return }
+  if(t('[data-nxcola]')){ nxCola(p,c); return }
+  if(t('[data-nxjunta]')){ let n=0; for(const s of NC_PECAS){ const r=c.pecas[s.k]; if(!r)continue; const di=desIx.get(r.di); if(di===undefined)continue;
+      if(!p.itens.some(it=>it.di===di&&it.mo===r.mo)){ p.itens.push({di,mo:r.mo,qtd:1}); n++ } }
+    if(n){ apply(); toast(n+' montage'+(n>1?'ns':'m')+' adicionada'+(n>1?'s':'')+' à medição.') } return }
+  const tr=t('[data-nxtirar]'); if(tr){ if(!await nmSim('Apagar a consola '+ncIdx(p,c)+' de '+esc(p.nome)+'?','Apagar'))return;
+    p.consolas=p.consolas.filter(y=>y!==c); NX.sel[p.id]=null; nxAlterou(p,null,true); rPostes(); return }
+  const ab=t('[data-ncabrir]'); if(ab){ ncAbrir(p,c) } });
+$('#nx').addEventListener('change',e=>{ const p=poste(); if(!p)return;
+  const f=e.target.closest('[data-nxf]'); if(f){ const c=nxSel(p); if(!c)return; const k=f.getAttribute('data-nxf');
+    c[k]=(f.type==='checkbox')?f.checked:ncStr(f.value);
+    if(k==='braco')c.bracoMan=true; if(k==='mont')c.montMan=true;
+    const re=(k==='braco'||k==='mont'); if(re&&k==='braco'&&!c.montMan)ncSync(c);
+    nxAlterou(p,c,re); return }
+  const g=e.target.closest('[data-nxdc]'); if(g){ if(!p.dc)p.dc=Object.assign({},ncDc(p)); p.dc[g.getAttribute('data-nxdc')]=ncStr(g.value); nxAlterou(p,null,true) } });
+$('#nx').addEventListener('keydown',e=>{ if(e.key!=='Enter'||!e.target.matches('input[data-nxf],input[data-nxdc]'))return; e.preventDefault();
+  const L=[...document.querySelectorAll('#nx input[data-nxf]:not([type=checkbox]),#nx input[data-nxdc]')]; const i=L.indexOf(e.target); e.target.blur(); const n=L[i+1]; if(n){ setTimeout(()=>{ n.focus(); n.select() },30) } });
+$('#nx').addEventListener('paste',e=>{ const f=e.target.closest('input[data-nxf]'); if(!f||f.type==='checkbox')return; const txt=(e.clipboardData||window.clipboardData).getData('text'); const n=(String(txt).replace(/,/g,'.').match(/-?\d+(?:\.\d+)?/g)||[]).length;
+  if(n>=4){ e.preventDefault(); const p=poste(), c=p&&nxSel(p); if(c)nxDistribui(p,c,txt) } });
 
 /* --- abrir no Software Consolas (a app completa, com os parâmetros desta consola) --- */
-function ncAbrir(p,it){
-  const w=document.createElement('div'); w.className='modalWrap ncModal'; const c=document.createElement('div'); c.className='modalCard ncCard';
-  c.innerHTML='<div class="ncCab"><b>Software Consolas</b><span class="n">'+esc(p.nome+' · '+label(it.di,it.mo))+' · só consulta: o que mudar aqui não volta para a Medição</span><button type="button" class="ncX" aria-label="Fechar">Fechar</button></div>';
-  const f=document.createElement('iframe'); f.title='Software Consolas'; f.srcdoc=ncHtml(); c.appendChild(f); w.appendChild(c); document.body.appendChild(w);
-  const caso=Object.assign({id:'med_'+it.cons.id},ncCaso(p,it));
+function ncAbrir(p,c){
+  const w=document.createElement('div'); w.className='modalWrap ncModal'; const k=document.createElement('div'); k.className='modalCard ncCard';
+  k.innerHTML='<div class="ncCab"><b>Software Consolas</b><span class="n">'+esc(p.nome+' · consola '+ncIdx(p,c))+' · só consulta: o que mudar aqui não volta para a Medição</span><button type="button" class="ncX" aria-label="Fechar">Fechar</button></div>';
+  const f=document.createElement('iframe'); f.title='Software Consolas'; f.srcdoc=ncHtml(); k.appendChild(f); w.appendChild(k); document.body.appendChild(w);
+  const caso=Object.assign({id:'med_'+c.id},ncCaso(p,c));
   const on=ev=>{ const m=ev.data; if(m&&m.de==='consola'&&m.tipo==='pronta'&&ev.source===f.contentWindow)f.contentWindow.postMessage({cmd:'abrir',caso},'*') };
   const fim=()=>{ window.removeEventListener('message',on); document.removeEventListener('keydown',tec,true); w.remove() };
   const tec=e=>{ if(e.key==='Escape'){ e.stopPropagation(); fim() } };
   window.addEventListener('message',on); document.addEventListener('keydown',tec,true);
-  c.querySelector('.ncX').onclick=fim; w.addEventListener('mousedown',e=>{ if(e.target===w)fim() }) }
+  k.querySelector('.ncX').onclick=fim; w.addEventListener('mousedown',e=>{ if(e.target===w)fim() }) }
 
 /* --- verificar todas (menu Obra) --- */
-async function ncTodas(){ const lista=[]; for(const p of st.postes)for(const it of p.itens)if(it.cons)lista.push({p,it});
+async function ncTodas(){ const lista=[]; for(const p of st.postes)if(p.verif!==false)for(const c of p.consolas||[])lista.push({p,c});
   if(!lista.length){ toast('Ainda não há consolas para verificar.'); return }
   toast('A verificar '+lista.length+' consolas…',2500); let nok=0;
-  for(const {p,it} of lista){ const k=ncChave(p,it); let r; try{ r=await ncVerif(ncCaso(p,it)) }catch(e){ r={estado:'erro',erro:String(e)} } it.cons.res=Object.assign({k},r); if((r.nok||[]).length)nok++ }
+  for(const {p,c} of lista){ const k=ncChave(p,c); let r; try{ r=await ncVerif(ncCaso(p,c)) }catch(e){ r={estado:'erro',erro:String(e)} } c.res=Object.assign({k},r); if((r.nok||[]).length)nok++ }
   nmMudou(); rItens(); rPostes(); toast(lista.length+' consolas verificadas, '+nok+' não ok.',5000) }
 $('#nmenu').addEventListener('click',e=>{ const b=e.target.closest('button[data-n="verifTodas"]'); if(b)ncTodas() });
 
-/* --- Excel: duas folhas novas (dados da estrutura e consolas); o resultado recalcula-se ao abrir --- */
+/* --- Excel: duas folhas (dados do poste e da linha; consolas, uma linha por consola) --- */
+const NX_PK=['fixTir','tir','fixPe','cons','antib','pend','brach','sobr'];
+const nxRef=r=>r?r.di+' / '+r.mo:'';
 const _cl0=construirLivro0;
 construirLivro0=function(){ const wb=_cl0();
-  try{ const A=[['Estrutura','Poste','Maciço','Catenária','Vento','Zona','Raio (m)','Lado','Vão anterior (m)','Vão seguinte (m)','I (m)','d (m)']];
-    const B=[['Estrutura','Desenho','Montagem','Tipo de montagem','Braço','Antivento','H (m)','D (m)','E (m)','A (m)','F (m)','Tubo da consola','Tirante','Antibalançante','Comp. tirante (m)','Comp. tubo (m)','Comp. antibal. (m)','Resultado','Pormenor']];
-    for(const p of st.postes){ if(p.dc){ const d=p.dc; A.push([p.nome,d.poste,d.macico,d.csis,d.vento,d.zona,d.raio,d.lado,d.va,d.vb,d.I,d.d]) }
-      for(const it of p.itens)if(it.cons){ const c=it.cons,r=c.res&&c.res.k===ncChave(p,it)?c.res:null;
-        B.push([p.nome,DES[it.di][0],it.mo,c.mont,c.braco,c.antivento?'Sim':'',c.H,c.D,c.E,c.A,c.F,c.tubo,c.tuboTir,c.tuboAntib,c.lt,c.lk,c.la,r?((r.nok||[]).length?'não ok':r.estado):'',r?(r.nok||[]).map(x=>x.desc+': '+x.valor+' (limite '+x.lim+')').join('; '):'']) } }
+  try{ const A=[['Estrutura','Poste','Zona','Perfil','N.º perfis','Altura (m)','Raio (m)','Maciço','Nível','CF','i (m)','d (m)','Catenária','Vento','Lado','Vão anterior (m)','Vão seguinte (m)']];
+    const B=[['Estrutura','Consola','Fixação do tirante','Tirante','Fixação do pé','Consola (tubo)','Antibalançante','Pêndulo','Braço de chamada','Sobreelevado','Braço','Tipo de montagem','Antivento','TL (m)','TT (m)','KL (m)','K (m)','L (m)','H','D','E','F','A','C','B','HFT','Resultado','Pormenor']];
+    for(const p of st.postes){ if(p.dc){ const d=ncDc(p); A.push([p.nome,d.poste,d.zona,d.perfil,d.nperf,d.alt,d.raio,d.macico,d.niv,d.cf,d.I,d.d,d.csis,d.vento,d.lado,d.va,d.vb]) }
+      (p.consolas||[]).forEach((c,i)=>{ const r=c.res&&c.res.k===ncChave(p,c)?c.res:null;
+        B.push([p.nome,i+1,...NX_PK.map(k=>nxRef(c.pecas[k])),c.braco,c.mont,c.antivento?'Sim':'',c.tl,c.tt,c.kl,c.k,c.la,c.H,c.D,c.E,c.F,c.A,c.C,c.B,c.HFT,r?((r.nok||[]).length?'não ok':r.estado):'',r?(r.nok||[]).map(x=>x.desc+': '+x.valor+' (limite '+x.lim+')').join('; '):'']) }) }
     if(A.length>1)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(A),'Dados estrutura');
     if(B.length>1)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(B),'Consolas'); }catch(e){ console.error(e) }
   return wb };
 function ncFolha(wb,n){ const k=wb.SheetNames.find(x=>norm(x).replace(/\s+/g,'')===norm(n).replace(/\s+/g,'')); return k?XLSX.utils.sheet_to_json(wb.Sheets[k],{defval:''}):[] }
+function nxParseRef(v){ const s=ncStr(v); if(!s)return null; const m=s.split('/').map(x=>x.trim()); return m.length>=2?{di:m[0],mo:m.slice(1).join('/')}:null }
 function ncLe(wb,postes){ const key=o=>{ const m={}; for(const k in o)m[norm(k).trim()]=o[k]; return m };
   const A=ncFolha(wb,'Dados estrutura'), B=ncFolha(wb,'Consolas'); if((A.length&&('Lote' in A[0]))||(B.length&&('Lote' in B[0])))return;
-  const S=v=>String(v==null?'':v).trim();
+  const S=ncStr;
   for(const raw of A){ const r=key(raw), p=postes.find(x=>x.nome===S(r['estrutura'])); if(!p)continue;
-    p.dc={poste:S(r['poste']),macico:S(r['macico']),csis:S(r['catenaria'])||'LP10',vento:S(r['vento'])||'A',zona:S(r['zona'])||'ZT',raio:S(r['raio (m)']),lado:S(r['lado'])||'ext',va:S(r['vao anterior (m)']),vb:S(r['vao seguinte (m)']),I:S(r['i (m)']),d:S(r['d (m)'])} }
-  for(const raw of B){ const r=key(raw), p=postes.find(x=>x.nome===S(r['estrutura'])); if(!p)continue;
-    const di=desIx.get(S(r['desenho'])), mo=S(r['montagem']); if(di===undefined)continue; const it=p.itens.find(x=>x.di===di&&x.mo===mo); if(!it)continue;
-    it.cons={id:'k'+Math.floor(Math.random()*1e9).toString(36)+Date.now().toString(36),mont:S(r['tipo de montagem'])||'tracao',braco:S(r['braco'])||'I',antivento:/^s|^1|^x|^v/i.test(S(r['antivento'])),H:S(r['h (m)']),D:S(r['d (m)']),E:S(r['e (m)']),A:S(r['a (m)']),F:S(r['f (m)']),
-      tubo:S(r['tubo da consola'])||'30x38',tuboTir:S(r['tirante'])||'19x26',tuboAntib:S(r['antibalancante'])||'24x32',lt:S(r['comp. tirante (m)']),lk:S(r['comp. tubo (m)']),la:S(r['comp. antibal. (m)']),res:null} } }
+    p.dc={poste:S(r['poste']),zona:S(r['zona'])||'ZT',perfil:S(r['perfil']),nperf:S(r['n.o perfis'])||'1',alt:S(r['altura (m)']),raio:S(r['raio (m)']),macico:S(r['macico']),niv:S(r['nivel']),cf:S(r['cf']),I:S(r['i (m)'])||'2,20',d:S(r['d (m)'])||'0',csis:S(r['catenaria'])||'LP10',vento:S(r['vento'])||'A',lado:S(r['lado'])||'ext',va:S(r['vao anterior (m)']),vb:S(r['vao seguinte (m)'])} }
+  for(const raw of B){ const r=key(raw), p=postes.find(x=>x.nome===S(r['estrutura'])); if(!p)continue; if(!p.consolas)p.consolas=[];
+    if('desenho' in r){ /* formato da v25: uma consola por montagem */
+      const di=desIx.get(S(r['desenho'])), mo=S(r['montagem']); if(di===undefined)continue; const c=ncCons0(null);
+      c.pecas={cons:{di:S(r['desenho']),mo}}; c.braco=S(r['braco'])||'I'; c.bracoMan=true; c.mont=S(r['tipo de montagem'])||'tracao'; c.montMan=true; c.antivento=/^s|^1|^x|^v/i.test(S(r['antivento']));
+      ['H','D','E','A','F'].forEach(k=>c[k]=S(r[k.toLowerCase()+' (m)'])); c.tubo=S(r['tubo da consola'])||'30x38'; c.tuboTir=S(r['tirante'])||'19x26'; c.tuboAntib=S(r['antibalancante'])||'24x32';
+      c.tt=S(r['comp. tirante (m)']); c.k=S(r['comp. tubo (m)']); c.la=S(r['comp. antibal. (m)']); p.consolas.push(c); p.verif=true; continue }
+    const c=ncCons0(null); c.pecas={};
+    NX_PK.forEach((k,i)=>{ c.pecas[k]=nxParseRef(r[norm(['Fixação do tirante','Tirante','Fixação do pé','Consola (tubo)','Antibalançante','Pêndulo','Braço de chamada','Sobreelevado'][i]).trim()]) });
+    c.braco=S(r['braco'])||'I'; c.bracoMan=true; c.mont=S(r['tipo de montagem'])||'tracao'; c.montMan=true; c.antivento=/^s|^1|^x|^v/i.test(S(r['antivento']));
+    c.tl=S(r['tl (m)']); c.tt=S(r['tt (m)']); c.kl=S(r['kl (m)']); c.k=S(r['k (m)']); c.la=S(r['l (m)']);
+    ['H','D','E','F','A','C','B','HFT'].forEach(k=>c[k]=S(r[k.toLowerCase()]));
+    const t1=ncTuboDe(c.pecas.cons),t2=ncTuboDe(c.pecas.tir),t3=ncTuboDe(c.pecas.antib); if(t1)c.tubo=t1; if(t2)c.tuboTir=t2; if(t3)c.tuboAntib=t3;
+    p.consolas.push(c); p.verif=true } }
 const _imp0=importar0;
 importar0=function(buf,f,s){ const wb=buf&&buf.SheetNames?buf:XLSX.read(buf,{type:'array'}); const r=_imp0(wb,f,s);
   try{ const al=(r&&r.novo)?r.novo.postes:(s?null:st.postes); if(al){ ncLe(wb,al); if(!s&&!(r&&r.novo))rAll() } }catch(e){ console.error(e) }
   return r };
 /* o resultado da verificação não conta para "por guardar" nem para o desfazer: recalcula-se sozinho */
 snapUndo=function(){ const c={...st}; delete c.sel; delete c.agrup; return JSON.stringify(c,(k,v)=>k==='res'?undefined:v) };
-window.__nc={NC,ncVerif,ncCaso,ncRoda,ncChave,ncDc,ncTodas};
+window.__nc={NC,ncVerif,ncCaso,ncRoda,ncChave,ncDc,ncTodas,ncMigra,ncSync,ncTuboDe,nxRender,NX};
 
 
 /* ===== ligação dentro da obra: os Materiais pedem a lista do projeto e o executado de cada auto ===== */
