@@ -51,6 +51,7 @@ h2{font-size:20px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 14px;font-si
 .big{width:100%;padding:16px;font-size:17px;margin:6px 0 16px}
 .sec{margin:20px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .dia{display:flex;gap:8px}.dia input{flex:1}.mos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}.mo{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px}.mo b{font-size:15px}.mo small{color:var(--muted);font-size:12px}.mo.brev{opacity:.5;background:var(--soft);border:1px dashed var(--rule);border-radius:10px;cursor:default}.duas{display:flex;gap:8px}.duas input{flex:1}details.card summary{cursor:pointer;font-weight:600}
+.visor{position:fixed;inset:0;z-index:200;background:#222;display:flex;flex-direction:column}.visor .vh{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#111;color:#fff}.visor .vh button,.visor .vdl{background:#2b3038;color:#fff;border:1px solid #444;border-radius:8px;padding:8px 12px;min-height:40px;font-size:14px;text-decoration:none}.visor .vn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.visor .vz{display:flex;gap:6px}.visor .vc{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:#555;touch-action:pan-x pan-y pinch-zoom}.visor .vi{display:block;width:100%;height:auto;background:#fff;margin:0 0 6px}
 .voltar{background:none;border:0;color:var(--muted);padding:0 0 8px;min-height:0;font-size:15px}
 .lin{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--rule)}.lin:last-child{border:0}.lin .t{flex:1;min-width:0}
 .lin small{color:var(--muted);display:block}
@@ -127,7 +128,7 @@ async function abreDoc(x){
       const u=await sb.storage.from('documentos').createSignedUrl(x.path,600);if(u.error)throw u.error;
       const r=await fetch(u.data.signedUrl);if(!r.ok)throw new Error('Falhou o descarregamento');
       rec={blob:await r.blob(),nome:x.nome};await docPut(x.path,rec)}
-    const url=URL.createObjectURL(rec.blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000);
+    await visor(rec.blob,rec.nome||x.nome);
   }catch(e){aviso(erroTxt(e),true)}}
 
 let S={eu:null,dados:{obras:[],est:[],os:[],per:[],partes:[],em:0},fila:[],obra:null,vista:'home',envio:false,rede:navigator.onLine};
@@ -248,6 +249,7 @@ async function sincroniza(manual){
 /* ---------- ecrãs ---------- */
 function vai(v,obraId){
   S.vista=v;if(v!=='home')S.obra=obraId||S.obra;
+  try{ if(v!=='home'&&!(history.state&&history.state.s))history.pushState({s:1},'') }catch(e){}
   const m=$('#m');m.classList.remove('entra');void m.offsetWidth;m.classList.add('entra');
   window.scrollTo(0,0);
   if(['norm','des','pec'].includes(v)&&!['norm','des','pec'].includes(S.vista0||''))S.volta=S.vista0||'home';S.vista0=v;
@@ -393,6 +395,34 @@ async function vPec(){ $('#tt').textContent='Peças';
     el.querySelectorAll('[data-i]').forEach(d=>d.onclick=()=>{ const x=v[+d.dataset.i], pd=d.querySelector('.pdet'); if(pd.innerHTML){ pd.innerHTML=''; return }
       const m=(man&&man[x.c])||[]; pd.innerHTML='<div style="margin:6px 0 10px">'+(x.n?'<small class="hint">Nomenclatura '+esc(x.n)+'</small>':'')+(m.length?m.map(y=>'<figure style="margin:8px 0"><a href="manual/'+y.f+'" target="_blank" rel="noopener"><img loading="lazy" style="width:100%;border-radius:6px;border:1px solid var(--rule)" src="manual/'+y.f+'" alt="Excerto do manual"></a><figcaption class="hint">GR.MN.CAT.003 '+esc(y.v)+' · pág. '+y.p+' · '+esc(y.t)+(y.v==='v01'?' · só consta da v01':'')+'</figcaption></figure>').join(''):'<p class="hint" style="margin:6px 0">Sem excerto do manual para esta peça.</p>')+'</div>' }) };
   $('#bq').oninput=pinta; pinta() }
+
+
+/* voltar atrás: deslizar o ecrã para a direita ou o botão Voltar do telemóvel (como o botão ← do ecrã) */
+(function(){ let t0=null;
+  const volta=()=>{ const vs=document.querySelector('.visor'); if(vs){ vs.remove(); return true } const b=document.querySelector('#vv'); if(b){ b.click(); return true } return false };
+  document.addEventListener('touchstart',e=>{ const t=e.touches[0]; t0=(e.touches.length===1&&!(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable],.rolagem')))?{x:t.clientX,y:t.clientY,t:Date.now()}:null },{passive:true});
+  document.addEventListener('touchend',e=>{ if(!t0)return; const t=e.changedTouches[0], dx=t.clientX-t0.x, dy=t.clientY-t0.y, dt=Date.now()-t0.t; t0=null;
+    if(dx>80&&Math.abs(dy)<60&&dx>2*Math.abs(dy)&&dt<700)volta() },{passive:true});
+  window.addEventListener('popstate',()=>{ if(volta()){ try{ history.pushState({s:1},'') }catch(e){} } }) })();
+
+
+/* visor dentro da app (no telemóvel instalado, abrir o PDF noutro separador não funciona) */
+function carregaPdfJsM(){ const V='3.11.174',U='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/'; return window.pdfjsLib?Promise.resolve():new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=U+'pdf.min.js'; s.onload=()=>{ pdfjsLib.GlobalWorkerOptions.workerSrc=U+'pdf.worker.min.js'; res() }; s.onerror=()=>rej(new Error('Sem rede para abrir o leitor de PDF (só a primeira vez).')); document.head.appendChild(s) }) }
+async function visor(blob,nome){
+  const w=document.createElement('div'); w.className='visor';
+  w.innerHTML='<div class="vh"><button class="vx" id="vfe">← Fechar</button><b class="vn">'+esc(String(nome||'').replace(/\.[^.]+$/,'').replace(/_/g,' '))+'</b><span class="vz"><button id="vm" aria-label="Menos zoom">−</button><button id="vp" aria-label="Mais zoom">+</button></span><a id="vd" class="vdl">Guardar</a></div><div class="vc" id="vc"><p class="hint" style="padding:16px">A abrir…</p></div>';
+  document.body.appendChild(w); const vc=w.querySelector('#vc'); let zoom=1; const pags=[];
+  const aplica=()=>pags.forEach(c=>c.style.width=(zoom*100)+'%');
+  const fecha=()=>{ w.remove(); history.state&&0 }; w.querySelector('#vfe').onclick=fecha;
+  w.querySelector('#vp').onclick=()=>{ zoom=Math.min(4,zoom+.5); aplica() }; w.querySelector('#vm').onclick=()=>{ zoom=Math.max(1,zoom-.5); aplica() };
+  const u=URL.createObjectURL(blob); const d=w.querySelector('#vd'); d.href=u; d.download=nome||'ficheiro';
+  try{
+    if(/image\//.test(blob.type)||/\.(jpe?g|png)$/i.test(nome||'')){ vc.innerHTML='<img class="vi" src="'+u+'" alt="">'; pags.push(vc.firstChild) }
+    else{ await carregaPdfJsM(); const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise; vc.innerHTML='';
+      for(let n=1;n<=pdf.numPages;n++){ const pg=await pdf.getPage(n); const v0=pg.getViewport({scale:1}); const k=Math.min(3.5,Math.max(1.5,2600/v0.width)); const vp=pg.getViewport({scale:k});
+        const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height); c.className='vi'; vc.appendChild(c); pags.push(c); aplica();
+        await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise } }
+  }catch(e){ vc.innerHTML='<div class="card" style="margin:16px"><p>Não consegui mostrar o ficheiro aqui: '+esc(erroTxt(e))+'</p><p class="hint">Toca em «Guardar» para o descarregar.</p></div>' } }
 
 /* reduzir a foto antes de guardar */
 async function reduz(file){
