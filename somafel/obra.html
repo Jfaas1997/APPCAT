@@ -253,7 +253,7 @@ function vai(v,obraId){
   const m=$('#m');m.classList.remove('entra');void m.offsetWidth;m.classList.add('entra');
   window.scrollTo(0,0);
   if(['norm','des','pec'].includes(v)&&!['norm','des','pec'].includes(S.vista0||''))S.volta=S.vista0||'home';S.vista0=v;
-  ({home:vHome,obra:vObra,nova:vNova,ints:vInts,os:vOs,plano:vPlano,esq:vEsq,norm:vNorm,des:vDes,pec:vPec}[v])();
+  ({home:vHome,obra:vObra,nova:vNova,ints:vInts,os:vOs,plano:vPlano,esq:vEsq,proj:vProj,norm:vNorm,des:vDes,pec:vPec}[v])();
   document.querySelectorAll('.barra').forEach(b=>{if(v!=='nova')b.remove()});
   pinta();
 }
@@ -278,16 +278,14 @@ function vObra(){
   const todas=locais.concat(remotas).sort((a,b)=>String(b.data).localeCompare(String(a.data)));
   let h='<button class="voltar" id="vv">← Obras</button>'
    +'<button class="pri big" id="np">+ Nova parte de hoje</button>'
-   +'<div class="mos"><button class="mo" id="mpt"><b>Partes diárias</b><small>'+todas.length+(todas.length===1?' parte':' partes')+'</small></button>'+[['ints','Interdições','Hoje e seguintes'],['os','Ordens de serviço','Com e sem parte'],['plano','Plano diário','Dia a dia'],['esq','Esquemas e preparações','Elétricos, sinalização, projeto']].map(t=>'<button class="mo" data-vv="'+t[0]+'"><b>'+t[1]+'</b><small>'+t[2]+'</small></button>').join('')+MENU_FERR+['Certificados'].map(t=>'<div class="mo brev"><b>'+t+'</b><small>em breve</small></div>').join('')+'</div>'
+   +'<div class="mos"><button class="mo" id="mpt"><b>Partes diárias</b><small>'+todas.length+(todas.length===1?' parte':' partes')+'</small></button>'+[['ints','Interdições','Hoje e seguintes'],['os','Ordens de serviço','Com e sem parte'],['plano','Plano diário','Dia a dia'],['esq','Esquemas e preparações','Elétricos, sinalização, projeto']].map(t=>'<button class="mo" data-vv="'+t[0]+'"><b>'+t[1]+'</b><small>'+t[2]+'</small></button>').join('')+'<button class="mo" data-vv="proj"><b>Projeto</b><small>Desenhos e documentos da obra</small></button>'+['Certificados'].map(t=>'<div class="mo brev"><b>'+t+'</b><small>em breve</small></div>').join('')+'</div>'
    +'<div class="sec" id="sPartes">As minhas partes</div>';
   h+=todas.length?'<div class="card" style="padding:4px 16px">'+todas.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];
     return '<div class="lin"><div class="t"><b>'+fmtData(p.data)+'</b>'+(p.trabalho?' · trabalho '+esc(p.trabalho):'')+(p.nf?'<small>'+p.nf+' foto'+(p.nf===1?'':'s')+'</small>':'')+'</div><span class="pill '+e[1]+'">'+e[0]+'</span></div>'}).join('')+'</div>'
     :'<div class="card"><p class="hint" style="margin:0">Ainda não fizeste nenhuma parte nesta obra.</p></div>';
-  h+='<div class="sec">Desenhos e documentos</div><div id="dl" class="card">'+Mov.skel(2)+'</div>';
   $('#m').innerHTML=h;
   $('#vv').onclick=()=>vai('home');$('#np').onclick=()=>vai('nova',ob.id);$('#mpt').onclick=()=>$('#sPartes').scrollIntoView({behavior:'smooth'});
-  document.querySelectorAll('.mo[data-vv]').forEach(b=>b.onclick=()=>vai(b.dataset.vv,ob.id)); ligaFerr();
-  pintaDocs(ob.id);
+  document.querySelectorAll('.mo[data-vv]').forEach(b=>b.onclick=()=>vai(b.dataset.vv,ob.id));
 }
 async function pintaDocs(obraId){
   const l=await listaDocs(obraId),el=$('#dl');if(!el||S.obra!==obraId)return;
@@ -346,6 +344,16 @@ async function vEsq(){
   el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=async()=>{await abreDoc(docs[+b.dataset.dc]);vEsq()})}
 
 
+
+/* Projeto: desenhos e documentos desta obra */
+async function vProj(){ const cats=['desenhos','documentos'];
+  $('#m').innerHTML=cab('Projeto','Desenhos e documentos desta obra.')+'<input id="bq" type="search" placeholder="Procurar…" autocomplete="off"><div id="bl" style="margin-top:10px">'+Mov.skel(3)+'</div>'; $('#vv').onclick=()=>vai('obra',S.obra);
+  const l=(await listaDocs(S.obra)).filter(x=>cats.includes(x.cat)), tem=new Set(await docKeys()); if(S.vista!=='proj')return;
+  const pinta=()=>{ const q=semAc($('#bq').value).split(/\s+/).filter(Boolean), el=$('#bl'); if(!el)return; const f=l.filter(x=>q.every(t=>semAc(x.nome).includes(t)));
+    if(!l.length){ el.innerHTML='<div class="card"><p class="hint" style="margin:0">Ainda não há desenhos nem documentos nesta obra.</p></div>'; return }
+    el.innerHTML=cats.map(c=>{ const v=f.filter(x=>x.cat===c); return v.length?'<div class="sec">'+CATDOC[c]+'</div><div class="card" style="padding:4px 16px">'+v.map(x=>'<div class="lin" data-p="'+esc(x.path)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+(x.tam?tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join('')+'</div>':'' }).join('')||'<div class="card"><p class="hint" style="margin:0">Nada encontrado.</p></div>';
+    el.querySelectorAll('[data-p]').forEach(d=>d.onclick=async()=>{ const x=l.find(y=>y.path===d.dataset.p); await abreDoc(x); tem.add(x.path); pinta() }) };
+  $('#bq').oninput=pinta; pinta() }
 /* ---------- normas, desenhos, peças e simulador (consulta, sem rede depois de abertos uma vez) ---------- */
 const MENU_FERR='<button class="mo" data-fe="norm"><b>Normas</b><small>PDFs da norma</small></button><button class="mo" data-fe="des"><b>Desenhos</b><small>Desenhos da base IP</small></button><button class="mo" data-fe="pec"><b>Peças</b><small>Catálogo e manual</small></button><button class="mo" data-fe="sim"><b>Simulador de consolas</b><small>Calcular e verificar</small></button>';
 function ligaFerr(){ document.querySelectorAll('.mo[data-fe]').forEach(b=>b.onclick=()=>{ const f=b.dataset.fe; if(f==='sim'){ location.href='consolas.html?obra=livre&movel=1'; return } vai(f,S.obra) }) }
