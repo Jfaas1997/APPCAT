@@ -334,6 +334,21 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 .skel.b{height:54px;border-radius:10px}.skel.s{width:45%}.skel.m{width:70%}
 /* indicador «guardado» */
 #gst,#et{transition:color .25s}
+
+@media (max-width:640px){
+  header.top{flex-wrap:wrap;padding:6px 10px;gap:6px 8px;height:auto;position:sticky;top:0}
+  header.top .sep,header.top .obrachip,header.top .stats,header.top .ttl{display:none}
+  header.top .logo{height:26px}
+  .corpo{display:flex;flex-direction:column;padding-bottom:56px}
+  main.area{flex:1 1 auto;min-height:0}
+  nav.lado{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;flex-direction:row;overflow-x:auto;background:var(--sheet);border-top:1px solid var(--rule);padding:0 4px;height:56px}
+  nav.lado .ng{display:none}
+  nav.lado .ni{flex:1 0 62px;flex-direction:column;gap:2px;padding:6px 4px;font-size:10px;justify-content:center;align-items:center;border-radius:0}
+  nav.lado .ni .tx{display:block!important;font-size:10px}
+  nav.lado .ni svg{width:20px;height:20px}
+  main,#main,.corpo>section,.corpo>main{padding-left:12px!important;padding-right:12px!important}
+  .modalWrap{padding:16px 8px}.modalCard{padding:14px}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 .nmLogin{position:fixed;inset:0;background:var(--paper,#F1F1EF);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;color:var(--ink,#2B3038);font-family:inherit}
@@ -1026,8 +1041,8 @@ async function onArranque(){
   var s=await sb.auth.getSession(); if(!s.data.session)await onLogin();
   s=await sb.auth.getSession(); ON.uid=s.data.session.user.id;
   var pq=await sb.from('pessoas').select('papel,ativo,organizacao_id').eq('id',ON.uid).maybeSingle(); ON.papel=pq.data&&pq.data.papel; ON.org=pq.data&&pq.data.organizacao_id;
-  if(!pq.data||!pq.data.ativo||ON.papel==='equipa'){ onEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   var id=new URLSearchParams(location.search).get('obra'), ob=null;
+  if(!pq.data||!pq.data.ativo||(ON.papel==='equipa'&&id!=='livre')){ onEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   if(id&&id!=='livre'){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
   if(id==='livre')ob='rapido';
   if(!ob)ob=await onListaObras();
@@ -1048,5 +1063,6 @@ $('menu').addEventListener('click',function(e){ var b=e.target.closest('button[d
 })();
 
 </script>
+<script>try{ if(new URLSearchParams(location.search).get('movel')){ document.addEventListener('DOMContentLoaded',function(){ var h=document.querySelector('header.top'); if(!h)return; var b=document.createElement('button'); b.textContent='← App de Obra'; b.style.cssText='margin-right:6px'; b.onclick=function(){ location.href='obra.html' }; h.insertBefore(b,h.firstChild) }) } }catch(e){}</script>
 </body>
 </html>
