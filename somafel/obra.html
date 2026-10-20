@@ -154,7 +154,7 @@ async function arranca(){
     const {data:{session}}=await sb.auth.getSession();
     if(session){
       if(navigator.onLine){
-        const {data,error}=await sb.from('pessoas').select('id,nome,papel,ativo').eq('id',session.user.id).maybeSingle();
+        const {data,error}=await sb.from('pessoas').select('id,nome,papel,ativo,organizacao_id').eq('id',session.user.id).maybeSingle();
         if(!error&&data&&data.ativo){eu=data;await cachePut('eu',eu)}
         else if(!error){await sb.auth.signOut();ecraEntrada('A tua conta ainda não tem acesso. Fala com o administrador.');return}
       }
@@ -250,7 +250,8 @@ function vai(v,obraId){
   S.vista=v;if(v!=='home')S.obra=obraId||S.obra;
   const m=$('#m');m.classList.remove('entra');void m.offsetWidth;m.classList.add('entra');
   window.scrollTo(0,0);
-  ({home:vHome,obra:vObra,nova:vNova,ints:vInts,os:vOs,plano:vPlano,esq:vEsq}[v])();
+  if(['norm','des','pec'].includes(v)&&!['norm','des','pec'].includes(S.vista0||''))S.volta=S.vista0||'home';S.vista0=v;
+  ({home:vHome,obra:vObra,nova:vNova,ints:vInts,os:vOs,plano:vPlano,esq:vEsq,norm:vNorm,des:vDes,pec:vPec}[v])();
   document.querySelectorAll('.barra').forEach(b=>{if(v!=='nova')b.remove()});
   pinta();
 }
@@ -261,8 +262,10 @@ function vHome(){
   if(S.fila.length)h+='<div class="card"><b>'+S.fila.length+' parte(s) por enviar</b><p class="hint" style="margin:4px 0 0">Ficam guardadas neste telemóvel e seguem automaticamente quando houver rede.</p></div>';
   if(!o.length)h+='<div class="card"><p style="margin:0">Ainda não tens obras atribuídas.'+(navigator.onLine?' Fala com o administrador.':' Liga-te à rede para descarregar.')+'</p></div>';
   h+=o.map(x=>'<div class="card obra" data-id="'+x.id+'"><span class="cc">'+esc(x.centro_custo)+'</span><h3>'+esc(x.nome)+'</h3></div>').join('');
+  h+='<div class="sec">Consulta</div><div class="mos">'+MENU_FERR+'</div>';
   $('#m').innerHTML=h;
   document.querySelectorAll('.obra').forEach(c=>c.onclick=()=>vai('obra',c.dataset.id));
+  ligaFerr();
 }
 function vObra(){
   const ob=S.dados.obras.find(x=>x.id===S.obra);if(!ob){vai('home');return}
@@ -273,7 +276,7 @@ function vObra(){
   const todas=locais.concat(remotas).sort((a,b)=>String(b.data).localeCompare(String(a.data)));
   let h='<button class="voltar" id="vv">← Obras</button>'
    +'<button class="pri big" id="np">+ Nova parte de hoje</button>'
-   +'<div class="mos"><button class="mo" id="mpt"><b>Partes diárias</b><small>'+todas.length+(todas.length===1?' parte':' partes')+'</small></button>'+[['ints','Interdições','Hoje e seguintes'],['os','Ordens de serviço','Com e sem parte'],['plano','Plano diário','Dia a dia'],['esq','Esquemas e preparações','Elétricos, sinalização, projeto']].map(t=>'<button class="mo" data-vv="'+t[0]+'"><b>'+t[1]+'</b><small>'+t[2]+'</small></button>').join('')+['Normas','Peças','Simulador de consolas','Certificados'].map(t=>'<div class="mo brev"><b>'+t+'</b><small>em breve</small></div>').join('')+'</div>'
+   +'<div class="mos"><button class="mo" id="mpt"><b>Partes diárias</b><small>'+todas.length+(todas.length===1?' parte':' partes')+'</small></button>'+[['ints','Interdições','Hoje e seguintes'],['os','Ordens de serviço','Com e sem parte'],['plano','Plano diário','Dia a dia'],['esq','Esquemas e preparações','Elétricos, sinalização, projeto']].map(t=>'<button class="mo" data-vv="'+t[0]+'"><b>'+t[1]+'</b><small>'+t[2]+'</small></button>').join('')+MENU_FERR+['Certificados'].map(t=>'<div class="mo brev"><b>'+t+'</b><small>em breve</small></div>').join('')+'</div>'
    +'<div class="sec" id="sPartes">As minhas partes</div>';
   h+=todas.length?'<div class="card" style="padding:4px 16px">'+todas.map(p=>{const e=ESTADO[p.estado]||[p.estado,''];
     return '<div class="lin"><div class="t"><b>'+fmtData(p.data)+'</b>'+(p.trabalho?' · trabalho '+esc(p.trabalho):'')+(p.nf?'<small>'+p.nf+' foto'+(p.nf===1?'':'s')+'</small>':'')+'</div><span class="pill '+e[1]+'">'+e[0]+'</span></div>'}).join('')+'</div>'
@@ -281,7 +284,7 @@ function vObra(){
   h+='<div class="sec">Desenhos e documentos</div><div id="dl" class="card">'+Mov.skel(2)+'</div>';
   $('#m').innerHTML=h;
   $('#vv').onclick=()=>vai('home');$('#np').onclick=()=>vai('nova',ob.id);$('#mpt').onclick=()=>$('#sPartes').scrollIntoView({behavior:'smooth'});
-  document.querySelectorAll('.mo[data-vv]').forEach(b=>b.onclick=()=>vai(b.dataset.vv,ob.id));
+  document.querySelectorAll('.mo[data-vv]').forEach(b=>b.onclick=()=>vai(b.dataset.vv,ob.id)); ligaFerr();
   pintaDocs(ob.id);
 }
 async function pintaDocs(obraId){
@@ -339,6 +342,57 @@ async function vEsq(){
   const docs=(await listaDocs(S.obra)).filter(x=>cats.includes(x.cat)), tem=new Set(await docKeys()), el=$('#el2'); if(!el)return;
   el.innerHTML=cats.map(c=>{const l=docs.filter(x=>x.cat===c);return '<div class="sec">'+CATDOC[c]+'</div><div class="card" style="padding:4px 16px">'+(l.length?l.map(x=>'<div class="lin" data-dc="'+docs.indexOf(x)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+(osDoc(x.nome)?'OS '+osDoc(x.nome)+' · ':'')+(diaDoc(x.nome)?fmtData(diaDoc(x.nome)):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join(''):'<p class="hint" style="margin:10px 0">Nada carregado.</p>')+'</div>'}).join('');
   el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=async()=>{await abreDoc(docs[+b.dataset.dc]);vEsq()})}
+
+
+/* ---------- normas, desenhos, peças e simulador (consulta, sem rede depois de abertos uma vez) ---------- */
+const MENU_FERR='<button class="mo" data-fe="norm"><b>Normas</b><small>PDFs da norma</small></button><button class="mo" data-fe="des"><b>Desenhos</b><small>Desenhos da base IP</small></button><button class="mo" data-fe="pec"><b>Peças</b><small>Catálogo e manual</small></button><button class="mo" data-fe="sim"><b>Simulador de consolas</b><small>Calcular e verificar</small></button>';
+function ligaFerr(){ document.querySelectorAll('.mo[data-fe]').forEach(b=>b.onclick=()=>{ const f=b.dataset.fe; if(f==='sim'){ location.href='consolas.html?obra=livre&movel=1'; return } vai(f,S.obra) }) }
+const voltaFerr=()=>{ vai(S.volta||'home',S.obra) };
+async function listaBibM(tipo){ const raiz='_org/'+S.eu.organizacao_id+'/'+tipo, ck='bib:'+tipo;
+  if(navigator.onLine){ try{ const out=[]; const r=await sb.storage.from('documentos').list(raiz,{limit:1000}); if(r.error)throw r.error;
+      (r.data||[]).filter(x=>x.id).forEach(x=>out.push({grupo:'',nome:x.name,path:raiz+'/'+x.name,tam:(x.metadata&&x.metadata.size)||0}));
+      const qs=await Promise.all((r.data||[]).filter(x=>!x.id).map(x=>sb.storage.from('documentos').list(raiz+'/'+x.name,{limit:1000}).then(q=>({x,q}))));
+      qs.forEach(({x,q})=>{ if(q.error)throw q.error; (q.data||[]).filter(y=>y.id).forEach(y=>out.push({grupo:x.name,nome:y.name,path:raiz+'/'+x.name+'/'+y.name,tam:(y.metadata&&y.metadata.size)||0})) });
+      await cachePut(ck,out); return out }catch(e){} }
+  return (await cacheGet(ck))||[] }
+const semAc=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+async function vBibM(tipo,titulo,sub){ S.bq=S.bq||{};
+  $('#tt').textContent=titulo;
+  $('#m').innerHTML='<button class="voltar" id="vv">← Voltar</button><h2>'+titulo+'</h2><p class="sub">'+sub+'</p><input id="bq" type="search" placeholder="Procurar…" autocomplete="off" value="'+esc(S.bq[tipo]||'')+'"><div id="bl" style="margin-top:10px">'+Mov.skel(3)+'</div>';
+  $('#vv').onclick=voltaFerr; const l=await listaBibM(tipo), tem=new Set(await docKeys()); if(S.vista!==(tipo==='normas'?'norm':'des'))return;
+  const pinta=()=>{ const q=semAc($('#bq').value).split(/\s+/).filter(Boolean); S.bq[tipo]=$('#bq').value;
+    const f=l.filter(x=>q.every(t=>semAc(x.grupo+' '+x.nome).includes(t))).sort((a,b)=>(a.grupo+a.nome).localeCompare(b.grupo+b.nome,'pt',{numeric:true})), el=$('#bl'); if(!el)return;
+    if(!l.length){ el.innerHTML='<div class="card"><p class="hint" style="margin:0">'+(navigator.onLine?'Ainda não há ficheiros aqui (ou não tens acesso).':'Sem rede e ainda sem lista guardada neste telemóvel.')+'</p></div>'; return }
+    const mx=q.length?150:60, v=f.slice(0,mx); let g=null, h='';
+    v.forEach(x=>{ if(x.grupo!==g){ g=x.grupo; if(g)h+='<div class="sec">'+esc(g)+'</div>' }
+      h+='<div class="lin" data-p="'+esc(x.path)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome.replace(/\.[^.]+$/,'').replace(/_/g,' '))+'</b><small>'+(x.tam?tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>' });
+    el.innerHTML='<p class="hint">'+f.length+' de '+l.length+(f.length>v.length?' · mostro '+v.length+', escreve para filtrar':'')+'</p><div class="card" style="padding:4px 16px">'+(h||'<p class="hint">Nada encontrado.</p>')+'</div>';
+    el.querySelectorAll('[data-p]').forEach(d=>d.onclick=async()=>{ const x=l.find(y=>y.path===d.dataset.p); await abreDoc(x); tem.add(x.path); pinta() }) };
+  $('#bq').oninput=pinta; pinta() }
+const vNorm=()=>vBibM('normas','Normas','Normas e especificações. Abertas uma vez, ficam no telemóvel.');
+const vDes=()=>vBibM('desenhos','Desenhos','Desenhos da base IP. Procura pelo código (ex.: E-6182).');
+function carregaXlsx(){ return window.XLSX?Promise.resolve():new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=res; s.onerror=()=>rej(new Error('Sem rede para carregar o leitor de Excel.')); document.head.appendChild(s) }) }
+async function carregaPecas(){ let c=await cacheGet('pecas'); const idade=c?Date.now()-c.t:1e13;
+  if(navigator.onLine&&(!c||idade>864e5)){ try{ await carregaXlsx(); const raiz='_org/'+S.eu.organizacao_id+'/base_dados';
+      const r=await sb.storage.from('documentos').list(raiz,{limit:100}); if(r.error)throw r.error;
+      const f=(r.data||[]).filter(x=>x.id&&/\.xlsx$/i.test(x.name)).sort((a,b)=>String(b.updated_at||b.created_at).localeCompare(String(a.updated_at||a.created_at)))[0]; if(!f)throw new Error('A base IP ainda não foi carregada.');
+      const u=await sb.storage.from('documentos').createSignedUrl(raiz+'/'+f.name,600); if(u.error)throw u.error;
+      const buf=await (await fetch(u.data.signedUrl)).arrayBuffer(); const wb=XLSX.read(new Uint8Array(buf),{type:'array',sheets:['Pecas']});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets['Pecas'],{header:1,raw:false,defval:''}); const l=[];
+      for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r[1]&&!r[3])continue; l.push({a:String(r[0]),c:String(r[1]),n:String(r[2]),d:String(r[3]),des:String(r[4]),ref:String(r[5]),k:semAc([r[0],r[1],r[2],r[3],r[4]].join(' '))}) }
+      c={t:Date.now(),l}; await cachePut('pecas',c) }catch(e){ if(!c)throw e } }
+  if(!c)throw new Error('Sem rede e ainda sem catálogo guardado neste telemóvel.'); return c }
+async function vPec(){ $('#tt').textContent='Peças';
+  $('#m').innerHTML='<button class="voltar" id="vv">← Voltar</button><h2>Peças</h2><p class="sub">Catálogo da base IP, com o excerto do manual de peças.</p><input id="bq" type="search" placeholder="Código, nome ou desenho…" autocomplete="off" value="'+esc((S.bq&&S.bq.pec)||'')+'"><div id="bl" style="margin-top:10px">'+Mov.skel(3)+'</div>';
+  $('#vv').onclick=voltaFerr; let c; try{ c=await carregaPecas() }catch(e){ if($('#bl'))$('#bl').innerHTML='<div class="card"><p class="hint" style="margin:0">'+esc(erroTxt(e))+'</p></div>'; return }
+  let man=null; try{ const r=await fetch('manual/idx.json'); man=r.ok?await r.json():null }catch(e){}
+  if(S.vista!=='pec')return; S.bq=S.bq||{};
+  const pinta=()=>{ const q=semAc($('#bq').value).split(/\s+/).filter(Boolean); S.bq.pec=$('#bq').value; const el=$('#bl'); if(!el)return;
+    const f=q.length?c.l.filter(x=>q.every(t=>x.k.includes(t))):c.l, v=f.slice(0,60);
+    el.innerHTML='<p class="hint">'+f.length+' de '+c.l.length+' peças'+(f.length>v.length?' · mostro '+v.length+', escreve para filtrar':'')+'</p><div class="card" style="padding:4px 16px">'+(v.map((x,i)=>'<div class="lin" data-i="'+i+'" style="cursor:pointer;flex-wrap:wrap"><div class="t"><b>'+esc(x.d)+'</b><small>'+esc(x.c)+(x.a?' · antigo '+esc(x.a):'')+(x.des?' · desenho '+esc(x.des)+(x.ref?' ref. '+esc(x.ref):''):'')+'</small></div><span class="pill">'+(man&&man[x.c]?'Manual':'')+'</span><div class="pdet" style="width:100%"></div></div>').join('')||'<p class="hint">Nada encontrado.</p>')+'</div>';
+    el.querySelectorAll('[data-i]').forEach(d=>d.onclick=()=>{ const x=v[+d.dataset.i], pd=d.querySelector('.pdet'); if(pd.innerHTML){ pd.innerHTML=''; return }
+      const m=(man&&man[x.c])||[]; pd.innerHTML='<div style="margin:6px 0 10px">'+(x.n?'<small class="hint">Nomenclatura '+esc(x.n)+'</small>':'')+(m.length?m.map(y=>'<figure style="margin:8px 0"><a href="manual/'+y.f+'" target="_blank" rel="noopener"><img loading="lazy" style="width:100%;border-radius:6px;border:1px solid var(--rule)" src="manual/'+y.f+'" alt="Excerto do manual"></a><figcaption class="hint">GR.MN.CAT.003 '+esc(y.v)+' · pág. '+y.p+' · '+esc(y.t)+(y.v==='v01'?' · só consta da v01':'')+'</figcaption></figure>').join(''):'<p class="hint" style="margin:6px 0">Sem excerto do manual para esta peça.</p>')+'</div>' }) };
+  $('#bq').oninput=pinta; pinta() }
 
 /* reduzir a foto antes de guardar */
 async function reduz(file){
