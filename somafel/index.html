@@ -236,7 +236,7 @@ const IC={
  sair:'<svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
  tema:'<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
 };
-const PAPEL={administrador:'Administrador',diretor:'Diretor de obra',encarregado:'Encarregado',equipa:'Equipa'};
+const PAPEL={administrador:'Administrador',diretor:'Diretor de obra',encarregado:'Encarregado',equipa:'Equipa',convidado:'Convidado'};
 const APPS=[['app:medicao','Medição'],['app:materiais','Materiais'],['app:producao','Produção'],['app:consolas','Software Consolas'],['app:rct','Medição RCT']];
 
 let S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};
@@ -299,7 +299,7 @@ function ecraEntrada(modo){
    +(modo==='recuperar'?'':'<label>Palavra-passe</label><input name="pw" type="password" required minlength="8" autocomplete="'+(modo==='criar'?'new-password':'current-password')+'">')
    +'<div class="acoes"><button class="pri" type="submit">'+(modo==='entrar'?'Entrar':modo==='criar'?'Criar conta':'Enviar ligação')+'</button></div>'
    +'<div id="m"></div>'
-   +(modo==='entrar'?'<button type="button" class="lnk" data-m="recuperar">Esqueci-me da palavra-passe</button><br><button type="button" class="lnk" data-m="criar">Primeiro acesso (administrador)</button>'
+   +(modo==='entrar'?'<button type="button" class="lnk" data-m="recuperar">Esqueci-me da palavra-passe</button>'
                     :'<button type="button" class="lnk" data-m="entrar">Voltar a entrar</button>')
    +'</form></div>';
   document.querySelectorAll('.lnk').forEach(b=>b.onclick=()=>ecraEntrada(b.dataset.m));
@@ -323,6 +323,7 @@ async function arranca(){
   const {data:eu,error}=await sb.from('pessoas').select('id,nome,papel,ativo,organizacao_id').eq('id',session.user.id).maybeSingle();
   if(error){$('#raiz').innerHTML='<div id="entrada"><div class="cx"><p>Não foi possível carregar o perfil.</p><div class="msg e">'+esc(error.message)+'</div><div class="acoes"><button id="sai">Sair</button></div></div></div>';$('#sai').onclick=sair;return}
   if(!eu||!eu.ativo){$('#raiz').innerHTML='<div id="entrada"><div class="cx"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Sem acesso</h1></div></div><p>A tua conta existe, mas ainda não foi associada a uma organização. Pede ao administrador para te dar acesso.</p><div class="acoes"><button id="sai">Sair</button></div></div></div>';$('#sai').onclick=sair;return}
+  if(['equipa','convidado'].includes(eu.papel)){location.replace('obra.html');return}
   S.eu=eu;S.vista='obras';S.obra=null;
   if(gestor()){const b=await sb.from('bloqueios').select('chave,descricao');S.bloqLista=b.data||[];S.bloq=new Set(S.bloqLista.map(x=>x.chave))}
   preparar();casca();vai('obras');
@@ -879,20 +880,27 @@ async function vPessoas(){
   let lista,obras;
   try{lista=await ok(sb.from('pessoas').select('*').order('nome'));obras=await ok(sb.from('obras').select('id,centro_custo,nome').order('centro_custo'))}
   catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
-  let h='<div class="vz"><div class="topo"><div><h2>Pessoas</h2><p class="sub" style="margin:0">Quem tem acesso e com que papel.</p></div><span class="sp"></span>'+(admin()?'<button class="pri" id="np">+ Nova pessoa</button>':'')+'</div><div style="height:14px"></div>'
+  let h='<div class="vz"><div class="topo"><div><h2>Pessoas</h2><p class="sub" style="margin:0">Quem tem acesso e com que papel.</p></div><span class="sp"></span>'+(admin()?'<button id="nc">Convidar por email</button> <button class="pri" id="np">+ Nova pessoa</button>':'')+'</div><div style="height:14px"></div>'
    +'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Nome</th><th>Papel</th><th>Estado</th><th></th></tr></thead><tbody>'
    +lista.map(p=>{const eu=p.id===S.eu.id;
      return '<tr><td><b>'+esc(p.nome)+'</b>'+(eu?' <span class="hint">(tu)</span>':'')+'</td><td>'
       +(admin()&&!eu?'<select data-p="'+p.id+'" style="width:auto">'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===p.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select>':PAPEL[p.papel])
       +'</td><td>'+(admin()&&!eu?'<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-t="'+p.id+'"'+(p.ativo?' checked':'')+'> ativo</label>':'<span class="pill '+(p.ativo?'on':'')+'">'+(p.ativo?'ativo':'inativo')+'</span>')
       +'</td><td class="ac">'+(admin()&&!eu?'<button data-pw="'+p.id+'">Nova palavra-passe</button>':'')+'</td></tr>'}).join('')
-   +'</tbody></table></div><p class="hint" style="margin-top:12px">O email serve só para entrar. Para quem não tem email, podes usar um endereço inventado (por exemplo <span class="mono">nome@somafel.pt</span>).</p></div>';
+   +'</tbody></table></div><p class="hint" style="margin-top:12px">«Convidar por email» envia uma ligação para a pessoa definir a própria palavra-passe. O email serve só para entrar. Para quem não tem email, podes usar um endereço inventado (por exemplo <span class="mono">nome@somafel.pt</span>).</p></div>';
   pg.innerHTML=h;
   pg.querySelectorAll('select[data-p]').forEach(s=>s.onchange=async()=>{try{await ok(sb.from('pessoas').update({papel:s.value}).eq('id',s.dataset.p));aviso('Papel atualizado.')}catch(e){aviso(erroTxt(e),true);vPessoas()}});
   pg.querySelectorAll('input[data-t]').forEach(s=>s.onchange=async()=>{try{await ok(sb.from('pessoas').update({ativo:s.checked}).eq('id',s.dataset.t));aviso(s.checked?'Pessoa ativada.':'Pessoa desativada.')}catch(e){aviso(erroTxt(e),true);vPessoas()}});
   pg.querySelectorAll('[data-pw]').forEach(b=>b.onclick=async()=>{
     const v=await formulario('Nova palavra-passe',[{id:'pw',tipo:'password',rotulo:'Palavra-passe (mínimo 8 caracteres)',obrig:true}],'Definir');if(!v)return;
     try{await chamaAdmin({acao:'password',id:b.dataset.pw,password:v.pw});aviso('Palavra-passe alterada.')}catch(e){aviso(erroTxt(e),true)}});
+  const nc=$('#nc');if(nc)nc.onclick=async()=>{
+    const v=await formulario('Convidar por email',[
+      {id:'nome',rotulo:'Nome (opcional)'},{id:'email',tipo:'email',rotulo:'Email',obrig:true},
+      {id:'papel',tipo:'select',rotulo:'Papel',valor:'convidado',opcoes:Object.keys(PAPEL).map(k=>({v:k,t:PAPEL[k]}))},
+      {id:'obras',tipo:'checks',rotulo:'Obras (só para equipas; o convidado vê todas)',opcoes:obras.map(o=>({v:o.id,t:o.centro_custo+' · '+o.nome}))}],'Enviar convite');
+    if(!v)return;
+    try{await chamaAdmin({acao:'convidar',nome:v.nome,email:v.email,papel:v.papel,obras:v.obras,redirectTo:location.origin+location.pathname});aviso('Convite enviado para '+v.email+'.');vPessoas()}catch(e){aviso(erroTxt(e),true)}};
   const np=$('#np');if(np)np.onclick=async()=>{
     const v=await formulario('Nova pessoa',[
       {id:'nome',rotulo:'Nome',obrig:true},{id:'email',tipo:'email',rotulo:'Email (para entrar)',obrig:true},
@@ -1213,7 +1221,12 @@ async function recuperaPw(){
   const v=await formulario('Nova palavra-passe',[{id:'pw',tipo:'password',rotulo:'Palavra-passe (mínimo 8 caracteres)',obrig:true}],'Definir');
   if(v){const {error}=await sb.auth.updateUser({password:v.pw});aviso(error?error.message:'Palavra-passe alterada.',!!error)}
 }
-arranca();
+async function defineConvite(){
+  await sb.auth.getSession();
+  for(let i=0;i<6;i++){ const v=await formulario('Bem-vindo à Somafel: define a tua palavra-passe',[{id:'pw',tipo:'password',rotulo:'Palavra-passe (mínimo 8 caracteres)',obrig:true}],'Definir');
+    if(!v)continue; const {error}=await sb.auth.updateUser({password:v.pw}); if(!error){aviso('Palavra-passe definida.');break} aviso(error.message,true) }
+  try{history.replaceState(null,'',location.pathname)}catch(e){} }
+(async()=>{ if(/type=invite/.test(location.hash)){ try{ await defineConvite() }catch(e){} } arranca() })();
 </script>
 </body>
 </html>

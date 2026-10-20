@@ -1989,7 +1989,7 @@ async function onArranque(){
   var s=await sb.auth.getSession(); if(!s.data.session)await onLogin();
   s=await sb.auth.getSession(); ON.uid=s.data.session.user.id;
   var pq=await sb.from('pessoas').select('papel,ativo,organizacao_id').eq('id',ON.uid).maybeSingle(); ON.papel=pq.data&&pq.data.papel; ON.org=pq.data&&pq.data.organizacao_id;
-  if(!pq.data||!pq.data.ativo||ON.papel==='equipa'){ onEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
+  if(!pq.data||!pq.data.ativo||['equipa','convidado'].includes(ON.papel)){ onEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   var id=new URLSearchParams(location.search).get('obra'), ob;
   if(id==='livre')ob='livre'; else if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
   if(!ob)ob=await onListaObras();

@@ -8809,7 +8809,7 @@ async function nmArranque(){
   var s=await sb.auth.getSession(); if(!s.data.session)await nmLogin();
   s=await sb.auth.getSession(); NM.uid=s.data.session.user.id;
   var pq=await sb.from('pessoas').select('papel,ativo,organizacao_id').eq('id',NM.uid).maybeSingle(); NM.papel=pq.data&&pq.data.papel; NM.org=pq.data&&pq.data.organizacao_id;
-  if(!pq.data||!pq.data.ativo||NM.papel==='equipa'){ nmEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
+  if(!pq.data||!pq.data.ativo||['equipa','convidado'].includes(NM.papel)){ nmEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   var id=new URLSearchParams(location.search).get('obra'), ob;
   if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
   if(!ob)ob=await nmListaObras();
