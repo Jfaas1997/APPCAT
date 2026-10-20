@@ -321,9 +321,11 @@ async function vOs(){
     return '<div class="card"><div class="lin" style="border:0"><div class="t"><b>OS '+esc(o.numero)+'</b><small>'+(o.semana?'semana '+esc(o.semana):'')+'</small></div><span class="pill '+(tem?'ok':'av')+'">'+(tem?'Com parte':'Sem parte')+'</span></div>'
       +ps.map(p=>'<div class="lin"><div class="t">'+fmtData(diaDe(p.inicio))+' · '+hm(p.inicio)+' → '+hm(p.fim)+(p.trabalhos?'<small>trabalho '+esc(String(p.trabalhos).replace(/[()]/g,''))+'</small>':'')+'</div></div>').join('')
       +dd.map(x=>'<div class="lin" data-dc="'+docs.indexOf(x)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+CATDOC[x.cat]+'</small></div><span class="pill">Abrir</span></div>').join('')
-      +'<button class="min" data-pt="'+o.id+'" style="margin-top:8px">Fazer parte desta OS</button></div>'}).join(''):'<div class="card"><p class="hint" style="margin:0">Ainda não há OS nesta obra.</p></div>';
+      +'<button class="min" data-pt="'+o.id+'" style="margin-top:8px">Fazer parte desta OS</button></div>'}).join(''):'<div class="card"><p class="hint" style="margin:0">Ainda não há OS com interdição nesta obra.</p></div>';
+  const tem=new Set(await docKeys()), so=docs.filter(x=>x.cat==='os').sort((a,b)=>b.nome.localeCompare(a.nome,'pt',{numeric:true}));
+  el.innerHTML+='<div class="sec">Ordens de serviço carregadas</div><div class="card" style="padding:4px 16px">'+(so.length?so.map(x=>'<div class="lin" data-dc="'+docs.indexOf(x)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+(osDoc(x.nome)?'OS '+osDoc(x.nome):'')+(x.tam?(osDoc(x.nome)?' · ':'')+tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join(''):'<p class="hint" style="margin:10px 0">Ainda não há ficheiros de OS carregados nesta obra (Central › OS e planos).</p>')+'</div>';
   el.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{S.osPre=b.dataset.pt;vai('nova',S.obra)});
-  el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>abreDoc(docs[+b.dataset.dc]))}
+  el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=async()=>{await abreDoc(docs[+b.dataset.dc]);vOs()})}
 async function vPlano(){
   S.planoDia=S.planoDia||hojeISO();
   const d=S.planoDia, pers=periodosObra().filter(p=>diaDe(p.inicio)===d).sort((a,b)=>String(a.inicio).localeCompare(String(b.inicio)));
