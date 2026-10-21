@@ -6,7 +6,7 @@
 <title>Medição de catenária · online</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="color-scheme" content="light dark">
-<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c');if(localStorage.getItem('vista')==='linha')document.documentElement.setAttribute('data-vista','linha')}catch(e){}</script>
+<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c')}catch(e){}</script>
 <style>
 /* IBM Plex embutida: a app fica igual sem internet */
 @font-face {
@@ -726,64 +726,39 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 @media (pointer:coarse){button,select,.tab{min-height:44px}input[type=checkbox]{width:22px;height:22px}}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* ===== Vista "Linha" (v34): a obra como linha de catenária ===== */
-#trilho{display:none}
-:root[data-vista="linha"] #trilho{display:block}
-:root[data-vista="linha"] body.vSemTrilho #trilho{display:none}
-:root[data-vista="linha"] main{grid-template-columns:var(--sw) minmax(0,1fr) 372px;grid-template-rows:auto minmax(0,1fr)}
-:root[data-vista="linha"] main #side{grid-row:1/3;grid-column:1}
-:root[data-vista="linha"] #trilho{grid-column:2/-1;grid-row:1}
-:root[data-vista="linha"] #painelEstruturas{display:none}
-:root[data-vista="linha"] main>section.pane:nth-of-type(2){grid-column:2;grid-row:2}
-:root[data-vista="linha"] main>section.pane:nth-of-type(3){grid-column:3;grid-row:2}
-:root[data-vista="linha"] body.vSemTrilho main{grid-template-rows:minmax(0,1fr)}
-:root[data-vista="linha"] body.vSemTrilho main>section.pane:nth-of-type(2){grid-row:1}
-:root[data-vista="linha"] body.vSemTrilho main>section.pane:nth-of-type(3){grid-row:1}
-#trilho{background:linear-gradient(#10151B,#18202A);color:#DDE5EE;border-bottom:1px solid #000;position:relative;min-width:0}
-.tlBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px 0}
-.tlBar h2{margin:0;font-size:13px;font-weight:600;color:#fff;letter-spacing:.02em}
-.tlBar .n{font-family:var(--mono);font-size:12px;color:#8FA0B3}
-.tlBar input,.tlBar select{background:#0C1116;color:#EAF0F7;border:1px solid #2E3944;border-radius:999px;padding:6px 13px;font-size:13px}
-.tlBar input{width:190px}
-.tlBar button{background:#F9D115;color:#14181D;border:0;border-radius:999px;padding:6px 14px;font-weight:600}
-.tlBar button.ghost{background:transparent;color:#DDE5EE;border:1px solid #2E3944;font-weight:400}
-.tlBar .sp{flex:1}
-.tlAdd{display:none;gap:6px;align-items:center}
-.tlAdd.on{display:flex}
-.tlAdd input{width:150px}
-#tlScroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#3A4654 transparent;cursor:grab;scroll-behavior:smooth;outline:none}
-#tlScroll.arr{cursor:grabbing;scroll-behavior:auto}
-#tlSvg{display:block;height:176px}
-#tlSvg text{font-family:var(--sans);fill:#9FB0C3;font-size:11.5px;text-anchor:middle;pointer-events:none}
-#tlSvg .mt{cursor:pointer;outline:none}
-#tlSvg .mt .pole{stroke:#7F8FA1;stroke-width:2.5;stroke-linecap:round;transition:stroke .2s}
-#tlSvg .mt .arm{stroke:#7F8FA1;stroke-width:2.5;stroke-linecap:round}
-#tlSvg .mt .hd{fill:#10151B;stroke:#7F8FA1;stroke-width:2.2;transition:all .2s}
-#tlSvg .mt.c1 .hd{fill:#F9D115;stroke:#F9D115}
-#tlSvg .mt.cp .hd{fill:#F9D115;stroke:#4CC38A;stroke-width:3.5}
-#tlSvg .mt.cf .hd{fill:#4CC38A;stroke:#4CC38A}
-#tlSvg .mt.cx .hd{fill:#F26B5E;stroke:#F26B5E}
-#tlSvg .mt:hover .pole,#tlSvg .mt:focus-visible .pole{stroke:#fff}
-#tlSvg .mt:hover .hd,#tlSvg .mt:focus-visible .hd{stroke:#fff}
-#tlSvg .mt .nm{fill:#B9C7D6;font-size:12px}
-#tlSvg .mt .qt{fill:#10151B;font-weight:700;font-size:10.5px}
-#tlSvg .mt .halo{fill:none;stroke:#F9D115;stroke-width:2;opacity:0}
-#tlSvg .mt.sel .pole{stroke:#F9D115;stroke-width:3.5}
-#tlSvg .mt.sel .arm{stroke:#F9D115}
-#tlSvg .mt.sel .nm{fill:#F9D115;font-size:14px;font-weight:700}
-#tlSvg .mt.sel .halo{opacity:1;animation:tlPulso .9s ease-out 1}
-#tlSvg .mt.cresce{animation:tlCresce .55s cubic-bezier(.2,.8,.2,1) both;transform-box:fill-box;transform-origin:50% 100%}
-#tlSvg .wire{fill:none;stroke:#AEBCCB;stroke-width:1.4;opacity:.8}
-#tlSvg .wire2{fill:none;stroke:#5E6E80;stroke-width:1;stroke-dasharray:3 4}
-#tlSvg .rail{stroke:#6D7B8A;stroke-width:2}
-#tlSvg .slp{stroke:#2B3641;stroke-width:3}
-#tlSvg .gp{fill:#6F8197;font-size:11px;text-anchor:start;font-weight:600}
-#tlSvg .gl{stroke:#2E3944;stroke-dasharray:2 5}
-#tlSvg .vz{fill:#566678;font-size:12px}
-@keyframes tlPulso{from{r:7;opacity:1}to{r:22;opacity:0}}
-@keyframes tlCresce{from{transform:scaleY(.15);opacity:0}to{transform:scaleY(1);opacity:1}}
-@media (prefers-reduced-motion:reduce){#tlSvg .mt.sel .halo{animation:none}#tlSvg .mt.cresce{animation:none}#tlScroll{scroll-behavior:auto}}
-@media (max-width:1180px){:root[data-vista="linha"] main{display:block}#tlSvg{height:150px}.tlBar input{width:140px}}
+/* ===== editor do poste (v35) ===== */
+#estrModal .modalCard{max-width:860px;padding:20px 24px}
+.ebHead{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.ebHead h3{font-size:16px;margin:0}
+.ebG{margin:14px 0}
+.ebT{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border-radius:999px;padding:7px 14px;font-size:13.5px;background:var(--sheet);border:1.5px solid var(--rule);min-height:36px}
+.chips button[aria-checked=true]{background:var(--brand);border-color:var(--brand);color:#2B3038;font-weight:600}
+.chips button.mais{border-style:dashed;color:var(--muted)}
+.chips.mini button{padding:3px 10px;font-size:12px;min-height:28px}
+.ebRow{display:grid;grid-template-columns:1.25fr 1.1fr .7fr .9fr;gap:14px;align-items:start}
+.ebC input.sm,.ebC select{width:100%}
+.ebD2{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.3}
+.sw{display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw .sl{width:42px;height:24px;border-radius:12px;background:var(--rule);position:relative;transition:background .15s}
+.sw .sl::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.sw input:checked+.sl{background:#4C9A52}
+.sw input:checked+.sl::after{transform:translateX(18px)}
+.sw input:focus-visible+.sl{outline:3px solid #1d4ed8;outline-offset:2px}
+.stp{display:flex;align-items:center;gap:0}
+.stp button{width:36px;height:36px;padding:0;font-size:18px}
+.stp input{width:54px!important;text-align:center;border-radius:0;height:36px}
+.ebAdd{display:flex;align-items:center;gap:12px;background:var(--hlA,#FDF6E6);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;margin:12px 0 4px}
+#ebPrev{flex:1;font-family:var(--mono);font-size:13px}
+#ebAdd{background:var(--brand);border-color:var(--brand);color:#2B3038;font-weight:600;padding:8px 18px;min-height:38px}
+.ebDet{margin:14px 0 4px;border-top:1px solid var(--soft);padding-top:10px}
+.ebDet summary{cursor:pointer;font-weight:600;font-size:13px;margin-bottom:8px}
+.ebFoot{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--soft);flex-wrap:wrap}
+.novoHint{flex-basis:100%;font-size:11.5px;color:var(--muted);min-height:1.2em}
+.addRow{flex-wrap:wrap}
+@media (max-width:720px){.ebRow{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -833,7 +808,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v34</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v35</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp">Medição</div>
     <button class="tab on" data-v="lista"><svg class="ic" aria-hidden="true"><use href="#i-struct"/></svg><span>Estrutura</span></button>
     <button class="tab" data-v="grelha"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span>Grelha da obra</span></button>
@@ -842,7 +817,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
     <button class="tab" data-v="base"><svg class="ic" aria-hidden="true"><use href="#i-db"/></svg><span>Base de dados</span></button>
     <div class="sgrp">Execução</div>
     <button class="tab" data-v="exec" title="Listas do executado, registo em massa e versões do projeto"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Execução</span></button>
-    <div class="sfoot"><button id="bCmd" class="tema" title="Procurar (Ctrl+K)"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="tl">Procurar</span><kbd>Ctrl K</kbd></button><button id="bVista" class="tema" type="button" title="Mudar a vista: clássica ou linha da obra" aria-label="Mudar a vista"><svg class="ic" aria-hidden="true"><use href="#i-span"/></svg><span class="tl">Vista: clássica</span></button><button id="bTema" class="tema" title="Tema: automático, escuro ou claro"><svg class="ic" aria-hidden="true"><use href="#i-auto"/></svg><span class="tl">Tema</span></button></div>
+    <div class="sfoot"><button id="bCmd" class="tema" title="Procurar (Ctrl+K)"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="tl">Procurar</span><kbd>Ctrl K</kbd></button><button id="bTema" class="tema" title="Tema: automático, escuro ou claro"><svg class="ic" aria-hidden="true"><use href="#i-auto"/></svg><span class="tl">Tema</span></button></div>
   </nav>
   <section class="pane" id="painelEstruturas" aria-label="Estruturas">
     <div class="ph"><button id="bColapsa" class="colapsaBtn" title="Esconder a lista de estruturas">«</button><h2>Estruturas</h2><span class="n" id="nPost">0</span><span id="nSel" class="nsel"></span><button id="bMuda" type="button" class="muda" hidden>Mudar</button></div>
@@ -854,8 +829,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
     <div class="bar"><input id="fPoste" placeholder="Filtrar estrutura…" aria-label="Filtrar estruturas"></div>
     <div class="scroll" id="listaPostes"></div>
     <div class="addRow">
-      <input id="novoPoste" placeholder="296-38, 296-39…" aria-label="Nova estrutura">
+      <input id="novoPoste" placeholder="296-38, 296-39 ou 296-38 a 296-45" aria-label="Novas estruturas: nomes separados por vírgula ou um intervalo" autocomplete="off">
       <button id="bAddPoste">Juntar</button>
+      <div id="novoHint" class="novoHint" aria-live="polite"></div>
     </div>
   </section>
 
@@ -881,20 +857,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
         <div id="estrModal" class="modalWrap" hidden>
         <div class="modalCard">
         <div id="estrBox">
-          <div class="ebHead"><h3>Postes, vigas e peças</h3><span class="n" id="ebN"></span></div>
+          <div class="ebHead"><h3 id="ebH">Postes, vigas e peças</h3><span class="n" id="ebN"></span></div>
           <div id="ebAviso"></div>
           <div id="ebLista"></div>
-          <div class="linha">
-            <select class="tp" id="ebTipoSel" aria-label="Tipo de viga"></select>
+          <div class="ebG">
+            <div class="ebT" id="ebTT">Poste ou viga</div>
+            <div id="ebChipsT" class="chips" role="radiogroup" aria-labelledby="ebTT"></div>
+            <select class="tp" id="ebTipoSel" aria-label="Tipo de viga" hidden></select>
             <input class="tp" id="ebTipo" list="tiposUsados" placeholder="Escrever o tipo" autocomplete="off" hidden>
-            <input class="sm" id="ebComp" list="alturas" placeholder="L (m)" autocomplete="off">
-            <select id="ebFur" style="width:132px;font-size:13px;padding:4px 7px" aria-label="Furação"></select>
-            <label style="font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer">
-              <input type="checkbox" id="ebGem" style="width:auto">geminado</label>
-            <input class="sm" id="ebQtd" type="number" min="1" step="1" value="1" aria-label="Quantidade">
-            <button id="ebAdd">Juntar poste/viga</button>
+          </div>
+          <div class="ebG ebRow">
+            <div class="ebC"><label class="ebT" for="ebComp">Comprimento L (m)</label><input class="sm" id="ebComp" list="alturas" placeholder="ex. 9,6" autocomplete="off" inputmode="decimal"><div id="ebChipsL" class="chips mini" aria-label="Comprimentos já usados"></div></div>
+            <div class="ebC"><label class="ebT" for="ebFur">Furação</label><select id="ebFur" aria-label="Furação"></select><div id="ebFurD" class="ebD2"></div></div>
+            <div class="ebC"><span class="ebT" id="ebGT">Geminado</span><label class="sw"><input type="checkbox" id="ebGem" aria-labelledby="ebGT"><span class="sl"></span><b id="ebGV">não</b></label></div>
+            <div class="ebC"><label class="ebT" for="ebQtd">Quantidade</label><div class="stp"><button type="button" id="ebQm" aria-label="Menos um">−</button><input class="sm" id="ebQtd" type="number" min="1" step="1" value="1"><button type="button" id="ebQp" aria-label="Mais um">+</button></div></div>
           </div>
           <datalist id="alturas"></datalist>
+          <div class="ebAdd"><span id="ebPrev" aria-live="polite"></span><button id="ebAdd" class="go">Juntar à estrutura</button></div>
           <div class="linha">
             <span style="font-size:11.5px;color:var(--muted)">Via</span>
             <input class="sm" id="geVia" list="viasUsadas" placeholder="VA" style="width:88px;text-align:left" aria-label="Via">
@@ -903,6 +882,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
             <input class="sm" id="geLinha" list="linhasUsadas" placeholder="Linha do Norte" style="width:170px;text-align:left" aria-label="Linha">
             <datalist id="linhasUsadas"></datalist>
           </div>
+          <details class="ebDet" id="ebDet"><summary>Espias e peças avulsas</summary>
           <div class="linha">
             <select class="esp" id="ebEspia" aria-label="Espia"></select>
             <input class="sm" id="ebEspiaQ" type="number" min="1" step="1" value="1" aria-label="Quantidade de espias">
@@ -916,9 +896,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
             <button id="ebPecaAdd">Juntar peça</button>
             <datalist id="pecasLista"></datalist>
           </div>
+          </details>
           <datalist id="tiposUsados"></datalist>
         </div>
-        <div style="text-align:right;margin-top:14px">
+        <div class="ebFoot">
+          <button id="ebCopia" type="button" title="Copia os postes, vigas, via e linha da estrutura anterior">Copiar da anterior</button><span style="flex:1"></span>
+          <button id="ebSeg" type="button">Concluir e ir para a seguinte</button>
           <button id="bEbFechar" class="go" style="background:var(--brand);border-color:var(--brand);color:#2B3038;font-weight:500">Concluído</button>
         </div>
         </div></div>
@@ -3628,9 +3611,21 @@ function rRes(term){
 }
 
 /* acções */
+/* aceita nomes separados por vírgula e intervalos: "296-38 a 296-45", "296-38..45", "296-38 até 45" */
+function expandeNomes(txt){
+  const out=[];
+  for(const t of String(txt).split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean)){
+    const m=t.match(/^(.*?)(\d+)\s*(?:a|até|ate|\.\.+|–|—|->|>)\s*(.*?)(\d+)$/i);
+    if(m){
+      const pre=m[1],n1=m[2],pre2=m[3],n2=m[4],a=+n1,b=+n2,w=n1.length;
+      if((pre2===''||pre2===pre)&&b>=a&&b-a<=300){
+        for(let k=a;k<=b;k++)out.push(pre+String(k).padStart(w,'0'));
+        continue}}
+    out.push(t)}
+  return out}
 function addPostes(txt){
   let ult=null, criouNovo=false;
-  for(const n of txt.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean)){
+  for(const n of expandeNomes(txt)){
     let e=st.postes.find(p=>p.nome===n);
     if(!e){e={id:st.seq++,nome:n,itens:[],estr:[],pecas:[]};st.postes.push(e);criouNovo=true}
     ult=e;
@@ -7073,105 +7068,63 @@ window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="
 })();
 </script>
 <script>
-/* v34: vista "Linha" — cada estrutura é um poste na linha; clicar escolhe-a */
+/* v35: editor do poste guiado + entrada de estruturas com intervalos */
 (function(){
- const $=s=>document.querySelector(s),NS='http://www.w3.org/2000/svg';
- const root=document.documentElement;
- const main=document.querySelector('main');
- const tl=document.createElement('div');tl.id='trilho';tl.setAttribute('role','region');tl.setAttribute('aria-label','Linha da obra');
- tl.innerHTML='<div class="tlBar"><h2>Linha da obra</h2><span class="n" id="tlN"></span><span class="sp"></span>'
-  +'<input id="tlQ" type="search" placeholder="Procurar estrutura…" aria-label="Procurar estrutura">'
-  +'<select id="tlG" aria-label="Agrupar por"><option value="troco">por troço</option><option value="via">por via</option></select>'
-  +'<span class="tlAdd" id="tlAdd"><input id="tlNovo" placeholder="296-38, 296-39…" aria-label="Nome das novas estruturas"><button id="tlOk" type="button">Juntar</button></span>'
-  +'<button id="tlMais" type="button" class="ghost" aria-expanded="false">+ Estrutura</button></div>'
-  +'<div id="tlScroll" tabindex="0" role="group" aria-label="Estruturas da obra. Setas esquerda e direita para mudar."><svg id="tlSvg" role="list"></svg></div>';
- main.insertBefore(tl,main.firstChild.nextSibling?main.firstChild:null);
- /* o trilho vem logo depois do menu lateral */
- const side=document.getElementById('side');side.after(tl);
- const svg=$('#tlSvg'),sc=$('#tlScroll');
- const el=(n,a,p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
- const H=176,YR=H-62,YT=40,SP=78,GAP=46,PAD=40;
- let primeira=true,ultimaSel=null;
- function estado(p){
-  const n=p.itens.reduce((s,i)=>s+i.qtd,0);
-  if(!n)return {c:'c0',n:0};
-  try{if((st.exec||[]).length){const s=estadoPoste(p);if(s.exc)return {c:'cx',n};if(s.tot&&s.fe>=s.tot-1e-9)return {c:'cf',n};if(s.fe>0)return {c:'cp',n}}}catch(e){}
-  return {c:'c1',n}}
- function desenha(){
-  if(root.getAttribute('data-vista')!=='linha')return;
-  const gs=grupos(),tot=st.postes.length,vis=visiveis().length;
-  $('#tlN').textContent=vis+(vis!==tot?' de '+tot:'')+' estruturas';
-  const nPos=gs.reduce((s,g)=>s+g[1].length,0);
-  const W=Math.max(sc.clientWidth,PAD*2+nPos*SP+Math.max(0,gs.length-1)*GAP);
-  svg.setAttribute('width',W);svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.textContent='';
-  if(!nPos){el('text',{x:W/2,y:H/2,class:'vz'}).textContent=tot?'Nenhuma estrutura corresponde à pesquisa.':'Ainda sem estruturas. Use «+ Estrutura» para juntar os primeiros postes.';
-    el('line',{x1:0,x2:W,y1:YR,y2:YR,class:'rail'});el('line',{x1:0,x2:W,y1:YR+4,y2:YR+4,class:'rail'});return}
-  /* via */
-  el('line',{x1:0,x2:W,y1:YR,y2:YR,class:'rail'});el('line',{x1:0,x2:W,y1:YR+5,y2:YR+5,class:'rail'});
-  for(let x=6;x<W;x+=14)el('line',{x1:x,x2:x,y1:YR-2,y2:YR+7,class:'slp'});
-  let x=PAD,i=0;const gTopo=[];
-  gs.forEach(([t,ps],gi)=>{
-   const xs=ps.map((p,k)=>x+k*SP+SP/2);
-   if(gi>0){el('line',{x1:x-GAP/2,x2:x-GAP/2,y1:14,y2:H-8,class:'gl'})}
-   el('text',{x:x-8,y:22,class:'gp'}).textContent=(rotuloGrupo()==='via'?'Via ':'Troço ')+t+' · '+ps.length;
-   /* fio de contacto entre postes vizinhos */
-   for(let k=0;k<ps.length-1;k++){const a=xs[k],b=xs[k+1],m=(a+b)/2;
-     el('path',{d:'M'+a+','+(YT+6)+' Q'+m+','+(YT+22)+' '+b+','+(YT+6),class:'wire'});
-     el('path',{d:'M'+a+','+(YT-6)+' Q'+m+','+(YT+4)+' '+b+','+(YT-6),class:'wire2'})}
-   ps.forEach((p,k)=>{
-    const cx=xs[k],e=estado(p),g=el('g',{class:'mt '+e.c+(p.id===st.sel?' sel':'')+(primeira?' cresce':''),'data-id':p.id,tabindex:'0',role:'listitem','aria-label':p.nome+(e.n?', '+e.n+' montagens':', sem montagens')+(p.id===st.sel?', escolhida':'')});
-    if(primeira)g.style.animationDelay=Math.min(i*28,900)+'ms';
-    el('line',{x1:cx,x2:cx,y1:YR,y2:YT,class:'pole'},g);
-    el('line',{x1:cx-13,x2:cx+13,y1:YT+6,y2:YT+6,class:'arm'},g);
-    el('circle',{cx:cx,cy:YT,r:p.id===st.sel?9:7,class:'halo'},g);
-    el('circle',{cx:cx,cy:YT-1,r:p.id===st.sel?9:7,class:'hd'},g);
-    if(e.n)el('text',{x:cx,y:YT+2.6,class:'qt'},g).textContent=e.n>99?'99+':e.n;
-    el('rect',{x:cx-SP/2+4,y:4,width:SP-8,height:H-8,fill:'transparent'},g);
-    el('text',{x:cx,y:H-14,class:'nm'},g).textContent=p.nome;
-    const t=el('title',{},g);t.textContent=p.nome+(e.n?' · '+e.n+' montagens':' · sem montagens');
-    i++});
-   x+=ps.length*SP+GAP;
-  });
-  primeira=false;
-  const s=svg.querySelector('.mt.sel');
-  if(s&&st.sel!==ultimaSel){const b=s.getBBox(),alvo=b.x+b.width/2-sc.clientWidth/2;sc.scrollTo({left:Math.max(0,alvo)})}
-  ultimaSel=st.sel;
+ const $=s=>document.querySelector(s);
+ const fmtL=v=>String(v).replace('.',',');
+ function chipsT(){
+  const sel=$('#ebTipoSel'),box=$('#ebChipsT');if(!sel||!box)return;
+  const cur=sel.value;
+  const og=[...sel.querySelectorAll('optgroup')];
+  const corr=[...(og[0]?og[0].querySelectorAll('option'):[])].map(o=>o.textContent);
+  const resto=og.slice(1).flatMap(g=>g.label==='—'?[]:[...g.querySelectorAll('option')].map(o=>o.textContent));
+  const abertos=box.dataset.mais==='1'||resto.includes(cur);
+  const B=(t,sel)=>`<button type="button" role="radio" aria-checked="${sel}" data-t="${t.replace(/"/g,'&quot;')}">${t}</button>`;
+  box.innerHTML=corr.map(t=>B(t,t===cur)).join('')
+   +(abertos?[...new Set(resto)].map(t=>B(t,t===cur)).join('')+B('Outro…',cur==='__outro'):`<button type="button" class="mais" data-mais="1">Mais perfis…</button>`);
+  box.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t;sel.value=t==='Outro…'?'__outro':t;sel.dispatchEvent(new Event('change'));chipsT();prev()});
+  const m=box.querySelector('[data-mais]');if(m)m.onclick=()=>{box.dataset.mais='1';chipsT()};
  }
- function escolhe(id){st.sel=id;despiece=null;rAll();if(typeof vista!=='undefined'&&vista==='lista'){const q=$('#q');q&&q.focus({preventScroll:true})}}
- svg.addEventListener('click',e=>{const g=e.target.closest('.mt');if(g&&!arrasto)escolhe(+g.dataset.id)});
- svg.addEventListener('keydown',e=>{const g=e.target.closest('.mt');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();escolhe(+g.dataset.id)}});
- sc.addEventListener('keydown',e=>{
-  const ids=[...svg.querySelectorAll('.mt')].map(g=>+g.dataset.id);if(!ids.length)return;
-  const i=Math.max(0,ids.indexOf(st.sel));let j=null;
-  if(e.key==='ArrowRight')j=Math.min(ids.length-1,i+1);else if(e.key==='ArrowLeft')j=Math.max(0,i-1);else if(e.key==='Home')j=0;else if(e.key==='End')j=ids.length-1;
-  if(j!==null&&e.target===sc){e.preventDefault();escolhe(ids[j])}
-  else if(j!==null&&e.target.closest('.mt')){e.preventDefault();escolhe(ids[j]);setTimeout(()=>{const g=svg.querySelector('.mt.sel');g&&g.focus({preventScroll:true})},30)}});
- /* roda do rato e arrastar para correr a linha */
- sc.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&sc.scrollWidth>sc.clientWidth){e.preventDefault();sc.classList.add('arr');sc.scrollLeft+=e.deltaY;clearTimeout(sc._t);sc._t=setTimeout(()=>sc.classList.remove('arr'),120)}},{passive:false});
- let ax=null,sl=0,arrasto=false;
- sc.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0){ax=e.clientX;sl=sc.scrollLeft;arrasto=false}});
- window.addEventListener('pointermove',e=>{if(ax===null)return;const d=e.clientX-ax;if(Math.abs(d)>5){arrasto=true;sc.classList.add('arr');sc.scrollLeft=sl-d}});
- window.addEventListener('pointerup',()=>{if(ax!==null){ax=null;sc.classList.remove('arr');setTimeout(()=>arrasto=false,0)}});
- /* procurar, agrupar e juntar usam os campos de sempre */
- $('#tlQ').addEventListener('input',e=>{$('#fPoste').value=e.target.value;$('#fPoste').dispatchEvent(new Event('input',{bubbles:true}));desenha()});
- $('#tlG').addEventListener('change',e=>{const a=$('#agrup');a.value=e.target.value;a.dispatchEvent(new Event('change',{bubbles:true}));desenha()});
- const add=$('#tlAdd'),mais=$('#tlMais');
- mais.onclick=()=>{const ab=!add.classList.contains('on');add.classList.toggle('on',ab);mais.setAttribute('aria-expanded',String(ab));mais.textContent=ab?'Fechar':'+ Estrutura';if(ab)$('#tlNovo').focus()};
- const juntar=()=>{const v=$('#tlNovo').value.trim();if(!v)return;$('#novoPoste').value=v;$('#bAddPoste').click();$('#tlNovo').value='';add.classList.remove('on');mais.setAttribute('aria-expanded','false');mais.textContent='+ Estrutura';setTimeout(desenha,50)};
- $('#tlOk').onclick=juntar;$('#tlNovo').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();juntar()}if(e.key==='Escape')mais.click()});
- /* esconde a linha nos separadores que não trabalham sobre uma estrutura */
- const marca=()=>{const on=document.querySelector('#side .tab.on'),v=on&&on.dataset.v;document.body.classList.toggle('vSemTrilho',!(v==='lista'||v==='grelha'||v==='lanco'));setTimeout(desenha,0)};
- new MutationObserver(marca).observe(side,{subtree:true,attributes:true,attributeFilter:['class']});
- /* refresca com a aplicação */
- const wrap=n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(){const r=f.apply(this,arguments);try{desenha()}catch(e){console.error(e)}return r}};
- wrap('rAll');wrap('rPostes');
- window.addEventListener('resize',()=>{clearTimeout(window.__tlr);window.__tlr=setTimeout(desenha,120)});
- /* seletor de vista */
- const b=document.getElementById('bVista');
- const ler=()=>{let a='';try{a=localStorage.getItem('vista')||''}catch(e){}return a==='linha'?'linha':''};
- const pinta=()=>{const a=ler();a?root.setAttribute('data-vista',a):root.removeAttribute('data-vista');b.querySelector('.tl').textContent='Vista: '+(a?'linha':'clássica');marca()};
- b.addEventListener('click',()=>{try{ler()?localStorage.removeItem('vista'):localStorage.setItem('vista','linha')}catch(e){}primeira=true;ultimaSel=null;pinta()});
- pinta();
+ function chipsL(){
+  const box=$('#ebChipsL');if(!box)return;
+  const cnt=new Map();try{st.postes.forEach(p=>(p.estr||[]).forEach(e=>{if(e.comp)cnt.set(e.comp,(cnt.get(e.comp)||0)+e.qtd)}))}catch(e){}
+  const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);
+  box.innerHTML=top.length?'<span class="ebD2" style="align-self:center">usados:</span>'+top.map(c=>`<button type="button" data-l="${c}">${fmtL(c)}</button>`).join(''):'';
+  box.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{$('#ebComp').value=b.dataset.l;prev();$('#ebAdd').focus()});
+ }
+ function fur(){const o=$('#ebFur'),d=$('#ebFurD');if(!o||!d)return;let t='';try{const f=FURACOES.find(x=>x[0]===o.value);t=f?f[1]:'Sem furação definida'}catch(e){}d.textContent=t}
+ function prev(){
+  const sel=$('#ebTipoSel'),outro=sel.value==='__outro',tipo=(outro?$('#ebTipo').value:sel.value)||'—';
+  const L=$('#ebComp').value.trim(),g=$('#ebGem').checked,q=Math.max(1,+$('#ebQtd').value||1),f=$('#ebFur').value;
+  $('#ebPrev').textContent=tipo+(L?' · '+fmtL(L)+' m':'')+(f?' · '+f:'')+(g?' · geminado':'')+' · ×'+q;
+  $('#ebGV').textContent=g?'sim':'não';fur();
+ }
+ const rEstr0=window.rEstr;
+ window.rEstr=function(){const r=rEstr0.apply(this,arguments);try{chipsT();chipsL();prev();const p=poste();$('#ebH').textContent=p?'Poste e peças de '+p.nome:'Postes, vigas e peças'}catch(e){console.error(e)}return r};
+ ['ebComp','ebQtd','ebTipo'].forEach(i=>$('#'+i).addEventListener('input',prev));
+ $('#ebGem').addEventListener('change',prev);$('#ebFur').addEventListener('change',prev);
+ $('#ebQm').onclick=()=>{const q=$('#ebQtd');q.value=Math.max(1,(+q.value||1)-1);prev()};
+ $('#ebQp').onclick=()=>{const q=$('#ebQtd');q.value=(+q.value||1)+1;prev()};
+ /* depois de juntar, volta a pôr o foco no comprimento e confirma */
+ $('#ebAdd').addEventListener('click',()=>setTimeout(()=>{prev();toast&&toast('Juntado à estrutura.')},0));
+ /* copiar da anterior e seguinte */
+ $('#ebCopia').onclick=()=>{
+  const p=poste();if(!p)return;const i=st.postes.indexOf(p),a=st.postes[i-1];
+  if(!a||!(a.estr||[]).length){toast('A estrutura anterior ainda não tem postes ou vigas.');return}
+  if((p.estr||[]).length&&!confirm('Esta estrutura já tem postes ou vigas. Juntar também os da anterior?'))return;
+  a.estr.forEach(e=>{const x=p.estr.find(y=>y.tipo===e.tipo&&y.comp===e.comp&&y.fur===e.fur&&!!y.gem===!!e.gem);if(x)x.qtd+=e.qtd;else p.estr.push(JSON.parse(JSON.stringify(e)))});
+  p.geo=p.geo||{};if(a.geo){if(!p.geo.via&&a.geo.via)p.geo.via=a.geo.via;if(!p.geo.linha&&a.geo.linha)p.geo.linha=a.geo.linha}
+  apply();toast('Copiado de '+a.nome+'.')};
+ $('#ebSeg').onclick=()=>{
+  const p=poste();if(!p)return;const i=st.postes.indexOf(p),n=st.postes[i+1];
+  if(!n){fechaEditorPoste();toast('Era a última estrutura.');return}
+  st.sel=n.id;despiece=null;rAll();abreEditorPoste()};
+ /* entrada de estruturas: pré-visualização do intervalo */
+ const ni=$('#novoPoste'),nh=$('#novoHint');
+ ni.addEventListener('input',()=>{const nm=expandeNomes(ni.value);const novos=nm.filter(n=>!st.postes.some(p=>p.nome===n));
+  nh.textContent=!nm.length?'':nm.length===1?(novos.length?'Cria a estrutura '+nm[0]+'.':'Já existe; fica escolhida.'):'Vai criar '+novos.length+(novos.length===1?' estrutura':' estruturas')+': '+nm[0]+' … '+nm[nm.length-1]+(nm.length!==novos.length?' ('+(nm.length-novos.length)+' já existiam)':'')});
+ $('#bAddPoste').addEventListener('click',()=>{nh.textContent=''});
+ rEstr();
 })();
 </script>
 </body>
