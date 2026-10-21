@@ -759,6 +759,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 .novoHint{flex-basis:100%;font-size:11.5px;color:var(--muted);min-height:1.2em}
 .addRow{flex-wrap:wrap}
 @media (max-width:720px){.ebRow{grid-template-columns:1fr 1fr}}
+
+/* juntar estrutura: no topo da lista e em destaque */
+#painelEstruturas .ph{order:-3}
+#painelEstruturas .addRow{order:-2;border-top:0;border-bottom:1px solid var(--soft);padding:10px 12px;background:var(--paper)}
+#painelEstruturas .addRow input{flex:1 1 120px;min-width:0}
+#bAddPoste{background:var(--brand);border-color:var(--brand);color:#2B3038;font-weight:700;padding:7px 14px;min-height:36px}
+#bAddPoste:hover{background:#ffdc3d;border-color:#ffdc3d;color:#2B3038}
+#bAddPoste::before{content:"+ "}
 </style>
 </head>
 <body>
