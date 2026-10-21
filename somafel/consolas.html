@@ -414,6 +414,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
     <div class="ng">Obra</div>
     <button class="ni" data-v="obra" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V9l7-5 7 5v11M10 20v-6h4v6"/></svg><span class="tx">Obra</span><span class="n" id="n-obra"></span></button>
     <div class="ng">Cálculo</div>
+    <button class="ni" data-v="estr"><svg viewBox="0 0 24 24"><path d="M5 21V8M12 21V4M19 21V8M3 21h4M10 21h4M17 21h4"/></svg><span class="tx">Estruturas da obra</span></button>
     <button class="ni" data-v="consola"><svg viewBox="0 0 24 24"><path d="M6 3v18M6 7h12M6 7l9 6M6 13h9"/></svg><span class="tx">Consolas</span></button>
     <button class="ni" data-v="poste"><svg viewBox="0 0 24 24"><path d="M12 3v18M12 6h6M9 11h3v5H9zM8 21h8"/></svg><span class="tx">Postes</span></button>
     <button class="ni" data-v="portico"><svg viewBox="0 0 24 24"><path d="M5 21V5M19 21V5M5 6q7 4 14 0M3 21h4M17 21h4"/></svg><span class="tx">Pórticos</span></button>
@@ -435,6 +436,10 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
         <div id="via-box"></div>
         <div class="cartas" id="cartas" style="margin-top:14px"></div>
       </div>
+    </section>
+    <section class="vista ifr" id="v-estr">
+      <div class="faixa"><span>Estruturas e montagens vêm da <b>Medição</b>. Aqui acrescenta as cotas, os dados do poste, as consolas e a verificação, por estrutura.</span></div>
+      <iframe class="app" id="if-estr" title="Estruturas da obra"></iframe>
     </section>
     <section class="vista ifr" id="v-consola">
       <div class="faixa"><span>Calcule a consola e envie-a para a obra. Fica uma folha no caderno com o desenho, as cotas e a lista de peças.</span>
@@ -570,11 +575,15 @@ var VISTA='obra';
 var MODOAPP='consola';
 function marcaNav(v){ document.querySelectorAll('.ni[data-v]').forEach(function(b){ if(b.getAttribute('data-v')===v) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); }); }
 function modoApp(m){ MODOAPP=m; var f=$('if-consola'); if(prontas.consola&&f&&f.contentWindow) f.contentWindow.postMessage({cmd:'modo',modo:m},'*'); }
+function carregaEstr(){ var f=document.getElementById('if-estr'); if(!f||f.dataset.ok) return;
+  var id=new URLSearchParams(location.search).get('obra');
+  if(!id){ f.srcdoc='<body style="font:15px system-ui;padding:32px;color:#444">Abra esta app a partir da obra, na Central de Obras, para ver as estruturas da obra.</body>'; return; }
+  f.src='medicao.html?modo=dim&obra='+encodeURIComponent(id); f.dataset.ok='1'; }
 function vai(v){ var vv=(v==='poste')?'consola':v; VISTA=v; marcaNav(v);
   document.querySelectorAll('.vista').forEach(function(s){ s.classList.toggle('on',s.id==='v-'+vv); });
   if(vv==='consola') modoApp(v==='poste'?'poste':'consola');
   var fx=document.querySelector('#v-consola .faixa'); if(fx) fx.hidden=(v==='poste');
-  v=vv; if(apps.indexOf(v)>=0) carregaApp(v); if(v==='caderno') desenhaCaderno(); if(v==='obra') desenhaObra(); document.querySelector('main.area').scrollTop=0; }
+  v=vv; if(v==='estr') carregaEstr(); if(apps.indexOf(v)>=0) carregaApp(v); if(v==='caderno') desenhaCaderno(); if(v==='obra') desenhaObra(); document.querySelector('main.area').scrollTop=0; }
 document.querySelectorAll('.ni[data-v]').forEach(function(b){ b.addEventListener('click',function(){ vai(b.getAttribute('data-v')); }); });
 
 /* ---------- logótipo ---------- */

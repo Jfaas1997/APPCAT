@@ -6,7 +6,7 @@
 <title>Medição de catenária · online</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="color-scheme" content="light dark">
-<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c')}catch(e){}</script>
+<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c');if(new URLSearchParams(location.search).get('modo')==='dim')document.documentElement.setAttribute('data-modo','dim')}catch(e){}</script>
 <style>
 /* IBM Plex embutida: a app fica igual sem internet */
 @font-face {
@@ -767,6 +767,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 #bAddPoste{background:var(--brand);border-color:var(--brand);color:#2B3038;font-weight:700;padding:7px 14px;min-height:36px}
 #bAddPoste:hover{background:#ffdc3d;border-color:#ffdc3d;color:#2B3038}
 #bAddPoste::before{content:"+ "}
+
+/* ===== modos (v36): Medição vs Dimensionamento ===== */
+html:not([data-modo=dim]) #nxSect,html:not([data-modo=dim]) #nVerifTodas{display:none!important}
+html[data-modo=dim] #nCadMont{display:none}
+html[data-modo=dim] #side [data-v=grelha],html[data-modo=dim] #side [data-v=lanco],html[data-modo=dim] #side [data-v=pend],html[data-modo=dim] #side [data-v=base],html[data-modo=dim] #side [data-v=exec],html[data-modo=dim] #side .sgrp{display:none}
+html[data-modo=dim] main{grid-template-columns:var(--sw) 236px minmax(0,1fr)}
+html[data-modo=dim] main>section.pane:nth-of-type(3){display:none}
+html[data-modo=dim] .stats .stat:nth-child(n+2){display:none}
+html[data-modo=dim] #vLista .entry,html[data-modo=dim] #estrResumo,html[data-modo=dim] #exSect,html[data-modo=dim] #loteOutros,html[data-modo=dim] #bExec,html[data-modo=dim] #loteSel{display:none!important}
+html[data-modo=dim] #itens input,html[data-modo=dim] #itens .xb,html[data-modo=dim] #itens [data-del]{pointer-events:none;opacity:.55}
+html[data-modo=dim] #itens [data-del]{display:none}
+html[data-modo=dim] [data-n=copias],html[data-modo=dim] [data-n=passa],html[data-modo=dim] [data-n=excel],html[data-modo=dim] [data-n=contratos],html[data-modo=dim] [data-n=baseIP],html[data-modo=dim] [data-n=altProp]{display:none}
+html[data-modo=dim] .nxSw{display:none}
+html[data-modo=dim] #bDup,html[data-modo=dim] #bRen,html[data-modo=dim] #bDelP{display:none}
+html[data-modo=dim] #pAct{display:none}
+html[data-modo=dim] #vLista .pad::before{content:"As estruturas e as montagens vêm da Medição, só para leitura. Aqui acrescenta as cotas, os dados do poste e a verificação.";display:block;margin:0 0 12px;padding:10px 14px;border-radius:8px;background:var(--verdbg);border:1px solid var(--verdbd);font-size:13px}
 </style>
 </head>
 <body>
@@ -802,7 +818,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
       <button data-n="central">Central de Obras</button>
       <button data-n="passa" id="nPassa" hidden>Passar para uma obra…</button>
       <button data-n="contratos">Contratos da obra…</button>
-      <button data-n="verifTodas">Verificar todas as consolas</button>
+      <button data-n="cadMont" id="nCadMont">Importar cadernos de montagem…</button>
+      <button data-n="verifTodas" id="nVerifTodas">Verificar todas as consolas</button>
       <button data-n="copias">Restaurar uma cópia…</button>
       <button data-n="excel">Descarregar Excel</button>
       <button data-n="baseIP" id="nBaseIP" hidden>Carregar base IP…</button>
@@ -816,7 +833,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v35</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v36</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp">Medição</div>
     <button class="tab on" data-v="lista"><svg class="ic" aria-hidden="true"><use href="#i-struct"/></svg><span>Estrutura</span></button>
     <button class="tab" data-v="grelha"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span>Grelha da obra</span></button>
@@ -5873,7 +5890,7 @@ window.APP={autoDe,autoIni,autoFim,nomeAuto,get st(){return st},get VERS(){retur
 /* ================= norma comum v1: serviços comuns (v24) ================= */
 const NM={ob:null,dir:null,lastMod:0,saveT:null,draftT:null,gravando:false,conflito:false,semPerm:false,erro:'',guardadoEm:null,ultimaCopia:0,alterado:false,restSujo:false,VERSAO:'24',ESQ:2};
 const NM_MAXCOP=20, NM_PAUSA=5000, NM_COPIA=30*60*1000;
-const nmChave=()=>(NM.ob&&NM.ob.cc)?NM.ob.cc:'rapido';
+const nmChave=()=>((NM.ob&&NM.ob.cc)?NM.ob.cc:'rapido')+(document.documentElement.getAttribute('data-modo')==='dim'?'#dim':'');
 const nm2=n=>('0'+n).slice(-2);
 const nmHM=d=>nm2(d.getHours())+':'+nm2(d.getMinutes());
 const nmCarimbo=()=>{const d=new Date();return d.getFullYear()+nm2(d.getMonth()+1)+nm2(d.getDate())+'_'+nm2(d.getHours())+nm2(d.getMinutes())+nm2(d.getSeconds())};
@@ -6979,7 +6996,7 @@ async function nmArranque(){
   NM.soLeitura=!(NM.papel==='administrador'||NM.papel==='diretor'||(NM.papel==='encarregado'&&bl.indexOf('app:medicao')<0));
   await nmCarregaForn();
   const okBase=await nmCarregaBase();
-  const d=await nmServidor(), rasc=await idbGet('rascunho:'+NM.ob.cc);
+  const d=await nmServidor(), rasc=await idbGet('rascunho:'+nmChave());
   NM.versao=d?d.versao:null; NM.lastMod=NM.versao;
   nmAplicaServidor(d&&d.dados);
   if(!NM.soLeitura&&rasc&&rasc.dirty&&rasc.st&&(rasc.base===NM.versao||(!rasc.base&&NM.versao==null))){
@@ -7133,6 +7150,104 @@ window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="
   nh.textContent=!nm.length?'':nm.length===1?(novos.length?'Cria a estrutura '+nm[0]+'.':'Já existe; fica escolhida.'):'Vai criar '+novos.length+(novos.length===1?' estrutura':' estruturas')+': '+nm[0]+' … '+nm[nm.length-1]+(nm.length!==novos.length?' ('+(nm.length-novos.length)+' já existiam)':'')});
  $('#bAddPoste').addEventListener('click',()=>{nh.textContent=''});
  rEstr();
+})();
+</script>
+<script>
+/* v36: Medição e Dimensionamento separados (mesma app, dois modos). ?modo=dim = Dimensionamento da obra */
+(function(){
+ const DIM=document.documentElement.getAttribute('data-modo')==='dim';
+ const clone=o=>JSON.parse(JSON.stringify(o));
+ const $=s=>document.querySelector(s);
+ /* ========== Medição: importar cadernos de montagem (só montagens e postes/vigas) ========== */
+ async function cadMontUI(){
+  if(NM.soLeitura){toast('Não tem permissão para alterar esta app.');return}
+  const r=await nmModal({titulo:'Importar cadernos de montagem',corpo:'<p class="cdP">Escolhe os PDFs do <b>caderno de montagem</b> (um por poste ou pórtico, vários de uma vez). Retiro de cada um os <b>postes ou vigas</b> e as <b>montagens</b> (consolas, tirantes, pêndulos, equipamento…). As cotas e a verificação ficam para o Dimensionamento. Só leio; nada é alterado antes de confirmares.</p>'
+   +'<div class="nxF"><label>PDFs do caderno</label><input type="file" id="cdPdf" accept=".pdf,application/pdf" multiple></div>',
+   botoes:[{t:'Cancelar',v:null},{t:'Ler',v:c=>[...c.querySelector('#cdPdf').files],p:true}],cancela:null});
+  if(!r)return; if(!r.length){toast('Não escolheste nenhum PDF.');return}
+  let lido; try{ lido=await cadLePdfs(r,(i,n)=>toast('A ler o caderno… '+i+'/'+n)) }catch(e){toast(String(e&&e.message||e));return}
+  const plano=cadPlano(lido.ok,null);
+  if(!plano.length){await nmDiz('Não encontrei nenhum poste nos PDFs.'+(lido.falhas.length?' '+lido.falhas.slice(0,5).map(f=>esc(f.ficheiro)+': '+esc(f.motivo)).join(' · '):''));return}
+  /* montagens de cada poste: peças das consolas + equipamento do caderno */
+  const monta=q=>{const m=new Map();const add=(code,mo)=>{const a=cadAchaMo(code,mo);if(!a)return false;const k=a.di+'|'+a.mo;m.set(k,{di:a.di,mo:a.mo,qtd:(m.get(k)?m.get(k).qtd:0)+1});return true};
+   const falta=[];for(const c of q.consolas)for(const r of Object.values(c.pecas||{}))add(r.di,r.mo);
+   for(const e of q.equip||[])if(!add(e.di,e.mo))falta.push(e.di+(e.mo?' '+e.mo:''));return {lista:[...m.values()],falta}};
+  const estrDe=q=>{const pc=q.poste||{};if(!pc.perfil||q.tipo==='portico')return null;const n=cadPerfilNorm((pc.nperf>1?pc.nperf+'x':'')+pc.perfil);const m=/^HE(\d{2,3})([AB])$/.exec(n.perfil);const tipo=m?'HE '+m[1]+m[2]:n.perfil;const gem=n.nperf>1?1:0;
+   return {tipo,comp:pc.altura?String(pc.altura).replace('.',','):'',fur:'',gem,qtd:1}};
+  const L=plano.map(q=>({q,m:monta(q),e:estrDe(q)}));
+  const nf=L.filter(x=>!x.q.existe).length;
+  const linha=(x,i)=>{const q=x.q,tem=q.existe&&(q.existe.itens||[]).length;
+   return '<tr><td><input type="checkbox" data-cdi="'+i+'" '+(x.m.lista.length||x.e?'checked':'disabled')+'></td><td><b>'+esc(q.nome)+'</b>'+(q.tipo==='portico'?' <span class="cdN">pórtico</span>':'')+'<div class="cdN">'+esc(q.ficheiro.replace(/\.pdf$/i,''))+'</div></td>'
+    +'<td>'+(x.e?esc((x.e.gem?'2×':'')+x.e.tipo+(x.e.comp?' · '+x.e.comp+' m':'')):'<span class="cdN">–</span>')+'</td><td>'+x.m.lista.length+'</td>'
+    +'<td>'+(q.existe?(tem?'<span class="cdW">já tem montagens (só junto as que faltam)</span>':'na medição'):'<span class="cdN">não está na medição</span>')
+    +((x.m.falta.length||q.avisos.length||q.aConfirmar)?'<div class="cdD">'+x.m.falta.map(f=>esc(f+' não existe na base IP')).concat(q.avisos.map(esc)).concat(q.aConfirmar?['pórtico: as consolas foram repartidas pelos dois postes por ordem; confirma']:[]).join('<br>')+'</div>':'')+'</td></tr>'};
+  const corpo='<p class="cdP"><b>'+plano.length+'</b> poste'+(plano.length>1?'s':'')+' lido'+(plano.length>1?'s':'')+' em '+lido.ok.length+' folha'+(lido.ok.length>1?'s':'')+'.</p>'
+   +(lido.falhas.length?'<p class="cdP cdW">Não consegui ler: '+lido.falhas.slice(0,8).map(f=>esc(f.ficheiro.replace(/\.pdf$/i,''))+' ('+esc(f.motivo)+')').join(' · ')+(lido.falhas.length>8?' …':'')+'</p>':'')
+   +'<div class="cdScroll"><table class="cdT"><thead><tr><th></th><th>Estrutura</th><th>Poste / viga</th><th>Montagens</th><th>Na medição</th></tr></thead><tbody>'+L.map(linha).join('')+'</tbody></table></div>'
+   +'<label class="chk"><input type="checkbox" id="cdCria"'+(nf&&nf===L.length?' checked':'')+'> criar as estruturas que ainda não estão na medição ('+nf+')</label>';
+  const o=await nmModal({titulo:'Caderno lido',corpo,botoes:[{t:'Cancelar',v:null},{t:'Importar os marcados',v:c=>({sel:[...c.querySelectorAll('[data-cdi]:checked')].map(x=>+x.dataset.cdi),criar:c.querySelector('#cdCria').checked}),p:true}],cancela:null});
+  if(!o)return; if(!o.sel.length){toast('Nada marcado.');return}
+  let np=0,nm=0,novos=0;
+  for(const i of o.sel){const x=L[i];let p=x.q.existe;
+   if(!p){if(!o.criar)continue;p={id:st.seq++,nome:x.q.nome,itens:[],estr:[],pecas:[]};st.postes.push(p);novos++}
+   p.itens=p.itens||[];p.estr=p.estr||[];
+   for(const it of x.m.lista){const di=desIx.get(it.di);if(di===undefined)continue;
+    const e=p.itens.find(y=>y.di===di&&y.mo===it.mo);if(e)continue;p.itens.push({di,mo:it.mo,qtd:it.qtd});nm++}
+   if(x.e&&!p.estr.length)p.estr.push(x.e);np++}
+  registaHistorico();atualizaBotoesUndo();nmMudou();garante();apply();
+  toast('Importadas '+np+' estrutura'+(np===1?'':'s')+' com '+nm+' montagem'+(nm===1?'':'ns')+(novos?' ('+novos+' nova'+(novos>1?'s':'')+')':'')+'.',5000)}
+ window.cadMontUI=cadMontUI;
+ const nm=$('#nmenu');
+ if(nm&&!DIM)nm.addEventListener('click',e=>{if(e.target.closest('button[data-n="cadMont"]'))cadMontUI()});
+ if(!DIM){ try{ ncAgenda=function(){} }catch(e){} return }
+ /* ========== Dimensionamento da obra ========== */
+ const APP='dimensionamento';
+ NM.medIds=new Set();NM.medVer=null;
+ nmServidor=async function(){
+  const f=a=>sb.from('dados_apps').select('dados,versao,atualizado_em').eq('obra_id',NM.ob.id).eq('app',a).maybeSingle();
+  const [m,d]=await Promise.all([f('medicao'),f(APP)]);
+  NM.medVer=m.data?m.data.versao:null;
+  return {dados:{dim:1,med:m.data?m.data.dados:null,dimd:d.data?d.data.dados:null},versao:d.data?d.data.versao:null,atualizado_em:(d.data||m.data||{}).atualizado_em||new Date().toISOString()} };
+ const _ap=nmAplicaServidor;
+ nmAplicaServidor=function(c){
+  if(!c||!c.dim)return _ap(c);
+  const med=c.med,dd=c.dimd;let d2=null;NM.medIds=new Set();
+  if(med&&med.st){const sm=clone(med.st);NM.medIds=new Set(sm.postes.map(p=>p.id));
+   const ex=dd&&dd.extras||null;
+   for(const p of sm.postes){const e=ex&&ex[p.id];
+    if(dd){p.consolas=(e&&e.consolas)||[];if(e&&e.dc)p.dc=e.dc;else delete p.dc;if(e&&e.equipCad&&e.equipCad.length)p.equipCad=e.equipCad;else delete p.equipCad;p.verif=e&&e.verif===false?false:true}
+    else if(p.verif===undefined)p.verif=true;
+    if(p.verif===false&&!(p.consolas||[]).length)p.verif=true}
+   if(dd&&dd.soDim){let k=0;for(const q of dd.soDim){q.id=-(++k);q.verif=true;sm.postes.push(q)}}
+   d2={st:sm,VERS:med.VERS,pd:med.pd}}
+  else if(dd&&dd.soDim&&dd.soDim.length){d2={st:{nome:'Obra',postes:dd.soDim.map((q,k)=>Object.assign(q,{id:-(k+1),verif:true})),sel:null,seq:1},VERS:{ativa:null,lista:[]},pd:null}}
+  return _ap(d2)};
+ nmPayload=function(){const extras={},soDim=[];
+  for(const p of st.postes){
+   if(!NM.medIds.has(p.id)){soDim.push(clone(p));continue}
+   if((p.consolas&&p.consolas.length)||p.dc||(p.equipCad&&p.equipCad.length))extras[p.id]={nome:p.nome,consolas:p.consolas||[],dc:p.dc||null,verif:p.verif,equipCad:p.equipCad||[]}}
+  return {esq:'dim1',extras,soDim,medVer:NM.medVer,gerado:new Date().toISOString()} };
+ nmGravaOnline=(0,eval)('('+nmGravaOnline.toString().replace(/'medicao'/g,"'"+APP+"'")+')');
+ /* trazer da Medição as alterações de estruturas e montagens, sem mexer no que é do Dimensionamento */
+ async function refresca(){
+  if(!NM.ob||NM.gravando||NM.carregando)return;
+  const q=await sb.from('dados_apps').select('dados,versao').eq('obra_id',NM.ob.id).eq('app','medicao').maybeSingle();
+  const m=q.data;if(!m||m.versao===NM.medVer||!(m.dados&&m.dados.st))return;
+  NM.medVer=m.versao;NM.carregando=true;
+  try{const byId=new Map(st.postes.map(p=>[p.id,p])),ids=new Set();
+   for(const x of m.dados.st.postes){ids.add(x.id);const p=byId.get(x.id);
+    if(p&&NM.medIds.has(p.id)){for(const k of ['nome','itens','estr','pecas','geo'])p[k]=clone(x[k]===undefined?(k==='geo'?{}:[]):x[k])}
+    else{const n=clone(x);n.consolas=[];delete n.dc;delete n.equipCad;n.verif=true;const c=st.postes.find(y=>y.id===n.id);if(c)c.id=-(Math.abs(c.id)+1000000);st.postes.push(n)}}
+   st.postes=st.postes.filter(p=>ids.has(p.id)||!NM.medIds.has(p.id)||(p.consolas||[]).length);
+   NM.medIds=new Set([...ids]);
+   if(!st.postes.find(p=>p.id===st.sel))st.sel=st.postes.length?st.postes[0].id:null;
+   garante();rAll();toast('Estruturas e montagens atualizadas a partir da Medição.',3000)}
+  finally{NM.carregando=false}}
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresca().catch(()=>{})});
+ setInterval(()=>{if(document.visibilityState==='visible')refresca().catch(()=>{})},60000);
+ const _ef=nmEcraFim;nmEcraFim=function(){_ef();try{document.title='Dimensionamento · '+NM.ob.cc}catch(e){}};
+ const sn=document.querySelector('.sname');if(sn)sn.textContent='Dimensionamento · obra';
+ const tt=document.getElementById('vTit');
 })();
 </script>
 </body>
