@@ -53,7 +53,7 @@
   
 }
 :root{
-  --paper:#F1F1EF; --sheet:#FFFFFF; --ink:#2B3038; --muted:#6E7178;
+  --paper:#F1F1EF; --sheet:#FFFFFF; --ink:#2B3038; --muted:#5A5E66;
   --rule:#D8D8D4; --soft:#EAEAE6; --brand:#F9D115; --verd:#7A5E00; --verdbg:#FDF3CE;
   --amber:#8F5D00; --amberbg:#F7EEDC; --red:#9B2C2C;
   --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -693,6 +693,38 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 .nmLogin[hidden]{display:none}.nmLogin form,.nmLogin .box{width:min(380px,100%);display:flex;flex-direction:column;gap:8px}
 .nmLogin .ob{text-align:left;padding:10px 12px}.nmLogin .er{color:#C62828;min-height:1em}
 
+
+/* ===== facelift da Medição (v32) ===== */
+:root{--card:#fff;--cardbd:#DDDDD8}
+#vLista .pad{background:var(--paper);min-height:100%;padding:14px 16px 40px}
+#vLista .pad>.entry,#vLista .pad>.sect,#vLista .pad>#estrResumo{background:var(--card);border:1px solid var(--cardbd);border-radius:10px;padding:14px 16px;margin:0 0 12px}
+#vLista .pad>#estrResumo{display:flex!important;align-items:center;gap:12px;flex-wrap:wrap}
+#vLista .pad>#estrResumo[style*="none"]{display:none!important}
+.entry label{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.sect h3,.exHead h3{font-size:13px;font-weight:600;margin:0 0 10px;letter-spacing:.01em}
+#vLista .pad>.sect:not(#exSect) h3::before{content:"";display:inline-block;width:4px;height:13px;background:var(--brand);border-radius:2px;margin-right:8px;vertical-align:-2px}
+#q{border-radius:8px}
+.pmenu{margin-left:auto;position:relative}
+#pMenu{position:absolute;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--cardbd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:4px;min-width:190px;z-index:50;display:flex;flex-direction:column}
+#pMenu[hidden]{display:none}
+#pMenu button{border:0;background:none;text-align:left;padding:9px 12px;border-radius:6px;min-height:36px}
+#pMenu button:hover,#pMenu button:focus-visible{background:var(--soft)}
+#pMenu .perigo{color:var(--red);border-top:1px solid var(--soft);border-radius:0 0 6px 6px;margin-top:4px}
+.nsel{font-weight:600;font-size:12.5px;color:var(--ink);margin-left:2px}
+.muda{margin-left:auto;padding:4px 12px}
+#painelEstruturas.mini .bar,#painelEstruturas.mini #barAgrup,#painelEstruturas.mini .scroll,#painelEstruturas.mini .addRow{display:none}
+@media (min-width:1181px){.nsel{display:none}}
+@media (max-width:1180px){
+  #bColapsa{display:none}
+  #painelEstruturas.mini .muda{display:inline-block}
+  #painelEstruturas.mini .ph{padding:8px 12px}
+  .tools{overflow:visible;flex-wrap:wrap}
+  #vLista .pad{padding:10px 10px 90px}
+  #vLista .pad>.entry,#vLista .pad>.sect{padding:12px}
+}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px;box-shadow:0 0 0 5px rgba(255,255,255,.9)}
+@media (pointer:coarse){button,select,.tab{min-height:44px}input[type=checkbox]{width:22px;height:22px}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -742,7 +774,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v31</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v32</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp">Medição</div>
     <button class="tab on" data-v="lista"><svg class="ic" aria-hidden="true"><use href="#i-struct"/></svg><span>Estrutura</span></button>
     <button class="tab" data-v="grelha"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span>Grelha da obra</span></button>
@@ -754,7 +786,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
     <div class="sfoot"><button id="bCmd" class="tema" title="Procurar (Ctrl+K)"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="tl">Procurar</span><kbd>Ctrl K</kbd></button><button id="bTema" class="tema" title="Tema: automático, escuro ou claro"><svg class="ic" aria-hidden="true"><use href="#i-auto"/></svg><span class="tl">Tema</span></button></div>
   </nav>
   <section class="pane" id="painelEstruturas" aria-label="Estruturas">
-    <div class="ph"><button id="bColapsa" class="colapsaBtn" title="Esconder a lista de estruturas">«</button><h2>Estruturas</h2><span class="n" id="nPost">0</span></div>
+    <div class="ph"><button id="bColapsa" class="colapsaBtn" title="Esconder a lista de estruturas">«</button><h2>Estruturas</h2><span class="n" id="nPost">0</span><span id="nSel" class="nsel"></span><button id="bMuda" type="button" class="muda" hidden>Mudar</button></div>
     <div class="bar" id="barAgrup">
       <select id="agrup" style="flex:1;font-size:11.5px;padding:3px 5px" aria-label="Agrupar por">
         <option value="troco">por troço</option><option value="via">por via</option></select>
@@ -772,8 +804,13 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
     <div class="ph">
       <h2 id="vTit">Estrutura</h2>
       <span class="n" id="ttPoste" style="margin-left:6px"></span>
-      <div style="margin-left:auto;display:flex;gap:6px" id="pAct" hidden>
-        <button id="bDup">Duplicar</button><button id="bRen">Renomear</button><button id="bDelP">Apagar</button>
+      <div class="pmenu" id="pAct" hidden>
+        <button id="bMais" aria-haspopup="true" aria-expanded="false" aria-controls="pMenu">Mais ▾</button>
+        <div id="pMenu" role="menu" hidden>
+          <button id="bDup" role="menuitem">Duplicar estrutura</button>
+          <button id="bRen" role="menuitem">Renomear…</button>
+          <button id="bDelP" role="menuitem" class="perigo">Apagar estrutura…</button>
+        </div>
       </div>
     </div>
     <div class="scroll" id="vLista">
@@ -6946,6 +6983,35 @@ window.__nm={NM,get st(){return st},nmAuto,nmFlush,nmCarregaBase,ready:null,dbg:
 nmUi();
 window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="box"><h2>Erro</h2><p>'+esc(e.message||String(e))+'</p></div>') });
 
+</script>
+<script>
+/* facelift v32: menu Mais, lista recolhida no telemóvel, acessibilidade */
+(function(){
+ const $=s=>document.querySelector(s), mq=window.matchMedia('(max-width:1180px)');
+ const bM=$('#bMais'),mn=$('#pMenu');
+ const fecha=()=>{if(mn.hidden)return;mn.hidden=true;bM.setAttribute('aria-expanded','false')};
+ bM.onclick=e=>{e.stopPropagation();const ab=mn.hidden;mn.hidden=!ab;bM.setAttribute('aria-expanded',String(ab));if(ab){const f=mn.querySelector('button');f&&f.focus()}};
+ mn.addEventListener('click',()=>setTimeout(fecha,0));
+ document.addEventListener('click',e=>{if(!e.target.closest('.pmenu'))fecha()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!mn.hidden){fecha();bM.focus()}
+  if(!mn.hidden&&(e.key==='ArrowDown'||e.key==='ArrowUp')){const b=[...mn.querySelectorAll('button')],i=b.indexOf(document.activeElement);e.preventDefault();b[(i+(e.key==='ArrowDown'?1:b.length-1))%b.length].focus()}});
+ /* telemóvel: depois de escolher uma estrutura, a lista recolhe-se */
+ const pn=$('#painelEstruturas'),nSel=$('#nSel'),mu=$('#bMuda');
+ const nome=()=>{try{const p=poste();return p?p.nome:''}catch(e){return ''}};
+ const atual=()=>{nSel.textContent=nome()?'· '+nome():''};
+ const mini=v=>{pn.classList.toggle('mini',v&&mq.matches&&!!nome());mu.hidden=!pn.classList.contains('mini');mu.setAttribute('aria-expanded',String(!v))};
+ $('#listaPostes').addEventListener('click',e=>{if(e.target.closest('.poste')){setTimeout(()=>{atual();mini(true)},0)}});
+ mu.onclick=()=>{mini(false);pn.classList.remove('mini');mu.hidden=true;const f=$('#fPoste');f&&f.focus()};
+ mq.addEventListener&&mq.addEventListener('change',()=>{pn.classList.remove('mini');mu.hidden=true});
+ setInterval(atual,1500);
+ /* acessibilidade: nomes para botões só com ícone, estado do menu */
+ const nav=document.getElementById('side');
+ const marca=()=>nav.querySelectorAll('.tab').forEach(b=>{const t=b.querySelector('span');if(t&&!b.getAttribute('aria-label'))b.setAttribute('aria-label',t.textContent.trim());b.toggleAttribute('aria-current',b.classList.contains('on'));if(b.classList.contains('on'))b.setAttribute('aria-current','page')});
+ marca();new MutationObserver(marca).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
+ [['bUndo','Desfazer'],['bRedo','Refazer'],['bSaveAs','Guardar noutro sítio'],['bCmd','Procurar em tudo'],['bTema','Mudar tema'],['bSide','Recolher o menu']].forEach(([i,t])=>{const b=document.getElementById(i);if(b&&!b.getAttribute('aria-label'))b.setAttribute('aria-label',t)});
+ document.querySelectorAll('input:not([aria-label]):not([id=""])').forEach(i=>{if(i.type==='hidden'||i.labels&&i.labels.length)return;const p=i.getAttribute('placeholder')||i.getAttribute('title');if(p)i.setAttribute('aria-label',p)});
+ const tb=document.querySelector('.tools');if(tb&&!tb.getAttribute('role')){tb.setAttribute('role','toolbar');tb.setAttribute('aria-label','Ficheiro e ações da obra')}
+})();
 </script>
 </body>
 </html>
