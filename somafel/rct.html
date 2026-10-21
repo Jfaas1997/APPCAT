@@ -817,6 +817,33 @@ table.ed td input.cod{font-family:var(--mono);font-size:12px}
 :root[data-theme="dark"] #semPasta{background:#3a2f10;color:#f3dca0;border-color:#6b5a22}
 #semPasta[hidden]{display:none}
 #semPasta b{font-weight:600}
+
+/* ===== facelift da Medição RCT (v3) ===== */
+:root{--card:var(--sheet);--cardbd:var(--rule)}
+#cDet{background:var(--paper);min-height:100%;padding:14px 16px 40px}
+#cDet>.fc{background:var(--card);border:1px solid var(--cardbd);border-radius:10px;padding:14px 16px;margin:0 0 12px}
+#cDet>.fc .chips{margin:0}
+#cDet>.fc h3.sec{margin:0 0 10px!important;font-size:13px;font-weight:600;letter-spacing:.01em;text-transform:none}
+#cDet>.fc h3.sec::before{content:"";display:inline-block;width:4px;height:13px;background:var(--brand);border-radius:2px;margin-right:8px;vertical-align:-2px}
+#cDet>.fc .ta .lb{font-weight:600;color:var(--ink)}
+#cDet .ctop{margin-bottom:12px}
+.pmenu{position:relative;display:inline-block}
+#pMenu{position:absolute;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--cardbd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:4px;min-width:170px;z-index:50;display:flex;flex-direction:column}
+#pMenu[hidden]{display:none}
+#pMenu button{border:0;background:none;text-align:left;padding:9px 12px;border-radius:6px;min-height:36px}
+#pMenu button:hover,#pMenu button:focus-visible{background:var(--soft)}
+#pMenu .perigo{color:#C62828;border-top:1px solid var(--soft);border-radius:0 0 6px 6px;margin-top:4px}
+.r3>.c1>.cadd{border-top:0;border-bottom:1px solid var(--rule);padding:10px;background:var(--soft)}
+#cAddB{background:var(--brand);border-color:var(--brand);font-weight:700}
+#cAddB::before{content:"+ "}#cAddB{white-space:nowrap}#cDet>.fc .ta+h3.sec,#cDet>.fc .hint.kb+h3.sec{margin-top:16px!important}
+#cMini{display:none;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--rule);font-weight:600}
+#cMini button{margin-left:auto}
+.r3>.c1.mini #cMini{display:flex}
+.r3>.c1.mini .cf,.r3>.c1.mini .lstm,.r3>.c1.mini .cadd{display:none}
+@media (max-width:1100px){#cDet{padding:10px 10px 90px}#cDet>.fc{padding:12px}.r3>.c1{max-height:none}.r3>.c1.mini{flex:0 0 auto}}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px;box-shadow:0 0 0 5px rgba(255,255,255,.9)}
+@media (pointer:coarse){button,select,.tab{min-height:44px}input[type=checkbox]{width:22px;height:22px}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 <style id="online-extra">
 /* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
@@ -1421,15 +1448,15 @@ function rCx(c){
   rCxDet(c); rMatR(c) }
 function rCxDet(c){
   var det=$('#cDet'), x=cxPorId(UI.cSel), tinhaFoco=document.activeElement&&document.activeElement.id==='mBusca';
-  if(!x){ det.innerHTML='<div class="vazio"><b>Escolha ou crie uma caixa</b>Na lista à esquerda. Em baixo escreve os números das caixas (4, 5, 6) e carrega em Juntar.</div>'; return }
+  if(!x){ cxMini(null); det.innerHTML='<div class="vazio"><b>Escolha ou crie uma caixa</b>Na lista à esquerda. Em baixo escreve os números das caixas (4, 5, 6) e carrega em Juntar.</div>'; return }
   var ms=x.ms||[], grupos=[]; ST.caixas.forEach(function(y){ if(y.grupo&&grupos.indexOf(y.grupo)<0)grupos.push(y.grupo) });
   var campo=function(k,t,w,ph){ return '<label class="chipf"><span>'+t+'</span><input data-cf="'+k+'" value="'+esc(x[k]||'')+'" placeholder="'+(ph||'—')+'" style="width:'+w+'px"'+(k==='grupo'?' list="dlGr"':'')+'></label>' };
   var h='<datalist id="dlGr">'+grupos.map(function(g){ return '<option value="'+esc(g)+'">' }).join('')+'</datalist>';
-  h+='<div class="ctop"><h3>Caixa <span class="mono">'+esc(x.cx)+'</span></h3><div class="ctb"><button id="cxDup">Duplicar</button><button id="cxDel">Apagar</button></div></div>';
+  h+='<div class="ctop"><h3>Caixa <span class="mono">'+esc(x.cx)+'</span></h3><div class="ctb"><button id="cxSeg" title="Ir para a caixa seguinte">Seguinte ›</button><span class="pmenu"><button id="pMore" aria-haspopup="true" aria-expanded="false">Mais ▾</button><div id="pMenu" hidden><button id="cxDup">Duplicar</button><button id="cxDel" class="perigo">Apagar</button></div></span></div></div>';
   h+='<div class="chips">'+campo('cx','Nº *',70,'obrigatório')+campo('pk','PK',110,'198+386')+campo('poste','Poste',100,'198-19A')+campo('grupo','Grupo',120,'troço')+campo('obs','Obs.',200,'')+'</div>';
   h+='<div class="ta"><label class="lb">Procurar montagem por código ou designação</label><input id="mBusca" autocomplete="off" placeholder="103  ·  cabo atravessamento  ·  barra de terra"><div class="tal" id="mTa" hidden></div><div class="hint kb"><kbd>↑</kbd><kbd>↓</kbd> percorrer · <kbd>Enter</kbd> juntar · <kbd>Esc</kbd> limpar</div></div>';
   h+='<h3 class="sec">Montagens nesta caixa</h3>';
-  if(!ms.length)h+='<div class="vazio" style="padding:18px"><b>Sem montagens nesta caixa</b>Procura em cima e carrega Enter.</div>';
+  if(!ms.length)h+='<div class="vazio" style="padding:18px"><b>Sem montagens nesta caixa</b>Procura em cima e carrega Enter.<div style="margin-top:10px"><button id="cxCopia">Copiar da caixa anterior</button></div></div>';
   else h+='<div class="mlist">'+ms.map(function(m){
     var mm=ME.mont[codM(m.code)], bad=m.code&&!mm, q=qm(m), cp=cabosPrev(m.code,q), cabTxt='';
     if(m.ex){ var gm=cabosGasto(m.ex), ts={}; Object.keys(cp).forEach(function(t){ ts[t]=1 }); Object.keys(gm).forEach(function(t){ ts[t]=1 });
@@ -1439,7 +1466,7 @@ function rCxDet(c){
     return '<div class="ml'+(m.ex?' ex':'')+'"><input type="checkbox" class="ck" data-ck="'+m.id+'"'+(m.ex?' checked':'')+' title="Marcar como executada: a app pede o cabo gasto">'+'<div class="mi" data-pop="'+m.id+'" title="Ver materiais e desenho da montagem"><b class="mono">'+esc(m.code||'?')+'</b> '+(bad?'<span class="neg">não existe na base</span>':esc(mm?mm.nome:''))+(m.ex?' <small class="tg ok">executada '+esc(m.ex.data||'')+'</small>':'')+(cabTxt?'<small class="cab">'+cabTxt+'</small>':'')+'</div>'+
       '<div class="qt"><button data-qm="-1:'+m.id+'" title="Menos">−</button><input data-mf="qtd" data-m="'+m.id+'" value="'+esc(nin(m.qtd==null?1:m.qtd))+'" inputmode="decimal"><span class="un">'+esc(uniMont(m.code))+'</span><button data-qm="1:'+m.id+'" title="Mais">+</button></div><button class="x" data-md="'+m.id+'" title="Retirar montagem">✕</button></div>' }).join('')+'</div>';
   h+=exBloco(x);
-  det.innerHTML=h;
+  det.innerHTML=h; cxFace(x,det);
   if(tinhaFoco||UI.focaBusca){ var b=$('#mBusca'); if(b)b.focus(); UI.focaBusca=false } }
 function resolveCx(txt,exceto){ var t=sa(txt).trim(); if(!t)return null; var L=ST.caixas.filter(function(y){ return y.id!==exceto });
   return L.filter(function(y){ return sa(cxTxt(y))===t })[0]||L.filter(function(y){ return sa(y.cx)===t })[0]||L.filter(function(y){ return sa(y.pk)===t||sa(y.poste)===t })[0]||null }
@@ -1464,12 +1491,34 @@ async function editaCaixa(id){
   if(dup&&!(await sim('Já existe a caixa <b>'+esc(r.cx)+'</b> no grupo «'+esc(r.grupo||'sem grupo')+'». Criar na mesma?','Criar')))return editaCaixa(id);
   if(l){ Object.assign(l,r) } else { r.id=nid('c'); r.ms=[]; ST.caixas.push(r); UI.cSel=r.id }
   mudou(); render() }
+function expandeNomes(txt){ var out=[];
+  String(txt).split(/[,;\n\t]+/).map(function(s){ return s.trim() }).filter(Boolean).forEach(function(t){
+    var m=t.match(/^(.*?)(\d+)\s*(?:a|até|ate|\.\.+|–|—|->|>)\s*(.*?)(\d+)$/i);
+    if(m){ var pre=m[1], n1=m[2], pre2=m[3], n2=m[4], a=+n1, b=+n2, w=n1.length;
+      if((pre2===''||pre2===pre)&&b>=a&&b-a<=300){ for(var k=a;k<=b;k++)out.push(pre+String(k).padStart(w,'0')); return } }
+    out.push(t) }); return out }
+function cxMini(x){ var c1=document.querySelector('.r3>.c1'); if(!c1)return;
+  var m=!!x&&window.matchMedia('(max-width:1100px)').matches&&!UI.cAbre; c1.classList.toggle('mini',m);
+  var t=$('#cMiniT'); if(t)t.textContent=x?cxTxt(x):'' }
+function cxFace(x,det){ cxMini(x);
+  var ac=document.activeElement, kids=[].slice.call(det.children), cur=null, cards=[];
+  var card=function(){ var d=document.createElement('div'); d.className='fc'; cards.push(d); return d };
+  kids.forEach(function(k){ if(k.matches('datalist,.ctop'))return;
+    if(k.classList.contains('chips')||k.classList.contains('ta')||(k.matches('h3.sec')&&/Execu/.test(k.textContent)))cur=card();
+    if(!cur)cur=card(); cur.appendChild(k) });
+  cards.forEach(function(c){ det.appendChild(c) });
+  if(ac&&ac.id&&document.activeElement!==ac){ var n=document.getElementById(ac.id); if(n)try{ n.focus() }catch(e){} } }
+function cxCopia(x){ var i=ST.caixas.indexOf(x), p=null; for(var k=i-1;k>=0;k--){ if((ST.caixas[k].ms||[]).length){ p=ST.caixas[k]; break } }
+  if(!p){ toast('Não há nenhuma caixa anterior com montagens.'); return }
+  x.ms=p.ms.map(function(m){ return {id:nid('m'),code:m.code,qtd:m.qtd,ex:null} }); mudou(); render(); toast('Montagens copiadas da caixa '+p.cx+'.',2500) }
+function cxSeguinte(x){ var i=ST.caixas.indexOf(x), y=null; for(var k=i+1;k<ST.caixas.length;k++){ if(!UI.cGr||ST.caixas[k].grupo===UI.cGr){ y=ST.caixas[k]; break } }
+  if(!y){ toast('Esta é a última caixa.'); return } UI.cSel=y.id; UI.cAbre=false; UI.focaBusca=true; render() }
 function juntaCaixas(txt){
-  var nomes=String(txt).split(/[,;\n\t]+/).map(function(s){ return s.trim() }).filter(Boolean); if(!nomes.length)return;
+  var nomes=expandeNomes(txt); if(!nomes.length)return;
   var base=cxPorId(UI.cSel), grupo=UI.cGr||(base&&base.grupo)||'', n=0, dup=[], ult=null;
   nomes.forEach(function(nm){ if(ST.caixas.some(function(y){ return String(y.cx).toLowerCase()===nm.toLowerCase()&&(y.grupo||'')===grupo })){ dup.push(nm); return }
     ult={id:nid('c'),cx:nm,pk:'',poste:'',grupo:grupo,obs:'',ms:[]}; ST.caixas.push(ult); n++ });
-  if(ult)UI.cSel=ult.id; mudou(); render(); toast(n+' caixa'+(n===1?'':'s')+' criada'+(n===1?'':'s')+'.'+(dup.length?' Já existiam: '+dup.join(', ')+'.':'')); UI.focaBusca=true; if(ult)rCxDet(calcula()) }
+  if(ult){ UI.cSel=ult.id; UI.cAbre=false } mudou(); render(); toast(n+' caixa'+(n===1?'':'s')+' criada'+(n===1?'':'s')+'.'+(dup.length?' Já existiam: '+dup.join(', ')+'.':'')); UI.focaBusca=true; if(ult)rCxDet(calcula()) }
 function montDe(cx,id){ return (cx.ms||[]).filter(function(m){ return m.id===id })[0] }
 async function executaMont(cx,m){
   if(!m.code||!ME.mont[codM(m.code)]){ await diz('Esta montagem não tem um código válido da base. Corrija o código antes de a executar.'); return false }
@@ -1508,7 +1557,13 @@ function rMatR(c){
   $('#mN2').textContent=L.length+' artigos';
   $('#mBoxR').innerHTML=L.length?'<table class="mt"><thead><tr><th>Material</th><th class="num">Prev.</th><th class="num">Exec.</th></tr></thead><tbody>'+L.map(function(x){ return '<tr><td><span class="mono ip">'+esc(x.ip||'—')+'</span> '+esc(x.d)+'</td><td class="num">'+fmt(x.prev,2)+uu(x.u)+'</td><td class="num">'+fmt(x.ex,2)+uu(x.u)+'</td></tr>' }).join('')+'</tbody></table>':'<p class="hint" style="padding:14px">Nada a listar ainda.</p>' }
 (function(){
-  $('#cLista').addEventListener('click',function(e){ var b=e.target.closest('button[data-c]'); if(b){ UI.cSel=b.dataset.c; render() } });
+  var c1=document.querySelector('.r3>.c1'), ca=c1.querySelector('.cadd'), ch=c1.querySelector('.ch');
+  ch.parentNode.insertBefore(ca,ch.nextSibling); $('#cAdd').placeholder='4, 5, 6 ou 4 a 10'; $('#cAdd').title='Escreva um ou vários Nº separados por vírgula, ou um intervalo (4 a 10)';
+  var mb=document.createElement('div'); mb.id='cMini'; mb.innerHTML='<span id="cMiniT"></span><button id="cMuda" type="button">Mudar de caixa</button>'; ca.parentNode.insertBefore(mb,ca.nextSibling);
+  $('#cMuda').onclick=function(){ UI.cAbre=true; render() };
+  window.addEventListener('resize',function(){ cxMini(cxPorId(UI.cSel)) });
+  document.addEventListener('click',function(e){ var pm=$('#pMenu'); if(pm&&!pm.hidden&&!e.target.closest('.pmenu')){ pm.hidden=true; var pb=$('#pMore'); if(pb)pb.setAttribute('aria-expanded','false') } });
+  $('#cLista').addEventListener('click',function(e){ var b=e.target.closest('button[data-c]'); if(b){ UI.cSel=b.dataset.c; UI.cAbre=false; render() } });
   $('#cQ').addEventListener('input',function(){ UI.cQ=this.value; render() });
   $('#cGr').addEventListener('change',function(){ UI.cGr=this.value; render() });
   var add=function(){ var i=$('#cAdd'); if(i.value.trim()){ juntaCaixas(i.value); i.value=''; i.focus() } };
@@ -1535,6 +1590,9 @@ function rMatR(c){
       else { i.checked=true; sim('Desfazer a execução desta montagem? Perde-se o registo dos metros de cabo.','Desfazer').then(function(ok){ if(ok){ m2.ex=null; mudou() } render() }) } } });
   det.addEventListener('mousedown',function(e){ var b=e.target.closest('button[data-ta]'); if(b){ e.preventDefault(); var k=(UI.taL||[])[+b.dataset.ta]; if(k)juntaMont(k) } });
   det.addEventListener('click',async function(e){ var b=e.target.closest('button'); if(!b)return; var x=cxPorId(UI.cSel); if(!x)return;
+    if(b.id==='pMore'){ var pm=$('#pMenu'); pm.hidden=!pm.hidden; b.setAttribute('aria-expanded',String(!pm.hidden)); return }
+    if(b.id==='cxSeg'){ cxSeguinte(x); return }
+    if(b.id==='cxCopia'){ cxCopia(x); return }
     if(b.id==='cxDel'){ var nt=ST.cabos.filter(function(t){ return t.de===x.id||t.para===x.id }).length; if(await sim('Apagar a caixa <b>'+esc(x.cx)+'</b>, as suas '+(x.ms||[]).length+' montagens'+(nt?' e '+nt+' troços de cabo ligados a ela':'')+'?','Apagar')){ ST.caixas=ST.caixas.filter(function(y){ return y.id!==x.id }); ST.cabos=ST.cabos.filter(function(t){ return t.de!==x.id&&t.para!==x.id }); UI.cSel=''; mudou(); render() } return }
     if(b.id==='cxDup'){ var nv=await modal({titulo:'Duplicar a caixa '+x.cx,corpo:'<p>Copia as montagens (por executar) para uma caixa nova.</p><label>Nº da nova caixa</label><input type="text" id="dpN">',botoes:[{t:'Cancelar',v:null},{t:'Duplicar',p:true,v:function(c){ return c.querySelector('#dpN').value.trim() }}],cancela:null});
       if(!nv)return; var n2={id:nid('c'),cx:nv,pk:'',poste:'',grupo:x.grupo||'',obs:'',ms:(x.ms||[]).map(function(m){ return {id:nid('m'),code:m.code,qtd:m.qtd,ex:null} })}; ST.caixas.push(n2); UI.cSel=n2.id; mudou(); render(); return }
