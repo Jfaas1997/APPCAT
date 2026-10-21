@@ -592,6 +592,19 @@ body.obraAtiva .novaObra,body.obraAtiva #bLoadObra,body.obraAtiva [data-rm]{disp
 body.obraAtiva .tab[data-n="g"],body.obraAtiva .sgrp[data-n="g"]{display:none!important}
 .ctrSel{font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--rule);border-radius:3px;background:var(--sheet);color:var(--ink);max-width:150px}
 
+
+/* ===== cabeçalho responsivo (v47) ===== */
+header{flex-wrap:wrap;height:auto;min-height:58px;padding:6px 15px;row-gap:6px}
+#obraNome{min-width:120px;flex:1 1 150px}
+.stats{min-width:0;flex:0 1 auto}
+.tools{flex-wrap:wrap;margin-left:auto;row-gap:6px}
+@media (max-width:1500px){.stat{min-width:0;padding:2px 10px}}
+@media (max-width:1250px){.stats .stat:nth-child(4){display:none}}
+@media (max-width:1000px){.stats .stat:nth-child(n+3){display:none}}
+@media (max-width:760px){.stats{display:none}.tools{width:100%;margin-left:0;border-left:0;padding-left:0}}
+body.obraAtiva .ob.geral{display:none}
+.foot{flex-wrap:wrap}.foot>*{min-width:0}
+@media (max-width:760px){.foot{display:block;line-height:1.6;max-height:5.2em;overflow:auto}}
 </style>
 <style id="online-extra">
 /* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
@@ -679,7 +692,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Controlo de materiais</span><span class="sver">v46</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Controlo de materiais</span><span class="sver">v47</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp" data-n="g">Todas as obras</div>
     <button class="tab" data-v="gres" data-n="g"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>Resumo geral</span></button>
     <button class="tab" data-v="obr" data-n="g"><svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><span>Material</span></button>
@@ -8668,7 +8681,7 @@ window.nmLivro=function(p,nome){
 
 
 /* ===================== MATERIAIS ONLINE (v46 online): dados na base, obra vinda da Central online ===================== */
-NM.VERSAO='46 online'; NM.uid=null; NM.papel=null; NM.org=null; NM.versao=null; NM.soLeitura=false; NM.pronto=false; NM.carregando=false;
+NM.VERSAO='47 online'; NM.uid=null; NM.papel=null; NM.org=null; NM.versao=null; NM.soLeitura=false; NM.pronto=false; NM.carregando=false;
 var sb=supabase.createClient('https://dnllrbgzkgrerkybtjjl.supabase.co','sb_publishable_Hro5FepbHNEFu2_w5TbBNw_FaHywmj_',{auth:{persistSession:true,autoRefreshToken:true}});
 var NM_PAUSA_ON=12000, NM_HIST=[];
 
