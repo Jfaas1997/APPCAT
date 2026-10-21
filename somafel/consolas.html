@@ -803,12 +803,19 @@ function visiveis(){ return D.folhas.map(function(f,i){ return {f:f,i:i}; }).fil
 var nomeContrato=function(id){ var c=((D.obra&&D.obra.contratos)||[]).filter(function(x){ return x.id===id; })[0]; return c?c.nome:''; };
 function banner(){ var el=$('banner'); if(D.obra){ el.innerHTML=''; return; }
   el.innerHTML=(ctx.ultimaPasta?'<div class="banner"><span>Última obra: <b>'+esc(ctx.ultimaPasta)+'</b>.</span><button class="btn p" id="bb-reabrir">Reabrir</button></div>':'')+'<div class="banner rap"><span><b>Modo rápido.</b> Sem obra aberta: serve para cálculos e testes. Para guardar por estrutura e ligar ao centro de custo, abra a pasta da obra.</span><button class="btn" id="bb-pasta">Abrir pasta da obra…</button></div>'; $('bb-pasta').addEventListener('click',abrePasta); if($('bb-reabrir')) $('bb-reabrir').addEventListener('click',reabrePasta); }
+var ESTR_NOMES=null;
+function estrNomes(){ var dl=document.getElementById('dl-estr'); if(!dl){ dl=document.createElement('datalist'); dl.id='dl-estr'; document.body.appendChild(dl); }
+  var pinta=function(){ dl.innerHTML=(ESTR_NOMES||[]).map(function(n){ return '<option value="'+esc(n)+'">'; }).join(''); };
+  if(ESTR_NOMES){ pinta(); return; }
+  try{ if(typeof ON==='undefined'||!ON||!ON.obraId||typeof sb==='undefined') return;
+    sb.from('dados_apps').select('dados').eq('obra_id',ON.obraId).eq('app','medicao').maybeSingle().then(function(q){
+      var ps=(q.data&&q.data.dados&&q.data.dados.st&&q.data.dados.st.postes)||[]; ESTR_NOMES=ps.map(function(p){ return p.nome; }).filter(Boolean); pinta(); }); }catch(e){} }
 function desenhaObra(){
-  banner(); desenhaMeta(); var n=D.folhas.length, vs=visiveis();
+  estrNomes(); banner(); desenhaMeta(); var n=D.folhas.length, vs=visiveis();
   $('via-box').innerHTML=n?'<div class="via">'+viaSvg()+'</div>':'<div class="vazio"><b>A obra ainda não tem apoios</b>Calcule uma consola ou um pórtico e use «Enviar ao caderno».<div style="margin-top:12px"><button class="btn p" data-go="consola">Calcular uma consola</button> <button class="btn" data-go="portico">Calcular um pórtico</button> <button class="btn" data-go="rigido">Pórtico rígido</button></div></div>';
   $('cartas').innerHTML=vs.map(function(x){ var f=x.f, i=x.i, u=f.util!=null?' · '+f.util+' %':''; return '<article class="carta '+esc(f.estado)+'" id="c-'+f.id+'"><div class="mini">'+(f.svg||'')+'</div><div class="cb"><div class="tt"><b title="'+esc(f.titulo)+'">'+(i+1)+'. '+esc(f.titulo)+'</b><span class="tag '+esc(f.estado)+'">'+(ROTE[f.estado]||f.estado)+u+'</span></div>'
     +'<small>'+esc(f.subt)+(f.contrato?' <span class="ctag">'+esc(nomeContrato(f.contrato))+'</span>':'')+'</small>'
-    +'<input class="sel-estr" data-i="'+i+'" value="'+esc(f.estrutura||'')+'" placeholder="Estrutura (ex.: 198-27)" aria-label="Estrutura de '+esc(f.titulo)+'">'
+    +'<input class="sel-estr" data-i="'+i+'" value="'+esc(f.estrutura||'')+'" list="dl-estr" placeholder="Estrutura da Medição (ex.: 198-27)" aria-label="Estrutura de '+esc(f.titulo)+'">'
     +'<div class="ac"><button class="btn g" data-a="abrir" data-i="'+i+'">Abrir para editar</button><button class="btn g" data-a="sobe" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="Subir">↑</button><button class="btn g" data-a="desce" data-i="'+i+'"'+(i===n-1?' disabled':'')+' aria-label="Descer">↓</button><button class="btn g perigo" data-a="apaga" data-i="'+i+'">Retirar</button></div></div></article>'; }).join('')+(n&&!vs.length?'<div class="vazio" style="grid-column:1/-1">Não há apoios deste contrato.</div>':'');
   document.querySelectorAll('[data-go]').forEach(function(b){ b.addEventListener('click',function(){ vai(b.getAttribute('data-go')); }); });
   document.querySelectorAll('.via .apoio').forEach(function(g){ var f=function(){ var el=$('c-'+D.folhas[+g.getAttribute('data-i')].id); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.outline='3px solid var(--brand)'; setTimeout(function(){ el.style.outline=''; },1400); } };
