@@ -6,7 +6,7 @@
 <title>Medição de catenária · online</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="color-scheme" content="light dark">
-<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c');var __a=localStorage.getItem('aspeto');if(__a)document.documentElement.setAttribute('data-aspeto',__a)}catch(e){}</script>
+<script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c');if(localStorage.getItem('vista')==='linha')document.documentElement.setAttribute('data-vista','linha')}catch(e){}</script>
 <style>
 /* IBM Plex embutida: a app fica igual sem internet */
 @font-face {
@@ -726,112 +726,64 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 @media (pointer:coarse){button,select,.tab{min-height:44px}input[type=checkbox]{width:22px;height:22px}}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* ===== aspetos (v33): Caderno · Cianótipo · Sinal. Mesmas funções, outra pele ===== */
-:root[data-aspeto]{--sans:"Bahnschrift","DIN Alternate","DIN 1451 Std","Roboto Condensed","IBM Plex Sans",system-ui,sans-serif}
-:root[data-aspeto] body{font-family:var(--sans);letter-spacing:.005em}
-:root[data-aspeto] h2,:root[data-aspeto] h3,:root[data-aspeto] .sbrand .sname{font-family:var(--sans)}
-
-/* --- Caderno: folha de desenho, linha de tinta, régua de cotas --- */
-:root[data-aspeto="caderno"]{color-scheme:light;
- --paper:#E9ECEE;--sheet:#FBFCFC;--ink:#14181D;--muted:#4D5661;--rule:#14181D;--soft:#C9CFD4;--brand:#F9D115;--verd:#14181D;--verdbg:#FFF3B8;--verdbd:#14181D;
- --hdr:#FBFCFC;--strong:#14181D;--onstrong:#fff;--r:0px;--card:#FBFCFC;--cardbd:#14181D;
- --okbg:#E3F0DF;--okfg:#1F5A1B;--okbd:#1F5A1B;--redbg:#FBE5E3;--redfg:#8F1D18;--redbd:#8F1D18;--amberbg:#FFF0D0;--amberbd:#8A5A00;--hl:#FFF8CF}
-:root[data-aspeto="caderno"] header{border-bottom:3px solid #14181D;color:#14181D}
-:root[data-aspeto="caderno"] header .sep{background:#14181D}
-:root[data-aspeto="caderno"] #obraNome{color:#14181D;font-weight:700;font-size:17px}
-:root[data-aspeto="caderno"] .stat{border-left:1px solid #14181D;text-align:left}
-:root[data-aspeto="caderno"] .stat b{color:#14181D;font-family:var(--mono);font-weight:600}
-:root[data-aspeto="caderno"] .stat span{color:#4D5661}
-:root[data-aspeto="caderno"] .tools button{color:#14181D;border:1.5px solid #14181D;background:#FBFCFC}
-:root[data-aspeto="caderno"] .tools button:hover{background:#14181D;color:#fff}
-:root[data-aspeto="caderno"] .tools button#bSave{background:#F9D115;color:#14181D;border-color:#14181D;font-weight:700}
-:root[data-aspeto="caderno"] .dirty{color:#8F1D18;font-weight:600}
-:root[data-aspeto="caderno"] #loteSel,:root[data-aspeto="caderno"] #obraNome{background:#fff;color:#14181D;border:1.5px solid #14181D}
-:root[data-aspeto="caderno"] #side{--sbg:#14181D;--sink:#C9CFD4;--shov:#262C33;--srule:#3A424B;--son:#F9D115}
-:root[data-aspeto="caderno"] #side .tab.on{color:#14181D;font-weight:700}
-:root[data-aspeto="caderno"] #side .tab.on .ic{color:#14181D}
-:root[data-aspeto="caderno"] .pane{border-color:#14181D}
-:root[data-aspeto="caderno"] .ph{border-bottom:2px solid #14181D;background:#FBFCFC}
-:root[data-aspeto="caderno"] .ph h2{font-size:13px;font-weight:700}
-:root[data-aspeto="caderno"] button,:root[data-aspeto="caderno"] input,:root[data-aspeto="caderno"] select{border:1.5px solid #14181D;border-radius:0}
-:root[data-aspeto="caderno"] #vLista .pad{background:#E9ECEE;background-image:linear-gradient(#D6DADD 1px,transparent 1px),linear-gradient(90deg,#D6DADD 1px,transparent 1px);background-size:24px 24px}
-:root[data-aspeto="caderno"] #vLista .pad>.entry,:root[data-aspeto="caderno"] #vLista .pad>.sect,:root[data-aspeto="caderno"] #vLista .pad>#estrResumo{border:1.5px solid #14181D;border-radius:0;box-shadow:4px 4px 0 #14181D;background:#FBFCFC}
-/* cota: cada título de bloco fica com uma linha de cota com tiques */
-:root[data-aspeto="caderno"] .sect h3,:root[data-aspeto="caderno"] .exHead h3,:root[data-aspeto="caderno"] .entry label{display:flex;align-items:center;gap:10px;font-weight:700}
-:root[data-aspeto="caderno"] .sect h3::after,:root[data-aspeto="caderno"] .entry label::after{content:"";flex:1;height:9px;border-left:1.5px solid #14181D;border-right:1.5px solid #14181D;background:linear-gradient(#14181D,#14181D) center/100% 1px no-repeat}
-:root[data-aspeto="caderno"] .exHead h3::after{display:none}
-:root[data-aspeto="caderno"] #vLista .pad>.sect:not(#exSect) h3::before{display:none}
-:root[data-aspeto="caderno"] #q{border-width:2px;border-radius:0;background:#fff}
-:root[data-aspeto="caderno"] .poste.sel{background:#FFF3B8;box-shadow:inset 4px 0 0 #14181D}
-:root[data-aspeto="caderno"] table th{border-bottom:2px solid #14181D;color:#14181D;font-weight:700}
-:root[data-aspeto="caderno"] .sub.on,:root[data-aspeto="caderno"] .sub2.on{background:#14181D;color:#fff;border-color:#14181D}
-:root[data-aspeto="caderno"] #pMenu{border:1.5px solid #14181D;border-radius:0;box-shadow:4px 4px 0 #14181D}
-
-/* cabeçalho claro: estado de gravação legível */
-:root[data-aspeto="caderno"] #gst,:root[data-aspeto="sinal"] #gst{color:#14181D;font-weight:600}
-:root[data-aspeto="caderno"] .dirty,:root[data-aspeto="sinal"] .dirty{color:#9A0E08!important;font-weight:700}
-:root[data-aspeto="sinal"] #bRedo:not(:disabled),:root[data-aspeto="sinal"] #bUndo:not(:disabled){background:#fff;color:#111}
-:root[data-aspeto="sinal"] .tools button:disabled,:root[data-aspeto="caderno"] .tools button:disabled{opacity:.45;color:#111;background:#fff}
-/* --- Cianótipo: a obra como prancheta de projeto --- */
-:root[data-aspeto="cian"]{color-scheme:dark;
- --paper:#0B2A4F;--sheet:#0F355F;--ink:#EAF3FF;--muted:#A9C4E4;--rule:#2C5C93;--soft:#1B4672;--brand:#FFD23F;--verd:#FFD23F;--verdbg:#1B4B7E;--verdbd:#FFD23F;
- --hdr:#08203D;--strong:#EAF3FF;--onstrong:#08203D;--r:2px;--card:#0F355F;--cardbd:#3F76B0;
- --okbg:#12493D;--okfg:#8FE3BE;--okbd:#2C8B6F;--redbg:#5A2230;--redfg:#FFB3B3;--redbd:#A54B5B;--amberbg:#4B3F12;--amberbd:#9A8230;--amber:#FFD23F;--red:#FF9C9C;--hl:#173F6B;--hlA:#1B4B7E;--gold:#FFD23F}
-:root[data-aspeto="cian"] body{background:#0B2A4F}
-:root[data-aspeto="cian"] header{border-bottom:1px solid #3F76B0}
-:root[data-aspeto="cian"] #side{--sbg:#08203D;--sink:#9FBCE0;--shov:#12355D;--srule:#254E7F;--son:rgba(255,210,63,.16)}
-:root[data-aspeto="cian"] .pane,:root[data-aspeto="cian"] .ph{border-color:#2C5C93}
-:root[data-aspeto="cian"] .ph{background:#0D3158}
-:root[data-aspeto="cian"] input,:root[data-aspeto="cian"] select{background:#0B2A4F;color:#EAF3FF;border-color:#3F76B0}
-:root[data-aspeto="cian"] button{background:#12406F;color:#EAF3FF;border-color:#3F76B0}
-:root[data-aspeto="cian"] button:hover{border-color:#FFD23F;color:#FFD23F}
-:root[data-aspeto="cian"] .tools button#bSave{background:#FFD23F;color:#08203D;border-color:#FFD23F}
-:root[data-aspeto="cian"] #vLista .pad{background:#0B2A4F;background-image:linear-gradient(rgba(120,170,225,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(120,170,225,.14) 1px,transparent 1px);background-size:20px 20px}
-:root[data-aspeto="cian"] #vLista .pad>.entry,:root[data-aspeto="cian"] #vLista .pad>.sect,:root[data-aspeto="cian"] #vLista .pad>#estrResumo{background:rgba(11,42,79,.92);border:1px solid #5E92C9;border-radius:2px;box-shadow:none}
-:root[data-aspeto="cian"] .sect h3,:root[data-aspeto="cian"] .entry label{color:#FFD23F;font-weight:600;letter-spacing:.04em}
-:root[data-aspeto="cian"] #q{background:#08203D;border-color:#FFD23F;color:#fff}
-:root[data-aspeto="cian"] .poste.sel{background:#1B4B7E;box-shadow:inset 3px 0 0 #FFD23F}
-:root[data-aspeto="cian"] #pMenu{background:#0F355F;border-color:#5E92C9}
-:root[data-aspeto="cian"] table th{color:#A9C4E4;border-bottom:1px solid #5E92C9}
-
-/* --- Sinal: chapa de sinalização para o trabalho de campo --- */
-:root[data-aspeto="sinal"]{color-scheme:light;
- --paper:#F2F2EF;--sheet:#FFFFFF;--ink:#111111;--muted:#444B53;--rule:#111111;--soft:#D4D4CF;--brand:#FFD400;--verd:#111111;--verdbg:#FFE766;--verdbd:#111111;
- --hdr:#FFD400;--strong:#111111;--onstrong:#FFD400;--r:10px;--card:#FFFFFF;--cardbd:#111111;
- --okbg:#D6F2D3;--okfg:#0E5A0E;--okbd:#0E5A0E;--redbg:#FFD9D6;--redfg:#9A0E08;--redbd:#9A0E08;--amberbg:#FFE9B3;--amberbd:#8A5A00}
-:root[data-aspeto="sinal"] body{font-size:15px}
-:root[data-aspeto="sinal"] header{background:#FFD400;color:#111;border-bottom:4px solid #111}
-:root[data-aspeto="sinal"] header .sep{background:#111}
-:root[data-aspeto="sinal"] #obraNome{color:#111;font-weight:800;font-size:18px}
-:root[data-aspeto="sinal"] #loteSel{background:#fff;color:#111;border:2px solid #111}
-:root[data-aspeto="sinal"] .stat{border-left:2px solid #111}
-:root[data-aspeto="sinal"] .stat b{color:#111;font-weight:700}
-:root[data-aspeto="sinal"] .stat span{color:#111}
-:root[data-aspeto="sinal"] .tools button{background:#fff;color:#111;border:2px solid #111;font-weight:600}
-:root[data-aspeto="sinal"] .tools button:hover{background:#111;color:#FFD400}
-:root[data-aspeto="sinal"] .tools button#bSave{background:#111;color:#FFD400;border-color:#111}
-:root[data-aspeto="sinal"] .dirty{color:#9A0E08;font-weight:700}
-:root[data-aspeto="sinal"] #side{--sbg:#111111;--sink:#E6E6E1;--shov:#2B2B2B;--srule:#3A3A3A;--son:#FFD400}
-:root[data-aspeto="sinal"] #side .tab{font-weight:600;padding:11px 12px;border-radius:8px}
-:root[data-aspeto="sinal"] #side .tab.on{color:#111;font-weight:800}
-:root[data-aspeto="sinal"] #side .tab.on .ic{color:#111}
-:root[data-aspeto="sinal"] .ph{background:#111;border-bottom:0}
-:root[data-aspeto="sinal"] .ph h2,:root[data-aspeto="sinal"] .ph .n,:root[data-aspeto="sinal"] .ph .nsel{color:#FFD400}
-:root[data-aspeto="sinal"] .ph .colapsaBtn{color:#FFD400}
-:root[data-aspeto="sinal"] .pane{border-color:#111}
-:root[data-aspeto="sinal"] button,:root[data-aspeto="sinal"] input,:root[data-aspeto="sinal"] select{border:2px solid #111;border-radius:8px}
-:root[data-aspeto="sinal"] button{min-height:36px;font-weight:600}
-:root[data-aspeto="sinal"] #vLista .pad{background:#F2F2EF}
-:root[data-aspeto="sinal"] #vLista .pad>.entry,:root[data-aspeto="sinal"] #vLista .pad>.sect,:root[data-aspeto="sinal"] #vLista .pad>#estrResumo{border:3px solid #111;border-radius:14px;box-shadow:none;padding:16px 18px}
-:root[data-aspeto="sinal"] .entry label,:root[data-aspeto="sinal"] .sect h3,:root[data-aspeto="sinal"] .exHead h3{font-size:15px;font-weight:800}
-:root[data-aspeto="sinal"] #vLista .pad>.sect:not(#exSect) h3::before{width:14px;height:14px;border-radius:50%;background:#FFD400;border:2px solid #111;vertical-align:-2px}
-:root[data-aspeto="sinal"] #q{border:3px solid #111;border-radius:12px;font-size:18px;padding:13px 14px}
-:root[data-aspeto="sinal"] #q:focus{box-shadow:0 0 0 5px #FFD400}
-:root[data-aspeto="sinal"] .poste.sel{background:#FFE766;box-shadow:inset 6px 0 0 #111;font-weight:700}
-:root[data-aspeto="sinal"] table th{border-bottom:3px solid #111;color:#111;font-weight:800}
-:root[data-aspeto="sinal"] .sub.on,:root[data-aspeto="sinal"] .sub2.on{background:#111;color:#FFD400;border-color:#111}
-:root[data-aspeto="sinal"] #pMenu{border:3px solid #111;border-radius:12px}
-:root[data-aspeto="sinal"] .tools button:focus-visible,:root[data-aspeto] button:focus-visible{outline:3px solid #1d4ed8}
+/* ===== Vista "Linha" (v34): a obra como linha de catenária ===== */
+#trilho{display:none}
+:root[data-vista="linha"] #trilho{display:block}
+:root[data-vista="linha"] body.vSemTrilho #trilho{display:none}
+:root[data-vista="linha"] main{grid-template-columns:var(--sw) minmax(0,1fr) 372px;grid-template-rows:auto minmax(0,1fr)}
+:root[data-vista="linha"] main #side{grid-row:1/3;grid-column:1}
+:root[data-vista="linha"] #trilho{grid-column:2/-1;grid-row:1}
+:root[data-vista="linha"] #painelEstruturas{display:none}
+:root[data-vista="linha"] main>section.pane:nth-of-type(2){grid-column:2;grid-row:2}
+:root[data-vista="linha"] main>section.pane:nth-of-type(3){grid-column:3;grid-row:2}
+:root[data-vista="linha"] body.vSemTrilho main{grid-template-rows:minmax(0,1fr)}
+:root[data-vista="linha"] body.vSemTrilho main>section.pane:nth-of-type(2){grid-row:1}
+:root[data-vista="linha"] body.vSemTrilho main>section.pane:nth-of-type(3){grid-row:1}
+#trilho{background:linear-gradient(#10151B,#18202A);color:#DDE5EE;border-bottom:1px solid #000;position:relative;min-width:0}
+.tlBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px 0}
+.tlBar h2{margin:0;font-size:13px;font-weight:600;color:#fff;letter-spacing:.02em}
+.tlBar .n{font-family:var(--mono);font-size:12px;color:#8FA0B3}
+.tlBar input,.tlBar select{background:#0C1116;color:#EAF0F7;border:1px solid #2E3944;border-radius:999px;padding:6px 13px;font-size:13px}
+.tlBar input{width:190px}
+.tlBar button{background:#F9D115;color:#14181D;border:0;border-radius:999px;padding:6px 14px;font-weight:600}
+.tlBar button.ghost{background:transparent;color:#DDE5EE;border:1px solid #2E3944;font-weight:400}
+.tlBar .sp{flex:1}
+.tlAdd{display:none;gap:6px;align-items:center}
+.tlAdd.on{display:flex}
+.tlAdd input{width:150px}
+#tlScroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#3A4654 transparent;cursor:grab;scroll-behavior:smooth;outline:none}
+#tlScroll.arr{cursor:grabbing;scroll-behavior:auto}
+#tlSvg{display:block;height:176px}
+#tlSvg text{font-family:var(--sans);fill:#9FB0C3;font-size:11.5px;text-anchor:middle;pointer-events:none}
+#tlSvg .mt{cursor:pointer;outline:none}
+#tlSvg .mt .pole{stroke:#7F8FA1;stroke-width:2.5;stroke-linecap:round;transition:stroke .2s}
+#tlSvg .mt .arm{stroke:#7F8FA1;stroke-width:2.5;stroke-linecap:round}
+#tlSvg .mt .hd{fill:#10151B;stroke:#7F8FA1;stroke-width:2.2;transition:all .2s}
+#tlSvg .mt.c1 .hd{fill:#F9D115;stroke:#F9D115}
+#tlSvg .mt.cp .hd{fill:#F9D115;stroke:#4CC38A;stroke-width:3.5}
+#tlSvg .mt.cf .hd{fill:#4CC38A;stroke:#4CC38A}
+#tlSvg .mt.cx .hd{fill:#F26B5E;stroke:#F26B5E}
+#tlSvg .mt:hover .pole,#tlSvg .mt:focus-visible .pole{stroke:#fff}
+#tlSvg .mt:hover .hd,#tlSvg .mt:focus-visible .hd{stroke:#fff}
+#tlSvg .mt .nm{fill:#B9C7D6;font-size:12px}
+#tlSvg .mt .qt{fill:#10151B;font-weight:700;font-size:10.5px}
+#tlSvg .mt .halo{fill:none;stroke:#F9D115;stroke-width:2;opacity:0}
+#tlSvg .mt.sel .pole{stroke:#F9D115;stroke-width:3.5}
+#tlSvg .mt.sel .arm{stroke:#F9D115}
+#tlSvg .mt.sel .nm{fill:#F9D115;font-size:14px;font-weight:700}
+#tlSvg .mt.sel .halo{opacity:1;animation:tlPulso .9s ease-out 1}
+#tlSvg .mt.cresce{animation:tlCresce .55s cubic-bezier(.2,.8,.2,1) both;transform-box:fill-box;transform-origin:50% 100%}
+#tlSvg .wire{fill:none;stroke:#AEBCCB;stroke-width:1.4;opacity:.8}
+#tlSvg .wire2{fill:none;stroke:#5E6E80;stroke-width:1;stroke-dasharray:3 4}
+#tlSvg .rail{stroke:#6D7B8A;stroke-width:2}
+#tlSvg .slp{stroke:#2B3641;stroke-width:3}
+#tlSvg .gp{fill:#6F8197;font-size:11px;text-anchor:start;font-weight:600}
+#tlSvg .gl{stroke:#2E3944;stroke-dasharray:2 5}
+#tlSvg .vz{fill:#566678;font-size:12px}
+@keyframes tlPulso{from{r:7;opacity:1}to{r:22;opacity:0}}
+@keyframes tlCresce{from{transform:scaleY(.15);opacity:0}to{transform:scaleY(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){#tlSvg .mt.sel .halo{animation:none}#tlSvg .mt.cresce{animation:none}#tlScroll{scroll-behavior:auto}}
+@media (max-width:1180px){:root[data-vista="linha"] main{display:block}#tlSvg{height:150px}.tlBar input{width:140px}}
 </style>
 </head>
 <body>
@@ -881,7 +833,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v33</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v34</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp">Medição</div>
     <button class="tab on" data-v="lista"><svg class="ic" aria-hidden="true"><use href="#i-struct"/></svg><span>Estrutura</span></button>
     <button class="tab" data-v="grelha"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span>Grelha da obra</span></button>
@@ -890,7 +842,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
     <button class="tab" data-v="base"><svg class="ic" aria-hidden="true"><use href="#i-db"/></svg><span>Base de dados</span></button>
     <div class="sgrp">Execução</div>
     <button class="tab" data-v="exec" title="Listas do executado, registo em massa e versões do projeto"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Execução</span></button>
-    <div class="sfoot"><button id="bCmd" class="tema" title="Procurar (Ctrl+K)"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="tl">Procurar</span><kbd>Ctrl K</kbd></button><button id="bAspeto" class="tema" type="button" title="Mudar o aspeto da aplicação" aria-label="Mudar o aspeto"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span class="tl">Aspeto: atual</span></button><button id="bTema" class="tema" title="Tema: automático, escuro ou claro"><svg class="ic" aria-hidden="true"><use href="#i-auto"/></svg><span class="tl">Tema</span></button></div>
+    <div class="sfoot"><button id="bCmd" class="tema" title="Procurar (Ctrl+K)"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="tl">Procurar</span><kbd>Ctrl K</kbd></button><button id="bVista" class="tema" type="button" title="Mudar a vista: clássica ou linha da obra" aria-label="Mudar a vista"><svg class="ic" aria-hidden="true"><use href="#i-span"/></svg><span class="tl">Vista: clássica</span></button><button id="bTema" class="tema" title="Tema: automático, escuro ou claro"><svg class="ic" aria-hidden="true"><use href="#i-auto"/></svg><span class="tl">Tema</span></button></div>
   </nav>
   <section class="pane" id="painelEstruturas" aria-label="Estruturas">
     <div class="ph"><button id="bColapsa" class="colapsaBtn" title="Esconder a lista de estruturas">«</button><h2>Estruturas</h2><span class="n" id="nPost">0</span><span id="nSel" class="nsel"></span><button id="bMuda" type="button" class="muda" hidden>Mudar</button></div>
@@ -7121,11 +7073,104 @@ window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="
 })();
 </script>
 <script>
+/* v34: vista "Linha" — cada estrutura é um poste na linha; clicar escolhe-a */
 (function(){
- const N=[['','atual'],['caderno','Caderno'],['cian','Cianótipo'],['sinal','Sinal']],b=document.getElementById('bAspeto');
- const ler=()=>{let a='';try{a=localStorage.getItem('aspeto')||''}catch(e){}return N.some(n=>n[0]===a)?a:''};
- const pinta=()=>{const a=ler(),r=document.documentElement;a?r.setAttribute('data-aspeto',a):r.removeAttribute('data-aspeto');b.querySelector('.tl').textContent='Aspeto: '+N.find(n=>n[0]===a)[1]};
- b.addEventListener('click',()=>{const i=(N.findIndex(n=>n[0]===ler())+1)%N.length;try{N[i][0]?localStorage.setItem('aspeto',N[i][0]):localStorage.removeItem('aspeto')}catch(e){}pinta()});
+ const $=s=>document.querySelector(s),NS='http://www.w3.org/2000/svg';
+ const root=document.documentElement;
+ const main=document.querySelector('main');
+ const tl=document.createElement('div');tl.id='trilho';tl.setAttribute('role','region');tl.setAttribute('aria-label','Linha da obra');
+ tl.innerHTML='<div class="tlBar"><h2>Linha da obra</h2><span class="n" id="tlN"></span><span class="sp"></span>'
+  +'<input id="tlQ" type="search" placeholder="Procurar estrutura…" aria-label="Procurar estrutura">'
+  +'<select id="tlG" aria-label="Agrupar por"><option value="troco">por troço</option><option value="via">por via</option></select>'
+  +'<span class="tlAdd" id="tlAdd"><input id="tlNovo" placeholder="296-38, 296-39…" aria-label="Nome das novas estruturas"><button id="tlOk" type="button">Juntar</button></span>'
+  +'<button id="tlMais" type="button" class="ghost" aria-expanded="false">+ Estrutura</button></div>'
+  +'<div id="tlScroll" tabindex="0" role="group" aria-label="Estruturas da obra. Setas esquerda e direita para mudar."><svg id="tlSvg" role="list"></svg></div>';
+ main.insertBefore(tl,main.firstChild.nextSibling?main.firstChild:null);
+ /* o trilho vem logo depois do menu lateral */
+ const side=document.getElementById('side');side.after(tl);
+ const svg=$('#tlSvg'),sc=$('#tlScroll');
+ const el=(n,a,p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+ const H=176,YR=H-62,YT=40,SP=78,GAP=46,PAD=40;
+ let primeira=true,ultimaSel=null;
+ function estado(p){
+  const n=p.itens.reduce((s,i)=>s+i.qtd,0);
+  if(!n)return {c:'c0',n:0};
+  try{if((st.exec||[]).length){const s=estadoPoste(p);if(s.exc)return {c:'cx',n};if(s.tot&&s.fe>=s.tot-1e-9)return {c:'cf',n};if(s.fe>0)return {c:'cp',n}}}catch(e){}
+  return {c:'c1',n}}
+ function desenha(){
+  if(root.getAttribute('data-vista')!=='linha')return;
+  const gs=grupos(),tot=st.postes.length,vis=visiveis().length;
+  $('#tlN').textContent=vis+(vis!==tot?' de '+tot:'')+' estruturas';
+  const nPos=gs.reduce((s,g)=>s+g[1].length,0);
+  const W=Math.max(sc.clientWidth,PAD*2+nPos*SP+Math.max(0,gs.length-1)*GAP);
+  svg.setAttribute('width',W);svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.textContent='';
+  if(!nPos){el('text',{x:W/2,y:H/2,class:'vz'}).textContent=tot?'Nenhuma estrutura corresponde à pesquisa.':'Ainda sem estruturas. Use «+ Estrutura» para juntar os primeiros postes.';
+    el('line',{x1:0,x2:W,y1:YR,y2:YR,class:'rail'});el('line',{x1:0,x2:W,y1:YR+4,y2:YR+4,class:'rail'});return}
+  /* via */
+  el('line',{x1:0,x2:W,y1:YR,y2:YR,class:'rail'});el('line',{x1:0,x2:W,y1:YR+5,y2:YR+5,class:'rail'});
+  for(let x=6;x<W;x+=14)el('line',{x1:x,x2:x,y1:YR-2,y2:YR+7,class:'slp'});
+  let x=PAD,i=0;const gTopo=[];
+  gs.forEach(([t,ps],gi)=>{
+   const xs=ps.map((p,k)=>x+k*SP+SP/2);
+   if(gi>0){el('line',{x1:x-GAP/2,x2:x-GAP/2,y1:14,y2:H-8,class:'gl'})}
+   el('text',{x:x-8,y:22,class:'gp'}).textContent=(rotuloGrupo()==='via'?'Via ':'Troço ')+t+' · '+ps.length;
+   /* fio de contacto entre postes vizinhos */
+   for(let k=0;k<ps.length-1;k++){const a=xs[k],b=xs[k+1],m=(a+b)/2;
+     el('path',{d:'M'+a+','+(YT+6)+' Q'+m+','+(YT+22)+' '+b+','+(YT+6),class:'wire'});
+     el('path',{d:'M'+a+','+(YT-6)+' Q'+m+','+(YT+4)+' '+b+','+(YT-6),class:'wire2'})}
+   ps.forEach((p,k)=>{
+    const cx=xs[k],e=estado(p),g=el('g',{class:'mt '+e.c+(p.id===st.sel?' sel':'')+(primeira?' cresce':''),'data-id':p.id,tabindex:'0',role:'listitem','aria-label':p.nome+(e.n?', '+e.n+' montagens':', sem montagens')+(p.id===st.sel?', escolhida':'')});
+    if(primeira)g.style.animationDelay=Math.min(i*28,900)+'ms';
+    el('line',{x1:cx,x2:cx,y1:YR,y2:YT,class:'pole'},g);
+    el('line',{x1:cx-13,x2:cx+13,y1:YT+6,y2:YT+6,class:'arm'},g);
+    el('circle',{cx:cx,cy:YT,r:p.id===st.sel?9:7,class:'halo'},g);
+    el('circle',{cx:cx,cy:YT-1,r:p.id===st.sel?9:7,class:'hd'},g);
+    if(e.n)el('text',{x:cx,y:YT+2.6,class:'qt'},g).textContent=e.n>99?'99+':e.n;
+    el('rect',{x:cx-SP/2+4,y:4,width:SP-8,height:H-8,fill:'transparent'},g);
+    el('text',{x:cx,y:H-14,class:'nm'},g).textContent=p.nome;
+    const t=el('title',{},g);t.textContent=p.nome+(e.n?' · '+e.n+' montagens':' · sem montagens');
+    i++});
+   x+=ps.length*SP+GAP;
+  });
+  primeira=false;
+  const s=svg.querySelector('.mt.sel');
+  if(s&&st.sel!==ultimaSel){const b=s.getBBox(),alvo=b.x+b.width/2-sc.clientWidth/2;sc.scrollTo({left:Math.max(0,alvo)})}
+  ultimaSel=st.sel;
+ }
+ function escolhe(id){st.sel=id;despiece=null;rAll();if(typeof vista!=='undefined'&&vista==='lista'){const q=$('#q');q&&q.focus({preventScroll:true})}}
+ svg.addEventListener('click',e=>{const g=e.target.closest('.mt');if(g&&!arrasto)escolhe(+g.dataset.id)});
+ svg.addEventListener('keydown',e=>{const g=e.target.closest('.mt');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();escolhe(+g.dataset.id)}});
+ sc.addEventListener('keydown',e=>{
+  const ids=[...svg.querySelectorAll('.mt')].map(g=>+g.dataset.id);if(!ids.length)return;
+  const i=Math.max(0,ids.indexOf(st.sel));let j=null;
+  if(e.key==='ArrowRight')j=Math.min(ids.length-1,i+1);else if(e.key==='ArrowLeft')j=Math.max(0,i-1);else if(e.key==='Home')j=0;else if(e.key==='End')j=ids.length-1;
+  if(j!==null&&e.target===sc){e.preventDefault();escolhe(ids[j])}
+  else if(j!==null&&e.target.closest('.mt')){e.preventDefault();escolhe(ids[j]);setTimeout(()=>{const g=svg.querySelector('.mt.sel');g&&g.focus({preventScroll:true})},30)}});
+ /* roda do rato e arrastar para correr a linha */
+ sc.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&sc.scrollWidth>sc.clientWidth){e.preventDefault();sc.classList.add('arr');sc.scrollLeft+=e.deltaY;clearTimeout(sc._t);sc._t=setTimeout(()=>sc.classList.remove('arr'),120)}},{passive:false});
+ let ax=null,sl=0,arrasto=false;
+ sc.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0){ax=e.clientX;sl=sc.scrollLeft;arrasto=false}});
+ window.addEventListener('pointermove',e=>{if(ax===null)return;const d=e.clientX-ax;if(Math.abs(d)>5){arrasto=true;sc.classList.add('arr');sc.scrollLeft=sl-d}});
+ window.addEventListener('pointerup',()=>{if(ax!==null){ax=null;sc.classList.remove('arr');setTimeout(()=>arrasto=false,0)}});
+ /* procurar, agrupar e juntar usam os campos de sempre */
+ $('#tlQ').addEventListener('input',e=>{$('#fPoste').value=e.target.value;$('#fPoste').dispatchEvent(new Event('input',{bubbles:true}));desenha()});
+ $('#tlG').addEventListener('change',e=>{const a=$('#agrup');a.value=e.target.value;a.dispatchEvent(new Event('change',{bubbles:true}));desenha()});
+ const add=$('#tlAdd'),mais=$('#tlMais');
+ mais.onclick=()=>{const ab=!add.classList.contains('on');add.classList.toggle('on',ab);mais.setAttribute('aria-expanded',String(ab));mais.textContent=ab?'Fechar':'+ Estrutura';if(ab)$('#tlNovo').focus()};
+ const juntar=()=>{const v=$('#tlNovo').value.trim();if(!v)return;$('#novoPoste').value=v;$('#bAddPoste').click();$('#tlNovo').value='';add.classList.remove('on');mais.setAttribute('aria-expanded','false');mais.textContent='+ Estrutura';setTimeout(desenha,50)};
+ $('#tlOk').onclick=juntar;$('#tlNovo').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();juntar()}if(e.key==='Escape')mais.click()});
+ /* esconde a linha nos separadores que não trabalham sobre uma estrutura */
+ const marca=()=>{const on=document.querySelector('#side .tab.on'),v=on&&on.dataset.v;document.body.classList.toggle('vSemTrilho',!(v==='lista'||v==='grelha'||v==='lanco'));setTimeout(desenha,0)};
+ new MutationObserver(marca).observe(side,{subtree:true,attributes:true,attributeFilter:['class']});
+ /* refresca com a aplicação */
+ const wrap=n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(){const r=f.apply(this,arguments);try{desenha()}catch(e){console.error(e)}return r}};
+ wrap('rAll');wrap('rPostes');
+ window.addEventListener('resize',()=>{clearTimeout(window.__tlr);window.__tlr=setTimeout(desenha,120)});
+ /* seletor de vista */
+ const b=document.getElementById('bVista');
+ const ler=()=>{let a='';try{a=localStorage.getItem('vista')||''}catch(e){}return a==='linha'?'linha':''};
+ const pinta=()=>{const a=ler();a?root.setAttribute('data-vista',a):root.removeAttribute('data-vista');b.querySelector('.tl').textContent='Vista: '+(a?'linha':'clássica');marca()};
+ b.addEventListener('click',()=>{try{ler()?localStorage.removeItem('vista'):localStorage.setItem('vista','linha')}catch(e){}primeira=true;ultimaSel=null;pinta()});
  pinta();
 })();
 </script>
