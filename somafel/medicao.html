@@ -783,6 +783,9 @@ html[data-modo=dim] .nxSw{display:none}
 html[data-modo=dim] #bDup,html[data-modo=dim] #bRen,html[data-modo=dim] #bDelP{display:none}
 html[data-modo=dim] #pAct{display:none}
 html[data-modo=dim] #vLista .pad::before{content:"As estruturas e as montagens vêm da Medição, só para leitura. Aqui acrescenta as cotas, os dados do poste e a verificação.";display:block;margin:0 0 12px;padding:10px 14px;border-radius:8px;background:var(--verdbg);border:1px solid var(--verdbd);font-size:13px}
+html[data-modo=dim] .dimF{list-style:none;margin:0;padding:0}html[data-modo=dim] .dimF li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--rule)}html[data-modo=dim] .dimE{margin-left:auto;font-weight:600}
+html[data-modo=dim] .dimJ{display:flex;gap:12px;align-items:center;margin:8px 0;padding:8px 12px;border-radius:8px;background:var(--verdbg);border:1px solid var(--verdbd)}html[data-modo=dim] .dimJ button{margin-left:auto;background:#F9D115;color:#2B3038;border:0;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}
+html:not([data-modo=dim]) #dimFolhas{display:none}
 </style>
 </head>
 <body>
@@ -7205,13 +7208,13 @@ window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="
  NM.medIds=new Set();NM.medVer=null;
  nmServidor=async function(){
   const f=a=>sb.from('dados_apps').select('dados,versao,atualizado_em').eq('obra_id',NM.ob.id).eq('app',a).maybeSingle();
-  const [m,d]=await Promise.all([f('medicao'),f(APP)]);
+  const [m,d,fo]=await Promise.all([f('medicao'),f(APP),f('consolas')]);
   NM.medVer=m.data?m.data.versao:null;
-  return {dados:{dim:1,med:m.data?m.data.dados:null,dimd:d.data?d.data.dados:null},versao:d.data?d.data.versao:null,atualizado_em:(d.data||m.data||{}).atualizado_em||new Date().toISOString()} };
+  return {dados:{dim:1,fol:(fo.data&&fo.data.dados&&fo.data.dados.doc&&fo.data.dados.doc.folhas)||[],med:m.data?m.data.dados:null,dimd:d.data?d.data.dados:null},versao:d.data?d.data.versao:null,atualizado_em:(d.data||m.data||{}).atualizado_em||new Date().toISOString()} };
  const _ap=nmAplicaServidor;
  nmAplicaServidor=function(c){
   if(!c||!c.dim)return _ap(c);
-  const med=c.med,dd=c.dimd;let d2=null;NM.medIds=new Set();
+  const med=c.med,dd=c.dimd;let d2=null;NM.medIds=new Set();NM.folhas=c.fol||[];
   if(med&&med.st){const sm=clone(med.st);NM.medIds=new Set(sm.postes.map(p=>p.id));
    const ex=dd&&dd.extras||null;
    for(const p of sm.postes){const e=ex&&ex[p.id];
@@ -7232,6 +7235,9 @@ window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="
  async function refresca(){
   if(!NM.ob||NM.gravando||NM.carregando)return;
   const q=await sb.from('dados_apps').select('dados,versao').eq('obra_id',NM.ob.id).eq('app','medicao').maybeSingle();
+  try{const fq=await sb.from('dados_apps').select('dados').eq('obra_id',NM.ob.id).eq('app','consolas').maybeSingle();
+   const nf=(fq.data&&fq.data.dados&&fq.data.dados.doc&&fq.data.dados.doc.folhas)||[];
+   if(JSON.stringify(nf.map(f=>[f.id,f.estrutura,f.estado,f.util]))!==JSON.stringify((NM.folhas||[]).map(f=>[f.id,f.estrutura,f.estado,f.util]))){NM.folhas=nf;dimFolhas()}}catch(e){}
   const m=q.data;if(!m||m.versao===NM.medVer||!(m.dados&&m.dados.st))return;
   NM.medVer=m.versao;NM.carregando=true;
   try{const byId=new Map(st.postes.map(p=>[p.id,p])),ids=new Set();
@@ -7245,6 +7251,36 @@ window.__nm.ready=nmArranque().catch(e=>{ console.error(e); nmEcra('<div class="
   finally{NM.carregando=false}}
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresca().catch(()=>{})});
  setInterval(()=>{if(document.visibilityState==='visible')refresca().catch(()=>{})},60000);
+ 
+ const ROTE={ok:'Verifica',nok:'Não verifica',falta:'Por verificar',fora:'Fora do âmbito',erro:'Sem resultado'},TIPO={consola:'Consola',portico:'Pórtico',rigido:'Pórtico rígido'};
+ function dimFolhas(){
+  let c=document.getElementById('dimFolhas');
+  if(!c){const a=document.getElementById('nxSect');if(!a)return;c=document.createElement('div');c.id='dimFolhas';c.className='sect';a.parentNode.insertBefore(c,a.nextSibling)}
+  const p=poste();if(!p){c.innerHTML='';return}
+  const nome=String(p.nome||'').trim().toLowerCase();
+  const fs=(NM.folhas||[]).filter(f=>String(f.estrutura||'').trim().toLowerCase()===nome);
+  const cor={ok:'var(--ok,#2E7D32)',nok:'var(--bad,#C62828)'};
+  let h='<div class="ph"><h3>Folhas do caderno desta estrutura</h3></div>';
+  if(p.id<0)h+='<div class="dimJ"><span>Esta estrutura só existe no Dimensionamento.</span><button type="button" id="dimJuntar">Juntar à medição</button></div>';
+  h+=fs.length?'<ul class="dimF">'+fs.map(f=>'<li><b>'+esc(f.titulo||'')+'</b> <span class="cdN">'+esc(TIPO[f.app]||f.app||'')+(f.subt?' · '+esc(f.subt):'')+'</span><span class="dimE" style="color:'+(cor[f.estado]||'inherit')+'">'+esc(ROTE[f.estado]||f.estado||'')+(f.util!=null&&f.util!==''?' · '+esc(f.util)+' %':'')+'</span></li>').join('')+'</ul>'
+   :'<p class="cdN" style="margin:6px 0">Nenhuma folha enviada. Na app Dimensionamento, vista «Obra», escreve «'+esc(p.nome)+'» no campo Estrutura da folha.</p>';
+  c.innerHTML=h;
+  const b=c.querySelector('#dimJuntar');if(b)b.onclick=()=>juntaMedicao(p)}
+ async function juntaMedicao(p){
+  if(NM.soLeitura){toast('Não tem permissão para alterar a Medição.');return}
+  if(!await nmSim('Junto «'+esc(p.nome)+'» à Medição, como estrutura nova e sem montagens. As consolas e a verificação continuam no Dimensionamento. Continuar?','Juntar'))return;
+  const q=await sb.from('dados_apps').select('dados,versao').eq('obra_id',NM.ob.id).eq('app','medicao').maybeSingle();
+  if(!q.data||!q.data.dados||!q.data.dados.st){await nmDiz('A Medição desta obra ainda não tem dados.');return}
+  const d=q.data.dados,ps=d.st.postes;
+  const ja=ps.find(x=>String(x.nome).trim().toLowerCase()===String(p.nome).trim().toLowerCase());
+  const id=ja?ja.id:Math.max(0,d.st.seq||0,...ps.map(x=>x.id))+1;
+  if(!ja){ps.push({id,nome:p.nome,itens:[],estr:clone(p.estr||[]),pecas:clone(p.pecas||[])});d.st.seq=id+1}
+  const u=await sb.from('dados_apps').update({dados:d,atualizado_por:NM.uid}).eq('obra_id',NM.ob.id).eq('app','medicao').eq('versao',q.data.versao).select('versao');
+  if(u.error||!u.data||!u.data.length){await nmDiz('A Medição foi alterada entretanto. Tenta outra vez.');return}
+  NM.medVer=u.data[0].versao;p.id=id;NM.medIds.add(id);if(st.sel!==id&&st.sel<0)st.sel=id;
+  nmMudou();rAll();toast(ja?'Já existia na Medição: ligada.':'«'+p.nome+'» juntada à Medição.',4000)}
+ function dimIds(){let m=Math.min(0,...st.postes.map(p=>p.id));for(const p of st.postes)if(!NM.medIds.has(p.id)&&p.id>0){const o=p.id;p.id=--m;if(st.sel===o)st.sel=p.id}}
+ const _ri2=rItens;rItens=function(){try{dimIds()}catch(e){}_ri2();try{dimFolhas()}catch(e){console.error(e)}};
  const _ef=nmEcraFim;nmEcraFim=function(){_ef();try{document.title='Dimensionamento · '+NM.ob.cc}catch(e){}};
  const sn=document.querySelector('.sname');if(sn)sn.textContent='Dimensionamento · obra';
  const tt=document.getElementById('vTit');
