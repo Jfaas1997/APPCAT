@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);var __s=localStorage.getItem('side');if(__s==='c')document.documentElement.setAttribute('data-side','c')}catch(e){}</script>
-<title>Controlo de materiais · online</title>
+<title>Controlo de materiais</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>/* IBM Plex embutida: a app fica igual sem internet */
 @font-face {
@@ -605,6 +605,68 @@ header{flex-wrap:wrap;height:auto;min-height:58px;padding:6px 15px;row-gap:6px}
 body.obraAtiva .ob.geral{display:none}
 .foot{flex-wrap:wrap}.foot>*{min-width:0}
 @media (max-width:760px){.foot{display:block;line-height:1.6;max-height:5.2em;overflow:auto}}
+
+/* ===== versão TESTE: grupos de navegação e resumo simples ===== */
+#side .tab[data-n="o"]{display:none!important}
+#side .gtab{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;border:0;border-left:3px solid transparent;border-radius:var(--r);background:transparent;color:var(--sink);font-size:13.5px;cursor:pointer;transition:background .15s,color .15s}
+#side .gtab:hover{background:var(--shov);color:#fff}
+#side .gtab.on{background:var(--son);color:#fff;border-left-color:var(--brand)}
+#side .gtab.on .ic{color:var(--brand)}
+#side .gtab:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+#subtabs{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--rule);background:var(--paper)}
+#subtabs[hidden]{display:none}
+#subtabs button{border-radius:999px;padding:6px 14px;font-size:13px}
+#subtabs button.on{background:var(--brand);border-color:var(--brand);font-weight:600;color:#2B3038}
+.rv2bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+.rv2bar button{margin-left:auto}
+.rv2kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.rv2kpi>div{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.rv2kpi b{display:block;font-family:var(--mono);font-size:21px;font-weight:500}
+.rv2kpi span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.rv2kpi em{display:block;font-style:normal;font-size:12px;margin-top:6px;color:var(--muted)}
+.rv2kpi em.bad{color:#C62828;font-weight:600}
+.rv2fase{margin:0 0 12px;font-size:13px;color:var(--muted)}
+.rv2g{border-top:1px solid var(--rule);padding:10px 14px}
+.rv2g:first-child{border-top:0}
+.rv2gh{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.rv2gh button{margin-left:auto}
+.rv2mais{font-size:12px;color:var(--muted);padding:4px 0 0 14px}
+@media (max-width:900px){.rv2kpi{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){#side .gtab{flex:0 0 auto;flex-direction:column;gap:2px;width:auto;min-width:64px;padding:5px 8px;border-left:0;border-bottom:3px solid transparent;font-size:10.5px;text-align:center;justify-content:center}#side .gtab.on{border-bottom-color:var(--brand)}}
+:root[data-side="c"] #side .gtab{width:44px;height:40px;padding:0;justify-content:center;border-left-width:0}
+:root[data-side="c"] #side .gtab span{display:none}
+
+/* ===== versão TESTE: janela Medições simples ===== */
+#vMed #mCols,#vMed #medOrd,#vMed #medModo,#vMed #fMedQue,#vMed #bPm,#vMed #bDelMed,#vMed #bFund{display:none!important}
+.mv2{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.mv2 thead th{position:sticky;z-index:3;background:var(--sheet,#fff);border-bottom:1px solid var(--rule);text-align:left;font-weight:600;font-size:12px;padding:6px 6px;white-space:nowrap}
+.mv2 thead tr.g1 th{top:0;border-top:2px solid var(--ink,#2b3038)}
+.mv2 thead tr.g2 th{top:30px;font-weight:500;color:var(--muted)}
+.mv2 th.n,.mv2 td.n{text-align:right}
+.mv2 th[colspan]{text-align:center}
+.mv2 .gi{background:rgba(120,130,150,.07)}
+.mv2 .gv{background:rgba(46,125,50,.07)}
+.mv2 .ga{background:rgba(255,210,0,.16)}
+.mv2 .gd{background:transparent}
+.mv2 thead th.gi{background:#eceef2}.mv2 thead th.gv{background:#e4f1e5}.mv2 thead th.ga{background:#fff0b3}
+.mv2 td{padding:5px 6px;border-bottom:1px solid var(--rule);font-family:var(--mono)}
+.mv2 td.t{font-family:var(--sans);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv2 td.ga{font-weight:600}
+.mv2 .z{color:var(--muted);opacity:.55}
+.mv2 td.pu{color:var(--muted);font-size:12px}
+.mv2 td.pu.mud{color:#b3261e;font-weight:600}
+.mv2 .up{color:#b3261e}.mv2 .dn{color:#2e7d32}
+.mv2 tr.fam td{background:var(--soft);font-family:var(--sans);font-weight:600;cursor:pointer;border-top:1px solid var(--rule)}
+.mv2 tr:hover td:not(.empty){filter:brightness(.98)}
+.mv2 tr.sel td{outline:0;box-shadow:inset 0 0 0 9999px rgba(255,210,0,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mv2 thead th.gi{background:#2a2f38}:root:not([data-theme="light"]) .mv2 thead th.gv{background:#1f3322}:root:not([data-theme="light"]) .mv2 thead th.ga{background:#4a3f10}.mv2 .up{color:#ff8a80}.mv2 .dn{color:#81c784}}
+:root[data-theme="dark"] .mv2 thead th.gi{background:#2a2f38}:root[data-theme="dark"] .mv2 thead th.gv{background:#1f3322}:root[data-theme="dark"] .mv2 thead th.ga{background:#4a3f10}
+@media (max-width:900px){.mv2 .gi,.mv2 .gd,.mv2 .un,.mv2 .pu{display:none}.mv2 td.t{max-width:150px}.mv2 td.c,.mv2 th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet,#fff)}}
+
+/* a obra já vem escolhida da Central: sem painel de obras */
+body.obraAtiva #paneObras{display:none}
+body.obraAtiva main,body.obraAtiva main.fechada{grid-template-columns:var(--sw) minmax(0,1fr)}
+.sver{display:none}
 </style>
 <style id="online-extra">
 /* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
@@ -692,7 +754,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Controlo de materiais</span><span class="sver">v47</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Controlo de materiais</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp" data-n="g">Todas as obras</div>
     <button class="tab" data-v="gres" data-n="g"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>Resumo geral</span></button>
     <button class="tab" data-v="obr" data-n="g"><svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><span>Material</span></button>
@@ -721,7 +783,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
         <button id="bLoadObra" class="sec">Carregar obra de um Excel</button>
         <h4>Nova obra</h4>
         <label for="ncc">Centro de custo</label>
-        <input id="ncc" placeholder="4002437" autocomplete="off">
+        <input id="ncc" placeholder="n.º da obra" autocomplete="off">
         <label for="nnome">Nome da obra</label>
         <input id="nnome" placeholder="Alfarelos — catenária" autocomplete="off">
         <button id="bNovaObra">Criar obra</button>
@@ -1042,7 +1104,7 @@ function extraVazio(){ return {cod:'',mn:'',sap:'',des:'',dw:'',fam:'',un:'',not
 var MOT=['TC (trabalho complementar)','Nova medição','Alteração de projeto','Erro de medição','Perda de material','Furto','Devolução ao fornecedor','Material cedido a outra obra','Medição de obra','Outro'];
 var DESTTIPOS=[['fora','Obra da empresa fora da app'],['app','Obra da empresa na app'],['terceiro','Terceiro externo']];
 var DESTINOS=['','A decidir','Vender','Transferir para outra obra','Devolver ao fornecedor','Fica em stock','Já resolvido'];
-var SUGNE=[["3040568106","09.000.00",150.0,309732.89,"Postes de Catenária",1,0],["3040600690","02.106.16",197.0,2078.35,"Outros Custos - Ferragens",1,0],["3040701584","07.200.04",27.0,1049.22,"566A",1,1],["O.4002432-1","02.209.07",10.0,570.0,"Outros Custos - Ferragens",1,0],["3040600690","02.101.03",30.0,345.0,"Outros Custos - Ferragens",1,0],["3040600690","02.101.04",12.0,114.84,"Outros Custos - Ferragens",1,0],["3040600690","02.101.02",12.0,94.68,"Outros Custos - Ferragens",1,0],["3040600690","02.209.07",2.0,90.6,"Outros Custos - Ferragens",1,0],["3040600690","02.106.20",2.0,60.74,"Outros Custos - Ferragens",1,0],["3040787045","02.100.11",4.0,20.96,"Outros Custos - Ferragens",1,0],["3040787045","02.100.21",2.0,16.76,"Outros Custos - Ferragens",1,0],["3040600690","02.100.11",1.0,5.29,"Outros Custos - Ferragens",1,0],["3040778490","01.100.24",4958.0,15617.7,"Outros Custos - Cabos",0,0],["3040778490","01.100.23",5564.0,12797.2,"Outros Custos - Cabos",0,0],["3040778490","01.100.22",4130.0,6649.3,"Outros Custos - Cabos",0,0],["3040778490","01.100.20",4016.0,5220.8,"Outros Custos - Cabos",0,0],["3040778490","01.100.22",3150.0,5071.5,"Outros Custos - Cabos",0,0],["3040795693","09.100.01",2.0,3276.18,"Postes de Catenária",1,0],["3040778490","01.100.22",2020.0,3252.2,"Outros Custos - Cabos",0,0],["3040798829","09.300.02",2.0,2700.0,"Outros Custos - Cabos",0,0],["3040662475","09.300.02",2.0,2600.0,"Outros Custos - Cabos",0,0],["3040798829","S/COD.019",2.0,2500.0,"Outros Custos - Cabos",0,0],["3040738289","09.100.02",1.0,2414.52,"Postes de Catenária",1,0],["3040738289","09.100.02",1.0,2414.52,"Postes de Catenária",1,0],["3040635171","05.300.42",17.0,2182.63,"Outros Custos - Laminados Ferrosos",0,0],["O.4002432-1","05.200.12",44.0,2162.16,"Outros Custos - Laminados não Ferrosos",0,0],["3040635171","05.301.13",39.0,2100.15,"Outros Custos - Laminados Ferrosos",0,0],["3040600690","02.204.14",27.0,2064.15,"Outros Custos - Ferragens",0,0],["3040738289","09.100.03",1.0,1987.94,"Postes de Catenária",1,0],["3040778490","01.100.22",1064.0,1947.12,"Outros Custos - Cabos",0,0],["3040662475","S/COD.019",2.0,1900.0,"Outros Custos - Cabos",0,0],["3040600690","02.205.02",14.0,1707.86,"Outros Custos - Ferragens",0,0],["3040662475","S/COD.020",2.0,1700.0,"Outros Custos - Cabos",0,0],["3040738289","09.100.01",1.0,1514.27,"Postes de Catenária",1,0],["3040738289","09.100.01",1.0,1514.27,"Postes de Catenária",1,0],["3040738289","09.100.04",1.0,1254.53,"Postes de Catenária",1,0],["3040738282","09.100.06",2.0,1248.32,"Postes de Catenária",1,0],["O.4002432-1","05.200.02",40.0,1174.4,"Outros Custos - Laminados não Ferrosos",0,0],["3040600690","02.200.06",152.0,1094.4,"Outros Custos - Ferragens",0,0],["3040635171","S/COD.016",1.0,1000.0,"Outros Custos",0,0],["3040616774","S/COD.015",1.0,1000.0,"Outros Custos",0,0],["3040600690","02.209.15",20.0,982.6,"Outros Custos - Ferragens",0,0],["O.4002432-1","05.300.36",20.0,945.0,"Outros Custos - Laminados Ferrosos",0,0],["3040600690","02.104.39",23.0,850.77,"Outros Custos - Ferragens",0,0],["3040600690","02.104.40",23.0,850.77,"Outros Custos - Ferragens",0,0],["3040798829","S/COD.020",1.0,850.0,"Outros Custos - Cabos",0,0],["3040600690","02.102.07",21.0,849.24,"Outros Custos - Ferragens",0,0],["3040778490","09.400.03",2.0,840.0,"Outros Custos - Cabos",0,0],["O.4002432-1","05.400.14",22.0,832.04,"Outros Custos - Laminados não Ferrosos",0,0],["O.4002432-1","05.300.09",46.0,812.36,"Outros Custos - Laminados Ferrosos",0,0],["3040610552","02.503.01",13.0,796.9,"Outros Custos - Tubos Aço Galvanizado",0,0],["3040610552","02.503.01",13.0,781.3,"Outros Custos - Tubos Aço Galvanizado",0,0],["3040738282","09.100.05",1.0,776.49,"Postes de Catenária",1,0],["3040704654","09.100.07",36.0,756.0,"Outros Custos",1,0],["3040610552","S/COD.032",1.0,655.0,"Outros Custos",0,0],["O.4002432-1","05.300.07",46.0,634.8,"Outros Custos - Laminados Ferrosos",0,0],["3040600690","02.100.12",121.0,617.1,"Outros Custos - Ferragens",0,0],["3040644588","S/COD.017",2.0,582.0,"Outros Custos - Cabos",0,0],["3040673633","S/COD.022",2.0,560.0,"Outros Custos - Cabos",0,0],["3040778490","09.400.05",2.0,560.0,"Outros Custos - Cabos",0,0],["3040602325","S/COD.031",1.0,500.0,"Outros Custos",0,0],["3040778490","09.400.06",1.0,490.0,"Outros Custos - Cabos",0,0],["3040723263","S/COD.024",1.0,480.0,"Outros Custos",0,0],["3040778490","09.400.08",3.0,480.0,"Outros Custos - Cabos",0,0],["3040600690","02.209.13",21.0,475.65,"Outros Custos - Ferragens",0,0],["3040600690","02.212.02",15.0,447.75,"Outros Custos - Ferragens",0,0],["3040778490","09.400.03",1.0,420.0,"Outros Custos - Cabos",0,0],["3040635171","05.900.06",4.0,394.6,"Outros Custos - Laminados não Ferrosos",0,0],["3040748228","05.102.07",4.0,391.88,"Outros Custos - Laminados não Ferrosos",0,0],["3040616774","05.600.05",20.0,360.0,"Outros Custos - Laminados Ferrosos",0,0],["O.4002432-1","02.207.04",10.0,336.0,"Outros Custos - Ferragens",0,0],["3040730778","09.500.04",6.0,334.68,"Outros Custos - Ferragens",0,0],["O.4002432-1","05.400.15",22.0,333.08,"Outros Custos - Laminados não Ferrosos",0,0],["3040616774","04.800.03",6.0,313.2,"Outros Custos - Ferragens",0,0],["3040602098","04.409.02",56.0,296.24,"Outros Custos - Pernos",0,0],["O.4002432-1","05.301.07",14.0,275.1,"Outros Custos - Laminados Ferrosos",0,0],["3040748228","05.102.06",2.0,269.68,"Outros Custos - Laminados não Ferrosos",0,0],["3040704654","S/COD.023",1.0,250.0,"Outros Custos",0,0],["3040730778","09.500.06",4.0,243.12,"Outros Custos - Ferragens",0,0],["3040602098","S/COD.014",1.0,213.75,"Outros Custos",0,0],["3040635171","05.700.02",110.0,211.2,"Outros Custos - Laminados Ferrosos",0,0],["3040602098","04.409.01",50.0,210.5,"Outros Custos - Pernos",0,0],["O.4002432-1","S/COD.034",10.0,200.0,"Outros Custos - Ferragens",0,0],["3040600690","02.212.03",6.0,192.0,"Outros Custos - Ferragens",0,0],["3040730786","02.200.06",14.0,191.1,"Outros Custos - Ferragens",0,0],["3040778490","09.400.04",1.0,190.0,"Outros Custos - Cabos",0,0],["3040778490","09.400.04",1.0,190.0,"Outros Custos - Cabos",0,0],["3040795693","02.206.03",2.0,178.16,"Outros Custos - Ferragens",0,0],["3040644588","S/COD.018",1.0,177.0,"Outros Custos - Cabos",0,0],["3040600690","02.204.11",4.0,166.24,"Outros Custos - Ferragens",0,0],["3040600690","02.106.17",12.0,165.96,"Outros Custos - Ferragens",0,0],["3040778490","09.400.07",1.0,160.0,"Outros Custos - Cabos",0,0],["3040610552","02.503.02",2.0,152.4,"Outros Custos - Tubos Aço Galvanizado",0,0],["O.4002432-1","04.403.06",40.0,146.0,"Outros Custos - Anilhas",0,0],["O.4002432-1","05.300.36",3.0,141.75,"Outros Custos - Laminados Ferrosos",0,0],["3040600690","02.106.05",10.0,138.3,"Outros Custos - Ferragens",0,0],["3040602098","04.403.06",46.0,133.4,"Outros Custos - Anilhas",0,0],["3040601834","04.202.04",268.0,128.64,"Outros Custos - Parafusos Inox",0,0],["3040730778","09.500.07",6.0,125.16,"Outros Custos - Ferragens",0,0],["3040679642","S/COD.033",1.0,125.0,"Outros Custos",0,0],["3040600690","02.203.05",12.0,121.92,"Outros Custos - Ferragens",0,0],["3040635171","05.602.03",92.0,111.32,"Outros Custos - Laminados não Ferrosos",0,0],["O.4002432-1","02.100.12",20.0,105.6,"Outros Custos - Ferragens",0,0],["3040730778","09.500.02",8.0,102.32,"Outros Custos - Ferragens",0,0],["O.4002432-1","04.101.24",60.0,102.0,"Outros Custos - Parafusos Galvanizados",0,0],["3040600690","02.403.06",21.0,97.23,"Outros Custos - Ferragens",0,0],["3040600690","02.105.08",3.0,91.14,"Outros Custos - Ferragens",0,0],["3040599502","02.305.04",4.0,73.36,"Outros Custos - Ferragens",0,0],["3040599502","02.303.04",46.0,72.68,"Outros Custos - Ferragens",0,0],["3040787045","02.203.09",2.0,72.14,"Outros Custos - Ferragens",0,0],["3040787045","02.304.12",2.0,71.04,"Outros Custos - Ferragens",0,0],["O.4002432-1","04.102.02",40.0,70.0,"Outros Custos - Parafusos Galvanizados",0,0],["3040600690","02.106.13",5.0,69.0,"Outros Custos - Ferragens",0,0],["3040600690","02.105.05",3.0,66.72,"Outros Custos - Ferragens",0,0],["3040635171","05.603.01",128.0,64.0,"Outros Custos - Laminados Ferrosos",0,0],["3040730778","09.500.03",4.0,63.32,"Outros Custos - Ferragens",0,0],["3040600690","02.213.04",3.0,61.65,"Outros Custos - Ferragens",0,0],["3040782054","09.400.02",25.0,59.75,"Outros Custos - Porcas",0,0],["3040787045","02.400.03",4.0,58.84,"Outros Custos - Ferragens",0,0],["3040601614","S/COD.003",39.0,58.5,"Outros Custos",0,0],["3040600690","02.104.09",5.0,57.15,"Outros Custos - Ferragens",0,0],["3040600690","02.203.02",7.0,55.02,"Outros Custos - Ferragens",0,0],["3040635171","05.602.02",44.0,51.92,"Outros Custos - Laminados não Ferrosos",0,0],["3040795693","02.114.47",2.0,47.46,"Outros Custos - Ferragens",0,0],["3040600690","02.104.12",7.0,46.69,"Outros Custos - Ferragens",0,0],["3040635171","05.603.02",86.0,43.0,"Outros Custos - Laminados não Ferrosos",0,0],["3040602098","04.407.10",8.0,42.24,"Outros Custos - Anilhas",0,0],["3040730778","09.500.05",4.0,41.88,"Outros Custos - Ferragens",0,0],["3040601614","04.101.21",12.0,40.8,"Outros Custos - Parafusos Galvanizados",0,0],["3040756874","S/COD.027",1.0,40.0,"Outros Custos",0,0],["3040601834","04.201.07",216.0,38.88,"Outros Custos - Parafusos Inox",0,0],["3040601834","04.201.06",242.0,36.3,"Outros Custos - Parafusos Inox",0,0],["3040601834","04.201.08",189.0,35.91,"Outros Custos - Parafusos Inox",0,0],["3040748228","S/COD.026",1.0,35.0,"Outros Custos",0,0],["3040730786","05.101.12",2.0,34.66,"Outros Custos - Laminados Ferrosos",0,0],["3040600690","02.403.02",4.0,32.6,"Outros Custos - Ferragens",0,0],["3040600690","02.105.09",1.0,31.71,"Outros Custos - Ferragens",0,0],["3040601834","S/COD.013",21.0,31.5,"Outros Custos",0,0],["3040600690","02.203.07",3.0,31.35,"Outros Custos - Ferragens",0,0],["3040730778","09.500.08",8.0,29.92,"Outros Custos - Pernos",0,0],["3040782054","09.400.01",20.0,29.8,"Outros Custos",0,0],["3040600690","02.104.15",4.0,29.76,"Outros Custos - Ferragens",0,0],["3040601614","04.300.04",280.0,28.0,"Outros Custos - Anilhas",0,0],["3040730778","09.500.10",6.0,26.76,"Outros Custos - Pernos",0,0],["3040600690","02.105.06",1.0,23.96,"Outros Custos - Ferragens",0,0],["3040600690","02.203.09",1.0,21.15,"Outros Custos - Ferragens",0,0],["3040600690","02.104.18",2.0,17.98,"Outros Custos - Ferragens",0,0],["3040601614","16F10",20.0,17.2,"Outros Custos - Parafusos Galvanizados",0,0],["3040600690","02.104.20",2.0,16.76,"Outros Custos - Ferragens",0,0],["O.4002432-1","05.200.08",1.0,16.7,"Outros Custos - Laminados não Ferrosos",0,0],["3040600690","02.104.14",2.0,16.32,"Outros Custos - Ferragens",0,0],["3040601614","04.101.27",28.0,16.24,"Outros Custos - Parafusos Galvanizados",0,0],["3040600690","02.104.33",1.0,15.13,"Outros Custos - Ferragens",0,0],["3040600690","02.403.07",3.0,14.04,"Outros Custos - Ferragens",0,0],["3040601614","16C10",24.0,13.44,"Outros Custos - Parafusos Galvanizados",0,0],["3040601834","17D1",56.0,13.44,"Outros Custos - Parafusos Inox",0,0],["3040730778","04.101.27",8.0,12.48,"Outros Custos - Parafusos Galvanizados",0,0],["3040601614","04.100.04",24.0,11.76,"Outros Custos - Parafusos Galvanizados",0,0],["3040601614","04.101.17",20.0,9.8,"Outros Custos - Parafusos Galvanizados",0,0],["3040601834","17II",46.0,8.74,"Outros Custos - Anilhas",0,0],["3040665162","S/COD.021",1.0,8.5,"Outros Custos",0,0],["3040730778","09.500.09",2.0,8.22,"Outros Custos - Pernos",0,0],["3040601614","16C8",44.0,7.92,"Outros Custos - Parafusos Galvanizados",0,0],["3040601614","04.300.08",210.0,6.3,"Outros Custos - Anilhas",0,0],["3040600690","1126",1.0,6.06,"Outros Custos - Ferragens",0,0],["3040601614","04.101.08",18.0,5.58,"Outros Custos - Parafusos Galvanizados",0,0],["3040600690","02.100.18",1.0,5.37,"Outros Custos - Ferragens",0,0],["3040601834","S/COD.006",98.0,4.9,"Outros Custos - Parafusos Inox",0,0],["3040601834","S/COD.007",52.0,4.68,"Outros Custos - Parafusos Inox",0,0],["3040601834","04.300.06",48.0,4.32,"Outros Custos - Anilhas",0,0],["3040601834","S/COD.011",152.0,3.04,"Outros Custos - Anilhas",0,0],["3040601834","17P",8.0,2.8,"Outros Custos - Parafusos Inox",0,0],["3040601614","16C4",6.0,2.76,"Outros Custos - Parafusos Galvanizados",0,0],["3040601834","S/COD.009",5.0,2.15,"Outros Custos - Parafusos Inox",0,0],["3040601834","S/COD.010",4.0,1.96,"Outros Custos - Parafusos Inox",0,0],["3040601614","04.300.05",5.0,1.9,"Outros Custos - Anilhas",0,0],["3040601834","S/COD.008",2.0,1.64,"Outros Custos - Parafusos Inox",0,0],["3040601834","04.204.02",1.0,1.6,"Outros Custos - Anilhas",0,0],["3040601834","S/COD.005",2.0,1.56,"Outros Custos - Parafusos Inox",0,0],["3040601834","S/COD.004",2.0,1.54,"Outros Custos - Parafusos Inox",0,0],["3040601834","S/COD.012",2.0,1.52,"Outros Custos - Anilhas",0,0],["3040552646","08.101.04",1.0,5590.91,"Outros Custos - Energia de Tração",1,0],["3040701577","08.200.01",19.0,4940.0,"Outros Custos - Energia de Tração",1,0],["3040600690","07.401.09",4.0,2223.48,"Outros Custos - Equipamentos",1,0],["3040704654","09.200.01",48.0,1896.0,"Outros Custos - Diversos",1,0],["3040600690","07.300.15",25.0,1607.75,"Outros Custos - Equipamentos",1,0],["3040600690","06.900.03",11.0,1564.97,"Outros Custos - Estruturas",1,0],["3040600690","06.403.01",3.0,1554.42,"Outros Custos - Estruturas",1,0],["3040738284","06.600.10",6.0,1426.98,"Outros Custos - Estruturas",1,0],["3040600690","06.100.16",6.0,1338.12,"Outros Custos - Estruturas",1,0],["3040701577","08.200.03",19.0,1064.0,"Outros Custos - Energia de Tração",1,0],["3040690076","07.500.02",8.0,1064.0,"Outros Custos - Equipamentos",1,0],["3040701577","09.300.01",19.0,912.0,"Outros Custos - Diversos",1,0],["3040756874","07.400.05",2.0,670.0,"Outros Custos - Equipamentos",1,0],["3040690076","07.500.02",6.0,615.0,"Outros Custos - Equipamentos",1,0],["3040600690","06.100.07",5.0,588.8,"Outros Custos - Estruturas",1,0],["3040738284","06.600.09",3.0,549.24,"Outros Custos - Estruturas",1,0],["3040704632","07.400.07",5.0,548.95,"Outros Custos - Equipamentos",1,0],["3040600690","06.103.01",1.0,503.72,"Outros Custos - Estruturas",1,0],["3040600690","06.900.11",6.0,490.74,"Outros Custos - Estruturas",1,0],["3040704632","07.400.06",4.0,403.6,"Outros Custos - Equipamentos",1,0],["3040600690","06.900.04",3.0,377.67,"Outros Custos - Estruturas",1,0],["3040600690","06.900.05",3.0,344.73,"Outros Custos - Estruturas",1,0],["3040600690","06.500.01",7.0,322.7,"Outros Custos - Estruturas",1,0],["3040600690","06.100.27",2.0,300.66,"Outros Custos - Estruturas",1,0],["3040600690","06.900.02",2.0,280.44,"Outros Custos - Estruturas",1,0],["O.4002417-2","08.200.25",2.0,246.0,"Outros Custos - Energia de Tração",1,0],["3040600690","257",4.0,188.2,"Outros Custos - Estruturas",1,0],["3040730778","06.500.03",3.0,179.25,"Outros Custos - Estruturas",1,0],["3040730778","06.500.04",3.0,153.33,"Outros Custos - Estruturas",1,0],["3040600690","06.900.01",1.0,133.29,"Outros Custos - Estruturas",1,0],["3040600690","E-7181 Som - REF 1",2.0,113.56,"Outros Custos - Estruturas",1,0],["3040600690","06.100.02",1.0,89.08,"Outros Custos - Estruturas",1,0],["3040600690","06.103.02",2.0,53.68,"Outros Custos - Estruturas",1,0],["3040730778","06.501.03",1.0,51.59,"Outros Custos - Estruturas",1,0],["3040600690","E-7181 Som - REF 2",2.0,45.26,"Outros Custos - Estruturas",1,0],["3040600690","E-7181 Som - REF 3",4.0,43.84,"Outros Custos - Estruturas",1,0],["O.4002417-2","08.101.13",2.0,0.0,"Outros Custos - Energia de Tração",1,0]];
+var SUGNE=[];   /* sem sugestões de obras passadas: cada obra começa limpa */
 var VERBANOMES=[["Postes de Catenária","Postes"],["Outros Custos - Postes de Catenária","Postes"],["Outros Custos - Cabos","Cabos"],["Outros Custos - Tubos Aço Galvanizado","Tubos"],["Outros Custos - Parafusos Galvanizados","Parafusos"],["Outros Custos - Parafusos Inox","Parafusos"],["Outros Custos - Pernos","Pernos"],["Outros Custos - Anilhas","Anilhas"],["Outros Custos - Porcas","Porcas"],["Outros Custos - Ferragens","Ferragens"],["Outros Custos - Laminados Ferrosos","Laminados"],["Outros Custos - Laminados não Ferrosos","Laminados"],["Outros Custos - Elementos Roscados","Elementos roscados"],["Outros Custos - Estruturas","Estruturas"],["Outros Custos - Equipamentos","Equipamentos"],["Outros Custos - Energia de Tração","Energia de Tração"],["Outros Custos - Diversos","Diversos"],["Outros Custos",""]];
 function verbas(){ return ST.med.filter(function(a){ return a.reserva }) }
 function ligaReserva(iNE,cod){ var r=ST.ne[iNE]; if(!r)return; r.reserva=cod||''; render() }
@@ -1790,7 +1852,7 @@ function renderListaFam(){
       h+='<div class="art" data-i="'+o.i+'"><span class="c">'+esc(o.a.cod||'—')+'</span>'+
          '<span class="d">'+esc(o.a.des||'(sem designação)')+'</span>'+
          '<span class="mono" style="font-size:11.5px;color:var(--muted)">'+q(o.a._qa)+'</span>'+
-         estChip(o.a._est)+'</div>';
+         estChip(o.a._est,o.a)+'</div>';
     });
     h+='</div>';
   });
@@ -1819,7 +1881,7 @@ function renderLista(){
       h+='<div class="art'+(o.i===sel?' on':'')+'" data-i="'+o.i+'">'+
          '<span class="c">'+esc(o.a.cod||'—')+'</span>'+
          '<span class="d">'+esc(o.a.des||'(sem designação)')+'</span>'+
-         estChip(o.a._est)+'</div>';
+         estChip(o.a._est,o.a)+'</div>';
     });
     h+='</div>';
   });
@@ -2207,7 +2269,7 @@ function renderMed(){
          '<td class="n">'+(sob?'<b style="color:var(--amber)">'+q(sob)+'</b>':'')+'</td>'+
          '<td class="n">'+(sob?eur(sob*pc):'')+'</td>'+
          '<td>'+(sob?'<select data-r="'+o.i+'" data-k="destino">'+DESTINOS.map(function(x){return '<option value="'+esc(x)+'"'+((a.destino||'')===x?' selected':'')+'>'+(x||'—')+'</option>'}).join('')+'</select>':'')+'</td>'+
-         '<td>'+estChip(a._est)+'</td></tr>';
+         '<td>'+estChip(a._est,a)+'</td></tr>';
     });
   } else {
     h='<table class="g"><thead><tr><th>Código</th><th>Designação de obra</th><th>Un</th>'+
@@ -8539,7 +8601,7 @@ document.addEventListener('click',function(e){ var m=$('#nmenu'); if(!m.hidden&&
 $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b)return; nmMenu(false); var a=b.getAttribute('data-n');
   if(a==='pasta')nmAbrePasta(); else if(a==='reabrir')nmReabre(); else if(a==='fechar')nmFecha(); else if(a==='copias')nmRestauraCopia(); else if(a==='contratos')nmVerContratos() };
 function nmVerContratos(){ var cs=nmContratos(); nmModal({titulo:'Contratos da obra',corpo:cs.length?'<table><tbody>'+cs.map(function(c,i){ return '<tr><td><b>'+esc(c.nome)+'</b>'+(i===0?' <span class="n">(inicial)</span>':'')+'</td><td>'+esc(c.cliente||'')+'</td><td class="n">'+(c.valor!=null?eurz(c.valor)+' €':'')+'</td></tr>' }).join('')+'</tbody></table><p style="color:var(--muted);font-size:12px">Os contratos vêm do <span class="mono">obra.json</span> (criados na Central).</p>':'<p>Abra primeiro a pasta de uma obra.</p>',botoes:[{t:'Fechar',v:true,p:true}]}) }
-function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de materiais v'+NM.VERSAO,corpo:
+function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de materiais',corpo:
   '<p><b>Uma obra por pasta.</b> Em «Obra ▾ › Abrir pasta da obra» escolhe a pasta da obra. Os dados ficam em <span class="mono">Dados/materiais.xlsx</span>, ligados ao centro de custo. A app trabalha com essa obra e com os contratos dela.</p>'
   +'<p><b>Gravação.</b> Grava sozinha 5 segundos depois da última alteração. Cópias datadas a cada 30 minutos e ao fechar (as últimas '+NM_MAXCOP+') em <span class="mono">Copias/</span>. Se o ficheiro mudar noutra janela ou por outra pessoa, a app avisa antes de gravar por cima.</p>'
   +'<p><b>Contratos.</b> Cada nota de encomenda e cada guia leva um contrato (por omissão o inicial), escolhido na respetiva lista. O material e o stock são da obra toda.</p>'
@@ -8858,7 +8920,7 @@ document.getElementById('fOpen').addEventListener('change',async function(e){
     var wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array',cellDates:true}); nmCarrega(wb); nmMudou() }
   catch(err){ nmDiz('Não consegui ler o ficheiro: '+esc(err.message)) } });
 var _bp=document.getElementById('bPasta'); if(_bp)_bp.hidden=true;
-nmAjuda=function(){ nmModal({titulo:'Ajuda · Controlo de materiais v'+NM.VERSAO,corpo:
+nmAjuda=function(){ nmModal({titulo:'Ajuda · Controlo de materiais',corpo:
   '<p><b>Dados online.</b> Os materiais de cada obra ficam no servidor. Grava sozinho 12 segundos depois da última alteração. Sem rede, as alterações ficam neste aparelho e seguem quando a rede voltar.</p>'
   +'<p><b>Livro de peças.</b> Vem da base IP da organização (folha «Pecas»). Os materiais fora do livro que a obra precisa ficam na própria obra; a lista de referência é da organização.</p>'
   +'<p><b>Contratos.</b> Cada nota de encomenda e cada guia leva um contrato, escolhido na respetiva lista. O material e o stock são da obra toda.</p>'
@@ -8872,8 +8934,371 @@ window.__nm.ready=nmArranque().catch(function(e){ console.error(e); nmEcra('<div
 
 
 window.APP={cmdLista:cmdLista,imprimeResumoObra:imprimeResumoObra,faseCurso:faseCurso,resAutHtml:resAutHtml,RES:RES,autDados:autDados,autAoa:autAoa,autoDe:autoDe,autLePrev:autLePrev,autPrevRows:autPrevRows,AUT:AUT,renderAut:renderAut,buildIX:buildIX,get MF(){return MF},exportarMapa:exportarMapa,get OBRAS(){return OBRAS},get oi(){return oi},escolheObra:escolheObra,get ST(){return ST},set ST(v){ST=v},get LIVRO(){return LIVRO},get ITEMS(){return ITEMS},render:render,importWB:importWB,exportar:exportar,calc:calc,look:look};
+
+/* ===== versão TESTE: navegação por grupos + Resumo simples ===== */
+var GRUPOS=[
+ {id:'res',t:'Resumo',ic:'i-home',tabs:[['res','Resumo']]},
+ {id:'med',t:'Medição',ic:'i-ruler',tabs:[['med','Medições'],['reo','Reorçamentos'],['oc','Outros Custos']]},
+ {id:'comp',t:'Compras',ic:'i-scale',tabs:[['mc','Comparativos'],['ne','Notas de encomenda'],['gr','Guias de remessa']]},
+ {id:'obra',t:'Obra',ic:'i-factory',tabs:[['prod','Produção'],['stko','Stock'],['aut','Por auto']]},
+ {id:'cruz',t:'Cruzamento',ic:'i-cross',tabs:[['cruz','Cruzamento']]}];
+var SUBLAST={}, RESV2={old:false};
+function grupoDe(v){ return GRUPOS.filter(function(g){ return g.tabs.some(function(t){ return t[0]===v }) })[0] }
+function montaNav(){
+  var ref=$('#side .sgrp[data-n="o"]'); if(!ref||$('#gnav'))return;
+  var wrap=document.createElement('div'); wrap.id='gnav'; wrap.style.display='contents';
+  GRUPOS.forEach(function(g){ var b=document.createElement('button'); b.className='gtab'; b.dataset.g=g.id; b.type='button';
+    b.innerHTML='<svg class="ic" aria-hidden="true"><use href="#'+g.ic+'"/></svg><span>'+g.t+'</span>'; wrap.appendChild(b) });
+  ref.parentNode.insertBefore(wrap,ref);
+  wrap.addEventListener('click',function(e){ var b=e.target.closest('.gtab'); if(!b)return;
+    var g=GRUPOS.filter(function(x){ return x.id===b.dataset.g })[0]; view=SUBLAST[g.id]||g.tabs[0][0]; renderView() });
+  var ph=document.querySelector('section.pane[aria-label="Trabalho"] > .ph'); if(!ph)return;
+  var st=document.createElement('div'); st.id='subtabs'; st.hidden=true; ph.parentNode.insertBefore(st,ph.nextSibling);
+  st.addEventListener('click',function(e){ var b=e.target.closest('button[data-sv]'); if(!b)return; view=b.dataset.sv; renderView() }) }
+function syncNav(){
+  montaNav(); var g=grupoDe(view);
+  $$('#gnav .gtab').forEach(function(b){ b.classList.toggle('on',!!g&&b.dataset.g===g.id) });
+  var cx=$('#ctx'); if(cx&&g&&!nivelGeral())cx.innerHTML='<b>'+esc(ST.nome||ST.obra||'Obra')+'</b> › '+esc(g.t)+(g.tabs.length>1?' › '+esc((g.tabs.filter(function(t){ return t[0]===view })[0]||[0,''])[1]):'');
+  var st=$('#subtabs'); if(!st)return;
+  if(!g||g.tabs.length<2){ st.hidden=true; st.innerHTML=''; return }
+  SUBLAST[g.id]=view; st.hidden=false;
+  st.innerHTML=g.tabs.map(function(t){ return '<button type="button" data-sv="'+t[0]+'" class="'+(t[0]===view?'on':'')+'">'+t[1]+'</button>' }).join('');
+  var on=$('#side .gtab.on'); if(on&&on.scrollIntoView&&window.innerWidth<=900){ try{ on.scrollIntoView({block:'nearest',inline:'center'}) }catch(e){} } }
+var _rvT=renderView; renderView=function(){ _rvT.apply(this,arguments); syncNav() };
+
+var AV_JANELA={'Valor fora do normal':['med','Medições'],'Já devia ter chegado':['ne','Notas de encomenda'],'Verba sem saldo':['oc','Outros Custos'],
+  'Gasto sem ter entrado em stock':['stko','Stock'],'Guia sem NE correspondente':['gr','Guias de remessa'],'Recebido acima do encomendado':['cruz','Cruzamento'],
+  'Encomendado sem estar medido':['cruz','Cruzamento'],'Recebido depois de anulada':['ne','Notas de encomenda'],'Artigo repetido nas medições':['med','Medições']};
+var AV_ORDEM=['Valor fora do normal','Já devia ter chegado','Verba sem saldo','Gasto sem ter entrado em stock','Guia sem NE correspondente','Recebido acima do encomendado','Encomendado sem estar medido','Recebido depois de anulada'];
+function avIr(x){ if(x.v==='med'){ view='med'; sel=x.i; render(); try{ abreFicha() }catch(e){} return }
+  var j=AV_JANELA[x.t]; view=j?j[0]:x.v; render() }
+function renderResumoV2(){
+  var box=$('#resBox'); if(!box)return;
+  var vig=0,apr=0,ne=0,qa=0,qne=0,qgr=0;
+  ST.med.forEach(function(a){ vig+=a._cv; apr+=a._ca; qa+=a._qa; qne+=a._qne; qgr+=Math.min(a._qgr,a._qne) });
+  ST.ne.forEach(function(r){ ne+=num(r.qt)*num(r.pu) });
+  var pct=qne?Math.min(100,qgr/qne*100):0, cob=qa?Math.min(100,qne/qa*100):0;
+  var fs=ST.fases||[], f=fs.length?fs[fs.length-1]:null;
+  var out=[]; ST.med.forEach(function(a,i){ if((a._ca||0)>100000&&(a._ca||0)>5*Math.max(a._cv||0,1))
+    out.push({g:'r',t:'Valor fora do normal',s:(a.cod||'')+' '+(a.des||'')+' · em vigor '+eurz(a._cv)+' € → a apresentar '+eurz(a._ca)+' €',v:'med',i:i}) });
+  var A=avisos().filter(function(x){ return !(/fora do catálogo/.test(x.t)&&/^RSV/i.test(x.s)) });
+  var all=out.concat(A), G={}; all.forEach(function(x){ (G[x.t]=G[x.t]||[]).push(x) });
+  var tipos=Object.keys(G).sort(function(a,b){ var ia=AV_ORDEM.indexOf(a), ib=AV_ORDEM.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib)||G[b].length-G[a].length });
+  var h='<div class="rv2bar"><span>Resumo simples (versão de teste)</span><button type="button" id="rv2Velho">Ver o resumo completo antigo</button></div>';
+  h+='<div class="rv2kpi">'+
+    '<div><b>'+eurz(vig)+' €</b><span>medição em vigor</span></div>'+
+    '<div><b>'+eurz(apr)+' €</b><span>medição a apresentar</span>'+(apr>vig*3&&apr-vig>100000?'<em class="bad">valor fora do normal, ver abaixo</em>':'')+'</div>'+
+    '<div><b>'+eurz(ne)+' €</b><span>encomendado</span><em>'+Math.round(cob)+'% do que a medição pede</em></div>'+
+    '<div><b>'+Math.round(pct)+'%</b><span>recebido do encomendado</span></div></div>';
+  if(f)h+='<div class="rv2fase">Fase em curso: <b>'+esc(f.nome||f.n||f.fase||'')+'</b>'+(f.data?' · '+esc(dstr(f.data)):'')+'</div>';
+  h+='<div class="card"><h3>O que precisa de atenção <span class="n">'+(all.length||'nada')+'</span></h3><div class="cb" style="padding:0">';
+  if(!all.length)h+='<div class="empty"><b>Está tudo consistente</b>Sem avisos nesta obra.</div>';
+  tipos.forEach(function(t){ var g=G[t], j=AV_JANELA[t];
+    h+='<div class="rv2g"><div class="rv2gh"><b>'+esc(t)+'</b><span class="chip '+(g[0].g==='r'?'bad':'wait')+'">'+g.length+'</span>'+(j?'<button type="button" data-ir="'+esc(t)+'">Abrir '+esc(j[1])+'</button>':'')+'</div>';
+    g.slice(0,3).forEach(function(x,k){ h+='<div class="av '+x.g+'" data-t="'+esc(t)+'" data-k="'+k+'"><span class="dot"></span><span class="tx"><span>'+esc(x.s)+'</span></span></div>' });
+    if(g.length>3)h+='<div class="rv2mais">e mais '+(g.length-3)+'. «Abrir» mostra-os na janela própria.</div>';
+    h+='</div>' });
+  h+='</div></div>';
+  box.innerHTML=h;
+  $('#rv2Velho').onclick=function(){ RESV2.old=true; renderResumo('obra') };
+  $$('#resBox [data-ir]').forEach(function(b){ b.onclick=function(){ var j=AV_JANELA[b.dataset.ir]; view=j[0]; render() } });
+  $$('#resBox .av[data-t]').forEach(function(e){ e.onclick=function(){ avIr(G[e.dataset.t][+e.dataset.k]) } }) }
+var _renderResumoT=renderResumo;
+renderResumo=function(modo){ modo=modo||'obra';
+  if(modo==='geral'){ return _renderResumoT(modo) }
+  if(RESV2.old){ _renderResumoT(modo); var box=$('#resBox'); if(box){ var d=document.createElement('div'); d.className='rv2bar'; d.innerHTML='<span>Resumo completo antigo</span><button type="button" id="rv2Novo">Voltar ao resumo simples</button>'; box.insertBefore(d,box.firstChild); $('#rv2Novo').onclick=function(){ RESV2.old=false; renderResumo('obra') } } return }
+  renderResumoV2() };
+
+
+/* ===== versão TESTE: custo seco sem código → verba da categoria (Diversos se não houver) ===== */
+VERBANOMES.push(["Outros Custos - Espias","Espias"]);
+function catVerbaDe(a){
+  /* a categoria é a família da base de dados IP (Cabos, Perfis, Isoladores, …): procura o artigo do catálogo mais parecido */
+  if(!ITEMS.length)buildIX();
+  function toks(s){ return lower(String(s||'')).replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(function(t){ return t.length>3&&!/^\d+$/.test(t)&&!/^(para|com|sem|aco|galv|quente)$/.test(t) }) }
+  var T=toks(a.des), fam='';
+  if(a.fam&&ITEMS.some(function(x){ return x.fam===a.fam }))fam=a.fam;
+  else if(T.length){ var best=0; ITEMS.forEach(function(x){ if(!x.fam||!x.des)return; var X=toks(x.des), n=0; T.forEach(function(t){ if(X.indexOf(t)>-1)n++ }); if(n&&X[0]===T[0])n+=3;
+      if(n>best||(n===best&&n>0&&!fam)){ best=n; fam=x.fam } }); if(best<1)fam='' }
+  return 'Outros Custos - '+(fam||'Diversos');
+}
+function verbaDestino(nome){
+  var v=null; ST.med.forEach(function(a){ if(a.reserva&&a.des===nome)v=a });
+  if(!v){ var fam=nome.replace(/^Outros Custos - /,''); VERBANOMES.forEach(function(p){ if(p[0]===nome)fam=p[1] }); var cod=novaVerba(nome,fam); ST.med.forEach(function(a){ if(a.cod===cod)v=a }) }
+  if(!puOrc(v)) v.pb=1;                       /* verba sem preço: 1 € por unidade, a quantidade passa a ser o valor */
+  return v;
+}
+function faseAberta(){ var r=null; (ST.fases||[]).forEach(function(f){ if(f.estado!=='validado')r=f }); return r?r.id:'' }
+function poeNaVerba(dest,valor,just,mot,f){
+  var p=puOrc(dest)||1; dest.lanc=dest.lanc||[];
+  dest.lanc.push({f:f,_fase:f,mot:mot||'Outros Custos',qt:valor/p,pu:p,vig:true,just:just,doc:'',data:'',src:''});
+}
+limpaMedicaoSemCodigo=function(){
+  var alvo=ST.med.filter(function(a){ return !a.reserva && (!a.cod || codigoInventado(a.cod) || !look(a.cod)) && (a._ca||0)>0.005 });
+  if(!alvo.length){ toast('Não encontrei artigos da medição sem código IP válido com orçamento.'); return }
+  var total=0, porCat={}; alvo.forEach(function(a){ total+=a._ca||0; var c=catVerbaDe(a); porCat[c]=(porCat[c]||0)+(a._ca||0) });
+  var lista=Object.keys(porCat).map(function(c){ return '• '+c+' · '+eurz(porCat[c])+' €' }).join('\n');
+  if(!confirm('Encontrei '+alvo.length+' artigo(s) sem código IP válido, '+eurz(total)+' € no total. O valor de cada um passa para a verba da sua categoria (Diversos se não houver categoria):\n\n'+lista+'\n\nFica registado em reorçamento, nada desaparece. Continuar?'))return;
+  var f=faseAberta();
+  alvo.forEach(function(a){
+    var v=a._ca||0, pu2=puApres(a)||1; a.lanc=a.lanc||[];
+    a.lanc.push({f:f,_fase:f,mot:'Outros Custos',qt:-(a._qa||0),pu:pu2,vig:true,just:'Sem código IP válido — movido para a verba da categoria',doc:'',data:'',src:''});
+    a.cod='';   /* o custo libertado passa sozinho para a verba da categoria (ver sincNaoPrevistos) */
+  });
+  buildIX(); render(); toast('Movi '+eurz(total)+' € de '+alvo.length+' artigo(s) para as verbas das categorias.');
+};
+/* lançamentos já gravados com a quantidade trocada pelo valor (qt = valor, pu = 1) */
+function lancTrocados(){
+  var out=[]; ST.med.forEach(function(a){ if(!a.reserva)return; var p=puOrc(a); if(p<=1.0001)return;
+    (a.lanc||[]).forEach(function(l){ if(num(l.pu)===1&&/^Custo seco vindo de/.test(String(l.just||'')))out.push({a:a,l:l}) }) });
+  return out;
+}
+function reparaVerbas(){
+  var L=lancTrocados(); if(!L.length){ toast('Não há lançamentos a corrigir.'); return }
+  var tot=0, porCat={}; L.forEach(function(x){ var v=num(x.l.qt); tot+=v;
+    var m=/\((.*)\)\s*$/.exec(x.l.just||''), src=null; if(m)ST.med.forEach(function(b){ if(!b.reserva&&b.des===m[1])src=b });
+    x.nome=catVerbaDe(src||{des:m?m[1]:'',fam:''}); porCat[x.nome]=(porCat[x.nome]||0)+v });
+  var lista=Object.keys(porCat).map(function(c){ return '• '+c+' · '+eurz(porCat[c])+' €' }).join('\n');
+  if(!confirm('Estes '+L.length+' lançamentos ('+eurz(tot)+' € no total) estão a multiplicar o valor pelo preço da verba "Outros Custos". Vou retirá-los daí: o valor passa sozinho para a verba da categoria de cada peça:\n\n'+lista+'\n\nContinuar?'))return;
+  L.forEach(function(x){ var v=num(x.l.qt), a=x.a;
+    a.lanc=a.lanc.filter(function(l){ return l!==x.l });   /* o valor volta sozinho, já na verba da categoria */
+  });
+  buildIX(); render(); toast('Corrigi '+L.length+' lançamentos ('+eurz(tot)+' €).');
+}
+var _rr2=renderResumoV2;
+renderResumoV2=function(){ _rr2.apply(this,arguments);
+  var n=lancTrocados().length, box=$('#resBox'); if(!n||!box)return;
+  var d=document.createElement('div'); d.className='card'; d.innerHTML='<h3>Valores a corrigir <span class="n">'+n+'</span></h3><div class="cb"><div class="row" style="align-items:center;gap:12px"><span>'+n+' lançamentos de custo seco ficaram com o valor a multiplicar pelo preço da verba (por isso a medição a apresentar mostra um valor absurdo). Passam para a verba da categoria de cada peça.</span><button type="button" class="p" id="rv2Rep">Corrigir</button></div></div>';
+  var k=box.querySelector('.rv2kpi'); k.parentNode.insertBefore(d,k.nextSibling); $('#rv2Rep').onclick=reparaVerbas };
+
+
+/* ===== versão TESTE: material comprado (NE) que não está na medição entra na lista, com custo ===== */
+function sincNaoPrevistos(){
+  var have={}; ST.med.forEach(function(a){ have[keyOf(a.cod||a.des)]=a });
+  var G={}; ST.ne.forEach(function(r){ if(r.anul||r.reserva)return; var k=rowKey(r); if(!k)return;
+    var g=G[k]||(G[k]={r:r,qt:0,v:0}); g.qt+=num(r.qt); g.v+=num(r.qt)*num(r.pu) });
+  var f=faseAberta(), mudou=false;
+  Object.keys(G).forEach(function(k){ var g=G[k], a=have[k];
+    if(!a){ if(g.qt<=0)return; a=novoArt(g.r.cod||''); a.des=a.des||g.r.des||''; a.un=a.un||g.r.un||''; a.naoPrev=true; ST.med.push(a); have[k]=a; mudou=true }
+    if(!a.naoPrev)return;
+    var pu=g.qt?g.v/g.qt:0; if(a.pb!==pu){ a.pb=pu; mudou=true }
+    var l=(a.lanc||[]).filter(function(x){ return x.auto })[0];
+    if(!l){ l={f:f,_fase:f,mot:'Comprado não previsto',qt:0,pu:pu,vig:true,just:'Entrou por NE sem estar na medição',doc:'',data:'',src:'',auto:true}; a.lanc=a.lanc||[]; a.lanc.push(l); mudou=true }
+    if(l.qt!==g.qt||l.pu!==pu){ l.qt=g.qt; l.pu=pu; mudou=true } });
+  return mudou;
+}
+var _calcNP=calc; calc=function(){ if(ST&&ST.med&&ST.ne&&sincNaoPrevistos())buildIX(); _calcNP.apply(this,arguments) };
+var _estChipNP=estChip; estChip=function(e,a){ return _estChipNP(e)+(a&&a.naoPrev?' <span class="chip wait" title="Comprado sem estar na medição: entrou pela NE, com o custo da compra">não previsto</span>':'') };
+
+
+/* ===== versão TESTE: NE sem código entra direto na verba da categoria + justificação dos Outros Custos ===== */
+function semCodigoNE(r){ return !r.cod || codigoInventado(r.cod) }
+var _sincNP=sincNaoPrevistos;
+sincNaoPrevistos=function(){
+  var m=false;
+  ST.ne.forEach(function(r){ if(r.anul||r.reserva||!semCodigoNE(r))return;
+    var d=verbaDestino(catVerbaDe({des:r.des||r.obs||'',fam:''})); r.reserva=d.cod; m=true });
+  return _sincNP()||m;
+};
+function exportaJustificacao(){
+  var vs=verbas().filter(function(a){ return (a._linhasImp||[]).length||(a._ca||0)>0.005 });
+  var R=[['Verba','Orçamento a apresentar (€)','Gasto (€)','Saldo (€)','N.º de linhas']], D=[['Verba','NE','Fornecedor','Data','Código','Designação','Quantidade','PU (€)','Valor (€)']];
+  vs.forEach(function(a){ R.push([a.des,+(a._ca||0).toFixed(2),+(a._imp||0).toFixed(2),+(a._sal||0).toFixed(2),(a._linhasImp||[]).length]);
+    (a._linhasImp||[]).forEach(function(i){ var r=ST.ne[i]; D.push([a.des,r.ne||'',r.forn||'',dstr(r.data)||'',r.cod||'',r.des||'',num(r.qt),num(r.pu),+(num(r.qt)*num(r.pu)).toFixed(2)]) }) });
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R),'Por verba'); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(D),'Detalhe');
+  XLSX.writeFile(wb,'Justificacao_Outros_Custos_'+(ST.obra||'obra')+'.xlsx'); toast('Exportei a justificação: '+(D.length-1)+' linhas em '+vs.length+' verbas.');
+}
+var _rocJ=renderOC;
+renderOC=function(){ _rocJ.apply(this,arguments); var box=$('#ocBox'); if(!box||$('#ocJust'))return;
+  var b=document.createElement('button'); b.id='ocJust'; b.type='button'; b.textContent='Exportar justificação (Excel)'; b.style.margin='0 0 10px'; b.onclick=exportaJustificacao; box.insertBefore(b,box.firstChild) };
+
+/* ===== versão TESTE: reorçamento que reduz — o que não foi comprado liberta custo para a verba da família; o que já foi comprado pede destino ===== */
+if(DESTINOS.indexOf('Assumir o custo')<0)DESTINOS.push('Assumir o custo');
+var _sincLib=sincNaoPrevistos;
+sincNaoPrevistos=function(){
+  var m=_sincLib();
+  var Q={}, V={}; ST.ne.forEach(function(r){ if(r.anul||r.reserva)return; var k=rowKey(r); Q[k]=(Q[k]||0)+num(r.qt); V[k]=(V[k]||0)+num(r.qt)*num(r.pu) });
+  var vistos={}, ativos={}, cred=[];
+  ST.med.forEach(function(a){ if(a.reserva||a.naoPrev)return; var k=keyOf(a.cod||a.des); if(vistos[k])return; vistos[k]=1;
+    var qv=num(a.qo)+totLanc(a,true).qt, qa=num(a.qo)+totLanc(a,false).qt, R=Math.max(0,qv-qa); if(R<=1e-9&&a.destino!=='Assumir o custo')return;
+    var qne=Q[k]||0, livre=Math.min(R,Math.max(0,qv-qne)), pv=puVigor(a)||puApres(a)||0;
+    var surplus=Math.max(0,qne-qa), pc=qne?V[k]/qne:pv, eur=livre*pv;
+    if(a.destino==='Assumir o custo')eur+=surplus*pc;
+    if(eur>0.005)cred.push({k:k,a:a,eur:eur,livre:livre,sur:surplus}) });
+  cred.forEach(function(c){ ativos[c.k]=1;
+    var nome=catVerbaDe({des:c.a.des,fam:famDe(c.a)}), v=verbaDestino(nome), p=puOrc(v)||1;
+    var l=null; (v.lanc||[]).forEach(function(x){ if(x.autoDe===c.k)l=x });
+    var just='Reorçamento: '+(c.a.des||c.a.cod)+' — '+(c.livre>0?q(c.livre)+' un não compradas':'')+((c.a.destino==='Assumir o custo'&&c.sur>0)?(c.livre>0?' + ':'')+q(c.sur)+' un compradas, custo assumido':'');
+    if(!l){ l={f:faseAberta(),_fase:faseAberta(),mot:'Libertado de '+(c.a.cod||c.a.des),qt:0,pu:p,vig:true,just:just,doc:'',data:'',src:'',autoDe:c.k}; v.lanc=v.lanc||[]; v.lanc.push(l); m=true }
+    if(Math.abs(l.qt-c.eur/p)>1e-9||l.just!==just||l.pu!==p){ l.qt=c.eur/p; l.pu=p; l.just=just; m=true } });
+  ST.med.forEach(function(v){ if(!v.reserva||!v.lanc)return; var n=v.lanc.length; v.lanc=v.lanc.filter(function(l){ return !l.autoDe||ativos[l.autoDe] }); if(v.lanc.length!==n)m=true });
+  return m;
+};
+function sobrasCompra(){
+  var out=[]; ST.med.forEach(function(a,i){ if(a.reserva||a._dup)return; var s=(a._qne||0)-(a._qa||0)-(a._vend||0); if(s<=1e-9)return;
+    var pc=a._qne?a._vne/a._qne:0; out.push({a:a,i:i,q:s,eur:s*pc}) });
+  out.sort(function(x,y){ return y.eur-x.eur }); return out;
+}
+var _rr3=renderResumoV2;
+renderResumoV2=function(){ _rr3.apply(this,arguments);
+  var L=sobrasCompra(), box=$('#resBox'); if(!L.length||!box)return;
+  var pend=L.filter(function(x){ return !x.a.destino||x.a.destino==='A decidir' }), tot=0; L.forEach(function(x){ tot+=x.eur });
+  var d=document.createElement('div'); d.className='card';
+  d.innerHTML='<h3>Comprado a mais, para dar destino <span class="n">'+pend.length+' por decidir · '+L.length+' no total · '+eurz(tot)+' €</span></h3><div class="cb" style="padding:0"><table class="g"><thead><tr><th>Código</th><th>Designação</th><th class="n">A mais</th><th class="n">Valor (€)</th><th>Destino</th></tr></thead><tbody>'+
+    L.slice(0,40).map(function(x){ return '<tr><td class="c">'+esc(x.a.cod||'—')+'</td><td class="t">'+esc(x.a.des||'')+'</td><td class="n">'+q(x.q)+'</td><td class="n">'+eurz(x.eur)+'</td><td><select data-sc="'+x.i+'">'+DESTINOS.map(function(o){ return '<option value="'+esc(o)+'"'+((x.a.destino||'')===o?' selected':'')+'>'+(o||'—')+'</option>' }).join('')+'</select></td></tr>' }).join('')+
+    '</tbody></table>'+(L.length>40?'<div class="rv2mais">e mais '+(L.length-40)+' artigos.</div>':'')+'</div>';
+  var k=box.querySelector('.rv2kpi'); k.parentNode.insertBefore(d,k.nextSibling);
+  $$('#resBox select[data-sc]').forEach(function(s){ s.onchange=function(){ ST.med[+s.dataset.sc].destino=s.value; render() } }) };
+
+window.__nm.cat=catVerbaDe;
+/* ===== versão TESTE: janela Medições simples (orçamento · em vigor · a apresentar), sem histórico nem informação extra ===== */
+var MV={que:''};
+function medV2(){
+  var box=$('#twMed'); if(!box)return;
+  var f0=ST.fases&&ST.fases[0], fl=lower(flt.med||'');
+  var R=[]; ST.med.forEach(function(a,i){
+    if(a.reserva)return;
+    var B=f0?estadoAte(ST,a,f0.id,true):{q:num(a.qo),p:puOrc(a)}, qi=B.q, ci=qi*(B.p||0);
+    var dq=a._qa-a._qv, dc=a._ca-a._cv, sob=Math.max(0,(a._qne||0)-(a._qa||0)-(a._vend||0));
+    if(fl&&lower((a.cod||'')+' '+(a.mn||'')+' '+(a.des||'')).indexOf(fl)<0)return;
+    if(MV.que==='alt'&&Math.abs(dq)<1e-9&&Math.abs(dc)<0.005)return;
+    if(MV.que==='sob'&&sob<=1e-9)return;
+    if(MV.que==='np'&&!a.naoPrev)return;
+    R.push({a:a,i:i,qi:qi,pi:(B.p||0),ci:ci,dq:dq,dc:dc,sob:sob,fam:famDe(a)}) });
+  var FP=famPrefixos(), fc=famCmpFn(FP);
+  R.sort(function(x,y){ return fc(x.fam,y.fam)||String(x.a.cod||'zzz').localeCompare(String(y.a.cod||'zzz'),'pt',{numeric:true}) });
+  MV.ordem=R.map(function(r){ return {a:r.a,i:r.i} });
+  var G={}; R.forEach(function(r){ var g=G[r.fam]||(G[r.fam]={n:0,ci:0,cv:0,ca:0}); g.n++; g.ci+=r.ci; g.cv+=r.a._cv; g.ca+=r.a._ca });
+  function pu0(v){ return v?Number(v).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:4}):'<span class="z">–</span>' }
+  function n0(v){ return v?q(v):'<span class="z">–</span>' }
+  function e0(v){ return Math.abs(v)<0.005?'<span class="z">–</span>':nf2.format(v) }
+  function d0(v,u){ if(Math.abs(v)<(u?0.005:1e-9))return '<span class="z">–</span>'; return '<span class="'+(v>0?'up':'dn')+'">'+(v>0?'+':'−')+(u?nf2.format(Math.abs(v)):q(Math.abs(v)))+'</span>' }
+  var h='<table class="g mv2"><thead><tr class="g1"><th rowspan="2">Código</th><th rowspan="2">Designação</th><th rowspan="2" class="un">Un</th>'+
+    '<th colspan="3" class="gi">Orçamento</th><th colspan="3" class="gv">Em vigor</th><th colspan="3" class="ga">A apresentar</th><th colspan="2" class="gd">Diferença</th><th colspan="2">Compras</th></tr>'+
+    '<tr class="g2"><th class="n gi">Qt.</th><th class="n gi pu">Custo seco</th><th class="n gi">€</th><th class="n gv">Qt.</th><th class="n gv pu">Custo seco</th><th class="n gv">€</th><th class="n ga">Qt.</th><th class="n ga pu">Custo seco</th><th class="n ga">€</th><th class="n gd">Qt.</th><th class="n gd">€</th><th class="n" title="Quantidade encomendada">Enc.</th><th>Estado</th></tr></thead><tbody>';
+  var ant=null;
+  R.forEach(function(r){ var a=r.a;
+    if(r.fam!==ant){ ant=r.fam; var g=G[r.fam], fech=!!famFecha['med|'+r.fam];
+      h+='<tr class="fam" data-fam="'+esc(r.fam)+'"><td colspan="3">'+(fech?'▸ ':'▾ ')+'<b>'+esc(r.fam)+'</b> · '+g.n+(g.n===1?' artigo':' artigos')+'</td>'+
+         '<td class="gi"></td><td class="gi pu"></td><td class="n gi">'+e0(g.ci)+'</td><td class="gv"></td><td class="gv pu"></td><td class="n gv">'+e0(g.cv)+'</td><td class="ga"></td><td class="ga pu"></td><td class="n ga">'+e0(g.ca)+'</td><td class="gd"></td><td class="n gd">'+d0(g.ca-g.cv,1)+'</td><td colspan="2"></td></tr>' }
+    if(famFecha['med|'+r.fam])return;
+    h+='<tr'+(r.i===sel?' class="sel"':'')+'><td class="c"><a href="#" data-go="'+r.i+'">'+esc(a.cod||'—')+'</a></td><td class="t">'+esc(a.des||'')+(a.naoPrev?' <span class="chip wait">não previsto</span>':'')+'</td><td class="un">'+esc(a.un||'')+'</td>'+
+      '<td class="n gi">'+n0(r.qi)+'</td><td class="n gi pu">'+pu0(r.pi)+'</td><td class="n gi">'+e0(r.ci)+'</td><td class="n gv">'+n0(a._qv)+'</td><td class="n gv pu">'+pu0(a._pv)+'</td><td class="n gv">'+e0(a._cv)+'</td><td class="n ga">'+n0(a._qa)+'</td><td class="n ga pu'+(Math.abs((a._pa||0)-(a._pv||0))>1e-9?' mud':'')+'">'+pu0(a._pa)+'</td><td class="n ga">'+e0(a._ca)+'</td>'+
+      '<td class="n gd">'+d0(r.dq,0)+'</td><td class="n gd">'+d0(r.dc,1)+'</td><td class="n">'+n0(a._qne)+'</td>'+
+      '<td>'+(r.sob>1e-9?'<span class="chip bad" title="Comprado acima do necessário: falta dar destino">a mais '+q(r.sob)+'</span>':estChip(a._est))+'</td></tr>' });
+  if(!R.length)h+='<tr><td colspan="16" class="empty" style="padding:30px;text-align:center;color:var(--muted)">Nenhum artigo para mostrar.</td></tr>';
+  box.innerHTML=h+'</tbody></table>';
+  var nm=$('#nMed'); if(nm)nm.textContent=R.length+' de '+ST.med.filter(function(a){ return !a.reserva }).length;
+  var co=0,cv=0,ca=0,sb=0; ST.med.forEach(function(a){ var B=f0?estadoAte(ST,a,f0.id,true):{q:num(a.qo),p:puOrc(a)}; co+=B.q*(B.p||0); cv+=a._cv; ca+=a._ca; if(Math.max(0,(a._qne||0)-(a._qa||0)-(a._vend||0))>1e-9)sb++ });
+  $('#ftMed').innerHTML='Total com Outros Custos · orçamento <b class="mono">'+eurz(co)+' €</b> · em vigor <b class="mono">'+eurz(cv)+' €</b> · a apresentar <b class="mono">'+eurz(ca)+' €</b> · diferença <b class="mono">'+(ca-cv>0?'+':(ca-cv<0?'−':''))+eurz(Math.abs(ca-cv))+' €</b>'+(sb?' · <b class="mono" style="color:var(--red)">'+sb+'</b> comprados a mais':'');
+}
+var _afV=artigosFiltrados;
+artigosFiltrados=function(){ if(view==='med'&&MV.ordem&&MV.ordem.length)return MV.ordem.filter(function(o){ return ST.med[o.i]===o.a }); return _afV.apply(this,arguments) };
+var _rmV=renderMed;
+renderMed=function(){ medModo='grelha'; medOrd='fam'; mcols='q'; _rmV.apply(this,arguments); if(medModo==='grelha')medV2() };
+(function(){ var bar=$('#vMed .bar'); if(!bar||$('#mvQue'))return;
+  var s=document.createElement('select'); s.id='mvQue'; s.setAttribute('aria-label','Que linhas mostrar');
+  s.innerHTML='<option value="">Todos os artigos</option><option value="alt">Só com alteração</option><option value="sob">Só comprados a mais</option><option value="np">Só não previstos</option>';
+  s.onchange=function(){ MV.que=s.value; renderMed() }; var b=$('#bAddMed'); bar.insertBefore(s,b);
+  var bi=$('#bImpMed'); if(bi){ bi.textContent='Carregar orçamento'; bi.title='Carrega o orçamento inicial a partir de um ficheiro. O resto vem da Medição.' } })();
+var _rfV=renderFicha;
+renderFicha=function(){ _rfV.apply(this,arguments);
+  var a=ST.med[sel], fb=$('#fichaBox'); if(!fb)return;
+  var en=fb.querySelector('.entry'); if(en)en.remove();
+  $$('#fichaBox .card').forEach(function(c){ var h=c.querySelector('h3'), t=h?h.textContent:'';
+    if(/^(Revisões|Histórico|Custo seco|Fornecedores conhecidos)/.test(t)||(/^Outros custos/.test(t)&&!(a&&a.reserva))){ c.remove(); return }
+    if(/^Medição/.test(t)){ var cb=c.querySelector('.cb'); if(cb){ var d0=cb.firstElementChild; if(d0&&d0.tagName==='DIV'&&!d0.className)d0.remove(); var rw=cb.querySelector('.row'); if(rw)rw.remove();
+      $$('.three span',cb).forEach(function(s){ if(s.textContent==='custo orçamento')s.textContent='orçamento' }); } }
+    if(c.querySelector('dl.kv')){ $$('dl.kv dt',c).forEach(function(dt){ if(/livro IP|^Designação$|Nomenclatura|Cód\. antigo|Desenho|Nota|Catálogo/.test(dt.textContent)){ var dd=dt.nextElementSibling; if(dd&&dd.tagName==='DD')dd.remove(); dt.remove() } }) } }) };
+
+/* ===== versão TESTE: o ficheiro só carrega o ORÇAMENTO; o reorçamento a apresentar vem sozinho da Medição ===== */
+function orcCarregado(){ if(!ST||!ST.med)return false; var f0=(ST.fases||[])[0]; return ST.med.some(function(a){ return !a.reserva&&!a.naoPrev&&(num(a.qo)>0||(f0&&(a.lanc||[]).some(function(l){ return l.f===f0.id&&!l.auto }))) }) }
+var _dmO=desenhaMedicao;
+desenhaMedicao=function(){
+  if(orcCarregado()){ MEDX.alvo='orcobra'; MEDX.limpar=false }
+  _dmO.apply(this,arguments);
+  if(!orcCarregado())return;
+  $$('#medWrap label.opt').forEach(function(l){ var i=l.querySelector('input'); if(i&&i.value!=='orcobra')l.style.display='none' });
+  var t=$('#medWrap .bd > div'); if(t)t.textContent='O orçamento já está carregado. Aqui só podes refazê-lo a partir de um ficheiro. As alterações da obra (reorçamento a apresentar) vêm sozinhas da Medição.';
+  var lg=$('#mdLigBox'); if(lg)lg.style.display='none';
+};
+var _imO=importaMedicaoApp;
+importaMedicaoApp=function(wb){
+  if(orcCarregado()&&leMedicaoApp(wb)){ toast('O orçamento já está carregado. As alterações vêm sozinhas da Medição; o ficheiro só serve para refazer o orçamento (Medição → Carregar → Custo orçamento).'); return true }
+  return _imO(wb);
+};
+var MLSTAT={txt:'',ts:0,ocupado:false};
+async function sincMedicao(){
+  if(MLSTAT.ocupado||!ligaCentral()||!orcCarregado())return; MLSTAT.ocupado=true;
+  try{
+    var M=await medLigPuxa(); if(!M||!M.L){ MLSTAT.txt='Medição indisponível'; return }
+    var sig=(M.ver?M.ver.nome:'')+'|'+M.L.length+'|'+M.L.reduce(function(s,x){ return s+num(x.qt) },0).toFixed(3);
+    MLSTAT.ts=Date.now();
+    if(ST.medSig===sig){ MLSTAT.txt='ligado à Medição · sem alterações'; return }
+    var fl=ST.fases[ST.fases.length-1], alvo=(fl&&fl.estado!=='validado')?fl.id:(fl?fl.id:'');
+    var d=difMedLig(M.L,alvo), n=d.novos.length+d.alt.length+d.fora.length;
+    ST.medSig=sig;
+    if(!n){ MLSTAT.txt='ligado à Medição · sem alterações'; return }
+    var fc=faseCurso(ST); MEDVERS=M.ver?M.ver.nome:'';
+    var r=aplicaMedicaoFase(ST,M.L,fc.id,'manter',false); MEDVERS='';
+    /* o que saiu da Medição sai do reorçamento a apresentar; o custo seco do que não foi comprado passa para os Outros Custos (ver sincNaoPrevistos) */
+    var KL={}; M.L.forEach(function(x){ KL[keyOf(x.cod||x.des)]=1 }); r.pm=0; r.saiu=0;
+    ST.med.forEach(function(a){ if(a.reserva||a.naoPrev||KL[keyOf(a.cod||a.des)])return;
+      var base=estadoAte(ST,a,fc.id,false).q; a.lanc=(a.lanc||[]).filter(function(l){ return !(l.f===fc.id&&l.src==='medapp') }); delete a.pm; delete a.pmLanc;
+      if(base>1e-9){ a.lanc.push({f:fc.id,mot:'Saiu da Medição',qt:-base,pu:pu(a)?+pu(a).toFixed(4):0,doc:'',just:'Deixou de constar na Medição da obra',ver:MEDVERS,data:hoje(),src:'medapp'}); r.saiu++ } });
+    calc();
+    MLSTAT.txt='ligado à Medição · atualizado agora ('+n+' alterações)';
+    render(); toast('Medição atualizou o reorçamento a apresentar: '+r.novos+' novos, '+r.alt+' alterados'+(r.saiu?', '+r.saiu+' saíram':'')+'.');
+  }catch(e){ MLSTAT.txt='erro a ler a Medição' }
+  finally{ MLSTAT.ocupado=false; var s=$('#medLigSt'); if(s)s.textContent=MLSTAT.txt }
+}
+var _rvL=renderView;
+renderView=function(){ _rvL.apply(this,arguments); var st=$('#subtabs'); if(!st||st.hidden||!MLSTAT.txt)return;
+  if(grupoDe(view)&&grupoDe(view).id==='med'){ var s=document.createElement('span'); s.id='medLigSt'; s.textContent=MLSTAT.txt; s.style.cssText='margin-left:auto;font-size:12px;color:var(--muted);align-self:center'; st.appendChild(s) } };
+setInterval(sincMedicao,20000); window.addEventListener('focus',sincMedicao); setTimeout(sincMedicao,4000);
+window.__nm.sincMedicao=sincMedicao; window.__nm.ligaTeste=function(fn){ medLigPuxa=fn; ligaCentral=function(){ return true } };
+
+/* ===== versão TESTE: carregar só as NE ou só as guias (não mexe no resto da obra) ===== */
+function impSoFolha(wb,campo,rotulo){
+  var cc=NM.ob?NM.ob.cc:(ST.obra||'');
+  var sv={O:OBRAS,i:oi,S:ST,v:view,s:sel,ex:EXTRA_G};
+  var got=null;
+  try{
+    OBRAS=[]; oi=-1; ST=novaObra(cc,ST.nome||'');
+    importWB0(wb);
+    var k=cc?obraPorCC(cc):-1; var o=(k>=0)?OBRAS[k]:(OBRAS.length===1?OBRAS[0]:null);
+    if(o)got=(o[campo]||[]).slice();
+    else if(OBRAS.length>1)toast('O ficheiro não tem a obra '+cc+'.',5000);
+  }catch(e){ got=null }
+  OBRAS=sv.O; oi=sv.i; ST=sv.S; view=sv.v; sel=sv.s; EXTRA_G=sv.ex;
+  if(!got||!got.length){ toast('Não encontrei '+rotulo+' da obra '+cc+' neste ficheiro.',5000); return }
+  var sig=campo==='ne'?['ne','cod','qt']:['guia','cod','qt'];
+  function S(r){ return sig.map(function(f){ return norm(r[f]) }).join('|') }
+  var tem=(ST[campo]||[]).length, subs=true;
+  if(tem)subs=confirm('Este ficheiro traz '+got.length+' linhas de '+rotulo+' e a obra já tem '+tem+'.\n\nOK — substituir as que já estão.\nCancelar — juntar só as que faltam.');
+  if(subs){ ST[campo]=got }
+  else { var ja={}; ST[campo].forEach(function(r){ ja[S(r)]=1 }); var n=0; got.forEach(function(r){ if(!ja[S(r)]){ ja[S(r)]=1; ST[campo].push(r); n++ } }); got=new Array(n) }
+  try{ calc() }catch(e){}
+  render(); nmMudou();
+  toast('Carreguei '+got.length+' linhas de '+rotulo+(subs?' (substituí as anteriores).':'.'));
+}
+function botaoImp(idBarra,idBtn,texto,campo,rotulo){
+  var bar=document.querySelector(idBarra+' .bar'); if(!bar||document.getElementById(idBtn))return;
+  var f=document.createElement('input'); f.type='file'; f.accept='.xlsx,.xls'; f.style.display='none'; f.id=idBtn+'F';
+  var b=document.createElement('button'); b.id=idBtn; b.textContent=texto; b.title='Carrega só '+rotulo+' deste ficheiro; o resto da obra não muda';
+  bar.insertBefore(b,bar.firstChild.nextSibling); bar.appendChild(f);
+  b.addEventListener('click',function(){ if(NM.soLeitura){ toast('Não tem permissão para alterar esta app.'); return } f.click() });
+  f.addEventListener('change',function(e){ var fl=e.target.files[0]; e.target.value=''; if(!fl)return;
+    var fr=new FileReader(); fr.onload=function(){ try{ impSoFolha(XLSX.read(new Uint8Array(fr.result),{type:'array',cellDates:true}),campo,rotulo) }catch(err){ toast('Não consegui ler o ficheiro: '+err.message) } };
+    fr.readAsArrayBuffer(fl) });
+}
+botaoImp('#vNE','bImpNE','Carregar NE','ne','notas de encomenda');
+botaoImp('#vGR','bImpGR','Carregar guias','gr','guias de remessa');
+window.__nm.impSoFolha=impSoFolha;
+
 render();
 })();
+
 
 </script>
 </body>
