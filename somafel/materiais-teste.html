@@ -639,7 +639,7 @@ body.obraAtiva .ob.geral{display:none}
 /* ===== versão TESTE: janela Medições simples ===== */
 #vMed #mCols,#vMed #medOrd,#vMed #medModo,#vMed #fMedQue,#vMed #bPm,#vMed #bDelMed,#vMed #bFund{display:none!important}
 .mv2{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
-.mv2 thead th{position:sticky;z-index:3;background:var(--sheet,#fff);border-bottom:1px solid var(--rule);text-align:left;font-weight:600;font-size:12px;padding:6px 8px;white-space:nowrap}
+.mv2 thead th{position:sticky;z-index:3;background:var(--sheet,#fff);border-bottom:1px solid var(--rule);text-align:left;font-weight:600;font-size:12px;padding:6px 6px;white-space:nowrap}
 .mv2 thead tr.g1 th{top:0;border-top:2px solid var(--ink,#2b3038)}
 .mv2 thead tr.g2 th{top:30px;font-weight:500;color:var(--muted)}
 .mv2 th.n,.mv2 td.n{text-align:right}
@@ -649,17 +649,19 @@ body.obraAtiva .ob.geral{display:none}
 .mv2 .ga{background:rgba(255,210,0,.16)}
 .mv2 .gd{background:transparent}
 .mv2 thead th.gi{background:#eceef2}.mv2 thead th.gv{background:#e4f1e5}.mv2 thead th.ga{background:#fff0b3}
-.mv2 td{padding:5px 8px;border-bottom:1px solid var(--rule);font-family:var(--mono)}
-.mv2 td.t{font-family:var(--sans);max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv2 td{padding:5px 6px;border-bottom:1px solid var(--rule);font-family:var(--mono)}
+.mv2 td.t{font-family:var(--sans);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mv2 td.ga{font-weight:600}
 .mv2 .z{color:var(--muted);opacity:.55}
+.mv2 td.pu{color:var(--muted);font-size:12px}
+.mv2 td.pu.mud{color:#b3261e;font-weight:600}
 .mv2 .up{color:#b3261e}.mv2 .dn{color:#2e7d32}
 .mv2 tr.fam td{background:var(--soft);font-family:var(--sans);font-weight:600;cursor:pointer;border-top:1px solid var(--rule)}
 .mv2 tr:hover td:not(.empty){filter:brightness(.98)}
 .mv2 tr.sel td{outline:0;box-shadow:inset 0 0 0 9999px rgba(255,210,0,.12)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mv2 thead th.gi{background:#2a2f38}:root:not([data-theme="light"]) .mv2 thead th.gv{background:#1f3322}:root:not([data-theme="light"]) .mv2 thead th.ga{background:#4a3f10}.mv2 .up{color:#ff8a80}.mv2 .dn{color:#81c784}}
 :root[data-theme="dark"] .mv2 thead th.gi{background:#2a2f38}:root[data-theme="dark"] .mv2 thead th.gv{background:#1f3322}:root[data-theme="dark"] .mv2 thead th.ga{background:#4a3f10}
-@media (max-width:900px){.mv2 .gi,.mv2 .gd,.mv2 .un{display:none}.mv2 td.t{max-width:150px}.mv2 td.c,.mv2 th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet,#fff)}}
+@media (max-width:900px){.mv2 .gi,.mv2 .gd,.mv2 .un,.mv2 .pu{display:none}.mv2 td.t{max-width:150px}.mv2 td.c,.mv2 th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet,#fff)}}
 
 /* a obra já vem escolhida da Central: sem painel de obras */
 body.obraAtiva #paneObras{display:none}
@@ -9162,28 +9164,29 @@ function medV2(){
     if(MV.que==='alt'&&Math.abs(dq)<1e-9&&Math.abs(dc)<0.005)return;
     if(MV.que==='sob'&&sob<=1e-9)return;
     if(MV.que==='np'&&!a.naoPrev)return;
-    R.push({a:a,i:i,qi:qi,ci:ci,dq:dq,dc:dc,sob:sob,fam:famDe(a)}) });
+    R.push({a:a,i:i,qi:qi,pi:(B.p||0),ci:ci,dq:dq,dc:dc,sob:sob,fam:famDe(a)}) });
   var FP=famPrefixos(), fc=famCmpFn(FP);
   R.sort(function(x,y){ return fc(x.fam,y.fam)||String(x.a.cod||'zzz').localeCompare(String(y.a.cod||'zzz'),'pt',{numeric:true}) });
   MV.ordem=R.map(function(r){ return {a:r.a,i:r.i} });
   var G={}; R.forEach(function(r){ var g=G[r.fam]||(G[r.fam]={n:0,ci:0,cv:0,ca:0}); g.n++; g.ci+=r.ci; g.cv+=r.a._cv; g.ca+=r.a._ca });
+  function pu0(v){ return v?Number(v).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:4}):'<span class="z">–</span>' }
   function n0(v){ return v?q(v):'<span class="z">–</span>' }
   function e0(v){ return Math.abs(v)<0.005?'<span class="z">–</span>':nf2.format(v) }
   function d0(v,u){ if(Math.abs(v)<(u?0.005:1e-9))return '<span class="z">–</span>'; return '<span class="'+(v>0?'up':'dn')+'">'+(v>0?'+':'−')+(u?nf2.format(Math.abs(v)):q(Math.abs(v)))+'</span>' }
   var h='<table class="g mv2"><thead><tr class="g1"><th rowspan="2">Código</th><th rowspan="2">Designação</th><th rowspan="2" class="un">Un</th>'+
-    '<th colspan="2" class="gi">Orçamento</th><th colspan="2" class="gv">Em vigor</th><th colspan="2" class="ga">A apresentar</th><th colspan="2" class="gd">Diferença</th><th colspan="2">Compras</th></tr>'+
-    '<tr class="g2"><th class="n gi">Qt.</th><th class="n gi">€</th><th class="n gv">Qt.</th><th class="n gv">€</th><th class="n ga">Qt.</th><th class="n ga">€</th><th class="n gd">Qt.</th><th class="n gd">€</th><th class="n">Encomendado</th><th>Estado</th></tr></thead><tbody>';
+    '<th colspan="3" class="gi">Orçamento</th><th colspan="3" class="gv">Em vigor</th><th colspan="3" class="ga">A apresentar</th><th colspan="2" class="gd">Diferença</th><th colspan="2">Compras</th></tr>'+
+    '<tr class="g2"><th class="n gi">Qt.</th><th class="n gi pu">Custo seco</th><th class="n gi">€</th><th class="n gv">Qt.</th><th class="n gv pu">Custo seco</th><th class="n gv">€</th><th class="n ga">Qt.</th><th class="n ga pu">Custo seco</th><th class="n ga">€</th><th class="n gd">Qt.</th><th class="n gd">€</th><th class="n" title="Quantidade encomendada">Enc.</th><th>Estado</th></tr></thead><tbody>';
   var ant=null;
   R.forEach(function(r){ var a=r.a;
     if(r.fam!==ant){ ant=r.fam; var g=G[r.fam], fech=!!famFecha['med|'+r.fam];
       h+='<tr class="fam" data-fam="'+esc(r.fam)+'"><td colspan="3">'+(fech?'▸ ':'▾ ')+'<b>'+esc(r.fam)+'</b> · '+g.n+(g.n===1?' artigo':' artigos')+'</td>'+
-         '<td class="gi"></td><td class="n gi">'+e0(g.ci)+'</td><td class="gv"></td><td class="n gv">'+e0(g.cv)+'</td><td class="ga"></td><td class="n ga">'+e0(g.ca)+'</td><td class="gd"></td><td class="n gd">'+d0(g.ca-g.cv,1)+'</td><td colspan="2"></td></tr>' }
+         '<td class="gi"></td><td class="gi pu"></td><td class="n gi">'+e0(g.ci)+'</td><td class="gv"></td><td class="gv pu"></td><td class="n gv">'+e0(g.cv)+'</td><td class="ga"></td><td class="ga pu"></td><td class="n ga">'+e0(g.ca)+'</td><td class="gd"></td><td class="n gd">'+d0(g.ca-g.cv,1)+'</td><td colspan="2"></td></tr>' }
     if(famFecha['med|'+r.fam])return;
     h+='<tr'+(r.i===sel?' class="sel"':'')+'><td class="c"><a href="#" data-go="'+r.i+'">'+esc(a.cod||'—')+'</a></td><td class="t">'+esc(a.des||'')+(a.naoPrev?' <span class="chip wait">não previsto</span>':'')+'</td><td class="un">'+esc(a.un||'')+'</td>'+
-      '<td class="n gi">'+n0(r.qi)+'</td><td class="n gi">'+e0(r.ci)+'</td><td class="n gv">'+n0(a._qv)+'</td><td class="n gv">'+e0(a._cv)+'</td><td class="n ga">'+n0(a._qa)+'</td><td class="n ga">'+e0(a._ca)+'</td>'+
+      '<td class="n gi">'+n0(r.qi)+'</td><td class="n gi pu">'+pu0(r.pi)+'</td><td class="n gi">'+e0(r.ci)+'</td><td class="n gv">'+n0(a._qv)+'</td><td class="n gv pu">'+pu0(a._pv)+'</td><td class="n gv">'+e0(a._cv)+'</td><td class="n ga">'+n0(a._qa)+'</td><td class="n ga pu'+(Math.abs((a._pa||0)-(a._pv||0))>1e-9?' mud':'')+'">'+pu0(a._pa)+'</td><td class="n ga">'+e0(a._ca)+'</td>'+
       '<td class="n gd">'+d0(r.dq,0)+'</td><td class="n gd">'+d0(r.dc,1)+'</td><td class="n">'+n0(a._qne)+'</td>'+
       '<td>'+(r.sob>1e-9?'<span class="chip bad" title="Comprado acima do necessário: falta dar destino">a mais '+q(r.sob)+'</span>':estChip(a._est))+'</td></tr>' });
-  if(!R.length)h+='<tr><td colspan="13" class="empty" style="padding:30px;text-align:center;color:var(--muted)">Nenhum artigo para mostrar.</td></tr>';
+  if(!R.length)h+='<tr><td colspan="16" class="empty" style="padding:30px;text-align:center;color:var(--muted)">Nenhum artigo para mostrar.</td></tr>';
   box.innerHTML=h+'</tbody></table>';
   var nm=$('#nMed'); if(nm)nm.textContent=R.length+' de '+ST.med.filter(function(a){ return !a.reserva }).length;
   var co=0,cv=0,ca=0,sb=0; ST.med.forEach(function(a){ var B=f0?estadoAte(ST,a,f0.id,true):{q:num(a.qo),p:puOrc(a)}; co+=B.q*(B.p||0); cv+=a._cv; ca+=a._ca; if(Math.max(0,(a._qne||0)-(a._qa||0)-(a._vend||0))>1e-9)sb++ });
@@ -9205,7 +9208,7 @@ renderFicha=function(){ _rfV.apply(this,arguments);
   $$('#fichaBox .card').forEach(function(c){ var h=c.querySelector('h3'), t=h?h.textContent:'';
     if(/^(Revisões|Histórico|Custo seco|Fornecedores conhecidos)/.test(t)||(/^Outros custos/.test(t)&&!(a&&a.reserva))){ c.remove(); return }
     if(/^Medição/.test(t)){ var cb=c.querySelector('.cb'); if(cb){ var d0=cb.firstElementChild; if(d0&&d0.tagName==='DIV'&&!d0.className)d0.remove(); var rw=cb.querySelector('.row'); if(rw)rw.remove();
-      $$('.three span',cb).forEach(function(s){ if(s.textContent==='custo orçamento')s.textContent='orçamento' }); $$('.three .eur',cb).forEach(function(e){ e.textContent=e.textContent.replace(/ · ao custo seco.*$/,'') }) } }
+      $$('.three span',cb).forEach(function(s){ if(s.textContent==='custo orçamento')s.textContent='orçamento' }); } }
     if(c.querySelector('dl.kv')){ $$('dl.kv dt',c).forEach(function(dt){ if(/livro IP|^Designação$|Nomenclatura|Cód\. antigo|Desenho|Nota|Catálogo/.test(dt.textContent)){ var dd=dt.nextElementSibling; if(dd&&dd.tagName==='DD')dd.remove(); dt.remove() } }) } }) };
 
 /* ===== versão TESTE: o ficheiro só carrega o ORÇAMENTO; o reorçamento a apresentar vem sozinho da Medição ===== */
