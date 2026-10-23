@@ -704,7 +704,7 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.da
     if(!m.length){aviso('O desenho '+e.data.cod+' não está no Catálogo (o administrador ainda não o carregou).',true);return}
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
 const LIVRE=['med','cons','rct'];
-const OBRAV=['visao','docs','mat','prod','med','cons','rct'],APPV={mat:(/[?&]teste=1\b/.test(location.search)?'materiais-teste':'materiais'),prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
+const OBRAV=['visao','docs','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
 async function vai(v,obraId){
   if(v==='obra')v='visao';
   if(obraId&&(!S.obra||S.obra.id!==obraId)){try{S.obra=await ok(sb.from('obras').select('*').eq('id',obraId).single());largaApps(obraId)}catch(e){aviso(erroTxt(e),true);return}}
