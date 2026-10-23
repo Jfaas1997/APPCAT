@@ -7511,10 +7511,12 @@ $('#fMedFile').addEventListener('change',function(e){
         if(mx.alvo==='orcobra'){
           if(!LQ){ toast('Este ficheiro não tem «Quant. Orç.» e «Quant. Obra». Para o custo orçamento preciso do MAT/CAT ou da lista de quantidades.'); return }
           var f1=ST.fases[0].id;
+          LQ.lista=orcRemapVerbas(LQ.lista);
           var lo=LQ.lista.map(function(x){ return {cod:x.cod,mn:x.mn,des:x.des,un:x.un,qt:num(x.qo),cs:x.cs} });   /* base do orçamento, guardada por dentro */
           var lb=LQ.lista.filter(function(x){ return qtDoAlvo(x,f1)>0 }).map(function(x){ return {cod:x.cod,mn:x.mn,des:x.des,un:x.un,qt:qtDoAlvo(x,f1)} });
           aplicaBaseOrcamento(ST,lo);
           var r2=aplicaMedicaoFase(ST,lb,f1,mx.modo,true);
+          orcMarcaVerbas();
           msg='Orçamento carregado: '+(r2.novos+r2.alt)+' artigos.';
           r={curso:false};
         } else {
@@ -9020,6 +9022,7 @@ function catVerbaDe(a){
   if(a.fam&&ITEMS.some(function(x){ return x.fam===a.fam }))fam=a.fam;
   else if(T.length){ var best=0; ITEMS.forEach(function(x){ if(!x.fam||!x.des)return; var X=toks(x.des), n=0; T.forEach(function(t){ if(X.indexOf(t)>-1)n++ }); if(n&&X[0]===T[0])n+=3;
       if(n>best||(n===best&&n>0&&!fam)){ best=n; fam=x.fam } }); if(best<1)fam='' }
+  if(/^postes/i.test(fam))fam='';
   return 'Outros Custos - '+(fam||'Diversos');
 }
 function verbaDestino(nome){
@@ -9046,6 +9049,39 @@ limpaMedicaoSemCodigo=function(){
     a.cod='';   /* o custo libertado passa sozinho para a verba da categoria (ver sincNaoPrevistos) */
   });
   buildIX(); render(); toast('Movi '+eurz(total)+' € de '+alvo.length+' artigo(s) para as verbas das categorias.');
+};
+/* verbas do orçamento: «Outros Custos - Postes de Catenária» passa para Diversos; códigos RSV são verbas */
+function orcRemapVerbas(L){
+  L.forEach(function(x){ var it=x.cod?look(x.cod):null; if(it&&it.cod&&it.cod!==x.cod){ if(!x.mn)x.mn=x.cod; x.cod=it.cod } });   /* código antigo (Cód. MN) passa para o código IP */
+  var out=[], v=0, tem=false;
+  L.forEach(function(x){ if(/^outros custos - postes de cat/i.test(String(x.des||'').trim())){ v+=num(x.qo)*(num(x.cs)||0); tem=true } else out.push(x) });
+  if(!tem)return out;
+  var d=null; out.forEach(function(x){ if(/^outros custos - diversos$/i.test(String(x.des||'').trim()))d=x });
+  if(!d){ d={cod:'RSV0016',mn:'',des:'Outros Custos - Diversos',un:'vg',qo:1,qb:1,cs:0}; out.push(d) }
+  d.cs=+((num(d.qo)||0)*(num(d.cs)||0)+v).toFixed(2); d.qo=1; d.qb=1; d.un='vg';
+  return out;
+}
+function orcMarcaVerbas(){
+  ST.med.forEach(function(a){ if(/^RSV\d+$/i.test(String(a.cod||'').trim())){ a.reserva=true; a.un='vg';
+    VERBANOMES.forEach(function(p){ if(p[0]===a.des)a.fam=p[1] }) } });
+}
+/* automático: o custo seco de artigos sem código IP válido passa sozinho para a verba da categoria (Diversos se não houver) */
+var AUTOSC=false;
+function semCodigoAuto(){
+  var f=faseAberta(); if(!f||!ST||!ST.med)return 0;
+  var alvo=ST.med.filter(function(a){ return !a.reserva && !a.naoPrev && !/^RSV\d+$/i.test(String(a.cod||'')) && !/^\d{2}\.\d{3}\.\d{2}$/.test(String(a.cod||'').trim()) && (a._ca||0)>0.005 });
+  alvo.forEach(function(a){
+    a.lanc=a.lanc||[];
+    a.lanc.push({f:f,_fase:f,mot:'Outros Custos',qt:-(a._qa||0),pu:puApres(a)||1,vig:true,just:'Sem código IP válido — movido para a verba da categoria',doc:'',data:'',src:'auto'});
+    a.cod='';
+  });
+  return alvo.length;
+}
+var _rAS=render;
+render=function(){
+  _rAS.apply(this,arguments);
+  if(AUTOSC)return; AUTOSC=true;
+  try{ if(semCodigoAuto()){ buildIX(); try{ nmMudou() }catch(e){} _rAS.apply(this,arguments) } }finally{ AUTOSC=false }
 };
 /* lançamentos já gravados com a quantidade trocada pelo valor (qt = valor, pu = 1) */
 function lancTrocados(){
@@ -9092,7 +9128,7 @@ var _estChipNP=estChip; estChip=function(e,a){ return _estChipNP(e)+(a&&a.naoPre
 
 
 /* ===== versão TESTE: NE sem código entra direto na verba da categoria + justificação dos Outros Custos ===== */
-function semCodigoNE(r){ return !r.cod || codigoInventado(r.cod) }
+function semCodigoNE(r){ return !r.cod || codigoInventado(r.cod) || !/^\d{2}\.\d{3}\.\d{2}$/.test(String(r.cod).trim()) }
 var _sincNP=sincNaoPrevistos;
 sincNaoPrevistos=function(){
   var m=false;
