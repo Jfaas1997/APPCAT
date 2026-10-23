@@ -660,6 +660,11 @@ body.obraAtiva .ob.geral{display:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mv2 thead th.gi{background:#2a2f38}:root:not([data-theme="light"]) .mv2 thead th.gv{background:#1f3322}:root:not([data-theme="light"]) .mv2 thead th.ga{background:#4a3f10}.mv2 .up{color:#ff8a80}.mv2 .dn{color:#81c784}}
 :root[data-theme="dark"] .mv2 thead th.gi{background:#2a2f38}:root[data-theme="dark"] .mv2 thead th.gv{background:#1f3322}:root[data-theme="dark"] .mv2 thead th.ga{background:#4a3f10}
 @media (max-width:900px){.mv2 .gi,.mv2 .gd,.mv2 .un{display:none}.mv2 td.t{max-width:150px}.mv2 td.c,.mv2 th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet,#fff)}}
+
+/* a obra já vem escolhida da Central: sem painel de obras */
+body.obraAtiva #paneObras{display:none}
+body.obraAtiva main,body.obraAtiva main.fechada{grid-template-columns:var(--sw) minmax(0,1fr)}
+.sver{display:none}
 </style>
 <style id="online-extra">
 /* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
@@ -747,7 +752,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Controlo de materiais</span><span class="sver">v47 teste</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Controlo de materiais</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp" data-n="g">Todas as obras</div>
     <button class="tab" data-v="gres" data-n="g"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>Resumo geral</span></button>
     <button class="tab" data-v="obr" data-n="g"><svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><span>Material</span></button>
@@ -8594,7 +8599,7 @@ document.addEventListener('click',function(e){ var m=$('#nmenu'); if(!m.hidden&&
 $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b)return; nmMenu(false); var a=b.getAttribute('data-n');
   if(a==='pasta')nmAbrePasta(); else if(a==='reabrir')nmReabre(); else if(a==='fechar')nmFecha(); else if(a==='copias')nmRestauraCopia(); else if(a==='contratos')nmVerContratos() };
 function nmVerContratos(){ var cs=nmContratos(); nmModal({titulo:'Contratos da obra',corpo:cs.length?'<table><tbody>'+cs.map(function(c,i){ return '<tr><td><b>'+esc(c.nome)+'</b>'+(i===0?' <span class="n">(inicial)</span>':'')+'</td><td>'+esc(c.cliente||'')+'</td><td class="n">'+(c.valor!=null?eurz(c.valor)+' €':'')+'</td></tr>' }).join('')+'</tbody></table><p style="color:var(--muted);font-size:12px">Os contratos vêm do <span class="mono">obra.json</span> (criados na Central).</p>':'<p>Abra primeiro a pasta de uma obra.</p>',botoes:[{t:'Fechar',v:true,p:true}]}) }
-function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de materiais v'+NM.VERSAO,corpo:
+function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de materiais',corpo:
   '<p><b>Uma obra por pasta.</b> Em «Obra ▾ › Abrir pasta da obra» escolhe a pasta da obra. Os dados ficam em <span class="mono">Dados/materiais.xlsx</span>, ligados ao centro de custo. A app trabalha com essa obra e com os contratos dela.</p>'
   +'<p><b>Gravação.</b> Grava sozinha 5 segundos depois da última alteração. Cópias datadas a cada 30 minutos e ao fechar (as últimas '+NM_MAXCOP+') em <span class="mono">Copias/</span>. Se o ficheiro mudar noutra janela ou por outra pessoa, a app avisa antes de gravar por cima.</p>'
   +'<p><b>Contratos.</b> Cada nota de encomenda e cada guia leva um contrato (por omissão o inicial), escolhido na respetiva lista. O material e o stock são da obra toda.</p>'
@@ -8913,7 +8918,7 @@ document.getElementById('fOpen').addEventListener('change',async function(e){
     var wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array',cellDates:true}); nmCarrega(wb); nmMudou() }
   catch(err){ nmDiz('Não consegui ler o ficheiro: '+esc(err.message)) } });
 var _bp=document.getElementById('bPasta'); if(_bp)_bp.hidden=true;
-nmAjuda=function(){ nmModal({titulo:'Ajuda · Controlo de materiais v'+NM.VERSAO,corpo:
+nmAjuda=function(){ nmModal({titulo:'Ajuda · Controlo de materiais',corpo:
   '<p><b>Dados online.</b> Os materiais de cada obra ficam no servidor. Grava sozinho 12 segundos depois da última alteração. Sem rede, as alterações ficam neste aparelho e seguem quando a rede voltar.</p>'
   +'<p><b>Livro de peças.</b> Vem da base IP da organização (folha «Pecas»). Os materiais fora do livro que a obra precisa ficam na própria obra; a lista de referência é da organização.</p>'
   +'<p><b>Contratos.</b> Cada nota de encomenda e cada guia leva um contrato, escolhido na respetiva lista. O material e o stock são da obra toda.</p>'
