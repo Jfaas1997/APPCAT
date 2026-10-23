@@ -1256,7 +1256,7 @@ $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b
   else if(a==='json')$('#fJson').click(); else if(a==='saveas')descarrega(JSON.stringify(JSON.parse(conteudo()),null,1),'medicao_rct_'+chave()+'_'+nmCarimbo()+'.json','application/json') };
 $('#fJson').onchange=async function(){ var f=this.files[0]; this.value=''; if(!f)return; try{ var o=JSON.parse(await f.text()); if(!o.caixas&&!o.cabos)throw new Error('não é um ficheiro de medição de RCT (versão 2)'); aplica(o); mudou(); toast('Ficheiro carregado.') }catch(e){ diz('Não consegui abrir: '+esc(e.message)) } };
 $('#bSave').onclick=guardar; $('#bUndo').onclick=function(){ histVai(-1) }; $('#bRedo').onclick=function(){ histVai(1) };
-$('#bAjuda').onclick=function(){ modal({titulo:'Ajuda · Medição de RCT v'+VERSAO,corpo:
+$('#bAjuda').onclick=function(){ modal({titulo:'Ajuda · Medição de RCT',corpo:
   '<p><b>Uma obra por pasta.</b> Em «Obra ▾ › Abrir pasta da obra» escolhe a pasta da obra (dentro da Central abre sozinha). Os dados ficam em <span class="mono">Dados/rct.json</span>, ligados ao centro de custo.</p>'
   +'<p><b>Gravação.</b> Grava sozinha 5 segundos depois da última alteração. Cópias datadas a cada 30 minutos (as últimas '+NM_MAXCOP+') em <span class="mono">Copias/</span>. Se o ficheiro mudar noutra janela, a app avisa antes de gravar por cima.</p>'
   +'<p><b>Montagens.</b> A lista de montagens e dos seus materiais não está dentro da app: lê-se do ficheiro <span class="mono">Base de dados/Montagens_RCT.xlsx</span> (folha «Tipos de montagens»). Editas o Excel e a app vê a alteração.</p>'
@@ -2107,7 +2107,7 @@ menu=function(on){ var m=$('#nmenu'); m.hidden=!on; $('#bObra').setAttribute('ar
 $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b)return; menu(false); var a=b.getAttribute('data-n');
   if(a==='trocar')location.href=location.pathname; else if(a==='central')location.href='index.html'; else if(a==='copias')restauraCopia(); else if(a==='baseRct')onCarregaBaseAdmin(); else if(a==='passa')onPassaObra();
   else if(a==='json')$('#fJson').click(); else if(a==='saveas')descarrega(JSON.stringify(JSON.parse(conteudo()),null,1),'medicao_rct_'+chave()+'_'+nmCarimbo()+'.json','application/json') };
-$('#bAjuda').onclick=function(){ modal({titulo:'Ajuda · Medição de RCT v'+VERSAO+' online',corpo:
+$('#bAjuda').onclick=function(){ modal({titulo:'Ajuda · Medição de RCT',corpo:
   '<p><b>Dados online.</b> A medição de cada obra fica no servidor. Grava sozinha 12 segundos depois da última alteração. Sem rede, fica no rascunho deste aparelho e segue quando a rede voltar.</p>'
   +'<p><b>Montagens.</b> A lista de montagens vem do ficheiro da organização (carregado pelo administrador em «Obra ▾ › Carregar base RCT…»). As alterações e montagens novas que criar partilham-se com os colegas.</p>'
   +'<p><b>Caixas e cabos.</b> Cria a caixa e junta-lhe montagens; ao executar, indica o tipo de cabo e os metros gastos. O cabo gasto a mais soma-se em «Cabo a reclamar».</p>'
