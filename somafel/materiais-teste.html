@@ -1820,7 +1820,7 @@ function renderListaFam(){
       h+='<div class="art" data-i="'+o.i+'"><span class="c">'+esc(o.a.cod||'—')+'</span>'+
          '<span class="d">'+esc(o.a.des||'(sem designação)')+'</span>'+
          '<span class="mono" style="font-size:11.5px;color:var(--muted)">'+q(o.a._qa)+'</span>'+
-         estChip(o.a._est)+'</div>';
+         estChip(o.a._est,o.a)+'</div>';
     });
     h+='</div>';
   });
@@ -1849,7 +1849,7 @@ function renderLista(){
       h+='<div class="art'+(o.i===sel?' on':'')+'" data-i="'+o.i+'">'+
          '<span class="c">'+esc(o.a.cod||'—')+'</span>'+
          '<span class="d">'+esc(o.a.des||'(sem designação)')+'</span>'+
-         estChip(o.a._est)+'</div>';
+         estChip(o.a._est,o.a)+'</div>';
     });
     h+='</div>';
   });
@@ -2237,7 +2237,7 @@ function renderMed(){
          '<td class="n">'+(sob?'<b style="color:var(--amber)">'+q(sob)+'</b>':'')+'</td>'+
          '<td class="n">'+(sob?eur(sob*pc):'')+'</td>'+
          '<td>'+(sob?'<select data-r="'+o.i+'" data-k="destino">'+DESTINOS.map(function(x){return '<option value="'+esc(x)+'"'+((a.destino||'')===x?' selected':'')+'>'+(x||'—')+'</option>'}).join('')+'</select>':'')+'</td>'+
-         '<td>'+estChip(a._est)+'</td></tr>';
+         '<td>'+estChip(a._est,a)+'</td></tr>';
     });
   } else {
     h='<table class="g"><thead><tr><th>Código</th><th>Designação de obra</th><th>Un</th>'+
@@ -9041,6 +9041,47 @@ renderResumoV2=function(){ _rr2.apply(this,arguments);
   var n=lancTrocados().length, box=$('#resBox'); if(!n||!box)return;
   var d=document.createElement('div'); d.className='card'; d.innerHTML='<h3>Valores a corrigir <span class="n">'+n+'</span></h3><div class="cb"><div class="row" style="align-items:center;gap:12px"><span>'+n+' lançamentos de custo seco ficaram com o valor a multiplicar pelo preço da verba (por isso a medição a apresentar mostra um valor absurdo). Passam para a verba da categoria de cada peça.</span><button type="button" class="p" id="rv2Rep">Corrigir</button></div></div>';
   var k=box.querySelector('.rv2kpi'); k.parentNode.insertBefore(d,k.nextSibling); $('#rv2Rep').onclick=reparaVerbas };
+
+
+/* ===== versão TESTE: material comprado (NE) que não está na medição entra na lista, com custo ===== */
+function sincNaoPrevistos(){
+  var have={}; ST.med.forEach(function(a){ have[keyOf(a.cod||a.des)]=a });
+  var G={}; ST.ne.forEach(function(r){ if(r.anul||r.reserva)return; var k=rowKey(r); if(!k)return;
+    var g=G[k]||(G[k]={r:r,qt:0,v:0}); g.qt+=num(r.qt); g.v+=num(r.qt)*num(r.pu) });
+  var f=faseAberta(), mudou=false;
+  Object.keys(G).forEach(function(k){ var g=G[k], a=have[k];
+    if(!a){ if(g.qt<=0)return; a=novoArt(g.r.cod||''); a.des=a.des||g.r.des||''; a.un=a.un||g.r.un||''; a.naoPrev=true; ST.med.push(a); have[k]=a; mudou=true }
+    if(!a.naoPrev)return;
+    var pu=g.qt?g.v/g.qt:0; if(a.pb!==pu){ a.pb=pu; mudou=true }
+    var l=(a.lanc||[]).filter(function(x){ return x.auto })[0];
+    if(!l){ l={f:f,_fase:f,mot:'Comprado não previsto',qt:0,pu:pu,vig:true,just:'Entrou por NE sem estar na medição',doc:'',data:'',src:'',auto:true}; a.lanc=a.lanc||[]; a.lanc.push(l); mudou=true }
+    if(l.qt!==g.qt||l.pu!==pu){ l.qt=g.qt; l.pu=pu; mudou=true } });
+  return mudou;
+}
+var _calcNP=calc; calc=function(){ if(ST&&ST.med&&ST.ne&&sincNaoPrevistos())buildIX(); _calcNP.apply(this,arguments) };
+var _estChipNP=estChip; estChip=function(e,a){ return _estChipNP(e)+(a&&a.naoPrev?' <span class="chip wait" title="Comprado sem estar na medição: entrou pela NE, com o custo da compra">não previsto</span>':'') };
+
+
+/* ===== versão TESTE: NE sem código entra direto na verba da categoria + justificação dos Outros Custos ===== */
+function semCodigoNE(r){ return !r.cod || codigoInventado(r.cod) }
+var _sincNP=sincNaoPrevistos;
+sincNaoPrevistos=function(){
+  var m=false;
+  ST.ne.forEach(function(r){ if(r.anul||r.reserva||!semCodigoNE(r))return;
+    var d=verbaDestino(catVerbaDe({des:r.des||r.obs||'',fam:''})); r.reserva=d.cod; m=true });
+  return _sincNP()||m;
+};
+function exportaJustificacao(){
+  var vs=verbas().filter(function(a){ return (a._linhasImp||[]).length||(a._ca||0)>0.005 });
+  var R=[['Verba','Orçamento a apresentar (€)','Gasto (€)','Saldo (€)','N.º de linhas']], D=[['Verba','NE','Fornecedor','Data','Código','Designação','Quantidade','PU (€)','Valor (€)']];
+  vs.forEach(function(a){ R.push([a.des,+(a._ca||0).toFixed(2),+(a._imp||0).toFixed(2),+(a._sal||0).toFixed(2),(a._linhasImp||[]).length]);
+    (a._linhasImp||[]).forEach(function(i){ var r=ST.ne[i]; D.push([a.des,r.ne||'',r.forn||'',dstr(r.data)||'',r.cod||'',r.des||'',num(r.qt),num(r.pu),+(num(r.qt)*num(r.pu)).toFixed(2)]) }) });
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R),'Por verba'); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(D),'Detalhe');
+  XLSX.writeFile(wb,'Justificacao_Outros_Custos_'+(ST.obra||'obra')+'.xlsx'); toast('Exportei a justificação: '+(D.length-1)+' linhas em '+vs.length+' verbas.');
+}
+var _rocJ=renderOC;
+renderOC=function(){ _rocJ.apply(this,arguments); var box=$('#ocBox'); if(!box||$('#ocJust'))return;
+  var b=document.createElement('button'); b.id='ocJust'; b.type='button'; b.textContent='Exportar justificação (Excel)'; b.style.margin='0 0 10px'; b.onclick=exportaJustificacao; box.insertBefore(b,box.firstChild) };
 
 render();
 })();
