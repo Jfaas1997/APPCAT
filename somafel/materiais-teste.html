@@ -635,6 +635,31 @@ body.obraAtiva .ob.geral{display:none}
 @media (max-width:900px){#side .gtab{flex:0 0 auto;flex-direction:column;gap:2px;width:auto;min-width:64px;padding:5px 8px;border-left:0;border-bottom:3px solid transparent;font-size:10.5px;text-align:center;justify-content:center}#side .gtab.on{border-bottom-color:var(--brand)}}
 :root[data-side="c"] #side .gtab{width:44px;height:40px;padding:0;justify-content:center;border-left-width:0}
 :root[data-side="c"] #side .gtab span{display:none}
+
+/* ===== versão TESTE: janela Medições simples ===== */
+#vMed #mCols,#vMed #medOrd,#vMed #medModo,#vMed #fMedQue,#vMed #bPm,#vMed #bDelMed,#vMed #bFund{display:none!important}
+.mv2{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.mv2 thead th{position:sticky;z-index:3;background:var(--sheet,#fff);border-bottom:1px solid var(--rule);text-align:left;font-weight:600;font-size:12px;padding:6px 8px;white-space:nowrap}
+.mv2 thead tr.g1 th{top:0;border-top:2px solid var(--ink,#2b3038)}
+.mv2 thead tr.g2 th{top:30px;font-weight:500;color:var(--muted)}
+.mv2 th.n,.mv2 td.n{text-align:right}
+.mv2 th[colspan]{text-align:center}
+.mv2 .gi{background:rgba(120,130,150,.07)}
+.mv2 .gv{background:rgba(46,125,50,.07)}
+.mv2 .ga{background:rgba(255,210,0,.16)}
+.mv2 .gd{background:transparent}
+.mv2 thead th.gi{background:#eceef2}.mv2 thead th.gv{background:#e4f1e5}.mv2 thead th.ga{background:#fff0b3}
+.mv2 td{padding:5px 8px;border-bottom:1px solid var(--rule);font-family:var(--mono)}
+.mv2 td.t{font-family:var(--sans);max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv2 td.ga{font-weight:600}
+.mv2 .z{color:var(--muted);opacity:.55}
+.mv2 .up{color:#b3261e}.mv2 .dn{color:#2e7d32}
+.mv2 tr.fam td{background:var(--soft);font-family:var(--sans);font-weight:600;cursor:pointer;border-top:1px solid var(--rule)}
+.mv2 tr:hover td:not(.empty){filter:brightness(.98)}
+.mv2 tr.sel td{outline:0;box-shadow:inset 0 0 0 9999px rgba(255,210,0,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mv2 thead th.gi{background:#2a2f38}:root:not([data-theme="light"]) .mv2 thead th.gv{background:#1f3322}:root:not([data-theme="light"]) .mv2 thead th.ga{background:#4a3f10}.mv2 .up{color:#ff8a80}.mv2 .dn{color:#81c784}}
+:root[data-theme="dark"] .mv2 thead th.gi{background:#2a2f38}:root[data-theme="dark"] .mv2 thead th.gv{background:#1f3322}:root[data-theme="dark"] .mv2 thead th.ga{background:#4a3f10}
+@media (max-width:900px){.mv2 .gi,.mv2 .gd,.mv2 .un{display:none}.mv2 td.t{max-width:150px}.mv2 td.c,.mv2 th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet,#fff)}}
 </style>
 <style id="online-extra">
 /* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
@@ -9119,6 +9144,65 @@ renderResumoV2=function(){ _rr3.apply(this,arguments);
   $$('#resBox select[data-sc]').forEach(function(s){ s.onchange=function(){ ST.med[+s.dataset.sc].destino=s.value; render() } }) };
 
 window.__nm.cat=catVerbaDe;
+/* ===== versão TESTE: janela Medições simples (orçamento · em vigor · a apresentar), sem histórico nem informação extra ===== */
+var MV={que:''};
+function medV2(){
+  var box=$('#twMed'); if(!box)return;
+  var f0=ST.fases&&ST.fases[0], fl=lower(flt.med||'');
+  var R=[]; ST.med.forEach(function(a,i){
+    if(a.reserva)return;
+    var B=f0?estadoAte(ST,a,f0.id,true):{q:num(a.qo),p:puOrc(a)}, qi=B.q, ci=qi*(B.p||0);
+    var dq=a._qa-a._qv, dc=a._ca-a._cv, sob=Math.max(0,(a._qne||0)-(a._qa||0)-(a._vend||0));
+    if(fl&&lower((a.cod||'')+' '+(a.mn||'')+' '+(a.des||'')).indexOf(fl)<0)return;
+    if(MV.que==='alt'&&Math.abs(dq)<1e-9&&Math.abs(dc)<0.005)return;
+    if(MV.que==='sob'&&sob<=1e-9)return;
+    if(MV.que==='np'&&!a.naoPrev)return;
+    R.push({a:a,i:i,qi:qi,ci:ci,dq:dq,dc:dc,sob:sob,fam:famDe(a)}) });
+  var FP=famPrefixos(), fc=famCmpFn(FP);
+  R.sort(function(x,y){ return fc(x.fam,y.fam)||String(x.a.cod||'zzz').localeCompare(String(y.a.cod||'zzz'),'pt',{numeric:true}) });
+  MV.ordem=R.map(function(r){ return {a:r.a,i:r.i} });
+  var G={}; R.forEach(function(r){ var g=G[r.fam]||(G[r.fam]={n:0,ci:0,cv:0,ca:0}); g.n++; g.ci+=r.ci; g.cv+=r.a._cv; g.ca+=r.a._ca });
+  function n0(v){ return v?q(v):'<span class="z">–</span>' }
+  function e0(v){ return Math.abs(v)<0.005?'<span class="z">–</span>':nf2.format(v) }
+  function d0(v,u){ if(Math.abs(v)<(u?0.005:1e-9))return '<span class="z">–</span>'; return '<span class="'+(v>0?'up':'dn')+'">'+(v>0?'+':'−')+(u?nf2.format(Math.abs(v)):q(Math.abs(v)))+'</span>' }
+  var h='<table class="g mv2"><thead><tr class="g1"><th rowspan="2">Código</th><th rowspan="2">Designação</th><th rowspan="2" class="un">Un</th>'+
+    '<th colspan="2" class="gi">Orçamento</th><th colspan="2" class="gv">Em vigor</th><th colspan="2" class="ga">A apresentar</th><th colspan="2" class="gd">Diferença</th><th colspan="2">Compras</th></tr>'+
+    '<tr class="g2"><th class="n gi">Qt.</th><th class="n gi">€</th><th class="n gv">Qt.</th><th class="n gv">€</th><th class="n ga">Qt.</th><th class="n ga">€</th><th class="n gd">Qt.</th><th class="n gd">€</th><th class="n">Encomendado</th><th>Estado</th></tr></thead><tbody>';
+  var ant=null;
+  R.forEach(function(r){ var a=r.a;
+    if(r.fam!==ant){ ant=r.fam; var g=G[r.fam], fech=!!famFecha['med|'+r.fam];
+      h+='<tr class="fam" data-fam="'+esc(r.fam)+'"><td colspan="3">'+(fech?'▸ ':'▾ ')+'<b>'+esc(r.fam)+'</b> · '+g.n+(g.n===1?' artigo':' artigos')+'</td>'+
+         '<td class="gi"></td><td class="n gi">'+e0(g.ci)+'</td><td class="gv"></td><td class="n gv">'+e0(g.cv)+'</td><td class="ga"></td><td class="n ga">'+e0(g.ca)+'</td><td class="gd"></td><td class="n gd">'+d0(g.ca-g.cv,1)+'</td><td colspan="2"></td></tr>' }
+    if(famFecha['med|'+r.fam])return;
+    h+='<tr'+(r.i===sel?' class="sel"':'')+'><td class="c"><a href="#" data-go="'+r.i+'">'+esc(a.cod||'—')+'</a></td><td class="t">'+esc(a.des||'')+(a.naoPrev?' <span class="chip wait">não previsto</span>':'')+'</td><td class="un">'+esc(a.un||'')+'</td>'+
+      '<td class="n gi">'+n0(r.qi)+'</td><td class="n gi">'+e0(r.ci)+'</td><td class="n gv">'+n0(a._qv)+'</td><td class="n gv">'+e0(a._cv)+'</td><td class="n ga">'+n0(a._qa)+'</td><td class="n ga">'+e0(a._ca)+'</td>'+
+      '<td class="n gd">'+d0(r.dq,0)+'</td><td class="n gd">'+d0(r.dc,1)+'</td><td class="n">'+n0(a._qne)+'</td>'+
+      '<td>'+(r.sob>1e-9?'<span class="chip bad" title="Comprado acima do necessário: falta dar destino">a mais '+q(r.sob)+'</span>':estChip(a._est))+'</td></tr>' });
+  if(!R.length)h+='<tr><td colspan="13" class="empty" style="padding:30px;text-align:center;color:var(--muted)">Nenhum artigo para mostrar.</td></tr>';
+  box.innerHTML=h+'</tbody></table>';
+  var nm=$('#nMed'); if(nm)nm.textContent=R.length+' de '+ST.med.filter(function(a){ return !a.reserva }).length;
+  var co=0,cv=0,ca=0,sb=0; ST.med.forEach(function(a){ var B=f0?estadoAte(ST,a,f0.id,true):{q:num(a.qo),p:puOrc(a)}; co+=B.q*(B.p||0); cv+=a._cv; ca+=a._ca; if(Math.max(0,(a._qne||0)-(a._qa||0)-(a._vend||0))>1e-9)sb++ });
+  $('#ftMed').innerHTML='Total com Outros Custos · orçamento <b class="mono">'+eurz(co)+' €</b> · em vigor <b class="mono">'+eurz(cv)+' €</b> · a apresentar <b class="mono">'+eurz(ca)+' €</b> · diferença <b class="mono">'+(ca-cv>0?'+':(ca-cv<0?'−':''))+eurz(Math.abs(ca-cv))+' €</b>'+(sb?' · <b class="mono" style="color:var(--red)">'+sb+'</b> comprados a mais':'');
+}
+var _afV=artigosFiltrados;
+artigosFiltrados=function(){ if(view==='med'&&MV.ordem&&MV.ordem.length)return MV.ordem.filter(function(o){ return ST.med[o.i]===o.a }); return _afV.apply(this,arguments) };
+var _rmV=renderMed;
+renderMed=function(){ medModo='grelha'; medOrd='fam'; mcols='q'; _rmV.apply(this,arguments); if(medModo==='grelha')medV2() };
+(function(){ var bar=$('#vMed .bar'); if(!bar||$('#mvQue'))return;
+  var s=document.createElement('select'); s.id='mvQue'; s.setAttribute('aria-label','Que linhas mostrar');
+  s.innerHTML='<option value="">Todos os artigos</option><option value="alt">Só com alteração</option><option value="sob">Só comprados a mais</option><option value="np">Só não previstos</option>';
+  s.onchange=function(){ MV.que=s.value; renderMed() }; var b=$('#bAddMed'); bar.insertBefore(s,b);
+  var bi=$('#bImpMed'); if(bi){ bi.textContent='Carregar orçamento'; bi.title='Carrega o orçamento inicial a partir de um ficheiro. O resto vem da Medição.' } })();
+var _rfV=renderFicha;
+renderFicha=function(){ _rfV.apply(this,arguments);
+  var a=ST.med[sel], fb=$('#fichaBox'); if(!fb)return;
+  var en=fb.querySelector('.entry'); if(en)en.remove();
+  $$('#fichaBox .card').forEach(function(c){ var h=c.querySelector('h3'), t=h?h.textContent:'';
+    if(/^(Revisões|Histórico|Custo seco|Fornecedores conhecidos)/.test(t)||(/^Outros custos/.test(t)&&!(a&&a.reserva))){ c.remove(); return }
+    if(/^Medição/.test(t)){ var cb=c.querySelector('.cb'); if(cb){ var d0=cb.firstElementChild; if(d0&&d0.tagName==='DIV'&&!d0.className)d0.remove(); var rw=cb.querySelector('.row'); if(rw)rw.remove();
+      $$('.three span',cb).forEach(function(s){ if(s.textContent==='custo orçamento')s.textContent='orçamento' }); $$('.three .eur',cb).forEach(function(e){ e.textContent=e.textContent.replace(/ · ao custo seco.*$/,'') }) } }
+    if(c.querySelector('dl.kv')){ $$('dl.kv dt',c).forEach(function(dt){ if(/livro IP|^Designação$|Nomenclatura|Cód\. antigo|Desenho|Nota|Catálogo/.test(dt.textContent)){ var dd=dt.nextElementSibling; if(dd&&dd.tagName==='DD')dd.remove(); dt.remove() } }) } }) };
+
 /* ===== versão TESTE: o ficheiro só carrega o ORÇAMENTO; o reorçamento a apresentar vem sozinho da Medição ===== */
 function orcCarregado(){ if(!ST||!ST.med)return false; var f0=(ST.fases||[])[0]; return ST.med.some(function(a){ return !a.reserva&&!a.naoPrev&&(num(a.qo)>0||(f0&&(a.lanc||[]).some(function(l){ return l.f===f0.id&&!l.auto }))) }) }
 var _dmO=desenhaMedicao;
