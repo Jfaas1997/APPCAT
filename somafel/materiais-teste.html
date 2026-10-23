@@ -9258,8 +9258,47 @@ renderView=function(){ _rvL.apply(this,arguments); var st=$('#subtabs'); if(!st|
 setInterval(sincMedicao,20000); window.addEventListener('focus',sincMedicao); setTimeout(sincMedicao,4000);
 window.__nm.sincMedicao=sincMedicao; window.__nm.ligaTeste=function(fn){ medLigPuxa=fn; ligaCentral=function(){ return true } };
 
+/* ===== versão TESTE: carregar só as NE ou só as guias (não mexe no resto da obra) ===== */
+function impSoFolha(wb,campo,rotulo){
+  var cc=NM.ob?NM.ob.cc:(ST.obra||'');
+  var sv={O:OBRAS,i:oi,S:ST,v:view,s:sel,ex:EXTRA_G};
+  var got=null;
+  try{
+    OBRAS=[]; oi=-1; ST=novaObra(cc,ST.nome||'');
+    importWB0(wb);
+    var k=cc?obraPorCC(cc):-1; var o=(k>=0)?OBRAS[k]:(OBRAS.length===1?OBRAS[0]:null);
+    if(o)got=(o[campo]||[]).slice();
+    else if(OBRAS.length>1)toast('O ficheiro não tem a obra '+cc+'.',5000);
+  }catch(e){ got=null }
+  OBRAS=sv.O; oi=sv.i; ST=sv.S; view=sv.v; sel=sv.s; EXTRA_G=sv.ex;
+  if(!got||!got.length){ toast('Não encontrei '+rotulo+' da obra '+cc+' neste ficheiro.',5000); return }
+  var sig=campo==='ne'?['ne','cod','qt']:['guia','cod','qt'];
+  function S(r){ return sig.map(function(f){ return norm(r[f]) }).join('|') }
+  var tem=(ST[campo]||[]).length, subs=true;
+  if(tem)subs=confirm('Este ficheiro traz '+got.length+' linhas de '+rotulo+' e a obra já tem '+tem+'.\n\nOK — substituir as que já estão.\nCancelar — juntar só as que faltam.');
+  if(subs){ ST[campo]=got }
+  else { var ja={}; ST[campo].forEach(function(r){ ja[S(r)]=1 }); var n=0; got.forEach(function(r){ if(!ja[S(r)]){ ja[S(r)]=1; ST[campo].push(r); n++ } }); got=new Array(n) }
+  try{ calc() }catch(e){}
+  render(); nmMudou();
+  toast('Carreguei '+got.length+' linhas de '+rotulo+(subs?' (substituí as anteriores).':'.'));
+}
+function botaoImp(idBarra,idBtn,texto,campo,rotulo){
+  var bar=document.querySelector(idBarra+' .bar'); if(!bar||document.getElementById(idBtn))return;
+  var f=document.createElement('input'); f.type='file'; f.accept='.xlsx,.xls'; f.style.display='none'; f.id=idBtn+'F';
+  var b=document.createElement('button'); b.id=idBtn; b.textContent=texto; b.title='Carrega só '+rotulo+' deste ficheiro; o resto da obra não muda';
+  bar.insertBefore(b,bar.firstChild.nextSibling); bar.appendChild(f);
+  b.addEventListener('click',function(){ if(NM.soLeitura){ toast('Não tem permissão para alterar esta app.'); return } f.click() });
+  f.addEventListener('change',function(e){ var fl=e.target.files[0]; e.target.value=''; if(!fl)return;
+    var fr=new FileReader(); fr.onload=function(){ try{ impSoFolha(XLSX.read(new Uint8Array(fr.result),{type:'array',cellDates:true}),campo,rotulo) }catch(err){ toast('Não consegui ler o ficheiro: '+err.message) } };
+    fr.readAsArrayBuffer(fl) });
+}
+botaoImp('#vNE','bImpNE','Carregar NE','ne','notas de encomenda');
+botaoImp('#vGR','bImpGR','Carregar guias','gr','guias de remessa');
+window.__nm.impSoFolha=impSoFolha;
+
 render();
 })();
+
 
 </script>
 </body>
