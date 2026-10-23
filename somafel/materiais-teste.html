@@ -8981,18 +8981,18 @@ renderResumo=function(modo){ modo=modo||'obra';
 /* ===== versão TESTE: custo seco sem código → verba da categoria (Diversos se não houver) ===== */
 VERBANOMES.push(["Outros Custos - Espias","Espias"]);
 function catVerbaDe(a){
-  var d=lower(String(a.des||'')), f=lower(String(a.fam||''));
-  var K=[[/espia/,'Espias'],[/parafuso.*inox|inox.*parafuso/,'Parafusos Inox'],[/parafuso/,'Parafusos Galvanizados'],[/pern/,'Pernos'],[/anilha/,'Anilhas'],[/porca/,'Porcas'],
-    [/tubo/,'Tubos Aço Galvanizado'],[/\bcabo|condutor|fio de/,'Cabos'],[/poste/,'Postes de Catenária'],[/perfil|cantoneira|chapa|laminad|ferro/,'Laminados Ferrosos'],
-    [/ferragem|abra[çc]adeira|grampo|pin[çc]a/,'Ferragens'],[/equipamento|seccionador|disjuntor/,'Equipamentos'],[/energia|tra[çc][ãa]o/,'Energia de Tração'],[/estrutura|consola|p[óo]rtico/,'Estruturas']];
-  for(var i=0;i<K.length;i++) if(K[i][0].test(d)) return 'Outros Custos - '+K[i][1];
-  var F={'cabos':'Cabos','estruturas':'Estruturas','equipamentos':'Equipamentos','energia de tração':'Energia de Tração','energia de tracao':'Energia de Tração','espias':'Espias'};
-  if(F[f]) return 'Outros Custos - '+F[f];
-  return 'Outros Custos - Diversos';
+  /* a categoria é a família da base de dados IP (Cabos, Perfis, Isoladores, …): procura o artigo do catálogo mais parecido */
+  if(!ITEMS.length)buildIX();
+  function toks(s){ return lower(String(s||'')).replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(function(t){ return t.length>3&&!/^\d+$/.test(t)&&!/^(para|com|sem|aco|galv|quente)$/.test(t) }) }
+  var T=toks(a.des), fam='';
+  if(a.fam&&ITEMS.some(function(x){ return x.fam===a.fam }))fam=a.fam;
+  else if(T.length){ var best=0; ITEMS.forEach(function(x){ if(!x.fam||!x.des)return; var X=toks(x.des), n=0; T.forEach(function(t){ if(X.indexOf(t)>-1)n++ }); if(n&&X[0]===T[0])n+=3;
+      if(n>best||(n===best&&n>0&&!fam)){ best=n; fam=x.fam } }); if(best<1)fam='' }
+  return 'Outros Custos - '+(fam||'Diversos');
 }
 function verbaDestino(nome){
   var v=null; ST.med.forEach(function(a){ if(a.reserva&&a.des===nome)v=a });
-  if(!v){ var fam=''; VERBANOMES.forEach(function(p){ if(p[0]===nome)fam=p[1] }); var cod=novaVerba(nome,fam); ST.med.forEach(function(a){ if(a.cod===cod)v=a }) }
+  if(!v){ var fam=nome.replace(/^Outros Custos - /,''); VERBANOMES.forEach(function(p){ if(p[0]===nome)fam=p[1] }); var cod=novaVerba(nome,fam); ST.med.forEach(function(a){ if(a.cod===cod)v=a }) }
   if(!puOrc(v)) v.pb=1;                       /* verba sem preço: 1 € por unidade, a quantidade passa a ser o valor */
   return v;
 }
@@ -9083,6 +9083,7 @@ var _rocJ=renderOC;
 renderOC=function(){ _rocJ.apply(this,arguments); var box=$('#ocBox'); if(!box||$('#ocJust'))return;
   var b=document.createElement('button'); b.id='ocJust'; b.type='button'; b.textContent='Exportar justificação (Excel)'; b.style.margin='0 0 10px'; b.onclick=exportaJustificacao; box.insertBefore(b,box.firstChild) };
 
+window.__nm.cat=catVerbaDe;
 render();
 })();
 
