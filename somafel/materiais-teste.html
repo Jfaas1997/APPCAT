@@ -8977,6 +8977,71 @@ renderResumo=function(modo){ modo=modo||'obra';
   if(RESV2.old){ _renderResumoT(modo); var box=$('#resBox'); if(box){ var d=document.createElement('div'); d.className='rv2bar'; d.innerHTML='<span>Resumo completo antigo</span><button type="button" id="rv2Novo">Voltar ao resumo simples</button>'; box.insertBefore(d,box.firstChild); $('#rv2Novo').onclick=function(){ RESV2.old=false; renderResumo('obra') } } return }
   renderResumoV2() };
 
+
+/* ===== versão TESTE: custo seco sem código → verba da categoria (Diversos se não houver) ===== */
+VERBANOMES.push(["Outros Custos - Espias","Espias"]);
+function catVerbaDe(a){
+  var d=lower(String(a.des||'')), f=lower(String(a.fam||''));
+  var K=[[/espia/,'Espias'],[/parafuso.*inox|inox.*parafuso/,'Parafusos Inox'],[/parafuso/,'Parafusos Galvanizados'],[/pern/,'Pernos'],[/anilha/,'Anilhas'],[/porca/,'Porcas'],
+    [/tubo/,'Tubos Aço Galvanizado'],[/\bcabo|condutor|fio de/,'Cabos'],[/poste/,'Postes de Catenária'],[/perfil|cantoneira|chapa|laminad|ferro/,'Laminados Ferrosos'],
+    [/ferragem|abra[çc]adeira|grampo|pin[çc]a/,'Ferragens'],[/equipamento|seccionador|disjuntor/,'Equipamentos'],[/energia|tra[çc][ãa]o/,'Energia de Tração'],[/estrutura|consola|p[óo]rtico/,'Estruturas']];
+  for(var i=0;i<K.length;i++) if(K[i][0].test(d)) return 'Outros Custos - '+K[i][1];
+  var F={'cabos':'Cabos','estruturas':'Estruturas','equipamentos':'Equipamentos','energia de tração':'Energia de Tração','energia de tracao':'Energia de Tração','espias':'Espias'};
+  if(F[f]) return 'Outros Custos - '+F[f];
+  return 'Outros Custos - Diversos';
+}
+function verbaDestino(nome){
+  var v=null; ST.med.forEach(function(a){ if(a.reserva&&a.des===nome)v=a });
+  if(!v){ var fam=''; VERBANOMES.forEach(function(p){ if(p[0]===nome)fam=p[1] }); var cod=novaVerba(nome,fam); ST.med.forEach(function(a){ if(a.cod===cod)v=a }) }
+  if(!puOrc(v)) v.pb=1;                       /* verba sem preço: 1 € por unidade, a quantidade passa a ser o valor */
+  return v;
+}
+function faseAberta(){ var r=null; (ST.fases||[]).forEach(function(f){ if(f.estado!=='validado')r=f }); return r?r.id:'' }
+function poeNaVerba(dest,valor,just,mot,f){
+  var p=puOrc(dest)||1; dest.lanc=dest.lanc||[];
+  dest.lanc.push({f:f,_fase:f,mot:mot||'Outros Custos',qt:valor/p,pu:p,vig:true,just:just,doc:'',data:'',src:''});
+}
+limpaMedicaoSemCodigo=function(){
+  var alvo=ST.med.filter(function(a){ return !a.reserva && (!a.cod || codigoInventado(a.cod) || !look(a.cod)) && (a._ca||0)>0.005 });
+  if(!alvo.length){ toast('Não encontrei artigos da medição sem código IP válido com orçamento.'); return }
+  var total=0, porCat={}; alvo.forEach(function(a){ total+=a._ca||0; var c=catVerbaDe(a); porCat[c]=(porCat[c]||0)+(a._ca||0) });
+  var lista=Object.keys(porCat).map(function(c){ return '• '+c+' · '+eurz(porCat[c])+' €' }).join('\n');
+  if(!confirm('Encontrei '+alvo.length+' artigo(s) sem código IP válido, '+eurz(total)+' € no total. O valor de cada um passa para a verba da sua categoria (Diversos se não houver categoria):\n\n'+lista+'\n\nFica registado em reorçamento, nada desaparece. Continuar?'))return;
+  var f=faseAberta();
+  alvo.forEach(function(a){
+    var v=a._ca||0, pu2=puApres(a)||1; a.lanc=a.lanc||[];
+    a.lanc.push({f:f,_fase:f,mot:'Outros Custos',qt:-(a._qa||0),pu:pu2,vig:true,just:'Sem código IP válido — movido para a verba da categoria',doc:'',data:'',src:''});
+    var nome=catVerbaDe(a), dest=verbaDestino(nome);
+    poeNaVerba(dest,v,'Custo seco vindo de artigo sem código IP válido ('+(a.des||'')+')','Outros Custos',f);
+    a.cod='';
+  });
+  buildIX(); render(); toast('Movi '+eurz(total)+' € de '+alvo.length+' artigo(s) para as verbas das categorias.');
+};
+/* lançamentos já gravados com a quantidade trocada pelo valor (qt = valor, pu = 1) */
+function lancTrocados(){
+  var out=[]; ST.med.forEach(function(a){ if(!a.reserva)return; var p=puOrc(a); if(p<=1.0001)return;
+    (a.lanc||[]).forEach(function(l){ if(num(l.pu)===1&&/^Custo seco vindo de/.test(String(l.just||'')))out.push({a:a,l:l}) }) });
+  return out;
+}
+function reparaVerbas(){
+  var L=lancTrocados(); if(!L.length){ toast('Não há lançamentos a corrigir.'); return }
+  var tot=0, porCat={}; L.forEach(function(x){ var v=num(x.l.qt); tot+=v;
+    var m=/\((.*)\)\s*$/.exec(x.l.just||''), src=null; if(m)ST.med.forEach(function(b){ if(!b.reserva&&b.des===m[1])src=b });
+    x.nome=catVerbaDe(src||{des:m?m[1]:'',fam:''}); porCat[x.nome]=(porCat[x.nome]||0)+v });
+  var lista=Object.keys(porCat).map(function(c){ return '• '+c+' · '+eurz(porCat[c])+' €' }).join('\n');
+  if(!confirm('Estes '+L.length+' lançamentos ('+eurz(tot)+' € no total) estão a multiplicar o valor pelo preço da verba "Outros Custos". Vou corrigir a quantidade e passar cada um para a verba da sua categoria:\n\n'+lista+'\n\nContinuar?'))return;
+  L.forEach(function(x){ var v=num(x.l.qt), a=x.a;
+    a.lanc=a.lanc.filter(function(l){ return l!==x.l });
+    poeNaVerba(verbaDestino(x.nome),v,x.l.just,x.l.mot,x.l.f);
+  });
+  buildIX(); render(); toast('Corrigi '+L.length+' lançamentos ('+eurz(tot)+' €).');
+}
+var _rr2=renderResumoV2;
+renderResumoV2=function(){ _rr2.apply(this,arguments);
+  var n=lancTrocados().length, box=$('#resBox'); if(!n||!box)return;
+  var d=document.createElement('div'); d.className='card'; d.innerHTML='<h3>Valores a corrigir <span class="n">'+n+'</span></h3><div class="cb"><div class="row" style="align-items:center;gap:12px"><span>'+n+' lançamentos de custo seco ficaram com o valor a multiplicar pelo preço da verba (por isso a medição a apresentar mostra um valor absurdo). Passam para a verba da categoria de cada peça.</span><button type="button" class="p" id="rv2Rep">Corrigir</button></div></div>';
+  var k=box.querySelector('.rv2kpi'); k.parentNode.insertBefore(d,k.nextSibling); $('#rv2Rep').onclick=reparaVerbas };
+
 render();
 })();
 
