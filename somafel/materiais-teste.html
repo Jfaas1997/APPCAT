@@ -9011,9 +9011,7 @@ limpaMedicaoSemCodigo=function(){
   alvo.forEach(function(a){
     var v=a._ca||0, pu2=puApres(a)||1; a.lanc=a.lanc||[];
     a.lanc.push({f:f,_fase:f,mot:'Outros Custos',qt:-(a._qa||0),pu:pu2,vig:true,just:'Sem código IP válido — movido para a verba da categoria',doc:'',data:'',src:''});
-    var nome=catVerbaDe(a), dest=verbaDestino(nome);
-    poeNaVerba(dest,v,'Custo seco vindo de artigo sem código IP válido ('+(a.des||'')+')','Outros Custos',f);
-    a.cod='';
+    a.cod='';   /* o custo libertado passa sozinho para a verba da categoria (ver sincNaoPrevistos) */
   });
   buildIX(); render(); toast('Movi '+eurz(total)+' € de '+alvo.length+' artigo(s) para as verbas das categorias.');
 };
@@ -9029,10 +9027,9 @@ function reparaVerbas(){
     var m=/\((.*)\)\s*$/.exec(x.l.just||''), src=null; if(m)ST.med.forEach(function(b){ if(!b.reserva&&b.des===m[1])src=b });
     x.nome=catVerbaDe(src||{des:m?m[1]:'',fam:''}); porCat[x.nome]=(porCat[x.nome]||0)+v });
   var lista=Object.keys(porCat).map(function(c){ return '• '+c+' · '+eurz(porCat[c])+' €' }).join('\n');
-  if(!confirm('Estes '+L.length+' lançamentos ('+eurz(tot)+' € no total) estão a multiplicar o valor pelo preço da verba "Outros Custos". Vou corrigir a quantidade e passar cada um para a verba da sua categoria:\n\n'+lista+'\n\nContinuar?'))return;
+  if(!confirm('Estes '+L.length+' lançamentos ('+eurz(tot)+' € no total) estão a multiplicar o valor pelo preço da verba "Outros Custos". Vou retirá-los daí: o valor passa sozinho para a verba da categoria de cada peça:\n\n'+lista+'\n\nContinuar?'))return;
   L.forEach(function(x){ var v=num(x.l.qt), a=x.a;
-    a.lanc=a.lanc.filter(function(l){ return l!==x.l });
-    poeNaVerba(verbaDestino(x.nome),v,x.l.just,x.l.mot,x.l.f);
+    a.lanc=a.lanc.filter(function(l){ return l!==x.l });   /* o valor volta sozinho, já na verba da categoria */
   });
   buildIX(); render(); toast('Corrigi '+L.length+' lançamentos ('+eurz(tot)+' €).');
 }
@@ -9082,6 +9079,44 @@ function exportaJustificacao(){
 var _rocJ=renderOC;
 renderOC=function(){ _rocJ.apply(this,arguments); var box=$('#ocBox'); if(!box||$('#ocJust'))return;
   var b=document.createElement('button'); b.id='ocJust'; b.type='button'; b.textContent='Exportar justificação (Excel)'; b.style.margin='0 0 10px'; b.onclick=exportaJustificacao; box.insertBefore(b,box.firstChild) };
+
+/* ===== versão TESTE: reorçamento que reduz — o que não foi comprado liberta custo para a verba da família; o que já foi comprado pede destino ===== */
+if(DESTINOS.indexOf('Assumir o custo')<0)DESTINOS.push('Assumir o custo');
+var _sincLib=sincNaoPrevistos;
+sincNaoPrevistos=function(){
+  var m=_sincLib();
+  var Q={}, V={}; ST.ne.forEach(function(r){ if(r.anul||r.reserva)return; var k=rowKey(r); Q[k]=(Q[k]||0)+num(r.qt); V[k]=(V[k]||0)+num(r.qt)*num(r.pu) });
+  var vistos={}, ativos={}, cred=[];
+  ST.med.forEach(function(a){ if(a.reserva||a.naoPrev)return; var k=keyOf(a.cod||a.des); if(vistos[k])return; vistos[k]=1;
+    var qv=num(a.qo)+totLanc(a,true).qt, qa=num(a.qo)+totLanc(a,false).qt, R=Math.max(0,qv-qa); if(R<=1e-9&&a.destino!=='Assumir o custo')return;
+    var qne=Q[k]||0, livre=Math.min(R,Math.max(0,qv-qne)), pv=puVigor(a)||puApres(a)||0;
+    var surplus=Math.max(0,qne-qa), pc=qne?V[k]/qne:pv, eur=livre*pv;
+    if(a.destino==='Assumir o custo')eur+=surplus*pc;
+    if(eur>0.005)cred.push({k:k,a:a,eur:eur,livre:livre,sur:surplus}) });
+  cred.forEach(function(c){ ativos[c.k]=1;
+    var nome=catVerbaDe({des:c.a.des,fam:famDe(c.a)}), v=verbaDestino(nome), p=puOrc(v)||1;
+    var l=null; (v.lanc||[]).forEach(function(x){ if(x.autoDe===c.k)l=x });
+    var just='Reorçamento: '+(c.a.des||c.a.cod)+' — '+(c.livre>0?q(c.livre)+' un não compradas':'')+((c.a.destino==='Assumir o custo'&&c.sur>0)?(c.livre>0?' + ':'')+q(c.sur)+' un compradas, custo assumido':'');
+    if(!l){ l={f:faseAberta(),_fase:faseAberta(),mot:'Libertado de '+(c.a.cod||c.a.des),qt:0,pu:p,vig:true,just:just,doc:'',data:'',src:'',autoDe:c.k}; v.lanc=v.lanc||[]; v.lanc.push(l); m=true }
+    if(Math.abs(l.qt-c.eur/p)>1e-9||l.just!==just||l.pu!==p){ l.qt=c.eur/p; l.pu=p; l.just=just; m=true } });
+  ST.med.forEach(function(v){ if(!v.reserva||!v.lanc)return; var n=v.lanc.length; v.lanc=v.lanc.filter(function(l){ return !l.autoDe||ativos[l.autoDe] }); if(v.lanc.length!==n)m=true });
+  return m;
+};
+function sobrasCompra(){
+  var out=[]; ST.med.forEach(function(a,i){ if(a.reserva||a._dup)return; var s=(a._qne||0)-(a._qa||0)-(a._vend||0); if(s<=1e-9)return;
+    var pc=a._qne?a._vne/a._qne:0; out.push({a:a,i:i,q:s,eur:s*pc}) });
+  out.sort(function(x,y){ return y.eur-x.eur }); return out;
+}
+var _rr3=renderResumoV2;
+renderResumoV2=function(){ _rr3.apply(this,arguments);
+  var L=sobrasCompra(), box=$('#resBox'); if(!L.length||!box)return;
+  var pend=L.filter(function(x){ return !x.a.destino||x.a.destino==='A decidir' }), tot=0; L.forEach(function(x){ tot+=x.eur });
+  var d=document.createElement('div'); d.className='card';
+  d.innerHTML='<h3>Comprado a mais, para dar destino <span class="n">'+pend.length+' por decidir · '+L.length+' no total · '+eurz(tot)+' €</span></h3><div class="cb" style="padding:0"><table class="g"><thead><tr><th>Código</th><th>Designação</th><th class="n">A mais</th><th class="n">Valor (€)</th><th>Destino</th></tr></thead><tbody>'+
+    L.slice(0,40).map(function(x){ return '<tr><td class="c">'+esc(x.a.cod||'—')+'</td><td class="t">'+esc(x.a.des||'')+'</td><td class="n">'+q(x.q)+'</td><td class="n">'+eurz(x.eur)+'</td><td><select data-sc="'+x.i+'">'+DESTINOS.map(function(o){ return '<option value="'+esc(o)+'"'+((x.a.destino||'')===o?' selected':'')+'>'+(o||'—')+'</option>' }).join('')+'</select></td></tr>' }).join('')+
+    '</tbody></table>'+(L.length>40?'<div class="rv2mais">e mais '+(L.length-40)+' artigos.</div>':'')+'</div>';
+  var k=box.querySelector('.rv2kpi'); k.parentNode.insertBefore(d,k.nextSibling);
+  $$('#resBox select[data-sc]').forEach(function(s){ s.onchange=function(){ ST.med[+s.dataset.sc].destino=s.value; render() } }) };
 
 window.__nm.cat=catVerbaDe;
 render();
