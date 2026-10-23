@@ -6631,7 +6631,7 @@ $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b
   if(a==='trocar')location.href=location.pathname; else if(a==='copias')nmRestauraCopia(); else if(a==='contratos')nmVerContratos(); else if(a==='excel')nmDescarrega(); else if(a==='central')location.href='index.html' };
 async function nmDescarrega(){ try{ var r=await nmWb(); XLSX.writeFile(r.wb,'producao_'+(NM.ob?NM.ob.cc:'obra')+'_'+nmCarimbo()+'.xlsx') }catch(e){ nmDiz('Não consegui gerar o Excel: '+esc(e.message)) } }
 function nmVerContratos(){ var cs=nmContratos(); nmModal({titulo:'Contratos da obra',corpo:cs.length?'<table><tbody>'+cs.map(function(c,i){ return '<tr><td><b>'+esc(c.nome)+'</b>'+(i===0?' <span class="n">(origem «Contrato»)</span>':' <span class="n">(origem própria)</span>')+'</td><td>'+esc(c.cliente||'')+'</td><td class="n">'+(c.valor!=null?eur(c.valor)+' €':'')+'</td></tr>' }).join('')+'</tbody></table><p style="color:var(--muted);font-size:12px">Os contratos vêm da Central de Obras.</p>':'<p>Sem contratos.</p>',botoes:[{t:'Fechar',v:true,p:true}]}) }
-function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de produção v'+NM.VERSAO,corpo:
+function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de produção',corpo:
   '<p><b>Dados online.</b> Cada obra guarda a produção no servidor. Grava sozinha 5 segundos depois da última alteração. Sem rede, as alterações ficam neste aparelho e seguem quando a rede voltar.</p>'
   +'<p><b>Cópias.</b> O servidor guarda uma cópia de 2 em 2 horas (quando há alterações). «Obra ▾ › Restaurar uma cópia». Pode também descarregar o Excel a qualquer momento.</p>'
   +'<p><b>Duas pessoas ao mesmo tempo.</b> Se outra pessoa guardar primeiro, a app avisa antes de gravar por cima.</p>'

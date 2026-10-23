@@ -370,7 +370,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 <header class="top">
   <img class="logo" id="logo" alt="Somafel" title="Carregar o logótipo da empresa" tabindex="0" role="button">
   <span class="sep"></span>
-  <div class="ttl"><b>Dimensionamento CAT</b><small>consolas, postes e pórticos · caderno de montagem · v<span id="ver"></span></small></div>
+  <div class="ttl"><b>Dimensionamento CAT</b><small>consolas, postes e pórticos · caderno de montagem</small></div>
   <span class="sep"></span>
   <div class="obrachip" id="obrachip"></div>
   <select id="contrato" aria-label="Contrato ativo" hidden></select>
@@ -756,7 +756,7 @@ $('menu').addEventListener('click',function(e){ var b=e.target.closest('button[d
   else if(m==='import'){ $('f-xlsx').setAttribute('data-modo','importar'); $('f-xlsx').click(); } else if(m==='copias') restauraCopia(); else if(m==='print'){ vai('caderno'); setTimeout(function(){ window.print(); },300); } });
 
 /* ---------- ajuda ---------- */
-function ajuda(){ modal({titulo:'Ajuda · Dimensionamento CAT v'+VERSAO,corpo:
+function ajuda(){ modal({titulo:'Ajuda · Dimensionamento CAT',corpo:
   '<p><b>Dois modos.</b> Sem obra (modo rápido) serve para testes e cálculos soltos. Com uma obra aberta (Ficheiro, Abrir pasta da obra), cada apoio enviado fica guardado por estrutura e ligado ao centro de custo.</p>'
   +'<p><b>Fluxo.</b> Calcule em Consolas, Pórticos ou Pórticos rígidos, envie para a obra, escreva a estrutura (por exemplo 198-27) na vista Obra e imprima o Caderno.</p>'
   +'<p><b>Gravação.</b> Com ficheiro, grava sozinho 5 segundos depois da última alteração. Sem ficheiro, o rascunho fica neste navegador até guardar com Ctrl+S. Cópias datadas a cada 30 minutos e ao fechar (as últimas '+MAXCOPIAS+') em <span class="mono">Copias/</span>.</p>'
@@ -835,7 +835,7 @@ function cabecalhoApp(){
   else if(cs.length===1) { sel.hidden=false; sel.innerHTML='<option value="'+esc(cs[0].id)+'">'+esc(cs[0].nome)+'</option>'; sel.disabled=true; }
   if(cs.length>=2) sel.disabled=false;
   var n=D.folhas.length, c=function(e){ return D.folhas.filter(function(f){ return f.estado===e; }).length; };
-  $('sAp').textContent=n; $('sOk').textContent=c('ok'); $('sNok').textContent=c('nok'); $('sFal').textContent=n-c('ok')-c('nok'); $('n-obra').textContent=n||''; $('ver').textContent=VERSAO; }
+  $('sAp').textContent=n; $('sOk').textContent=c('ok'); $('sNok').textContent=c('nok'); $('sFal').textContent=n-c('ok')-c('nok'); $('n-obra').textContent=n||''; }
 $('contrato').addEventListener('change',function(){ D.contratoAtivo=this.value; muda('contrato'); });
 function atualizaTudo(){ cabecalhoApp(); indicador(); botoesUndo(); if(VISTA==='obra') desenhaObra(); if(VISTA==='caderno') desenhaCaderno(); }
 

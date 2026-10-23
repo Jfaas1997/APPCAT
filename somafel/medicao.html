@@ -836,7 +836,7 @@ html:not([data-modo=dim]) #dimFolhas{display:none}
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Medição de catenária</span><span class="sver">v36</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Medição de catenária</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp">Medição</div>
     <button class="tab on" data-v="lista"><svg class="ic" aria-hidden="true"><use href="#i-struct"/></svg><span>Estrutura</span></button>
     <button class="tab" data-v="grelha"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span>Grelha da obra</span></button>
@@ -6082,7 +6082,7 @@ $('#bObra').onclick=e=>{ e.stopPropagation(); nmMenu($('#nmenu').hidden) };
 document.addEventListener('click',e=>{ const m=$('#nmenu'); if(!m.hidden&&!m.contains(e.target))nmMenu(false) });
 $('#nmenu').onclick=e=>{ const b=e.target.closest('button[data-n]'); if(!b)return; nmMenu(false); const a=b.getAttribute('data-n');
   if(a==='pasta')nmAbrePasta(); else if(a==='reabrir')nmReabre(); else if(a==='fechar')nmFecha(); else if(a==='copias')nmRestauraCopia(); else if(a==='contratos'){ abreLotes() } };
-function nmAjuda(){ nmModal({titulo:'Ajuda · Medição de catenária v'+NM.VERSAO,corpo:
+function nmAjuda(){ nmModal({titulo:'Ajuda · Medição de catenária',corpo:
   '<p><b>Dois modos.</b> Sem obra, a medição vive só neste navegador e num ficheiro Excel à sua escolha. Com uma obra aberta (Obra, Abrir pasta da obra), a medição fica em <span class="mono">Dados/medicao.xlsx</span> dentro da pasta da obra, ligada ao centro de custo, e os lotes passam a ser os contratos da obra.</p>'
   +'<p><b>Gravação.</b> Com ficheiro, grava sozinho 5 segundos depois da última alteração. Sem ficheiro, o rascunho fica neste navegador até guardar com Ctrl+S. Cópias datadas a cada 30 minutos e ao fechar (as últimas '+NM_MAXCOP+') em <span class="mono">Copias/</span>.</p>'
   +'<p><b>Se o ficheiro mudar</b> noutra janela ou por outra pessoa, a app avisa antes de gravar por cima.</p>'
@@ -7053,7 +7053,7 @@ $('#nmenu').onclick=e=>{ const b=e.target.closest('button[data-n]'); if(!b)retur
   if(a==='copias')nmRestauraCopia(); else if(a==='contratos'){ abreLotes() } };
 $('#bOpen').onclick=async()=>{ if(NM.soLeitura){ toast('Não tem permissão para alterar esta app.'); return } if(st.postes.length&&!(await nmSim('Importar um Excel substitui a medição aberta desta obra. Continuar?','Importar')))return; $('#fOpen').click() };
 $('#bNovo').hidden=true;
-nmAjuda=function(){ nmModal({titulo:'Ajuda · Medição de catenária v'+NM.VERSAO,corpo:
+nmAjuda=function(){ nmModal({titulo:'Ajuda · Medição de catenária',corpo:
   '<p><b>Dados online.</b> A medição de cada obra fica no servidor. Grava sozinha 12 segundos depois da última alteração. Sem rede, as alterações ficam neste aparelho e seguem quando a rede voltar.</p>'
   +'<p><b>Base de dados IP.</b> Vem do servidor (a base IP nunca é alterada). As montagens, desenhos e peças que acrescentar ou alterar guardam-se à parte e partilham-se com os colegas.</p>'
   +'<p><b>Cópias.</b> O servidor guarda uma cópia de 2 em 2 horas, quando há alterações («Obra ▾ › Restaurar uma cópia»). O botão «…» descarrega um Excel.</p>'
