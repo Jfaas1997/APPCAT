@@ -9119,6 +9119,47 @@ renderResumoV2=function(){ _rr3.apply(this,arguments);
   $$('#resBox select[data-sc]').forEach(function(s){ s.onchange=function(){ ST.med[+s.dataset.sc].destino=s.value; render() } }) };
 
 window.__nm.cat=catVerbaDe;
+/* ===== versão TESTE: o ficheiro só carrega o ORÇAMENTO; o reorçamento a apresentar vem sozinho da Medição ===== */
+function orcCarregado(){ if(!ST||!ST.med)return false; var f0=(ST.fases||[])[0]; return ST.med.some(function(a){ return !a.reserva&&!a.naoPrev&&(num(a.qo)>0||(f0&&(a.lanc||[]).some(function(l){ return l.f===f0.id&&!l.auto }))) }) }
+var _dmO=desenhaMedicao;
+desenhaMedicao=function(){
+  if(orcCarregado()){ MEDX.alvo='orcobra'; MEDX.limpar=false }
+  _dmO.apply(this,arguments);
+  if(!orcCarregado())return;
+  $$('#medWrap label.opt').forEach(function(l){ var i=l.querySelector('input'); if(i&&i.value!=='orcobra')l.style.display='none' });
+  var t=$('#medWrap .bd > div'); if(t)t.textContent='O orçamento já está carregado. Aqui só podes refazê-lo a partir de um ficheiro. As alterações da obra (reorçamento a apresentar) vêm sozinhas da Medição.';
+  var lg=$('#mdLigBox'); if(lg)lg.style.display='none';
+};
+var _imO=importaMedicaoApp;
+importaMedicaoApp=function(wb){
+  if(orcCarregado()&&leMedicaoApp(wb)){ toast('O orçamento já está carregado. As alterações vêm sozinhas da Medição; o ficheiro só serve para refazer o orçamento (Medição → Carregar → Custo orçamento).'); return true }
+  return _imO(wb);
+};
+var MLSTAT={txt:'',ts:0,ocupado:false};
+async function sincMedicao(){
+  if(MLSTAT.ocupado||!ligaCentral()||!orcCarregado())return; MLSTAT.ocupado=true;
+  try{
+    var M=await medLigPuxa(); if(!M||!M.L){ MLSTAT.txt='Medição indisponível'; return }
+    var sig=(M.ver?M.ver.nome:'')+'|'+M.L.length+'|'+M.L.reduce(function(s,x){ return s+num(x.qt) },0).toFixed(3);
+    MLSTAT.ts=Date.now();
+    if(ST.medSig===sig){ MLSTAT.txt='ligado à Medição · sem alterações'; return }
+    var fl=ST.fases[ST.fases.length-1], alvo=(fl&&fl.estado!=='validado')?fl.id:(fl?fl.id:'');
+    var d=difMedLig(M.L,alvo), n=d.novos.length+d.alt.length+d.fora.length;
+    ST.medSig=sig;
+    if(!n){ MLSTAT.txt='ligado à Medição · sem alterações'; return }
+    var fc=faseCurso(ST); MEDVERS=M.ver?M.ver.nome:'';
+    var r=aplicaMedicaoFase(ST,M.L,fc.id,'substituir',false); MEDVERS='';
+    MLSTAT.txt='ligado à Medição · atualizado agora ('+n+' alterações)';
+    render(); toast('Medição atualizou o reorçamento a apresentar: '+r.novos+' novos, '+r.alt+' alterados'+(r.pm?', '+r.pm+' deixam de ser medidos':'')+'.');
+  }catch(e){ MLSTAT.txt='erro a ler a Medição' }
+  finally{ MLSTAT.ocupado=false; var s=$('#medLigSt'); if(s)s.textContent=MLSTAT.txt }
+}
+var _rvL=renderView;
+renderView=function(){ _rvL.apply(this,arguments); var st=$('#subtabs'); if(!st||st.hidden||!MLSTAT.txt)return;
+  if(grupoDe(view)&&grupoDe(view).id==='med'){ var s=document.createElement('span'); s.id='medLigSt'; s.textContent=MLSTAT.txt; s.style.cssText='margin-left:auto;font-size:12px;color:var(--muted);align-self:center'; st.appendChild(s) } };
+setInterval(sincMedicao,20000); window.addEventListener('focus',sincMedicao); setTimeout(sincMedicao,4000);
+window.__nm.sincMedicao=sincMedicao; window.__nm.ligaTeste=function(fn){ medLigPuxa=fn; ligaCentral=function(){ return true } };
+
 render();
 })();
 
