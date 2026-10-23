@@ -9148,9 +9148,15 @@ async function sincMedicao(){
     ST.medSig=sig;
     if(!n){ MLSTAT.txt='ligado à Medição · sem alterações'; return }
     var fc=faseCurso(ST); MEDVERS=M.ver?M.ver.nome:'';
-    var r=aplicaMedicaoFase(ST,M.L,fc.id,'substituir',false); MEDVERS='';
+    var r=aplicaMedicaoFase(ST,M.L,fc.id,'manter',false); MEDVERS='';
+    /* o que saiu da Medição sai do reorçamento a apresentar; o custo seco do que não foi comprado passa para os Outros Custos (ver sincNaoPrevistos) */
+    var KL={}; M.L.forEach(function(x){ KL[keyOf(x.cod||x.des)]=1 }); r.pm=0; r.saiu=0;
+    ST.med.forEach(function(a){ if(a.reserva||a.naoPrev||KL[keyOf(a.cod||a.des)])return;
+      var base=estadoAte(ST,a,fc.id,false).q; a.lanc=(a.lanc||[]).filter(function(l){ return !(l.f===fc.id&&l.src==='medapp') }); delete a.pm; delete a.pmLanc;
+      if(base>1e-9){ a.lanc.push({f:fc.id,mot:'Saiu da Medição',qt:-base,pu:pu(a)?+pu(a).toFixed(4):0,doc:'',just:'Deixou de constar na Medição da obra',ver:MEDVERS,data:hoje(),src:'medapp'}); r.saiu++ } });
+    calc();
     MLSTAT.txt='ligado à Medição · atualizado agora ('+n+' alterações)';
-    render(); toast('Medição atualizou o reorçamento a apresentar: '+r.novos+' novos, '+r.alt+' alterados'+(r.pm?', '+r.pm+' deixam de ser medidos':'')+'.');
+    render(); toast('Medição atualizou o reorçamento a apresentar: '+r.novos+' novos, '+r.alt+' alterados'+(r.saiu?', '+r.saiu+' saíram':'')+'.');
   }catch(e){ MLSTAT.txt='erro a ler a Medição' }
   finally{ MLSTAT.ocupado=false; var s=$('#medLigSt'); if(s)s.textContent=MLSTAT.txt }
 }
