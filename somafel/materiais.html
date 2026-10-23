@@ -7515,7 +7515,7 @@ $('#fMedFile').addEventListener('change',function(e){
           var lb=LQ.lista.filter(function(x){ return qtDoAlvo(x,f1)>0 }).map(function(x){ return {cod:x.cod,mn:x.mn,des:x.des,un:x.un,qt:qtDoAlvo(x,f1)} });
           aplicaBaseOrcamento(ST,lo);
           var r2=aplicaMedicaoFase(ST,lb,f1,mx.modo,true);
-          msg='Custo orçamento: '+r2.novos+' artigos novos, '+r2.alt+' atualizados'+(r2.limpas?', '+r2.limpas+' alterações de fases seguintes apagadas':'')+'. Falta carregar o resto na fase em curso, em «Juntar».';
+          msg='Orçamento carregado: '+(r2.novos+r2.alt)+' artigos.';
           r={curso:false};
         } else {
           var lista=LA?LA:LQ.lista.filter(function(x){ return qtDoAlvo(x,mx.alvo)>0 }).map(function(x){ return {cod:x.cod,mn:x.mn,des:x.des,un:x.un,qt:qtDoAlvo(x,mx.alvo)} });
@@ -8984,7 +8984,7 @@ function renderResumoV2(){
   var A=avisos().filter(function(x){ return !(/fora do catálogo/.test(x.t)&&/^RSV/i.test(x.s)) });
   var all=out.concat(A), G={}; all.forEach(function(x){ (G[x.t]=G[x.t]||[]).push(x) });
   var tipos=Object.keys(G).sort(function(a,b){ var ia=AV_ORDEM.indexOf(a), ib=AV_ORDEM.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib)||G[b].length-G[a].length });
-  var h='<div class="rv2bar"><span>Resumo simples (versão de teste)</span><button type="button" id="rv2Velho">Ver o resumo completo antigo</button></div>';
+  var h='<div class="rv2bar"><span>Resumo</span><button type="button" id="rv2Velho">Ver o resumo completo antigo</button></div>';
   h+='<div class="rv2kpi">'+
     '<div><b>'+eurz(vig)+' €</b><span>medição em vigor</span></div>'+
     '<div><b>'+eurz(apr)+' €</b><span>medição a apresentar</span>'+(apr>vig*3&&apr-vig>100000?'<em class="bad">valor fora do normal, ver abaixo</em>':'')+'</div>'+
@@ -9213,14 +9213,16 @@ renderFicha=function(){ _rfV.apply(this,arguments);
 
 /* ===== versão TESTE: o ficheiro só carrega o ORÇAMENTO; o reorçamento a apresentar vem sozinho da Medição ===== */
 function orcCarregado(){ if(!ST||!ST.med)return false; var f0=(ST.fases||[])[0]; return ST.med.some(function(a){ return !a.reserva&&!a.naoPrev&&(num(a.qo)>0||(f0&&(a.lanc||[]).some(function(l){ return l.f===f0.id&&!l.auto }))) }) }
-var _dmO=desenhaMedicao;
 desenhaMedicao=function(){
-  if(orcCarregado()){ MEDX.alvo='orcobra'; MEDX.limpar=false }
-  _dmO.apply(this,arguments);
-  if(!orcCarregado())return;
-  $$('#medWrap label.opt').forEach(function(l){ var i=l.querySelector('input'); if(i&&i.value!=='orcobra')l.style.display='none' });
-  var t=$('#medWrap .bd > div'); if(t)t.textContent='O orçamento já está carregado. Aqui só podes refazê-lo a partir de um ficheiro. As alterações da obra (reorçamento a apresentar) vêm sozinhas da Medição.';
-  var lg=$('#mdLigBox'); if(lg)lg.style.display='none';
+  var w=$('#medWrap'); MEDX={alvo:'orcobra',modo:'substituir',limpar:true};
+  var d=w.firstChild; if(!d||!d.classList||!d.classList.contains('dlg')){ d=document.createElement('div'); d.className='dlg'; w.innerHTML=''; w.appendChild(d) }
+  d.innerHTML='<h3>Carregar orçamento<button id="mdX" title="Fechar">×</button></h3><div class="bd">'+
+    '<div style="font-size:13px;line-height:1.5">Escolhe o ficheiro Excel com o orçamento da obra: código, designação, quantidade, unidade e custo seco.</div>'+
+    '<div style="font-size:12.5px;color:var(--muted);margin-top:8px">Só o orçamento entra por ficheiro. Tudo o resto vem sozinho da Medição.</div>'+
+    (orcCarregado()?'<div class="hint" style="margin-top:10px">Já há um orçamento carregado. Se carregares outro, este é refeito.</div>':'')+
+    '</div><div class="ft"><button id="mdNo" style="margin-left:auto">Cancelar</button><button id="mdOk" style="background:var(--brand);border-color:var(--brand);font-weight:600">Escolher ficheiro…</button></div>';
+  $('#mdX').addEventListener('click',fechaMedicao); $('#mdNo').addEventListener('click',fechaMedicao);
+  $('#mdOk').addEventListener('click',function(){ $('#fMedFile').click() });
 };
 var _imO=importaMedicaoApp;
 importaMedicaoApp=function(wb){
