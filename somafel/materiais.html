@@ -9077,11 +9077,37 @@ function semCodigoAuto(){
   });
   return alvo.length;
 }
+/* o reorçamento a apresentar leva o custo do que foi comprado: o preço das NE substitui o custo seco do orçamento */
+function precoCompraAuto(){
+  var f=faseAberta(); if(!f||!ST||!ST.med)return 0; var n=0;
+  ST.med.forEach(function(a){
+    var eff=0, forn={}, p0=puVigor(a)||puOrc(a), qa=num(a._qa);
+    if(!(p0>0)||!(qa>0))return;
+    if(a.reserva){
+      if(/^outros custos/i.test(a.des||''))return;
+      var v=num(a._imp), qn=0; if(!(v>0))return;
+      ST.ne.forEach(function(r){ if(!r.anul&&r.reserva===a.cod){ qn+=num(r.qt); if(r.forn)forn[r.forn]=1 } });
+      eff=(v+Math.max(0,qa-qn)*p0)/qa;
+    } else {
+      if(!/^\d{2}\.\d{3}\.\d{2}$/.test(String(a.cod||'').trim()))return;
+      var s=D[keyOf(a.cod||a.des)]; if(!s||!(s.qne>0)||!(s.vne>0))return;
+      var pc=s.vne/s.qne; if(pc/p0>3||pc/p0<0.33)return;         /* preço muito fora do orçamento (unidade diferente?): não mexe */
+      (s.ne||[]).forEach(function(i){ var r=ST.ne[i]; if(r&&!r.anul&&r.forn)forn[r.forn]=1 });
+      var qc=Math.min(s.qne,qa); eff=(qc*pc+(qa-qc)*p0)/qa;
+    }
+    var ex=puDaFase(a,f);
+    if(ex&&ex.fonte!=='Compra (NE)')return;                      /* preço posto à mão ou por adjudicação manda */
+    if(Math.abs(eff-p0)/p0<0.005){ if(ex){ a.pus=a.pus.filter(function(x){ return x.f!==f }); n++ } return }
+    if(ex&&Math.abs(num(ex.pu)-eff)<0.0001)return;
+    poePu(a,f,+eff.toFixed(4),'Compra (NE)',Object.keys(forn).slice(0,2).join(', ')); n++;
+  });
+  return n;
+}
 var _rAS=render;
 render=function(){
   _rAS.apply(this,arguments);
   if(AUTOSC)return; AUTOSC=true;
-  try{ if(semCodigoAuto()){ buildIX(); try{ nmMudou() }catch(e){} _rAS.apply(this,arguments) } }finally{ AUTOSC=false }
+  try{ var c1=semCodigoAuto(); var c2=precoCompraAuto(); if(c1||c2){ if(c1)buildIX(); try{ nmMudou() }catch(e){} _rAS.apply(this,arguments) } }finally{ AUTOSC=false }
 };
 /* lançamentos já gravados com a quantidade trocada pelo valor (qt = valor, pu = 1) */
 function lancTrocados(){
