@@ -360,7 +360,7 @@ function preparar(){
     try{
       barra(4,'A preparar as aplicações…');
       const vistos=new Set(),ks=Object.keys(APPV);let n=0;
-      await Promise.all(ks.map(async k=>{try{const t=await (await fetch(APPV[k]+'.html')).text();
+      await Promise.all(ks.map(async k=>{try{const t=await (await fetch(APPV[k]+'.html',{cache:'no-cache'})).text();
         for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}catch(e){}
         barra(4+(++n/ks.length)*26)}));
       barra(32,'A abrir o catálogo…');
@@ -738,7 +738,7 @@ function injetaVoltar(d,id){try{const nav=id==='cons'?d.querySelector('nav.lado'
   b.onclick=()=>parent.postMessage({tipo:'voltar'},location.origin);
   nav.insertBefore(b,id==='cons'?nav.firstChild:(nav.querySelector('.sgrp')||(nav.querySelector('.sbrand')||{}).nextSibling||null))}catch(e){}}
 function frameApp(o,v){const k=o.id+'|'+v;let f=FR[k];if(f)return f;
-  f=document.createElement('iframe');f.className='appif';f.title=APPNOME[v];f.dataset.k=k;f.src=APPV[v]+'.html?obra='+o.id+'&emb=1';
+  f=document.createElement('iframe');f.className='appif';f.title=APPNOME[v];f.dataset.k=k;f.src=APPV[v]+'.html?obra='+o.id+'&emb=1&v='+(window.__bv||(window.__bv=Date.now()));
   const revela=()=>{if(f.dataset.rd)return;f.dataset.rd='1';const c=document.querySelector('.carr[data-k="'+k+'"]');if(c)c.remove();if(S.fk===k)posiciona()};
   f.onload=()=>{f.dataset.ok='1';try{estiloApp(f,v);injetaVoltar(f.contentDocument,v)}catch(e){}
     const t0=Date.now(),espera=()=>{if(f.dataset.rd||!f.isConnected)return;let p=false;try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');p=!!((w.__nm&&w.__nm.NM&&w.__nm.NM.pronto)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)||(l&&l.hidden))}catch(e){}
