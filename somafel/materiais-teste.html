@@ -9486,7 +9486,7 @@ function linhasDeTabela(buf){
 var FORNDB=null;
 async function carregaFornDB(){ if(FORNDB)return FORNDB; try{ var r=await sb.from('precos_fornecedor').select('codigo,fornecedor,preco,data').order('data',{ascending:false}).limit(5000); FORNDB=r.data||[] }catch(e){ FORNDB=[] } return FORNDB }
 function fornConhecidos(cod){
-  var k=keyOf(cod), R={}; function poe(f,p,d,o){ if(!f||!(p>0)||/^SOMAFEL\b/i.test(String(f).trim()))return; var a=R[norm(f)]; if(!a||String(d||'')>String(a.data||''))R[norm(f)]={nome:f,pu:p,data:d||'',origem:o} }
+  var k=keyOf(cod), R={}; function poe(f,p,d,o){ if(!f||!(p>0))return; var a=R[norm(f)]; if(!a||String(d||'')>String(a.data||''))R[norm(f)]={nome:f,pu:p,data:d||'',origem:o} }
   (FORNDB||[]).forEach(function(x){ if(keyOf(x.codigo)===k)poe(x.fornecedor,num(x.preco),x.data,'proposta') });
   (precosConhecidos()[k]||[]).forEach(function(x){ poe(x.forn,x.pu,x.data,x.origem) });
   return Object.keys(R).map(function(z){ return R[z] }).sort(function(a,b){ return String(b.data).localeCompare(String(a.data)) });
