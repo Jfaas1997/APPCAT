@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Medição de catenária · online</title>
+<title>Medições CAT · online</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <meta name="color-scheme" content="light dark">
 <script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t);if(localStorage.getItem('side')==='c')document.documentElement.setAttribute('data-side','c');if(new URLSearchParams(location.search).get('modo')==='dim')document.documentElement.setAttribute('data-modo','dim')}catch(e){}</script>
@@ -836,7 +836,7 @@ html:not([data-modo=dim]) #dimFolhas{display:none}
 
 <main>
   <nav id="side" aria-label="Separadores">
-    <div class="sbrand"><span class="sname">Medição de catenária</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+    <div class="sbrand"><span class="sname">Medições CAT</span><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu" aria-expanded="true"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
     <div class="sgrp">Medição</div>
     <button class="tab on" data-v="lista"><svg class="ic" aria-hidden="true"><use href="#i-struct"/></svg><span>Estrutura</span></button>
     <button class="tab" data-v="grelha"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg><span>Grelha da obra</span></button>
@@ -6079,7 +6079,7 @@ abrirFicheiro=async function(){ if(NM.ob){ if(!(await nmSim('Está numa obra. Ab
 const _importar=importar;
 importar=function(b,f,s){ const r=_importar(b,f,s); if(!s&&NM.ob)nmReaplica(); return r };
 const _construirLivro=construirLivro;
-construirLivro=function(){ const wb=_construirLivro(); try{ const ws=XLSX.utils.aoa_to_sheet([['Medição de catenária'],['Versão da app',NM.VERSAO],['Esquema de dados',NM.ESQ],['Centro de custo',NM.ob?NM.ob.cc:''],['Obra',NM.ob?NM.ob.nome:st.nome],['Gravado em',nm2(new Date().getDate())+'/'+nm2(new Date().getMonth()+1)+'/'+new Date().getFullYear()+' '+nmHM(new Date())]]); ws['!cols']=[{wch:22},{wch:50}]; XLSX.utils.book_append_sheet(wb,ws,'Norma') }catch(e){} return wb };
+construirLivro=function(){ const wb=_construirLivro(); try{ const ws=XLSX.utils.aoa_to_sheet([['Medições CAT'],['Versão da app',NM.VERSAO],['Esquema de dados',NM.ESQ],['Centro de custo',NM.ob?NM.ob.cc:''],['Obra',NM.ob?NM.ob.nome:st.nome],['Gravado em',nm2(new Date().getDate())+'/'+nm2(new Date().getMonth()+1)+'/'+new Date().getFullYear()+' '+nmHM(new Date())]]); ws['!cols']=[{wch:22},{wch:50}]; XLSX.utils.book_append_sheet(wb,ws,'Norma') }catch(e){} return wb };
 window.addEventListener('message',ev=>{ const m=ev.data; if(m&&typeof m==='object'&&m.cmd==='pasta'&&m.handle){ document.documentElement.setAttribute('data-central','1'); nmAbrePasta(m.handle,true); return }
   if(m&&typeof m==='object'&&m.cmd==='obra'&&m.obra){ const ob=nmNorm(m.obra); if(ob){ NM.ob=ob; nmReaplica(); nmFlush() } } });
 
@@ -6090,7 +6090,7 @@ $('#bObra').onclick=e=>{ e.stopPropagation(); nmMenu($('#nmenu').hidden) };
 document.addEventListener('click',e=>{ const m=$('#nmenu'); if(!m.hidden&&!m.contains(e.target))nmMenu(false) });
 $('#nmenu').onclick=e=>{ const b=e.target.closest('button[data-n]'); if(!b)return; nmMenu(false); const a=b.getAttribute('data-n');
   if(a==='pasta')nmAbrePasta(); else if(a==='reabrir')nmReabre(); else if(a==='fechar')nmFecha(); else if(a==='copias')nmRestauraCopia(); else if(a==='contratos'){ abreLotes() } };
-function nmAjuda(){ nmModal({titulo:'Ajuda · Medição de catenária',corpo:
+function nmAjuda(){ nmModal({titulo:'Ajuda · Medições CAT',corpo:
   '<p><b>Dois modos.</b> Sem obra, a medição vive só neste navegador e num ficheiro Excel à sua escolha. Com uma obra aberta (Obra, Abrir pasta da obra), a medição fica em <span class="mono">Dados/medicao.xlsx</span> dentro da pasta da obra, ligada ao centro de custo, e os lotes passam a ser os contratos da obra.</p>'
   +'<p><b>Gravação.</b> Com ficheiro, grava sozinho 5 segundos depois da última alteração. Sem ficheiro, o rascunho fica neste navegador até guardar com Ctrl+S. Cópias datadas a cada 30 minutos e ao fechar (as últimas '+NM_MAXCOP+') em <span class="mono">Copias/</span>.</p>'
   +'<p><b>Se o ficheiro mudar</b> noutra janela ou por outra pessoa, a app avisa antes de gravar por cima.</p>'
@@ -7061,7 +7061,7 @@ $('#nmenu').onclick=e=>{ const b=e.target.closest('button[data-n]'); if(!b)retur
   if(a==='copias')nmRestauraCopia(); else if(a==='contratos'){ abreLotes() } };
 $('#bOpen').onclick=async()=>{ if(NM.soLeitura){ toast('Não tem permissão para alterar esta app.'); return } if(st.postes.length&&!(await nmSim('Importar um Excel substitui a medição aberta desta obra. Continuar?','Importar')))return; $('#fOpen').click() };
 $('#bNovo').hidden=true;
-nmAjuda=function(){ nmModal({titulo:'Ajuda · Medição de catenária',corpo:
+nmAjuda=function(){ nmModal({titulo:'Ajuda · Medições CAT',corpo:
   '<p><b>Dados online.</b> A medição de cada obra fica no servidor. Grava sozinha 12 segundos depois da última alteração. Sem rede, as alterações ficam neste aparelho e seguem quando a rede voltar.</p>'
   +'<p><b>Base de dados IP.</b> Vem do servidor (a base IP nunca é alterada). As montagens, desenhos e peças que acrescentar ou alterar guardam-se à parte e partilham-se com os colegas.</p>'
   +'<p><b>Cópias.</b> O servidor guarda uma cópia de 2 em 2 horas, quando há alterações («Obra ▾ › Restaurar uma cópia»). O botão «…» descarrega um Excel.</p>'

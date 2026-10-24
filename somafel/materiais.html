@@ -4868,7 +4868,7 @@ function renderProd(){
        'São '+eurz(vf)+' € de entradas em falta.</div></div></div>';
   }
   h+='<div class="card"><h3>Medições de '+esc(nomeMes(prodMes))+' <span class="n">'+docs.length+'</span></h3><div class="cb" style="padding:0">';
-  if(!docs.length)h+='<div class="empty"><b>Ainda não há medições neste mês</b>Usa o «Carregar medição do mês» e escolhe os ficheiros que saem da app de Medição de Catenária. Podes juntar várias ao mesmo mês.</div>';
+  if(!docs.length)h+='<div class="empty"><b>Ainda não há medições neste mês</b>Usa o «Carregar medição do mês» e escolhe os ficheiros que saem da app Medições CAT. Podes juntar várias ao mesmo mês.</div>';
   else {
     h+='<table class="g" style="width:100%"><thead><tr><th>Medição</th><th>Carregada em</th><th class="n">Materiais</th><th class="n">Quantidade</th><th class="n">Valor (€)</th><th>Mês</th><th></th></tr></thead><tbody>';
     docs.forEach(function(c){
@@ -5777,7 +5777,7 @@ function renderDatalists(){
 
 /* ---------- importação ---------- */
 
-/* ---- lista de material vinda da app Medição de Catenária ---- */
+/* ---- lista de material vinda da app Medições CAT ---- */
 function aplicaMedicao(o,lista,substituir){
   var keep=ST; ST=o; calc();
   if(!o.fases||!o.fases.length)o.fases=fasesNovas();
@@ -5805,7 +5805,7 @@ function aplicaMedicao(o,lista,substituir){
     var b=baseSem(a), d=qt-b;
     if(Math.abs(d)>1e-9){
       a.lanc.push({f:fc.id,mot:'Nova medição',qt:d,pu:pu(a)?+pu(a).toFixed(4):0,doc:'',
-        just:'Importado da app de Medição de Catenária'+medVersTxt(),ver:(typeof MEDVERS!=='undefined'?MEDVERS:''),data:hoje(),src:'medapp'});
+        just:'Importado da app Medições CAT'+medVersTxt(),ver:(typeof MEDVERS!=='undefined'?MEDVERS:''),data:hoje(),src:'medapp'});
     }
   }
 
@@ -6008,7 +6008,7 @@ function aplicaMedicaoFase(o,lista,alvo,modo,limpar){
     if(ant.length){ var qAnt=base; ant.forEach(function(l){ qAnt+=num(l.qt) });
       if(Math.abs(qAnt-qt)>1e-9){ a.hist=a.hist||[]; a.hist.push({f:F.id,data:hoje(),de:qAnt,para:qt,ver:ant[0].ver||'',comp:(D[keyOf(a.cod||a.des)]||{}).qne||0}) } }
     if(Math.abs(d)>1e-9)a.lanc.push({f:F.id,mot:(iF===0?'Medição de obra':'Nova medição'),qt:d,pu:pu(a)?+pu(a).toFixed(4):0,doc:'',
-      just:'Importado da app de Medição de Catenária'+medVersTxt(),ver:(typeof MEDVERS!=='undefined'?MEDVERS:''),data:hoje(),src:'medapp'});
+      just:'Importado da app Medições CAT'+medVersTxt(),ver:(typeof MEDVERS!=='undefined'?MEDVERS:''),data:hoje(),src:'medapp'});
   });
   if(modo==='substituir'){
     for(var i=o.med.length-1;i>=0;i--){
@@ -6183,7 +6183,7 @@ function importWB0(wb){
   var temMed=false, temNE=false, temGR=false, temFases=false;
   var names=wb.SheetNames;
 
-  /* --- lista de material da app Medição de Catenária --- */
+  /* --- lista de material da app Medições CAT --- */
   if(importaMedicaoApp(wb))return;
 
   /* --- livro de peças IP (o Excel oficial) --- */
