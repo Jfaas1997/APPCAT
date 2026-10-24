@@ -2519,6 +2519,14 @@ const ALTURAS=(()=>{const a=[];for(let v=8;v<=16.001;v+=0.4)a.push(v.toFixed(2))
 
 let ESPIAS=[], CABOS=[], pecaPorCod=new Map();
 const PEND=['01.200.05','01.200.06'];
+/* Desenho E-7173 (Pêndulos, v05): material de cada pêndulo por montagem. c = [código IP, quantidade por pêndulo]; cabo = leva Cabo Bz12 (01.100.02) com o comprimento l da pendulagem */
+const PEND_E7173={
+  IV:{n:'IV · Pêndulo normal 25 kV',cabo:1,c:[['05.900.01',2],['05.100.04',2],['05.100.06',2]]},
+  IX:{n:'IX · Pêndulo normal 1500 V',cabo:1,c:[['05.100.16',2],['05.900.01',2],['05.100.04',2]]},
+  V:{n:'V · Pêndulo para Y',cabo:1,c:[['05.702.01',1],['05.700.01',1],['04.204.02',1],['05.900.01',2],['05.100.04',2]]},
+  VII:{n:'VII · Pêndulo para feeder isolado',cabo:1,c:[['05.702.04',1],['05.500.18',1],['04.101.01',1],['05.500.16',1],['04.101.03',1],['04.204.02',1],['05.900.01',2]]},
+  VIII:{n:'VIII · Pêndulo curto para feeder isolado',cabo:0,c:[['05.702.04',1],['05.500.18',1],['04.101.01',1],['05.500.16',1],['04.101.03',1]]},
+  X:{n:'X · Pêndulo condutor LP300',cabo:1,c:[['05.100.19',1],['05.100.18',1]]}};
 
 function garante(){
   garanteLotes();
@@ -3433,8 +3441,9 @@ function agregado0(scope){
     const nm='Lanço '+(l.via?l.via+'/':'')+(l.num||'?');
     if(+l.csM>0) junta(l.csCod||'01.100.07',+l.csM,'m',nm+' · CS');
     if(+l.fcM>0) junta(l.fcCod||'01.100.12',+l.fcM,'m',nm+' · FC');
-    if(+l.pend>0) junta(l.pendTipo||PEND[1],+l.pend,'un',nm+' · pendulagem');
-    if(+l.pendCabo>0) junta('01.100.02',+l.pendCabo,'m',nm+' · pendulagem');
+    if(+l.pend>0){const M=PEND_E7173[(l.pd&&l.pd.tipo)||'IV']||PEND_E7173.IV;
+      for(const [c,q] of M.c) junta(c,q*(+l.pend),unDe(c)||'un',nm+' · pêndulos '+M.n.split(' · ')[0]);
+      if(M.cabo&&+l.pendCabo>0) junta('01.100.02',+l.pendCabo,'m',nm+' · pêndulos '+M.n.split(' · ')[0]);}
   }
   if(false) for(const q of st.equip){ /* TT e seccionadores retirados da medição de lanços e cabos */
     const nm=q.tipo+(q.poste?' · '+q.poste:'');
@@ -5213,7 +5222,7 @@ function pdGuarda(){try{localStorage.setItem('medicao_pend_v1',JSON.stringify(pd
 function pdLanco(){return (st.lancos||[]).find(l=>l.id===pd.lan)||null}
 function pdSalvaLanco(){
   const l=pdLanco(); if(!l)return;
-  const novo={ab:pd.ab,abOutra:pd.abOutra,sit:pd.sit||'NS',vr:pd.vr||'',lista:pd.lista||''};
+  const novo={ab:pd.ab,abOutra:pd.abOutra,sit:pd.sit||'NS',vr:pd.vr||'',lista:pd.lista||'',tipo:pd.tipo||'IV'};
   let tp='',tc='';
   if(novo.sit==='NS'){const vs=pdVaosLista(); if(vs.length){const R=vs.map(a=>pdVao(a,null)); tp=R.reduce((s,r)=>s+r.C.x.length,0); tc=r2(R.reduce((s,r)=>s+somaA(r.C.l),0))}}
   if(JSON.stringify(l.pd||null)===JSON.stringify(novo)&&l.pend===tp&&l.pendCabo===tc)return;
@@ -5221,7 +5230,7 @@ function pdSalvaLanco(){
 }
 function pdEscolheLanco(id){
   pd.lan=id||null; const l=pdLanco();
-  if(l){const d=l.pd||{}; pd.ab=d.ab||pd.ab||'1.40'; pd.abOutra=d.abOutra||''; pd.sit=d.sit||'NS'; pd.vr=d.vr||''; pd.lista=d.lista||''; pd.esp=null}
+  if(l){const d=l.pd||{}; pd.ab=d.ab||pd.ab||'1.40'; pd.abOutra=d.abOutra||''; pd.sit=d.sit||'NS'; pd.vr=d.vr||''; pd.lista=d.lista||''; pd.tipo=d.tipo||'IV'; pd.esp=null}
   try{localStorage.setItem('medicao_pend_v1',JSON.stringify(pd))}catch(e){}
   pdMontado=false; rPend();
 }
@@ -5328,11 +5337,12 @@ function pdSVG(R){
 }
 function rPend(){
   if(vista!=='pend')return;
-  if(!pdLanco()&&(st.lancos||[]).length===1){pd.lan=st.lancos[0].id; const d=st.lancos[0].pd; if(d){pd.ab=d.ab||pd.ab;pd.abOutra=d.abOutra||'';pd.sit=d.sit||'NS';pd.vr=d.vr||'';pd.lista=d.lista||''}}
+  if(!pdLanco()&&(st.lancos||[]).length===1){pd.lan=st.lancos[0].id; const d=st.lancos[0].pd; if(d){pd.ab=d.ab||pd.ab;pd.abOutra=d.abOutra||'';pd.sit=d.sit||'NS';pd.vr=d.vr||'';pd.lista=d.lista||'';pd.tipo=d.tipo||'IV'}}
   if(!pdMontado){
     const P=pd.P, inp=(k,t,u)=>`<label class="pdP"><span>${t}</span><input data-p="${k}" value="${P[k]}" inputmode="decimal"><em>${u}</em></label>`;
     $('#pdWrap').innerHTML=`
       <div class="pdSec"><div class="pdRow"><label class="xlab">Lanço <select id="pdLan"><option value="">— sem lanço (só cálculo) —</option>${(st.lancos||[]).map(l=>`<option value="${l.id}" ${pd.lan===l.id?'selected':''}>${esc((l.via?l.via+' · ':'')+'nº '+(l.num||'?')+' · '+(l.de||'?')+' → '+(l.para||'?'))}</option>`).join('')}</select></label>
+        <label class="xlab">Pêndulo (E-7173) <select id="pdTp">${Object.entries(PEND_E7173).map(([k,m])=>`<option value="${k}" ${(pd.tipo||'IV')===k?'selected':''}>${esc(m.n)}</option>`).join('')}</select></label>
         <span class="xhint">${pdLanco()?'Os pêndulos e o cabo dos «Vários vãos» ficam neste lanço e entram no material.':'Escolhe o lanço a que esta pendulagem pertence.'}</span></div></div>
       <div class="pdSec"><div class="pdRow">
         <label class="xlab">Vão (m) <input id="pdA" value="${esc(pd.a)}" inputmode="decimal" style="width:80px"></label>
@@ -5421,7 +5431,8 @@ function rPendMulti(){
   $('#pdMulti').innerHTML=tabX([['#'],['Vão (m)',1],['Distribuição'],['Pêndulos',1],['Cabo Bz 12 (m)',1],['L mín.',1],['L máx.',1]],
       R.map((r,i)=>[String(i+1),fmt(r.a),r.D.tipo==='norma'?esc(r.D.ref):r.D.tipo==='adaptada'?'≈ '+esc(r.D.ref):'genérica',String(r.C.x.length),fmt(r2(somaA(r.C.l))),Math.min(...r.C.L).toFixed(3),Math.max(...r.C.L).toFixed(3)]))
     +`<div class="xks" style="margin-top:10px"><div class="xk"><b>${fmt(r2(somaA(vs)))}</b><span>m de lanço (Σ vãos)</span></div><div class="xk"><b>${tp}</b><span>pêndulos</span></div><div class="xk"><b>${fmt(tc)}</b><span>m de cabo Bz 12</span></div></div>
-    <div class="xnota">${pdLanco()?`Material: este lanço leva <b>${tp}</b> pêndulos e <b>${fmt(tc)} m</b> de cabo; já está na lista de material.`:'<b>Atenção:</b> não há lanço escolhido, por isso este material ainda não entra na lista. Escolhe o lanço no topo da página.'}</div>
+    <div class="xnota"><b>Material dos ${tp} pêndulos (desenho E-7173, montagem ${esc((PEND_E7173[pd.tipo||'IV']||PEND_E7173.IV).n)}):</b><div class="lRes">${(()=>{const M=PEND_E7173[pd.tipo||'IV']||PEND_E7173.IV;return M.c.map(([c,q])=>{const pi=pecaPorCod.get(c);return `<span class="lChip"><b class="mono">${c}</b> ${esc(pi!=null?PEC[pi][3]:'')} · <b>${q*tp} un</b></span>`}).join('')+(M.cabo?`<span class="lChip"><b class="mono">01.100.02</b> Cabo Bz 12 · <b>${fmt(tc)} m</b></span>`:'')})()}</div></div>
+    <div class="xnota">${pdLanco()?`Este material já está na lista de material do lanço.`:'<b>Atenção:</b> não há lanço escolhido, por isso este material ainda não entra na lista. Escolhe o lanço no topo da página.'}</div>
     <div class="pdRow"><button id="pdExpN" style="margin-left:auto">Fichas destes vãos (Excel)</button></div>`;
 }
 function rPendVal(){
@@ -5467,6 +5478,7 @@ $('#pdWrap').oninput=e=>{
 };
 $('#pdWrap').onchange=e=>{
   const t=e.target;
+  if(t.id==='pdTp'){pd.tipo=t.value;pdGuarda();rPendMulti();return}
   if(t.id==='pdLan'){pdEscolheLanco(t.value?+t.value:null);return}
   if(t.id==='pdAb'){pd.ab=t.value;$('#pdAbO').style.display=t.value==='outra'?'':'none';const sp=pdSits(pdParte(pdAbertura()));if(!sp.includes(pd.sit||'NS')){pd.sit='NS';pd.vr=''}pdGuarda();pdMontado=false;rPend();return}
   if(t.id==='pdSit'){pd.sit=t.value;const vs=pdVars(pdParte(pdAbertura()),pd.sit);pd.vr=vs[0]?vs[0][0]:'';pdGuarda();pdMontado=false;rPend();return}
