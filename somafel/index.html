@@ -1016,7 +1016,7 @@ async function vPessoal(){
   let D;try{D=await pessoalCarrega()}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
   const R=pessoalResumo(D),adm=admin();
   const tabs=[['pessoas','Pessoas'],['validades','Validades'],['catalogo','Tipos de certificado']];
-  let h='<div class="vz"><div class="topo"><div><h2>Pessoal</h2><p class="sub" style="margin:0">Quem somos e o que têm em dia: certificados, formações e validades. Fora das obras.</p></div><span class="sp"></span>'+(adm?'<button class="pri" id="psNova">+ Nova pessoa</button>':'')+'</div>'
+  let h='<div class="vz"><div class="topo"><div><h2>Pessoal</h2><p class="sub" style="margin:0">Quem somos e o que têm em dia: certificados, formações e validades. Fora das obras.</p></div><span class="sp"></span>'+(adm?'<button id="psImp">Importar documentação</button> <button class="pri" id="psNova">+ Nova pessoa</button>':'')+'</div>'
    +'<div class="pskpi" role="group" aria-label="Alertas de certificados">'
    +[['cad','Caducados',R.cad,'er'],['30','Caducam em 30 dias',R.d30,'er'],['90','Caducam em 31 a 90 dias',R.d90,'av'],['falta','Com obrigatórios em falta',R.falta,'av']].map(k=>'<button type="button" data-k="'+k[0]+'" class="'+(k[2]?k[3]:'')+'"><b>'+k[2]+'</b><span>'+k[1]+'</span></button>').join('')+'</div>'
    +'<div class="pstabs" role="tablist">'+tabs.map(t=>'<button role="tab" type="button" data-sep="'+t[0]+'" aria-selected="'+(PS.sep===t[0])+'">'+t[1]+'</button>').join('')+'</div><div id="psCorpo"></div></div>';
@@ -1024,8 +1024,86 @@ async function vPessoal(){
   const corpo=()=>{const c=$('#psCorpo');({pessoas:psPessoas,validades:psValidades,catalogo:psCatalogo}[PS.sep])(c,D,R,adm,()=>vPessoal())};
   pg.querySelectorAll('[data-sep]').forEach(b=>b.onclick=()=>{PS.sep=b.dataset.sep;pg.querySelectorAll('[data-sep]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));corpo()});
   pg.querySelectorAll('.pskpi [data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==='falta'){PS.sep='pessoas';PS.q='';PS.est='falta'}else{PS.sep='validades';PS.val=k==='90'?'90':k}pg.querySelectorAll('[data-sep]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.sep===PS.sep)));corpo()});
+  const bi=$('#psImp');if(bi)bi.onclick=()=>psImportar(D,()=>vPessoal());
   const bn=$('#psNova');if(bn)bn.onclick=()=>psFichaPessoa(null,D,()=>vPessoal());
   corpo();pessoalBadge()}
+/* ---------- importar documentação do pessoal (pasta com uma subpasta por pessoa) ---------- */
+const psNorm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function psAchaPessoa(pasta,pessoal){
+  const f=psNorm(pasta).split(/[^a-z]+/).filter(Boolean);if(!f.length)return null;
+  const tk=p=>psNorm(p.nome).split(/[^a-z]+/).filter(Boolean);
+  let m=pessoal.filter(p=>{const t=tk(p);return t[0]===f[0]&&t[t.length-1]===f[f.length-1]});
+  if(m.length!==1)m=pessoal.filter(p=>{const t=tk(p);return f.every(x=>t.includes(x))});
+  return m.length===1?m[0]:null}
+function psClassifica(nome){
+  const n=psNorm(nome).replace(/\.pdf$/,'');let tipo=null,rot=null,tit=null;
+  if(/primeiros socorros/.test(n)){tipo='Primeiros-Socorros';rot=/cartao/.test(n)?null:'Curso básico'}
+  else if(/plataforma/.test(n)){tipo='Plataformas Elevatórias';rot=/cartao/.test(n)?'Cartão':/isq/.test(n)?'ISQ':/^plataformas elevatorias/.test(n)?null:'Certificado'}
+  else if(/altura/.test(n))tipo='Trabalhos em Altura';
+  else if(/ne\+vt cat|ne vt cat/.test(n))tipo='NE+VT CAT';
+  else if(/ne\+m cat/.test(n))tipo='NE+M CAT';
+  else if(/^ne cat/.test(n))tipo='NE CAT';
+  else if(/nivel ne|nau-curso|^ne certificado/.test(n))tipo='NE';
+  else if(/(^|[^a-z0-9])sf2/.test(n))tipo='SF2';
+  else if(/(^|[^a-z0-9])sf1/.test(n))tipo='SF1';
+  else if(/^cvi/.test(n))tipo='CVI';
+  else if(/^pvi/.test(n))tipo='PVI';
+  else if(/^c2[_ ]/.test(n))tipo='C2';
+  else if(/varas/.test(n))tit='Varas de Terra';
+  else if(/iet.?77/.test(n))tit='Certificado IET 77';
+  const m=n.match(/val[_ ]?(\d{2})-(\d{2})-(\d{4})/);
+  return {tipo,rot,tit,validade:m?m[3]+'-'+m[2]+'-'+m[1]:null}}
+function psPlano(ficheiros,D){
+  const pastas={};
+  ficheiros.forEach(f=>{const rel=(f.webkitRelativePath||f.name).split('/');if(rel.length<2||!/\.pdf$/i.test(f.name))return;(pastas[rel[rel.length-2]]=pastas[rel[rel.length-2]]||[]).push(f)});
+  const linhas=[],T=n=>D.tipos.find(t=>t.nome===n);
+  Object.keys(pastas).sort((a,b)=>a.localeCompare(b,'pt')).forEach(pasta=>{
+    const p=psAchaPessoa(pasta,D.pessoal),L=pastas[pasta].map(f=>Object.assign({f,pasta,p},psClassifica(f.name)));
+    L.forEach(x=>{x.dup=!!(p&&D.certs.some(c=>c.pessoal_id===p.id&&c.notas&&c.notas.includes('Documento: '+x.f.name)))});
+    const usados=new Set();
+    L.sort((a,b)=>(a.rot?1:0)-(b.rot?1:0));
+    L.forEach(x=>{
+      if(!p){x.acao='sem pessoa';return}
+      if(x.dup){x.acao='já importado';return}
+      const t=x.tipo&&T(x.tipo);x.tipoId=t?t.id:null;
+      const livre=t&&!usados.has(t.id)&&!x.rot&&D.certs.find(c=>c.pessoal_id===p.id&&c.tipo_id===t.id&&!c.ficheiro);
+      if(livre){usados.add(t.id);x.cert=livre;x.acao='atualiza'}
+      else x.acao='novo';
+      x.titulo=x.tipo?(x.rot?x.tipo+' ('+x.rot+')':x.tipo):(x.tit||x.f.name.replace(/\.pdf$/i,''));
+      if(x.tipo&&!t)x.acao='sem tipo'});
+    L.forEach(x=>linhas.push(x))});
+  return linhas}
+async function psImportar(D,rec){
+  const org=S.eu.organizacao_id,w=janela('Importar documentação do pessoal',true);
+  w.corpo.innerHTML='<p class="hint">Escolha a pasta «Documentação do pessoal» (com uma subpasta por pessoa). Cada PDF é ligado à pessoa e ao tipo de certificado pelo nome do ficheiro; a validade é lida de «val dd-mm-aaaa» quando existe. Vê tudo antes de gravar.</p><input type="file" id="imF" webkitdirectory multiple><div id="imR"></div>';
+  const r=w.corpo.querySelector('#imR');
+  w.corpo.querySelector('#imF').onchange=e=>{
+    const L=psPlano([...e.target.files],D);
+    if(!L.length){r.innerHTML='<p class="msg e">Não encontrei PDFs em subpastas.</p>';return}
+    const cont=k=>L.filter(x=>x.acao===k).length;
+    r.innerHTML='<p><b>'+L.length+'</b> ficheiros: '+cont('atualiza')+' atualizam um certificado existente, '+cont('novo')+' criam um novo, '+cont('sem tipo')+' sem tipo no catálogo, '+cont('já importado')+' já importados, '+cont('sem pessoa')+' sem pessoa correspondente.</p>'
+     +'<div style="max-height:46vh;overflow:auto"><table><thead><tr><th></th><th>Pessoa</th><th>Ficheiro</th><th>Certificado</th><th>Validade</th><th>Ação</th></tr></thead><tbody>'
+     +L.map((x,i)=>'<tr><td><input type="checkbox" data-i="'+i+'" aria-label="Importar" '+(x.p&&x.acao!=='já importado'?'checked':'disabled')+'></td><td>'+esc(x.p?x.p.nome:x.pasta)+'</td><td>'+esc(x.f.name)+'</td><td>'+esc(x.titulo||'')+'</td><td class="n">'+(x.validade?dPT(x.validade):'—')+'</td><td>'+esc(x.acao)+'</td></tr>').join('')+'</tbody></table></div>'
+     +'<div class="bt"><button type="button" class="cancela">Cancelar</button><button class="pri" type="button" id="imGo">Importar selecionados</button></div><div id="imP" class="hint"></div>';
+    r.querySelector('.cancela').onclick=()=>w.fecha();
+    r.querySelector('#imGo').onclick=async()=>{
+      const sel=[...r.querySelectorAll('input[data-i]:checked')].map(c=>L[+c.dataset.i]);if(!sel.length)return;
+      r.querySelectorAll('button').forEach(b=>b.disabled=true);let feitos=0,falhas=[];
+      for(const x of sel){
+        r.querySelector('#imP').textContent='A enviar '+(feitos+falhas.length+1)+' de '+sel.length+'… '+x.f.name;
+        try{const caminho='_org/'+org+'/pessoal/'+x.p.id+'/'+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(x.f.name);
+          const up=await sb.storage.from('documentos').upload(caminho,x.f,{contentType:'application/pdf'});if(up.error)throw up.error;
+          const nota='Documento: '+x.f.name;
+          try{if(x.cert){const novo=Object.assign({ficheiro:caminho},x.validade&&!x.cert.validade?{validade:x.validade}:{},{notas:x.cert.notas&&!/^Importado do mapa/.test(x.cert.notas)?x.cert.notas+' · '+nota:nota});
+              Object.assign(x.cert,await ok(sb.from('certificados').update(novo).eq('id',x.cert.id).select().single()))}
+            else D.certs.push(await ok(sb.from('certificados').insert({organizacao_id:org,pessoal_id:x.p.id,tipo_id:x.tipoId||null,titulo:x.titulo,validade:x.validade||null,ficheiro:caminho,notas:nota}).select().single()))}
+          catch(er){await sb.storage.from('documentos').remove([caminho]);throw er}
+          feitos++}catch(er){falhas.push(x.f.name+': '+erroTxt(er))}}
+      r.querySelector('#imP').innerHTML='<b>'+feitos+' importados.</b>'+(falhas.length?' <span class="msg e">'+falhas.length+' falharam:</span><br>'+falhas.map(esc).join('<br>'):'');
+      r.querySelectorAll('button').forEach(b=>b.disabled=false);r.querySelector('#imGo').remove();r.querySelector('.cancela').textContent='Fechar';r.querySelector('.cancela').onclick=()=>{w.fecha();rec()};
+      pessoalBadge()}};
+}
+window.__psImp={psAchaPessoa,psClassifica,psPlano};
 function psPessoas(c,D,R,adm,rec){
   const nomeV=id=>(D.val.find(v=>v.id===id)||{}).nome;
   let L=D.pessoal.filter(p=>PS.est==='todos'||(PS.est==='falta'?(R.porPessoa[p.id]&&R.porPessoa[p.id].faltam&&p.estado==='ativo'):(PS.est==='inativos'?p.estado==='inativo':p.estado==='ativo')));
