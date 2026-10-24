@@ -3089,8 +3089,7 @@ function resumoCodigos(pares){
 function tfLanco(){
   const som=f=>st.lancos.reduce((s,l)=>s+(+f(l)||0),0);
   return `<tr><td class="lbl" colspan="6">Totais</td><td>${fmt(som(l=>l.L))}</td><td></td>
-    <td></td><td>${fmt(som(l=>l.csM))}</td><td></td><td>${fmt(som(l=>l.fcM))}</td>
-    <td>${fmt(som(l=>l.pend))}</td><td></td><td>${fmt(som(l=>l.pendCabo))}</td><td></td></tr>`;
+    <td></td><td>${fmt(som(l=>l.csM))}</td><td></td><td>${fmt(som(l=>l.fcM))}</td><td></td></tr>`;
 }
 function tfCabos(){
   const som=f=>st.cabosL.reduce((s,c)=>s+(+f(c)||0),0);
@@ -3102,7 +3101,7 @@ function rLanco(){
   const am=[...new Set([...AMARR_BASE,...st.lancos.flatMap(l=>[l.amDe,l.amPara]).filter(Boolean)])];
   const th=`<th>Via</th><th>Nº</th><th>De</th><th>Amarração</th><th>Para</th><th>Amarração</th><th>L lanço (m)</th><th></th>
     <th class="cab">Cabo de suporte</th><th class="cab">CS (m)</th><th class="cab">Fio de contacto</th><th class="cab">FC (m)</th>
-    <th>Pêndulos</th><th>Tipo</th><th>Cabo 9V (m)</th><th></th>`;
+    <th></th>`;
   const linhas=st.lancos.map((l,i)=>`<tr data-l="${i}">
     <td><input data-f="via" value="${esc(l.via||'')}" placeholder="via"></td>
     <td><input data-f="num" value="${esc(l.num||'')}" placeholder="nº"></td>
@@ -3116,9 +3115,6 @@ function rLanco(){
     <td class="cab"><input class="num" data-f="csM" value="${l.csM||''}" inputmode="decimal"></td>
     <td class="cab"><select data-f="fcCod" class="cod">${optsCod(FC_COD,l.fcCod)}</select></td>
     <td class="cab"><input class="num" data-f="fcM" value="${l.fcM||''}" inputmode="decimal"></td>
-    <td><input class="num" data-f="pend" value="${l.pend||''}" inputmode="numeric"></td>
-    <td><select data-f="pendTipo">${PEND.map(c=>{const pi=pecaPorCod.get(c);return `<option value="${c}" ${l.pendTipo===c?'selected':''}>${esc(pi!=null?PEC[pi][3].slice(0,24):c)}</option>`}).join('')}</select></td>
-    <td><input class="num" data-f="pendCabo" value="${l.pendCabo||''}" inputmode="decimal"></td>
     <td><button class="xb" data-dl="${i}" aria-label="Apagar lanço">×</button></td></tr>`).join('');
   const tf=tfLanco();
   $('#lWrap').innerHTML=st.lancos.length
@@ -3437,8 +3433,6 @@ function agregado0(scope){
     const nm='Lanço '+(l.via?l.via+'/':'')+(l.num||'?');
     if(+l.csM>0) junta(l.csCod||'01.100.07',+l.csM,'m',nm+' · CS');
     if(+l.fcM>0) junta(l.fcCod||'01.100.12',+l.fcM,'m',nm+' · FC');
-    if(+l.pend>0) junta(l.pendTipo||PEND[1],+l.pend,'un',nm);
-    if(+l.pendCabo>0) junta('01.100.02',+l.pendCabo,'m',nm+' · pendulagem');
   }
   if(false) for(const q of st.equip){ /* TT e seccionadores retirados da medição de lanços e cabos */
     const nm=q.tipo+(q.poste?' · '+q.poste:'');
@@ -5397,9 +5391,7 @@ function rPendMulti(){
   $('#pdMulti').innerHTML=tabX([['#'],['Vão (m)',1],['Distribuição'],['Pêndulos',1],['Cabo Bz 12 (m)',1],['L mín.',1],['L máx.',1]],
       R.map((r,i)=>[String(i+1),fmt(r.a),r.D.tipo==='norma'?esc(r.D.ref):r.D.tipo==='adaptada'?'≈ '+esc(r.D.ref):'genérica',String(r.C.x.length),fmt(r2(somaA(r.C.l))),Math.min(...r.C.L).toFixed(3),Math.max(...r.C.L).toFixed(3)]))
     +`<div class="xks" style="margin-top:10px"><div class="xk"><b>${fmt(r2(somaA(vs)))}</b><span>m de lanço (Σ vãos)</span></div><div class="xk"><b>${tp}</b><span>pêndulos</span></div><div class="xk"><b>${fmt(tc)}</b><span>m de cabo Bz 12</span></div></div>
-    <div class="pdRow">${st.lancos.length?`<select id="pdLan">${opts}</select><button id="pdEnv" class="amarelo">Enviar para este lanço</button><span class="xhint">Preenche Pêndulos e Cabo 9V do lanço escolhido.</span>`
-      :'<span class="xhint">Cria primeiro um lanço de catenária para poderes enviar estes totais.</span>'}
-      <button id="pdExpN" style="margin-left:auto">Fichas destes vãos (Excel)</button></div>`;
+    <div class="pdRow"><button id="pdExpN" style="margin-left:auto">Fichas destes vãos (Excel)</button></div>`;
 }
 function rPendVal(){
   const el=$('#pdVal'); if(!el||!el.closest('details').open){if(el)el.innerHTML='';return}
@@ -5458,11 +5450,6 @@ $('#pdWrap').onclick=e=>{
   if(b.id==='pdRepor'){pd.P={...PD_DEF};pdGuarda();pdMontado=false;rPend();const d=$('#pdWrap details');if(d){d.open=true;rPendVal()}return}
   if(b.id==='pdExp1')return pdExporta(false);
   if(b.id==='pdExpN')return pdExporta(true);
-  if(b.id==='pdEnv'){
-    const l=st.lancos[+$('#pdLan').value]; if(!l)return;
-    const R=pdVaosLista().map(a=>pdVao(a,null)), tp=R.reduce((s,r)=>s+r.C.x.length,0), tc=r2(R.reduce((s,r)=>s+somaA(r.C.l),0));
-    if((l.pend||l.pendCabo)&&!confirm(`O lanço já tem ${l.pend||0} pêndulos e ${l.pendCabo||0} m de cabo. Substituir por ${tp} pêndulos e ${fmt(tc)} m?`))return;
-    l.pend=tp; l.pendCabo=tc; apply(); toast(`Lanço ${l.num||''}: ${tp} pêndulos e ${fmt(tc)} m de cabo Bz 12.`,4000); return }
 };
 
 /* ================= onde se aplica um artigo (janela) ================= */
