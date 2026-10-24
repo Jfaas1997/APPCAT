@@ -5360,19 +5360,19 @@ function pdSVG(R){
     <text x="${X(a/2)}" y="${Hh-4}" class="pdN">vão ${fmt(a)} m · abertura ${fmt(ab)} m</text>
     <text x="${X(0)+6}" y="${Y(ab)-4}" class="pdT">CS</text><text x="${X(0)+6}" y="${base+14}" class="pdT">FC</text></svg>`;
 }
-function pdSVGg(R){ /* esquema genérico (situações da IT.CAT.042): postes, CS, FC e pêndulos à escala */
-  const a=R.a, x=R.C.x, L=R.C.L, W=1000, mx=40, top=34, sx=(W-2*mx)/a, X=v=>mx+v*sx, mxL=Math.max(...L,0.5), sy=100/mxL, Y=l=>top+l*sy, base=top+mxL*sy, Hh=base+58;
-  const pts=[[0,L[0]||0],...x.map((xx,i)=>[xx,L[i]]),[a,L[L.length-1]||0]].map(q=>`${X(q[0]).toFixed(1)},${Y(q[1]).toFixed(1)}`).join(' ');
-  const dr=x.map((xx,i)=>`<line x1="${X(xx).toFixed(1)}" y1="${top}" x2="${X(xx).toFixed(1)}" y2="${Y(L[i]).toFixed(1)}" class="pdDr"/>
-    <rect x="${(X(xx)-9).toFixed(1)}" y="${top}" width="18" height="${(Y(L[i])-top+18).toFixed(1)}" class="pdHit" data-tip="Pêndulo ${i+1}&#10;l a cortar: ${R.C.l[i].toFixed(2)} m&#10;L: ${L[i].toFixed(3)} m"/>
-    <text x="${X(xx).toFixed(1)}" y="${(Y(L[i])+15).toFixed(1)}" class="pdN">${i+1}</text>
-    <text x="${X(xx).toFixed(1)}" y="${top-6}" class="pdL">${L[i].toFixed(2)}</text>`).join('');
-  const es=R.E&&R.E.esp?R.E.esp:null, ed=es?[0,...x,a].slice(0,-1).map((p0,i)=>{const p1=[...x,a][i];return `<text x="${X((p0+p1)/2).toFixed(1)}" y="${base+30}" class="pdT" text-anchor="middle">${fmt(r2(p1-p0))}</text>`}).join(''):'';
+function pdSVGg(R){ /* esquema genérico (situações da IT.CAT.042): FC direito em baixo, CS curvo em cima, pêndulos à escala */
+  const a=R.a, x=R.C.x, L=R.C.L, W=1000, mx=40, sx=(W-2*mx)/a, X=v=>mx+v*sx, mxL=Math.max(...L,0.5), sy=100/mxL, top=40, base=top+mxL*sy+4, Hh=base+62, YC=l=>base-l*sy;
+  const pts=[[0,L[0]||0],...x.map((xx,i)=>[xx,L[i]]),[a,L[L.length-1]||0]].map(q=>`${X(q[0]).toFixed(1)},${YC(q[1]).toFixed(1)}`).join(' ');
+  const dr=x.map((xx,i)=>`<line x1="${X(xx).toFixed(1)}" y1="${YC(L[i]).toFixed(1)}" x2="${X(xx).toFixed(1)}" y2="${base}" class="pdDr"/>
+    <rect x="${(X(xx)-9).toFixed(1)}" y="${YC(L[i]).toFixed(1)}" width="18" height="${(L[i]*sy+14).toFixed(1)}" class="pdHit" data-tip="Pêndulo ${i+1}&#10;l a cortar: ${R.C.l[i].toFixed(2)} m&#10;L: ${L[i].toFixed(3)} m"/>
+    <text x="${X(xx).toFixed(1)}" y="${base+15}" class="pdN">${i+1}</text>
+    <text x="${X(xx).toFixed(1)}" y="${(YC(L[i])-6).toFixed(1)}" class="pdL">${L[i].toFixed(2)}</text>`).join('');
+  const pp=[0,...x,a], ed=pp.slice(0,-1).map((p0,i)=>`<text x="${X((p0+pp[i+1])/2).toFixed(1)}" y="${base+34}" class="pdT" text-anchor="middle">${fmt(r2(pp[i+1]-p0))}</text>`).join('');
   return `<svg viewBox="0 0 ${W} ${Hh.toFixed(0)}" class="pdSvg" role="img" aria-label="Esquema do vão com os pêndulos">
-    <line x1="${X(0)}" y1="${top-16}" x2="${X(0)}" y2="${base+12}" class="pdPo"/><line x1="${X(a)}" y1="${top-16}" x2="${X(a)}" y2="${base+12}" class="pdPo"/>
-    <line x1="${X(0)}" y1="${top}" x2="${X(a)}" y2="${top}" class="pdCS"/><polyline points="${pts}" class="pdFC"/>${dr}${ed}
-    <text x="${X(0)+6}" y="${top-18}" class="pdT">CS</text><text x="${X(0)+6}" y="${Y(L[0]||0)+14}" class="pdT">FC</text>
-    <text x="${X(a/2)}" y="${Hh.toFixed(0)-6}" class="pdN">vão ${fmt(a)} m · abertura ${fmt(R.ab)} m (esquema à escala horizontal; L nos pêndulos em m, distâncias entre pêndulos em baixo)</text></svg>`;
+    <line x1="${X(0)}" y1="${top-24}" x2="${X(0)}" y2="${base+22}" class="pdPo"/><line x1="${X(a)}" y1="${top-24}" x2="${X(a)}" y2="${base+22}" class="pdPo"/>
+    <polyline points="${pts}" class="pdCS"/><line x1="${X(0)}" y1="${base}" x2="${X(a)}" y2="${base}" class="pdFC"/>${dr}${ed}
+    <text x="${X(0)+8}" y="${YC(L[0]||0)-8}" class="pdT">CS</text><text x="${X(0)+8}" y="${base+14}" class="pdT">FC</text>
+    <text x="${X(a/2)}" y="${Hh.toFixed(0)-6}" class="pdN">vão ${fmt(a)} m · abertura ${fmt(R.ab)} m (L nos pêndulos em m; distâncias entre pêndulos em baixo)</text></svg>`;
 }
 function pdRAberto(){ /* resultado do vão aberto (NS ou situação) */
   const a=Number(String(pd.a).replace(',','.')); if(!(a>=4))return null;
