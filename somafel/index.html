@@ -966,7 +966,7 @@ async function vEquip(){
   titulo('Equipamentos');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
   let L;try{L=await ok(sb.from('equipamentos').select('*').order('categoria').order('designacao'))}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
   const adm=admin(),cats=[...new Set(EQ_SUG.concat(L.map(x=>x.categoria)))].sort((a,b)=>a.localeCompare(b,'pt'));
-  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Equipamentos</h2><p class="sub" style="margin:0">Equipamento da empresa com ensaio ou inspeção periódica, como as varas de terra: identificação, último ensaio, validade e certificado.</p></div><span class="sp"></span>'+(adm?'<button class="pri" id="eqNovo">+ Equipamento</button>':'')+'</div>'
+  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Equipamentos</h2><p class="sub" style="margin:0">Equipamento da empresa com ensaio ou inspeção periódica, como as varas de terra: identificação, último ensaio, validade e certificado.</p></div><span class="sp"></span>'+(adm?'<button id="eqImp">Importar fichas</button> <button class="pri" id="eqNovo">+ Equipamento</button>':'')+'</div>'
    +'<div class="psbar"><input type="search" id="eqQ" placeholder="Procurar por designação, n.º ou local" value="'+esc(EQ.q)+'"><select id="eqC" aria-label="Categoria"><option value="">Todas as categorias</option>'+cats.map(c=>'<option>'+esc(c)+'</option>').join('')+'</select><select id="eqE" aria-label="Estado"><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="todos">Todos</option></select><span class="hint" id="eqN"></span></div><div id="eqL"></div></div>';
   $('#eqC').value=EQ.cat;$('#eqE').value=EQ.est;
   const pinta=()=>{
@@ -975,18 +975,37 @@ async function vEquip(){
     if(!F.length){$('#eqL').innerHTML='<div class="vazio"><h2>'+(L.length?'Nada neste filtro':'Ainda não há equipamentos')+'</h2><p>'+(L.length?'Tente outro termo.':(adm?'Comece por «+ Equipamento» e escolha a categoria «Varas de terra».':'O administrador ainda não registou equipamentos.'))+'</p></div>';return}
     const G={};F.forEach(x=>(G[x.categoria]=G[x.categoria]||[]).push(x));let h='';
     Object.keys(G).sort((a,b)=>a.localeCompare(b,'pt')).forEach(k=>{
-      h+='<div class="card" style="padding:4px 8px;margin-bottom:10px"><div style="padding:8px 6px 2px"><b>'+esc(k)+'</b> <span class="hint">'+G[k].length+'</span></div><table><thead><tr><th>N.º</th><th>Designação</th><th>Local</th><th>Último ensaio</th><th>Validade</th><th>Estado</th><th></th></tr></thead><tbody>'
-       +G[k].map(x=>{const e=estCert(x);return '<tr><td class="n"><b>'+esc(x.numero||'—')+'</b></td><td><b>'+esc(x.designacao)+'</b><div class="hint">'+esc(x.marca_modelo||'')+(x.notas?' · '+esc(x.notas):'')+'</div></td><td>'+esc(x.localizacao||'')+'</td><td class="n">'+dPT(x.ultimo_ensaio)+'</td><td class="n">'+dPT(x.validade)+'</td><td>'+(x.estado==='ativo'?pillC(e):'<span class="pill">inativo</span>')+'</td><td>'+(x.ficheiro?'<button type="button" data-doc="'+esc(x.ficheiro)+'">Certificado</button> ':'')+(adm?'<button type="button" data-ed="'+x.id+'">Editar</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>'});
+      h+='<div class="card" style="padding:4px 8px;margin-bottom:10px"><div style="padding:8px 6px 2px"><b>'+esc(k)+'</b> <span class="hint">'+G[k].length+'</span></div><table><thead><tr><th>N.º</th><th>Designação</th><th>Local</th><th>Em serviço</th><th>Último ensaio</th><th>Validade</th><th>Estado</th><th></th></tr></thead><tbody>'
+       +G[k].map(x=>{const e=estCert(x);return '<tr><td class="n"><b>'+esc(x.numero||'—')+'</b></td><td><b>'+esc(x.designacao)+'</b><div class="hint">'+esc([x.fabricante,x.marca_modelo].filter(Boolean).join(' · '))+(x.data_fabrico?' · fab. '+esc(x.data_fabrico):'')+(x.notas?' · '+esc(x.notas):'')+'</div></td><td>'+esc(x.localizacao||'')+'</td><td class="n">'+dPT(x.entrada_servico)+'</td><td class="n">'+dPT(x.ultimo_ensaio)+'</td><td class="n">'+dPT(x.validade)+'</td><td>'+(x.estado==='ativo'?pillC(e):'<span class="pill">inativo</span>')+'</td><td>'+(x.ficheiro?'<button type="button" data-doc="'+esc(x.ficheiro)+'">Certificado</button> ':'')+(adm?'<button type="button" data-ed="'+x.id+'">Editar</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>'});
     $('#eqL').innerHTML=h;
     $('#eqL').querySelectorAll('[data-doc]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.doc,300);if(r.error||!r.data){aviso('Não consegui abrir o documento.',true);return}window.open(r.data.signedUrl,'_blank')});
     $('#eqL').querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>eqForm(L.find(z=>z.id===b.dataset.ed),cats,()=>vEquip()))};
   $('#eqQ').oninput=e=>{EQ.q=e.target.value;pinta()};$('#eqC').onchange=e=>{EQ.cat=e.target.value;pinta()};$('#eqE').onchange=e=>{EQ.est=e.target.value;pinta()};
+  const bi=$('#eqImp');if(bi)bi.onclick=()=>eqImportar(L,()=>vEquip());
   const bn=$('#eqNovo');if(bn)bn.onclick=()=>eqForm(null,cats,()=>vEquip());
   pinta()}
+async function eqImportar(L,rec){
+  const org=S.eu.organizacao_id,w=janela('Importar fichas de equipamentos');
+  w.corpo.innerHTML='<p class="hint">Escolha os PDFs das fichas. O n.º do equipamento tira-se do nome do ficheiro (por exemplo «VT_07.pdf» liga-se à vara (07)); se já tinha ficha, é substituída.</p><input type="file" id="eF" accept="application/pdf,image/*" multiple><div id="eR"></div>';
+  const r=w.corpo.querySelector('#eR');
+  w.corpo.querySelector('#eF').onchange=e=>{
+    const M=[...e.target.files].map(f=>{const m=f.name.match(/(?:VT|LC)[ _-]?0*(\d{1,2})(?!\d)/i)||f.name.match(/\((\d{1,2})\)/);
+      const q=m&&String(+m[1]).padStart(2,'0'),x=q&&L.find(z=>z.categoria==='Varas de terra'&&new RegExp('\\('+q+'\\)\\s*$').test(z.numero||''));return {f,x}});
+    r.innerHTML='<table><thead><tr><th>Ficheiro</th><th>Equipamento</th></tr></thead><tbody>'+M.map(m=>'<tr><td>'+esc(m.f.name)+'</td><td>'+(m.x?esc(m.x.designacao+' '+m.x.numero)+(m.x.ficheiro?' <span class="hint">(substitui a ficha atual)</span>':''):'<span class="hint">sem correspondência — ignorado</span>')+'</td></tr>').join('')+'</tbody></table><div class="bt"><button type="button" class="cancela">Cancelar</button><button class="pri" type="button" id="eGo">Importar</button></div><div id="eP" class="hint"></div>';
+    r.querySelector('.cancela').onclick=()=>w.fecha();
+    r.querySelector('#eGo').onclick=async()=>{const A=M.filter(m=>m.x);if(!A.length)return;r.querySelectorAll('button').forEach(b=>b.disabled=true);let n=0,fal=[];
+      for(const m of A){r.querySelector('#eP').textContent='A enviar '+(n+fal.length+1)+' de '+A.length+'…';
+        try{const caminho='_org/'+org+'/equipamentos/'+m.x.id+'/'+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(m.f.name);
+          const up=await sb.storage.from('documentos').upload(caminho,m.f,{contentType:m.f.type||'application/pdf'});if(up.error)throw up.error;
+          try{await ok(sb.from('equipamentos').update({ficheiro:caminho}).eq('id',m.x.id))}catch(er){await sb.storage.from('documentos').remove([caminho]);throw er}
+          if(m.x.ficheiro)await sb.storage.from('documentos').remove([m.x.ficheiro]);
+          m.x.ficheiro=caminho;n++}catch(er){fal.push(m.f.name+': '+erroTxt(er))}}
+      r.querySelector('#eP').innerHTML='<b>'+n+' ficha(s) importada(s).</b>'+(fal.length?'<br><span class="msg e">'+fal.map(esc).join('<br>')+'</span>':'');
+      r.querySelector('#eGo').remove();const c=r.querySelector('.cancela');c.disabled=false;c.textContent='Fechar';c.onclick=()=>{w.fecha();rec()}}}}
 function eqForm(x,cats,rec){
   const w=janela(x?'Editar equipamento':'Novo equipamento'),f=document.createElement('form'),V=k=>esc(x&&x[k]||'');
   f.innerHTML='<label for="qC">Categoria</label><input id="qC" list="qCl" required value="'+esc(x?x.categoria:'Varas de terra')+'"><datalist id="qCl">'+cats.map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist>'
-   +'<label for="qD">Designação</label><input id="qD" required value="'+V('designacao')+'"><label for="qN">Número / identificação</label><input id="qN" value="'+V('numero')+'"><label for="qM">Marca e modelo</label><input id="qM" value="'+V('marca_modelo')+'"><label for="qL">Local / quem o tem</label><input id="qL" value="'+V('localizacao')+'">'
+   +'<label for="qD">Designação</label><input id="qD" required value="'+V('designacao')+'"><label for="qN">Número / identificação</label><input id="qN" value="'+V('numero')+'"><label for="qB">Fabricante</label><input id="qB" value="'+V('fabricante')+'"><label for="qM">Modelo</label><input id="qM" value="'+V('marca_modelo')+'"><label for="qS">Entrada em serviço</label><input id="qS" type="date" value="'+V('entrada_servico')+'"><label for="qA">Data de fabrico (ex.: 07-2024)</label><input id="qA" value="'+V('data_fabrico')+'"><label for="qL">Local / quem o tem</label><input id="qL" value="'+V('localizacao')+'">'
    +'<label for="qU">Último ensaio</label><input id="qU" type="date" value="'+V('ultimo_ensaio')+'"><label for="qV">Validade do ensaio (vazio = sem prazo)</label><input id="qV" type="date" value="'+V('validade')+'">'
    +'<label for="qE">Estado</label><select id="qE"><option value="ativo">Ativo</option><option value="inativo">Inativo (abatido)</option></select>'
    +'<label for="qF">Certificado (PDF ou imagem)'+(x&&x.ficheiro?' — já tem um; escolher outro substitui-o':'')+'</label><input id="qF" type="file" accept="application/pdf,image/*"><label for="qO">Notas</label><input id="qO" value="'+V('notas')+'">'
@@ -998,7 +1017,7 @@ function eqForm(x,cats,rec){
   f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('.pri');b.disabled=true;
     try{const file=G('qF').files[0];let caminho=x?x.ficheiro:null;
       if(file){const novo='_org/'+S.eu.organizacao_id+'/equipamentos/'+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(file.name);const up=await sb.storage.from('documentos').upload(novo,file,{contentType:file.type||'application/octet-stream'});if(up.error)throw up.error;if(caminho)await sb.storage.from('documentos').remove([caminho]);caminho=novo}
-      const row={categoria:G('qC').value.trim(),designacao:G('qD').value.trim(),numero:G('qN').value.trim()||null,marca_modelo:G('qM').value.trim()||null,localizacao:G('qL').value.trim()||null,ultimo_ensaio:G('qU').value||null,validade:G('qV').value||null,estado:G('qE').value,notas:G('qO').value.trim()||null,ficheiro:caminho};
+      const row={categoria:G('qC').value.trim(),designacao:G('qD').value.trim(),numero:G('qN').value.trim()||null,marca_modelo:G('qM').value.trim()||null,fabricante:G('qB').value.trim()||null,entrada_servico:G('qS').value||null,data_fabrico:G('qA').value.trim()||null,localizacao:G('qL').value.trim()||null,ultimo_ensaio:G('qU').value||null,validade:G('qV').value||null,estado:G('qE').value,notas:G('qO').value.trim()||null,ficheiro:caminho};
       if(x)await ok(sb.from('equipamentos').update(row).eq('id',x.id));else await ok(sb.from('equipamentos').insert(Object.assign({organizacao_id:S.eu.organizacao_id},row)));
       w.fecha();aviso('Equipamento guardado.');rec()}catch(er){b.disabled=false;aviso(erroTxt(er),true)}};
   G('qD').focus()}
