@@ -3433,6 +3433,8 @@ function agregado0(scope){
     const nm='Lanço '+(l.via?l.via+'/':'')+(l.num||'?');
     if(+l.csM>0) junta(l.csCod||'01.100.07',+l.csM,'m',nm+' · CS');
     if(+l.fcM>0) junta(l.fcCod||'01.100.12',+l.fcM,'m',nm+' · FC');
+    if(+l.pend>0) junta(l.pendTipo||PEND[1],+l.pend,'un',nm+' · pendulagem');
+    if(+l.pendCabo>0) junta('01.100.02',+l.pendCabo,'m',nm+' · pendulagem');
   }
   if(false) for(const q of st.equip){ /* TT e seccionadores retirados da medição de lanços e cabos */
     const nm=q.tipo+(q.poste?' · '+q.poste:'');
@@ -4004,7 +4006,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   $('#vBase').style.display=vista==='base'?'flex':'none';
   $('#vPend').style.display=vista==='pend'?'flex':'none';
   exAberta=(vista==='exec'); $('#exWin').hidden=!exAberta;
-  if(vista==='grelha')rGrelha(); else if(vista==='lanco')mostraSub(); else if(vista==='base')rBase(); else if(vista==='pend')rPend(); else if(vista==='exec'){syncComp();rExWin()} else qEl.focus();
+  if(vista==='grelha')rGrelha(); else if(vista==='lanco')mostraSub(); else if(vista==='base')rBase(); else if(vista==='pend'){pdMontado=false;rPend()} else if(vista==='exec'){syncComp();rExWin()} else qEl.focus();
 });
 function abreCelula(td){
   if(!td||td.querySelector('input'))return;
@@ -5206,7 +5208,23 @@ const PD_DEF={tfc:1176,tcs:1176,wfc:0.951,wcs:0.51,wd:1.10,flecha:1000,desc:0.06
 var pd=(()=>{try{const o=JSON.parse(localStorage.getItem('medicao_pend_v1')||'null');if(o&&o.P)return o}catch(e){}
   return {a:'49.5',ab:'1.40',abOutra:'',lista:'',esp:null,P:{...PD_DEF}}})();
 var pdMontado=false;
-function pdGuarda(){try{localStorage.setItem('medicao_pend_v1',JSON.stringify(pd))}catch(e){}}
+function pdGuarda(){try{localStorage.setItem('medicao_pend_v1',JSON.stringify(pd))}catch(e){}; try{pdSalvaLanco()}catch(e){}}
+/* a pendulagem pertence a um lanço: guarda no lanço as definições e os totais (pêndulos e cabo) que vão para o material */
+function pdLanco(){return (st.lancos||[]).find(l=>l.id===pd.lan)||null}
+function pdSalvaLanco(){
+  const l=pdLanco(); if(!l)return;
+  const novo={ab:pd.ab,abOutra:pd.abOutra,sit:pd.sit||'NS',vr:pd.vr||'',lista:pd.lista||''};
+  let tp='',tc='';
+  if(novo.sit==='NS'){const vs=pdVaosLista(); if(vs.length){const R=vs.map(a=>pdVao(a,null)); tp=R.reduce((s,r)=>s+r.C.x.length,0); tc=r2(R.reduce((s,r)=>s+somaA(r.C.l),0))}}
+  if(JSON.stringify(l.pd||null)===JSON.stringify(novo)&&l.pend===tp&&l.pendCabo===tc)return;
+  l.pd=novo; l.pend=tp; l.pendCabo=tc; apply();
+}
+function pdEscolheLanco(id){
+  pd.lan=id||null; const l=pdLanco();
+  if(l){const d=l.pd||{}; pd.ab=d.ab||pd.ab||'1.40'; pd.abOutra=d.abOutra||''; pd.sit=d.sit||'NS'; pd.vr=d.vr||''; pd.lista=d.lista||''; pd.esp=null}
+  try{localStorage.setItem('medicao_pend_v1',JSON.stringify(pd))}catch(e){}
+  pdMontado=false; rPend();
+}
 const somaA=v=>v.reduce((s,x)=>s+x,0);
 const r2=v=>Math.round(v*100)/100;
 function pdAbertura(){const v=pd.ab==='outra'?Number(String(pd.abOutra).replace(',','.')):Number(pd.ab);return v>0?v:1.4}
@@ -5313,6 +5331,8 @@ function rPend(){
   if(!pdMontado){
     const P=pd.P, inp=(k,t,u)=>`<label class="pdP"><span>${t}</span><input data-p="${k}" value="${P[k]}" inputmode="decimal"><em>${u}</em></label>`;
     $('#pdWrap').innerHTML=`
+      <div class="pdSec"><div class="pdRow"><label class="xlab">Lanço <select id="pdLan"><option value="">— sem lanço (só cálculo) —</option>${(st.lancos||[]).map(l=>`<option value="${l.id}" ${pd.lan===l.id?'selected':''}>${esc((l.via?l.via+' · ':'')+'nº '+(l.num||'?')+' · '+(l.de||'?')+' → '+(l.para||'?'))}</option>`).join('')}</select></label>
+        <span class="xhint">${pdLanco()?'Os pêndulos e o cabo dos «Vários vãos» ficam neste lanço e entram no material.':'Escolhe o lanço a que esta pendulagem pertence.'}</span></div></div>
       <div class="pdSec"><div class="pdRow">
         <label class="xlab">Vão (m) <input id="pdA" value="${esc(pd.a)}" inputmode="decimal" style="width:80px"></label>
         <label class="xlab">Abertura <select id="pdAb"><option value="1.40" ${pd.ab==='1.40'?'selected':''}>1,40 m (Parte 02)</option><option value="1.60" ${pd.ab==='1.60'?'selected':''}>1,60 m (Parte 01)</option><option value="outra" ${pd.ab==='outra'?'selected':''}>outra…</option></select></label>
@@ -5435,6 +5455,7 @@ $('#pdWrap').oninput=e=>{
 };
 $('#pdWrap').onchange=e=>{
   const t=e.target;
+  if(t.id==='pdLan'){pdEscolheLanco(t.value?+t.value:null);return}
   if(t.id==='pdAb'){pd.ab=t.value;$('#pdAbO').style.display=t.value==='outra'?'':'none';const sp=pdSits(pdParte(pdAbertura()));if(!sp.includes(pd.sit||'NS')){pd.sit='NS';pd.vr=''}pdGuarda();pdMontado=false;rPend();return}
   if(t.id==='pdSit'){pd.sit=t.value;const vs=pdVars(pdParte(pdAbertura()),pd.sit);pd.vr=vs[0]?vs[0][0]:'';pdGuarda();pdMontado=false;rPend();return}
   if(t.id==='pdVr'){pd.vr=t.value;pdGuarda();rPendRes();return}
