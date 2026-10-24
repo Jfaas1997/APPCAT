@@ -391,7 +391,7 @@ function casca(){
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medição de catenária</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
-   +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="forn">'+IC.pessoas+'<span>Fornecedores</span></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
+   +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="forn">'+IC.pessoas+'<span>Fornecedores</span></button><button class="tab" data-v="equip">'+IC.def+'<span>Equipamentos</span></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
    +'<header><span class="ccchip" id="hCC" hidden></span><h1 id="hT">Obras</h1><span class="hint" id="hSub"></span><span class="hsave" id="hSave" hidden><i></i><span></span></span><span class="hsp"></span><span class="quem"><b>'+esc(S.eu.nome)+'</b> <span class="pill">'+PAPEL[S.eu.papel]+'</span></span><button id="bNova" class="pri" hidden>+ Nova obra</button><button id="bAjuda" aria-label="Ajuda">?</button></header>'
    +'<main><div class="pg" id="pg"></div></main></div>';
@@ -718,7 +718,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,forn:vForn,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,forn:vForn,equip:vEquip,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
   posiciona();
   if(S.obra&&gestor()&&!app&&S.obra.id!=='livre'){const oid=S.obra.id;clearTimeout(window.__pw);window.__pw=setTimeout(()=>{if(S.obra&&S.obra.id===oid&&!APPV[S.vista]){frameApp(S.obra,'med');setTimeout(()=>{if(S.obra&&S.obra.id===oid)frameApp(S.obra,'rct')},2500)}},700)}
 }
@@ -959,11 +959,62 @@ async function rubricas(c,fim){
 
 /* ---------- fornecedores (fora da obra): peça × fornecedor × preço × data, vindos das propostas ---------- */
 const FO={modo:'peca',q:'',dados:null};
+/* ---------- equipamentos (Administração): varas de terra e outros ---------- */
+const EQ={q:'',cat:'',est:'ativo'};
+const EQ_SUG=['Varas de terra'];
+async function vEquip(){
+  titulo('Equipamentos');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
+  let L;try{L=await ok(sb.from('equipamentos').select('*').order('categoria').order('designacao'))}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  const adm=admin(),cats=[...new Set(EQ_SUG.concat(L.map(x=>x.categoria)))].sort((a,b)=>a.localeCompare(b,'pt'));
+  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Equipamentos</h2><p class="sub" style="margin:0">Equipamento da empresa com ensaio ou inspeção periódica, como as varas de terra: identificação, último ensaio, validade e certificado.</p></div><span class="sp"></span>'+(adm?'<button class="pri" id="eqNovo">+ Equipamento</button>':'')+'</div>'
+   +'<div class="psbar"><input type="search" id="eqQ" placeholder="Procurar por designação, n.º ou local" value="'+esc(EQ.q)+'"><select id="eqC" aria-label="Categoria"><option value="">Todas as categorias</option>'+cats.map(c=>'<option>'+esc(c)+'</option>').join('')+'</select><select id="eqE" aria-label="Estado"><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="todos">Todos</option></select><span class="hint" id="eqN"></span></div><div id="eqL"></div></div>';
+  $('#eqC').value=EQ.cat;$('#eqE').value=EQ.est;
+  const pinta=()=>{
+    const q=psNorm(EQ.q.trim()),F=L.filter(x=>(!EQ.cat||x.categoria===EQ.cat)&&(EQ.est==='todos'||x.estado===EQ.est)&&(!q||psNorm([x.designacao,x.numero,x.localizacao,x.marca_modelo].join(' ')).includes(q)));
+    $('#eqN').textContent=F.length+' equipamento'+(F.length===1?'':'s');
+    if(!F.length){$('#eqL').innerHTML='<div class="vazio"><h2>'+(L.length?'Nada neste filtro':'Ainda não há equipamentos')+'</h2><p>'+(L.length?'Tente outro termo.':(adm?'Comece por «+ Equipamento» e escolha a categoria «Varas de terra».':'O administrador ainda não registou equipamentos.'))+'</p></div>';return}
+    const G={};F.forEach(x=>(G[x.categoria]=G[x.categoria]||[]).push(x));let h='';
+    Object.keys(G).sort((a,b)=>a.localeCompare(b,'pt')).forEach(k=>{
+      h+='<div class="card" style="padding:4px 8px;margin-bottom:10px"><div style="padding:8px 6px 2px"><b>'+esc(k)+'</b> <span class="hint">'+G[k].length+'</span></div><table><thead><tr><th>N.º</th><th>Designação</th><th>Local</th><th>Último ensaio</th><th>Validade</th><th>Estado</th><th></th></tr></thead><tbody>'
+       +G[k].map(x=>{const e=estCert(x);return '<tr><td class="n"><b>'+esc(x.numero||'—')+'</b></td><td><b>'+esc(x.designacao)+'</b><div class="hint">'+esc(x.marca_modelo||'')+(x.notas?' · '+esc(x.notas):'')+'</div></td><td>'+esc(x.localizacao||'')+'</td><td class="n">'+dPT(x.ultimo_ensaio)+'</td><td class="n">'+dPT(x.validade)+'</td><td>'+(x.estado==='ativo'?pillC(e):'<span class="pill">inativo</span>')+'</td><td>'+(x.ficheiro?'<button type="button" data-doc="'+esc(x.ficheiro)+'">Certificado</button> ':'')+(adm?'<button type="button" data-ed="'+x.id+'">Editar</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>'});
+    $('#eqL').innerHTML=h;
+    $('#eqL').querySelectorAll('[data-doc]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.doc,300);if(r.error||!r.data){aviso('Não consegui abrir o documento.',true);return}window.open(r.data.signedUrl,'_blank')});
+    $('#eqL').querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>eqForm(L.find(z=>z.id===b.dataset.ed),cats,()=>vEquip()))};
+  $('#eqQ').oninput=e=>{EQ.q=e.target.value;pinta()};$('#eqC').onchange=e=>{EQ.cat=e.target.value;pinta()};$('#eqE').onchange=e=>{EQ.est=e.target.value;pinta()};
+  const bn=$('#eqNovo');if(bn)bn.onclick=()=>eqForm(null,cats,()=>vEquip());
+  pinta()}
+function eqForm(x,cats,rec){
+  const w=janela(x?'Editar equipamento':'Novo equipamento'),f=document.createElement('form'),V=k=>esc(x&&x[k]||'');
+  f.innerHTML='<label for="qC">Categoria</label><input id="qC" list="qCl" required value="'+esc(x?x.categoria:'Varas de terra')+'"><datalist id="qCl">'+cats.map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist>'
+   +'<label for="qD">Designação</label><input id="qD" required value="'+V('designacao')+'"><label for="qN">Número / identificação</label><input id="qN" value="'+V('numero')+'"><label for="qM">Marca e modelo</label><input id="qM" value="'+V('marca_modelo')+'"><label for="qL">Local / quem o tem</label><input id="qL" value="'+V('localizacao')+'">'
+   +'<label for="qU">Último ensaio</label><input id="qU" type="date" value="'+V('ultimo_ensaio')+'"><label for="qV">Validade do ensaio (vazio = sem prazo)</label><input id="qV" type="date" value="'+V('validade')+'">'
+   +'<label for="qE">Estado</label><select id="qE"><option value="ativo">Ativo</option><option value="inativo">Inativo (abatido)</option></select>'
+   +'<label for="qF">Certificado (PDF ou imagem)'+(x&&x.ficheiro?' — já tem um; escolher outro substitui-o':'')+'</label><input id="qF" type="file" accept="application/pdf,image/*"><label for="qO">Notas</label><input id="qO" value="'+V('notas')+'">'
+   +'<div class="bt">'+(x?'<button type="button" class="apaga">Apagar</button>':'')+'<button type="button" class="cancela">Cancelar</button><button class="pri" type="submit">Guardar</button></div>';
+  w.corpo.appendChild(f);const G=id=>f.querySelector('#'+id);G('qE').value=x?x.estado:'ativo';
+  f.querySelector('.cancela').onclick=()=>w.fecha();
+  const ap=f.querySelector('.apaga');if(ap)ap.onclick=async()=>{if(!await confirmar('Apagar «'+x.designacao+'»? Se já não o usa, é melhor marcá-lo como inativo.','Apagar'))return;
+    try{await ok(sb.from('equipamentos').delete().eq('id',x.id));if(x.ficheiro)await sb.storage.from('documentos').remove([x.ficheiro]);w.fecha();aviso('Equipamento apagado.');rec()}catch(er){aviso(erroTxt(er),true)}};
+  f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('.pri');b.disabled=true;
+    try{const file=G('qF').files[0];let caminho=x?x.ficheiro:null;
+      if(file){const novo='_org/'+S.eu.organizacao_id+'/equipamentos/'+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(file.name);const up=await sb.storage.from('documentos').upload(novo,file,{contentType:file.type||'application/octet-stream'});if(up.error)throw up.error;if(caminho)await sb.storage.from('documentos').remove([caminho]);caminho=novo}
+      const row={categoria:G('qC').value.trim(),designacao:G('qD').value.trim(),numero:G('qN').value.trim()||null,marca_modelo:G('qM').value.trim()||null,localizacao:G('qL').value.trim()||null,ultimo_ensaio:G('qU').value||null,validade:G('qV').value||null,estado:G('qE').value,notas:G('qO').value.trim()||null,ficheiro:caminho};
+      if(x)await ok(sb.from('equipamentos').update(row).eq('id',x.id));else await ok(sb.from('equipamentos').insert(Object.assign({organizacao_id:S.eu.organizacao_id},row)));
+      w.fecha();aviso('Equipamento guardado.');rec()}catch(er){b.disabled=false;aviso(erroTxt(er),true)}};
+  G('qD').focus()}
+/* preço de fornecedor lançado à mão (proposta que não leva a compra) */
+async function foForm(r,rec){
+  const v=await formulario(r?'Editar preço':'Adicionar preço de fornecedor',[
+    {id:'forn',rotulo:'Fornecedor',valor:r&&r.fornecedor||'',obrig:true},{id:'cod',rotulo:'Código da peça (opcional)',valor:r&&r.codigo||''},{id:'des',rotulo:'Designação da peça',valor:r&&r.designacao||'',obrig:true},
+    {id:'un',rotulo:'Unidade',valor:r&&r.unidade||'un',obrig:true},{id:'preco',tipo:'number',rotulo:'Preço unitário (€)',valor:r?r.preco:'',obrig:true},{id:'data',tipo:'date',rotulo:'Data da proposta',valor:r&&r.data||new Date().toISOString().slice(0,10),obrig:true},{id:'ref',rotulo:'Referência da proposta (opcional)',valor:r&&r.proposta_ref||''}],'Guardar');
+  if(!v)return;const p=parseFloat(String(v.preco).replace(',','.'));if(!(p>=0)){aviso('Preço inválido.',true);return}
+  const row={fornecedor:v.forn,codigo:v.cod,designacao:v.des,unidade:v.un,preco:p,data:v.data,proposta_ref:v.ref};
+  try{if(r)await ok(sb.from('precos_fornecedor').update(row).eq('id',r.id));else await ok(sb.from('precos_fornecedor').insert(Object.assign({organizacao_id:S.eu.organizacao_id,obra_id:null,origem:'manual',mc_id:'',pdf_path:''},row)));aviso('Preço guardado.');rec()}catch(er){aviso(erroTxt(er),true)}}
 async function vForn(){
   titulo('Fornecedores');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
   let L;try{L=await ok(sb.from('precos_fornecedor').select('*').order('data',{ascending:false}).limit(5000))}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
   FO.dados=L;
-  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Fornecedores</h2><p class="sub" style="margin:0">O que cada fornecedor propôs, por peça, com o preço e a data. Vem das propostas carregadas nos mapas comparativos dos Materiais.</p></div></div>'
+  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Fornecedores</h2><p class="sub" style="margin:0">O que cada fornecedor propôs, por peça, com o preço e a data. Vem das propostas carregadas nos mapas comparativos dos Materiais; também pode lançar à mão propostas que não levem a compra.</p></div><span class="sp"></span><button class="pri" id="foNovo">+ Adicionar preço</button></div>'
    +'<div class="psbar"><input type="search" id="foQ" placeholder="Procurar peça, código ou fornecedor…" value="'+esc(FO.q)+'"><select id="foM" aria-label="Agrupar"><option value="peca">Por peça</option><option value="forn">Por fornecedor</option></select><span class="hint" id="foN"></span></div><div id="foC"></div></div>';
   $('#foM').value=FO.modo;
   const pinta=()=>{
@@ -975,10 +1026,12 @@ async function vForn(){
     let h='';
     Object.keys(G).sort((a,b)=>a.localeCompare(b,'pt')).forEach(k=>{const R=G[k],r0=R[0];
       h+='<div class="card" style="padding:4px 8px;margin-bottom:10px"><div style="padding:8px 6px 2px"><b>'+esc(k)+'</b>'+(FO.modo==='peca'?' <span class="hint">'+esc(r0.designacao||'')+'</span>':'')+'</div><table><thead><tr><th>'+(FO.modo==='peca'?'Fornecedor':'Peça')+'</th><th class="n">Preço un.</th><th>Data</th><th>Proposta</th><th></th></tr></thead><tbody>'
-       +R.map((r,i)=>'<tr><td>'+esc(FO.modo==='peca'?r.fornecedor:(r.codigo+' · '+(r.designacao||'').slice(0,50)))+'</td><td class="n"><b>'+eur(r.preco)+'</b>'+(FO.modo==='peca'&&i===0?' <span class="pill on">mais recente</span>':'')+'</td><td class="n">'+dPT(r.data)+'</td><td>'+esc(r.proposta_ref||'')+'</td><td>'+(r.pdf_path?'<button type="button" data-pdf="'+esc(r.pdf_path)+'">PDF</button>':'')+'</td></tr>').join('')
+       +R.map((r,i)=>'<tr><td>'+esc(FO.modo==='peca'?r.fornecedor:(r.codigo+' · '+(r.designacao||'').slice(0,50)))+'</td><td class="n"><b>'+eur(r.preco)+'</b>'+(FO.modo==='peca'&&i===0?' <span class="pill on">mais recente</span>':'')+'</td><td class="n">'+dPT(r.data)+'</td><td>'+esc(r.proposta_ref||'')+'</td><td>'+(r.pdf_path?'<button type="button" data-pdf="'+esc(r.pdf_path)+'">PDF</button>':'')+(r.origem==='manual'?'<button type="button" data-fe="'+r.id+'">Editar</button>':'')+'</td></tr>').join('')
        +'</tbody></table></div>'});
     $('#foC').innerHTML=h;
     $('#foC').querySelectorAll('[data-pdf]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.pdf,300);if(r.error||!r.data){aviso('Não consegui abrir o PDF.',true);return}window.open(r.data.signedUrl,'_blank')})};
+  $('#foNovo').onclick=()=>foForm(null,()=>vForn());
+  $('#foC').addEventListener('click',e=>{const b=e.target.closest('[data-fe]');if(b)foForm(L.find(z=>z.id===b.dataset.fe),()=>vForn())});
   $('#foQ').oninput=e=>{FO.q=e.target.value;pinta()};$('#foM').onchange=e=>{FO.modo=e.target.value;pinta()};pinta()}
 /* ---------- pessoal (fora da obra): pessoas, valências e certificados ---------- */
 const PS={sep:'pessoas',q:'',est:'ativos',val:'todas',dados:null};
@@ -1374,7 +1427,7 @@ async function docsObra(o){
 }
 
 /* ---------- exportar tudo ---------- */
-const TAB_EXP=['organizacoes','pessoas','obras','obra_pessoas','contratos','rubricas','estruturas','os_interdicoes','os_periodos','partes_diarias','parte_linhas','fotos','dados_apps','dados_copias','pessoal','precos_fornecedor','valencias','pessoal_valencias','tipos_certificado','certificados','bloqueios','historico'];
+const TAB_EXP=['organizacoes','pessoas','obras','obra_pessoas','contratos','rubricas','estruturas','os_interdicoes','os_periodos','partes_diarias','parte_linhas','fotos','dados_apps','dados_copias','pessoal','precos_fornecedor','equipamentos','valencias','pessoal_valencias','tipos_certificado','certificados','bloqueios','historico'];
 function carregaXlsx(){return window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar o gerador de Excel (sem rede?).'));document.head.appendChild(s)})}
 async function tabelaTodas(t){const out=[];for(let i=0;;i+=1000){const r=await sb.from(t).select('*').range(i,i+999);if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}return out}
 async function ficheirosBucket(b,prefixo,acc){
