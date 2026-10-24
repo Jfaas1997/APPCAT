@@ -421,6 +421,10 @@ table.lan input[data-f="tipo"]{width:110px}
 .pdH{display:flex;align-items:center;gap:8px;margin:0 0 8px;flex-wrap:wrap}.pdN{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--brand,#F9D115);color:#111;font-size:12px;font-weight:700}.pdH .xhint{font-weight:400}
 .pdRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 8px}
 .pdRow select,.pdRow input,.pdRow textarea{font-size:13px;padding:4px 7px}
+.pdPrevB{background:var(--sheet);color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:16px;max-width:980px;width:100%;margin:auto}
+#pdPrev{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);overflow:auto;padding:24px 16px;display:flex}
+#pdPrev[hidden]{display:none!important}
+@media print{body>*:not(#pdPrev){display:none!important}#pdPrev{position:static;background:none;padding:0;display:block}.pdPrevB{border:0;max-width:none}.pdPrevB .xdir{display:none}}
 .pdSvg{width:100%;height:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:4px 0 10px}
 .pdCS{fill:none;stroke:var(--gold);stroke-width:1.6}
 .pdFC{fill:none;stroke:var(--ink);stroke-width:1.8}
@@ -5356,6 +5360,39 @@ function pdSVG(R){
     <text x="${X(a/2)}" y="${Hh-4}" class="pdN">vão ${fmt(a)} m · abertura ${fmt(ab)} m</text>
     <text x="${X(0)+6}" y="${Y(ab)-4}" class="pdT">CS</text><text x="${X(0)+6}" y="${base+14}" class="pdT">FC</text></svg>`;
 }
+function pdSVGg(R){ /* esquema genérico (situações da IT.CAT.042): postes, CS, FC e pêndulos à escala */
+  const a=R.a, x=R.C.x, L=R.C.L, W=1000, mx=40, top=34, sx=(W-2*mx)/a, X=v=>mx+v*sx, mxL=Math.max(...L,0.5), sy=100/mxL, Y=l=>top+l*sy, base=top+mxL*sy, Hh=base+58;
+  const pts=[[0,L[0]||0],...x.map((xx,i)=>[xx,L[i]]),[a,L[L.length-1]||0]].map(q=>`${X(q[0]).toFixed(1)},${Y(q[1]).toFixed(1)}`).join(' ');
+  const dr=x.map((xx,i)=>`<line x1="${X(xx).toFixed(1)}" y1="${top}" x2="${X(xx).toFixed(1)}" y2="${Y(L[i]).toFixed(1)}" class="pdDr"/>
+    <rect x="${(X(xx)-9).toFixed(1)}" y="${top}" width="18" height="${(Y(L[i])-top+18).toFixed(1)}" class="pdHit" data-tip="Pêndulo ${i+1}&#10;l a cortar: ${R.C.l[i].toFixed(2)} m&#10;L: ${L[i].toFixed(3)} m"/>
+    <text x="${X(xx).toFixed(1)}" y="${(Y(L[i])+15).toFixed(1)}" class="pdN">${i+1}</text>
+    <text x="${X(xx).toFixed(1)}" y="${top-6}" class="pdL">${L[i].toFixed(2)}</text>`).join('');
+  const es=R.E&&R.E.esp?R.E.esp:null, ed=es?[0,...x,a].slice(0,-1).map((p0,i)=>{const p1=[...x,a][i];return `<text x="${X((p0+p1)/2).toFixed(1)}" y="${base+30}" class="pdT" text-anchor="middle">${fmt(r2(p1-p0))}</text>`}).join(''):'';
+  return `<svg viewBox="0 0 ${W} ${Hh.toFixed(0)}" class="pdSvg" role="img" aria-label="Esquema do vão com os pêndulos">
+    <line x1="${X(0)}" y1="${top-16}" x2="${X(0)}" y2="${base+12}" class="pdPo"/><line x1="${X(a)}" y1="${top-16}" x2="${X(a)}" y2="${base+12}" class="pdPo"/>
+    <line x1="${X(0)}" y1="${top}" x2="${X(a)}" y2="${top}" class="pdCS"/><polyline points="${pts}" class="pdFC"/>${dr}${ed}
+    <text x="${X(0)+6}" y="${top-18}" class="pdT">CS</text><text x="${X(0)+6}" y="${Y(L[0]||0)+14}" class="pdT">FC</text>
+    <text x="${X(a/2)}" y="${Hh.toFixed(0)-6}" class="pdN">vão ${fmt(a)} m · abertura ${fmt(R.ab)} m (esquema à escala horizontal; L nos pêndulos em m, distâncias entre pêndulos em baixo)</text></svg>`;
+}
+function pdRAberto(){ /* resultado do vão aberto (NS ou situação) */
+  const a=Number(String(pd.a).replace(',','.')); if(!(a>=4))return null;
+  if((pd.sit||'NS')!=='NS')return pdSitR(a);
+  const esp=pd.esp&&Math.abs(pd.espA-a)<1e-9?pd.esp:null; return pdVao(a,esp);
+}
+function pdPrevia(){
+  const R=pdRAberto(); if(!R){toast('Escreve o comprimento do vão.',2500);return}
+  const V=pdVaos()[pdSel]||{}, L=pdLanco(), k=R.k||'NS', sv=R.E?R.E:null;
+  const cab=[['Pêndulo'],['Ao poste (m)',1],['Entre (m)',1],['L (m)',1],['l a cortar',1]], esp=R.D.esp;
+  const linhas=R.C.x.map((xx,i)=>[String(i+1),fmt(r2(xx)),fmt(esp[i]),R.C.L[i].toFixed(3),`<b>${R.C.l[i].toFixed(2)}</b>`]);
+  const mo=PEND_E7173[V.mont||pd.tipo||'IV'];
+  const html=`<div class="pdPrevB"><div class="pdRow"><b>Ficha de pendulagem · vão ${pdSel+1}</b><span class="xdir"><button id="pdPrevX">Descarregar (Excel)</button><button id="pdPrevP">Imprimir</button><button id="pdPrevF">Fechar</button></span></div>
+    <div class="xnota">${L?`Lanço <b>${esc((L.via?L.via+' · ':'')+'nº '+(L.num||'?'))}</b> · `:''}Poste <b>${esc(V.de||'?')}</b> → <b>${esc(V.para||'?')}</b> · vão <b>${fmt(R.a)} m</b> · abertura <b>${fmt(R.ab)} m</b><br>
+    Tipo de pendulagem: <b>${esc(PD_SIT[k]||k)}</b>${sv?` · variante <b>${esc(R.v)}</b> · ${sv.tipo==='norma'?'quadro '+esc(sv.ref):'estimativa a partir do quadro '+esc(sv.ref)}`:' · '+refTxt(R.D)}<br>Pêndulo: ${esc(mo?mo.n:'')}</div>
+    ${k==='NS'?pdSVG(R):pdSVGg(R)}${tabX(cab,linhas)}
+    <div class="xks" style="margin-top:10px"><div class="xk"><b>${R.C.x.length}</b><span>pêndulos</span></div><div class="xk"><b>${fmt(r2(somaA(R.C.l)))}</b><span>m de cabo Bz 12 (Σ l)</span></div><div class="xk"><b>${fmt(esp[esp.length-1])}</b><span>m do último pêndulo ao poste</span></div></div></div>`;
+  let o=$('#pdPrev'); if(!o){o=document.createElement('div');o.id='pdPrev';document.body.appendChild(o)}
+  o.innerHTML=html; o.hidden=false;
+}
 function rPend(){
   if(vista!=='pend')return;
   if(!pdLanco()&&(st.lancos||[]).length===1){pd.lan=st.lancos[0].id; if(st.lancos[0].pd)pdCarregaDoLanco(st.lancos[0])}
@@ -5376,7 +5413,7 @@ function rPend(){
         <datalist id="pdPostes">${(st.postes||[]).map(q=>`<option value="${esc(q.nome)}">`).join('')}</datalist>
         <div id="pdVaosT"></div>
         <details><summary>Colar uma lista de vãos (m)</summary><div class="pdRow"><textarea id="pdLista" rows="2" placeholder="Vãos separados por espaço ou ponto e vírgula, ex.: 49,5 54 54 58,5 63" style="flex:1;min-width:260px"></textarea><button id="pdCola">Juntar à lista</button></div></details>
-        <div class="pdVD" id="pdVD" hidden><div class="pdRow"><b id="pdVT"></b><span class="xdir"><button id="pdExp1">Ficha deste vão (Excel)</button><button id="pdExpN">Fichas de todos os vãos (Excel)</button><button id="pdFecha">Fechar</button></span></div>
+        <div class="pdVD" id="pdVD" hidden><div class="pdRow"><b id="pdVT"></b><span class="xdir"><button id="pdPrevB" class="amarelo">Pré-visualizar ficha</button><button id="pdExp1">Ficha deste vão (Excel)</button><button id="pdExpN">Fichas de todos os vãos (Excel)</button><button id="pdFecha">Fechar</button></span></div>
           <div id="pdRes"></div></div></div>
       <div class="pdSec">${H(4,'Material do lanço')}<div id="pdMat"></div></div>
       <details class="pdSec"><summary>Parâmetros e validação</summary>
@@ -5436,7 +5473,7 @@ function rPendSit(a){
   const topo=E.tipo==='norma'?`Quadro <b>${esc(E.ref)}</b> da ${nome}, pág. ${E.pag} do PDF${E.r?` · r = ${fmt(E.r)} m`:''}. Os valores são os impressos na norma.`
     :`<b>Estimativa</b> a partir do quadro <b>${esc(E.ref)}</b> (${fmt(E.q[4])} m, pág. ${E.pag}): espaços ajustados e L corrigido pelo modelo${E.dAb&&Math.abs(E.dAb)>1e-9?` (abertura ${fmt(ab)} m em vez de ${fmt(p===1?1.6:1.4)} m)`:''}.`;
   const aviso=E.tipo==='estimada'?`<div class="difbar">Fora dos quadros da norma${E.fora?' e fora do intervalo de vãos desta variante':''}: confirma com o projeto.${er?` Validação cruzada nesta variante: erro mediano ${(er.med*1000).toFixed(0)} mm, 95% abaixo de ${(er.p95*1000).toFixed(0)} mm, máximo ${(er.max*1000).toFixed(0)} mm.`:' Sem outros vãos desta variante para validar.'}</div>`:'';
-  $('#pdRes').innerHTML=`<div class="xnota">${esc(PD_SIT[k])} · variante <b>${esc(v)}</b>. ${topo}</div>${aviso}${tabX(cab,linhas)}
+  $('#pdRes').innerHTML=`<div class="xnota">${esc(PD_SIT[k])} · variante <b>${esc(v)}</b>. ${topo}</div>${aviso}${pdSVGg(R)}${tabX(cab,linhas)}
     <div class="xks" style="margin-top:10px"><div class="xk"><b>${C.x.length}</b><span>pêndulos</span></div>
     <div class="xk"><b>${fmt(r2(somaA(C.l)))}</b><span>m de cabo Bz 12 (Σ l)</span></div>
     <div class="xk"><b>${fmt(E.esp[E.esp.length-1])}</b><span>m do último pêndulo ao poste</span></div></div>
@@ -5540,10 +5577,15 @@ $('#pdWrap').onclick=e=>{
     L.forEach(a=>pdNovoVao(a)); $('#pdLista').value=''; pdGuarda(); pdTabVaos(); rPendRes(); return}
   if(b.id==='pdFecha'){pdAberto=false;rPendRes();return}
   if(b.dataset.vx!==undefined){pdVaos().splice(+b.dataset.vx,1); if(pdSel>=pdVaos().length)pdSel=Math.max(0,pdVaos().length-1); if(!pdVaos().length)pdAberto=false; pdGuarda();pdTabVaos();rPendRes();return}
+  if(b.id==='pdPrevB')return pdPrevia();
   if(b.id==='pdExp1')return pdExporta(false);
   if(b.id==='pdExpN')return pdExporta(true);
 };
 
+document.addEventListener('click',e=>{const b=e.target.closest('#pdPrev button'); const o=$('#pdPrev');
+  if(!o)return; if(b&&b.id==='pdPrevX'){pdExporta(false);return} if(b&&b.id==='pdPrevP'){window.print();return}
+  if((b&&b.id==='pdPrevF')||e.target===o)o.hidden=true});
+document.addEventListener('keydown',e=>{const o=$('#pdPrev'); if(e.key==='Escape'&&o&&!o.hidden)o.hidden=true});
 /* ================= onde se aplica um artigo (janela) ================= */
 var moK=null, moVista='estr', moF='';
 function moPartes(k){const i=k.indexOf(' · ');return i<0?[k,'']:[k.slice(0,i),k.slice(i+3)]}
