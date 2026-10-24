@@ -9428,10 +9428,10 @@ async function propAnexa(m,j,file){
 }
 async function propBaixa(f){ var r=await sb.storage.from('documentos').download(f.pdf); if(r.error)throw r.error; return await r.data.arrayBuffer() }
 async function propAbre(f){ var r=await sb.storage.from('documentos').createSignedUrl(f.pdf,300); if(r.error||!r.data){ toast('Não consegui abrir o PDF.'); return } window.open(r.data.signedUrl,'_blank') }
-async function propLe(m,j,buf){
+async function propLe(m,j,buf,linhasPre){
   var f=m.forns[j]; toast('A ler a proposta…');
-  var linhas=await textoPdf(buf);
-  if(linhas.join('').replace(/\s/g,'').length<60){ await nmDiz('Este PDF é uma imagem digitalizada e não tem texto para ler. Fica arquivado; preenche os preços à mão na tabela.'); return }
+  var linhas=linhasPre||await textoPdf(buf);
+  if(!linhasPre&&linhas.join('').replace(/\s/g,'').length<60){ await nmDiz('Este PDF é uma imagem digitalizada e não tem texto para ler. Fica arquivado; preenche os preços à mão na tabela.'); return }
   var A=analisaProposta(linhas,m);
   if(!A.rows.length&&!A.semMapa.length){ await nmDiz('Não encontrei nenhum código dos artigos do mapa neste PDF ('+linhas.length+' linhas lidas). Confere se os artigos do mapa têm o código IP; ou preenche os preços à mão.'); return }
   var h='<p style="font-size:12.5px;color:var(--muted)">Lidas '+linhas.length+' linhas de «'+esc(f.nome||'fornecedor')+'». Confirma os preços unitários antes de os passar para o mapa.</p>'+
@@ -9468,6 +9468,62 @@ async function propGuarda(m,j){
   if(novos.length){ var r2=await sb.from('precos_fornecedor').insert(novos); if(r2.error)throw r2.error; n+=novos.length }
   toast('Guardei '+n+' preços de «'+f.nome+'» em Fornecedores.'); return n;
 }
+
+/* tabela (Excel/CSV) com código e preço → linhas de texto que o leitor percebe */
+function linhasDeTabela(buf){
+  var wb=XLSX.read(new Uint8Array(buf),{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+  var hr=-1, ic=-1, ip=-1, iq=-1, id=-1;
+  rows.forEach(function(r,k){ if(hr>=0)return; var L=r.map(function(x){ return lower(String(x)) });
+    var c=L.findIndex(function(x){ return /^(c[óo]d|c[óo]digo|artigo|ref)/.test(x) }), p=L.findIndex(function(x){ return /pre[çc]o|p\.?\s?unit|pu\b/.test(x) });
+    if(c>=0&&p>=0){ hr=k; ic=c; ip=p; iq=L.findIndex(function(x){ return /^quant|^qt/.test(x) }); id=L.findIndex(function(x){ return /^design/.test(x) }) } });
+  if(hr<0)return [];
+  var out=[]; function f2(v){ return (Math.round(v*10000)/10000).toString().replace('.',',').replace(/^(\d+)$/,'$1,00') }
+  rows.slice(hr+1).forEach(function(r){ var cod=String(r[ic]||'').trim(), pu=parseFloat(String(r[ip]).replace(/\s/g,'').replace(/\.(?=\d{3}\b)/g,'').replace(',','.')); if(!cod||!(pu>0))return;
+    var q=iq>=0?parseFloat(String(r[iq]).replace(',','.')):0; out.push([cod,id>=0?String(r[id]||''):'',q>0?String(q):'',f2(pu),q>0?f2(q*pu):''].join(' ').replace(/\s+/g,' ')) });
+  return out;
+}
+/* fornecedores que já conhecemos para uma peça: propostas guardadas (empresa) + NE e mapas das obras abertas */
+var FORNDB=null;
+async function carregaFornDB(){ if(FORNDB)return FORNDB; try{ var r=await sb.from('precos_fornecedor').select('codigo,fornecedor,preco,data').order('data',{ascending:false}).limit(5000); FORNDB=r.data||[] }catch(e){ FORNDB=[] } return FORNDB }
+function fornConhecidos(cod){
+  var k=keyOf(cod), R={}; function poe(f,p,d,o){ if(!f||!(p>0)||/^SOMAFEL\b/i.test(String(f).trim()))return; var a=R[norm(f)]; if(!a||String(d||'')>String(a.data||''))R[norm(f)]={nome:f,pu:p,data:d||'',origem:o} }
+  (FORNDB||[]).forEach(function(x){ if(keyOf(x.codigo)===k)poe(x.fornecedor,num(x.preco),x.data,'proposta') });
+  (precosConhecidos()[k]||[]).forEach(function(x){ poe(x.forn,x.pu,x.data,x.origem) });
+  return Object.keys(R).map(function(z){ return R[z] }).sort(function(a,b){ return String(b.data).localeCompare(String(a.data)) });
+}
+async function sugerirFornecedores(){
+  var m=mcAtual(); if(!m||!m.itens.length){ toast('Acrescenta primeiro os artigos ao mapa.'); return }
+  await carregaFornDB(); var F={};
+  m.itens.forEach(function(it){ fornConhecidos(it.cod).forEach(function(x){ var a=F[norm(x.nome)]||(F[norm(x.nome)]={nome:x.nome,n:0,data:'',ult:[]}); a.n++; if(String(x.data)>a.data)a.data=x.data; a.ult.push(it.cod) }) });
+  var L=Object.keys(F).map(function(k){ return F[k] }).sort(function(a,b){ return b.n-a.n }), ja={}; m.forns.forEach(function(f){ ja[norm(f.nome)]=1 });
+  if(!L.length){ await nmDiz('Ainda não há fornecedores conhecidos para estes artigos. Vão aparecendo à medida que carregas propostas e NE.'); return }
+  var h='<p style="font-size:12.5px;color:var(--muted)">Fornecedores que já tiveram preço para estes artigos (propostas e notas de encomenda). Os marcados são acrescentados ao mapa.</p><div style="max-height:50vh;overflow:auto"><table class="g" style="width:100%"><thead><tr><th></th><th>Fornecedor</th><th class="n">Artigos do mapa</th><th>Último preço</th></tr></thead><tbody>'+
+    L.map(function(x,i){ return '<tr><td><input type="checkbox" data-sf="'+i+'"'+(ja[norm(x.nome)]?' disabled':'')+'></td><td class="t">'+esc(x.nome)+(ja[norm(x.nome)]?' <span class="hint">já no mapa</span>':'')+'</td><td class="n">'+x.n+' de '+m.itens.length+'</td><td>'+esc(dstr(x.data)||'')+'</td></tr>' }).join('')+'</tbody></table></div>';
+  var r=await nmModal({titulo:'Fornecedores conhecidos',corpo:h,botoes:[{t:'Cancelar',v:null},{t:'Acrescentar ao mapa',v:function(c){ return Array.prototype.map.call(c.querySelectorAll('[data-sf]:checked'),function(e){ return L[+e.dataset.sf].nome }) },p:true}],cancela:null});
+  if(!r||!r.length)return; r.forEach(function(n){ m.forns.push({nome:n,ref:'',data:'',pag:'',prazo:''}) }); nmMudou(); renderMC(); toast(r.length+' fornecedores acrescentados.');
+}
+/* pedido de cotação: mapa de peças para anexar ao email */
+async function pedidoCotacao(){
+  var m=mcAtual(); if(!m||!m.itens.length){ toast('Acrescenta primeiro os artigos ao mapa.'); return }
+  var op='<option value="">Para vários fornecedores</option>'+m.forns.map(function(f,j){ return '<option value="'+j+'">'+esc(f.nome||'fornecedor')+'</option>' }).join('');
+  var r=await nmModal({titulo:'Pedido de cotação',corpo:'<p style="font-size:12.5px;color:var(--muted)">Cria um Excel com as peças e as quantidades, com a coluna do preço em branco, para anexares ao email.</p><div class="fld"><label>Para</label><select id="pcF">'+op+'</select></div>',
+    botoes:[{t:'Cancelar',v:null},{t:'Criar Excel',v:function(c){ return {j:c.querySelector('#pcF').value} },p:true}],cancela:null});
+  if(!r)return; var f=r.j!==''?m.forns[+r.j]:null;
+  var A=[['PEDIDO DE COTAÇÃO'],[],['Obra',(ST.obra||'')+' · '+(ST.nome||'')],['Mapa comparativo',m.titulo||''],['Empreitada',m.empreitada||''],['Data',hoje()],['Fornecedor',f?f.nome:''],[],
+    ['Pos','Código IP','Cód. antigo','Nomenclatura','Designação','Un','Quantidade','Desenho','Preço unit. (€)','Prazo de entrega','Observações']];
+  m.itens.forEach(function(it,i){ var x=look(it.cod)||{}; A.push([i+1,it.cod||'',x.mn||'',x.sap||'',it.des||x.des||'',it.un||'',num(it.qt)||null,x.dw||'',null,'','']) });
+  A.push([]); A.push(['Preços sem IVA. Indicar validade da proposta, condições de pagamento e prazo de entrega. Responder, se possível, preenchendo a coluna «Preço unit. (€)».']);
+  var ws=XLSX.utils.aoa_to_sheet(A); ws['!cols']=[{wch:5},{wch:13},{wch:12},{wch:13},{wch:54},{wch:6},{wch:11},{wch:12},{wch:15},{wch:16},{wch:30}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Pedido de cotação');
+  guardaWb(wb,('Pedido de cotação - '+(ST.obra||'')+' - '+(f?f.nome:(m.titulo||'mapa'))).replace(/[\\\/:*?"<>|]/g,'-')+'.xlsx');
+  toast('Pedido de cotação criado com '+m.itens.length+' artigos.');
+}
+function ligaBarraMC(){
+  var b=$('#bMcForn'); if(!b||$('#bMcSug'))return;
+  var s=document.createElement('button'); s.id='bMcSug'; s.textContent='Sugerir fornecedores'; s.title='Fornecedores que já tiveram preço para os artigos deste mapa'; s.onclick=function(){ sugerirFornecedores().catch(function(e){ toast('Erro: '+e.message) }) };
+  var p=document.createElement('button'); p.id='bMcPed'; p.textContent='Pedido de cotação'; p.title='Excel com as peças e quantidades para anexar ao email'; p.onclick=function(){ pedidoCotacao().catch(function(e){ toast('Erro: '+e.message) }) };
+  b.parentNode.insertBefore(s,b.nextSibling); b.parentNode.insertBefore(p,s.nextSibling);
+}
 function ligaBotoesProposta(){
   var m=mcAtual(); if(!m||!$('#mcBox'))return;
   $$('#mcBox [data-fdel]').forEach(function(x){
@@ -9476,6 +9532,7 @@ function ligaBotoesProposta(){
     c.innerHTML=(f.pdf?'<button data-pab="'+j+'" title="'+esc(f.pdfNome||'proposta.pdf')+'">PDF ✓</button> ':'')+
       '<button data-pan="'+j+'" title="Arquivar o PDF desta proposta">'+(f.pdf?'Trocar':'+ PDF')+'</button> '+
       '<button data-ple="'+j+'" title="Ler os códigos e preços do PDF">Ler</button> '+
+      '<button data-pta="'+j+'" title="Ler os preços de um Excel ou CSV com código e preço">Tabela</button> '+
       '<button data-pgu="'+j+'" title="Guardar os preços desta proposta em Fornecedores">→ Forn.</button>';
     tr.insertBefore(c,td);
   });
@@ -9487,12 +9544,14 @@ function ligaBotoesProposta(){
   $$('#mcBox [data-pab]').forEach(function(b){ b.onclick=function(){ propAbre(m.forns[+b.dataset.pab]).catch(erro) } });
   $$('#mcBox [data-ple]').forEach(function(b){ b.onclick=async function(){ var j=+b.dataset.ple, f=m.forns[j];
     try{ if(f.pdf)await propLe(m,j,await propBaixa(f)); else pedePdf(async function(fl){ try{ await propAnexa(m,j,fl); renderMC(); await propLe(m,j,await fl.arrayBuffer()) }catch(e){ erro(e) } }) }catch(e){ erro(e) } } });
+  $$('#mcBox [data-pta]').forEach(function(b){ b.onclick=function(){ var j=+b.dataset.pta; var i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xls,.csv'; i.onchange=async function(){ if(!i.files[0])return;
+      try{ var L=linhasDeTabela(await i.files[0].arrayBuffer()); if(!L.length){ await nmDiz('Não encontrei uma tabela com colunas «Código» e «Preço».'); return } await propLe(m,j,null,L) }catch(e){ erro(e) } }; i.click() } });
   $$('#mcBox [data-pgu]').forEach(function(b){ b.onclick=function(){ propGuarda(m,+b.dataset.pgu).catch(erro) } });
 }
 var _stMC=document.createElement('style'); _stMC.textContent='#mcBox .cb{overflow-x:auto}'; document.head.appendChild(_stMC);
 var _rMC=renderMC;
-renderMC=function(){ _rMC.apply(this,arguments); try{ ligaBotoesProposta() }catch(e){ console.error(e) } };
-window.__nm.analisaProposta=analisaProposta; window.__nm.propLe=propLe; window.__nm.propAnexa=propAnexa; window.__nm.propGuarda=propGuarda;
+renderMC=function(){ _rMC.apply(this,arguments); try{ ligaBarraMC(); ligaBotoesProposta(); carregaFornDB().then(function(){ var mm=mcAtual(); if(!mm)return; $$('#mcBox tbody td.c').forEach(function(td){ var l=fornConhecidos(td.textContent.trim()); if(l.length)td.title='Fornecedores conhecidos: '+l.slice(0,6).map(function(x){ return x.nome+' ('+nf2.format(x.pu)+' € · '+(dstr(x.data)||'')+')' }).join('; ') }) }) }catch(e){ console.error(e) } };
+window.__nm.analisaProposta=analisaProposta; window.__nm.propLe=propLe; window.__nm.propAnexa=propAnexa; window.__nm.propGuarda=propGuarda; window.__nm.linhasDeTabela=linhasDeTabela;
 
 render();
 })();
