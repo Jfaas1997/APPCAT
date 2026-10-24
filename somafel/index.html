@@ -391,7 +391,7 @@ function casca(){
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medição de catenária</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
-   +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
+   +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="forn">'+IC.pessoas+'<span>Fornecedores</span></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
    +'<header><span class="ccchip" id="hCC" hidden></span><h1 id="hT">Obras</h1><span class="hint" id="hSub"></span><span class="hsave" id="hSave" hidden><i></i><span></span></span><span class="hsp"></span><span class="quem"><b>'+esc(S.eu.nome)+'</b> <span class="pill">'+PAPEL[S.eu.papel]+'</span></span><button id="bNova" class="pri" hidden>+ Nova obra</button><button id="bAjuda" aria-label="Ajuda">?</button></header>'
    +'<main><div class="pg" id="pg"></div></main></div>';
@@ -718,7 +718,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,forn:vForn,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
   posiciona();
   if(S.obra&&gestor()&&!app&&S.obra.id!=='livre'){const oid=S.obra.id;clearTimeout(window.__pw);window.__pw=setTimeout(()=>{if(S.obra&&S.obra.id===oid&&!APPV[S.vista]){frameApp(S.obra,'med');setTimeout(()=>{if(S.obra&&S.obra.id===oid)frameApp(S.obra,'rct')},2500)}},700)}
 }
@@ -956,6 +956,30 @@ async function rubricas(c,fim){
   desenha();
 }
 
+
+/* ---------- fornecedores (fora da obra): peça × fornecedor × preço × data, vindos das propostas ---------- */
+const FO={modo:'peca',q:'',dados:null};
+async function vForn(){
+  titulo('Fornecedores');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
+  let L;try{L=await ok(sb.from('precos_fornecedor').select('*').order('data',{ascending:false}).limit(5000))}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  FO.dados=L;
+  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Fornecedores</h2><p class="sub" style="margin:0">O que cada fornecedor propôs, por peça, com o preço e a data. Vem das propostas carregadas nos mapas comparativos dos Materiais.</p></div></div>'
+   +'<div class="psbar"><input type="search" id="foQ" placeholder="Procurar peça, código ou fornecedor…" value="'+esc(FO.q)+'"><select id="foM" aria-label="Agrupar"><option value="peca">Por peça</option><option value="forn">Por fornecedor</option></select><span class="hint" id="foN"></span></div><div id="foC"></div></div>';
+  $('#foM').value=FO.modo;
+  const pinta=()=>{
+    const q=FO.q.trim().toLowerCase(),F=L.filter(r=>!q||(r.codigo+' '+r.designacao+' '+r.fornecedor).toLowerCase().includes(q));
+    $('#foN').textContent=F.length+' preços';
+    if(!F.length){$('#foC').innerHTML='<div class="vazio"><h2>'+(L.length?'Nada neste filtro':'Ainda não há propostas')+'</h2><p>'+(L.length?'Tenta outro termo.':'Nos Materiais, em Compras › Comparativos, carrega o PDF da proposta, usa «Ler» e «→ Forn.». Os preços aparecem aqui.')+'</p></div>';return}
+    const chave=FO.modo==='peca'?(r=>r.codigo||r.designacao):(r=>r.fornecedor),G={};F.forEach(r=>{(G[chave(r)]=G[chave(r)]||[]).push(r)});
+    const eur=v=>Number(v).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:4})+' €';
+    let h='';
+    Object.keys(G).sort((a,b)=>a.localeCompare(b,'pt')).forEach(k=>{const R=G[k],r0=R[0];
+      h+='<div class="card" style="padding:4px 8px;margin-bottom:10px"><div style="padding:8px 6px 2px"><b>'+esc(k)+'</b>'+(FO.modo==='peca'?' <span class="hint">'+esc(r0.designacao||'')+'</span>':'')+'</div><table><thead><tr><th>'+(FO.modo==='peca'?'Fornecedor':'Peça')+'</th><th class="n">Preço un.</th><th>Data</th><th>Proposta</th><th></th></tr></thead><tbody>'
+       +R.map((r,i)=>'<tr><td>'+esc(FO.modo==='peca'?r.fornecedor:(r.codigo+' · '+(r.designacao||'').slice(0,50)))+'</td><td class="n"><b>'+eur(r.preco)+'</b>'+(FO.modo==='peca'&&i===0?' <span class="pill on">mais recente</span>':'')+'</td><td class="n">'+dPT(r.data)+'</td><td>'+esc(r.proposta_ref||'')+'</td><td>'+(r.pdf_path?'<button type="button" data-pdf="'+esc(r.pdf_path)+'">PDF</button>':'')+'</td></tr>').join('')
+       +'</tbody></table></div>'});
+    $('#foC').innerHTML=h;
+    $('#foC').querySelectorAll('[data-pdf]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.pdf,300);if(r.error||!r.data){aviso('Não consegui abrir o PDF.',true);return}window.open(r.data.signedUrl,'_blank')})};
+  $('#foQ').oninput=e=>{FO.q=e.target.value;pinta()};$('#foM').onchange=e=>{FO.modo=e.target.value;pinta()};pinta()}
 /* ---------- pessoal (fora da obra): pessoas, valências e certificados ---------- */
 const PS={sep:'pessoas',q:'',est:'ativos',val:'todas',dados:null};
 const VAL_SUG=['Eletricista de catenária','Montador de postes e consolas','Operador de PEMP / plataforma','Trabalhos em altura','Condutor de veículo de via','Segurança ferroviária (piloto, vigia)','Topografia','Soldadura','Eletricista BT/MT','Encarregado de obra'];
@@ -1272,7 +1296,7 @@ async function docsObra(o){
 }
 
 /* ---------- exportar tudo ---------- */
-const TAB_EXP=['organizacoes','pessoas','obras','obra_pessoas','contratos','rubricas','estruturas','os_interdicoes','os_periodos','partes_diarias','parte_linhas','fotos','dados_apps','dados_copias','pessoal','valencias','pessoal_valencias','tipos_certificado','certificados','bloqueios','historico'];
+const TAB_EXP=['organizacoes','pessoas','obras','obra_pessoas','contratos','rubricas','estruturas','os_interdicoes','os_periodos','partes_diarias','parte_linhas','fotos','dados_apps','dados_copias','pessoal','precos_fornecedor','valencias','pessoal_valencias','tipos_certificado','certificados','bloqueios','historico'];
 function carregaXlsx(){return window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar o gerador de Excel (sem rede?).'));document.head.appendChild(s)})}
 async function tabelaTodas(t){const out=[];for(let i=0;;i+=1000){const r=await sb.from(t).select('*').range(i,i+999);if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}return out}
 async function ficheirosBucket(b,prefixo,acc){
