@@ -5301,13 +5301,15 @@ function pdCalc(a,esp,ab,P,ab1){
   const l=L.map(v=>Math.floor((v-P.desc)*100+0.5+1e-9)/100);
   return {x,L,l,d,cs,F};
 }
+function pdPNS(p){ /* parâmetros dos vãos N/S: com os valores por defeito, a Parte 01 usa o ajuste aos 93 quadros (erro máx. 2,1 mm em vez de 5,1 mm) */
+  return (p===1&&pd.P.wd===PD_DEF.wd&&pd.P.wcs===PD_DEF.wcs)?Object.assign({},pd.P,{wd:0.8162,wcs:0.5537}):pd.P }
 function pdOp(v){ /* aberturas próprias do vão nos dois postes (opcionais) */
   if(!v)return null; const o0=pdNum(v.ab0),o1=pdNum(v.ab1); return (o0>0||o1>0)?{ab0:o0>0?o0:0,ab1:o1>0?o1:0}:null }
 function pdAbTxt(R){ const a0=R.ab0!=null?R.ab0:R.ab, a1=R.ab1!=null?R.ab1:R.ab; return Math.abs(a0-a1)<1e-9?fmt(a0)+' m':fmt(a0)+' m (início) / '+fmt(a1)+' m (fim)' }
 function pdVao(a,esp,op){
   const abO=pdAbertura(), ab=op&&op.ab0>0?op.ab0:abO, ab1=op&&op.ab1>0?op.ab1:abO, D=esp?{esp,tipo:'manual'}:pdDistrib(a);
   const aa=esp?somaA(esp):a;
-  const C=pdCalc(aa,D.esp,ab,pd.P,ab1);
+  const C=pdCalc(aa,D.esp,ab,pdPNS(pdParte(abO)),ab1);
   const nor=D.tipo==='norma'&&Math.abs(ab-ab1)<1e-9&&(Math.abs(ab-1.4)<1e-9||Math.abs(ab-1.6)<1e-9)?pdNorma(a):null;
   /* quadro da norma: valem os valores impressos (L e l); só se o quadro tiver gralha (>20 mm face ao modelo) fica o modelo, com aviso */
   if(nor&&nor[2].length===C.L.length&&nor[3]&&nor[3].length===C.L.length&&C.L.every((v,i)=>Math.abs(v-nor[2][i])<=0.02)){C.Lm=C.L; C.L=nor[2].slice(); C.l=nor[3].slice(); C.daNorma=true}
@@ -5315,7 +5317,7 @@ function pdVao(a,esp,op){
 }
 function pdValida(p){
   p=p||2; const E=[], gral=[];
-  for(const r of pdTab(p)){const a=somaA(r[1]),C=pdCalc(a,r[1],p===1?1.6:1.4,pd.P);
+  for(const r of pdTab(p)){const a=somaA(r[1]),C=pdCalc(a,r[1],p===1?1.6:1.4,pdPNS(p));
     let mx=0; C.L.forEach((v,i)=>{const e=Math.abs(v-r[2][i]);E.push(e);mx=Math.max(mx,e)});
     if(mx>0.01)gral.push([r[0],mx])}
   E.sort((p,q)=>p-q);
@@ -5343,18 +5345,18 @@ function pdEstimaL(qs,hv,a,esp){ /* interpola, em função do vão, os perfis do
   return {L:L,u:u.q,w:w.q}
 }
 function pdArred(L){return L.map(x=>Math.floor((x-pd.P.desc)*100+0.5+1e-9)/100)}
+const PD_CAL={"1|SLA|b":[0.805,0.553,1.8,[]],"1|SLA|c":[1.028,0.531,2.5,[]],"1|SLA|d":[1.028,0.531,2.5,[]],"1|SLA|e":[1.031,0.531,2.4,[]],"1|SLA|h":[1.032,0.531,2.5,[]],"1|SLA|j":[1.031,0.531,2.4,[]],"1|SLA|k":[1.032,0.531,2.5,[]],"1|SLA|m":[1.024,0.532,2.5,["ST1m"]],"1|SLA|n":[1.028,0.531,2.5,[]],"1|Z|Z1":[0.976,0.521,1.9,[]],"1|Z|Z9":[0.742,0.57,1.6,[]],"2|ET|e":[1.208,0.5,1.8,[]],"2|ET|h":[1.176,0.505,2.5,[]],"2|ET|j":[1.208,0.5,1.8,[]],"2|ET|k":[1.176,0.505,2.5,[]],"2|SLA|a":[0.941,0.527,1.8,[]],"2|SLA|b":[0.941,0.527,1.8,[]],"2|SLA|c":[12.649,-1.064,4.8,[]],"2|SLA|d":[4.04,0.103,0.3,[]],"2|SLA|e":[1.17,0.505,2.1,["ST1e"]],"2|SLA|h":[1.171,0.505,2.2,[]],"2|SLA|j":[1.179,0.504,2.3,[]],"2|SLA|k":[1.171,0.505,2.2,[]],"2|SLA|m":[4.04,0.103,0.3,[]],"2|SLA|n":[4.04,0.103,0.3,[]],"2|Z|a":[1.07,0.528,2.2,[]],"2|Z|i":[1.07,0.528,2.2,[]],"2|Z|j":[1.07,0.528,2.2,[]],"2|Z|r":[1.07,0.528,2.2,[]]}; /* variantes cujo cálculo físico reproduz TODOS os quadros da norma com erro ≤ 5 mm: [peso do pêndulo, peso do CS, erro máximo (mm), quadros com gralha] */
 function pdEstSit(p,k,v,a,ab,op){
   const qs=Q042.filter(q=>q[0]===p&&q[2]===k&&q[3]===v); if(!qs.length)return null;
-  const abP=p===1?1.6:1.4, hv=pdAltV(p,k,v), dAb=ab-abP;
+  const abP=p===1?1.6:1.4, hv=pdAltV(p,k,v), dAb=ab-abP, cal=PD_CAL[p+'|'+k+'|'+v];
   const o0=op&&op.ab0>0?op.ab0:hv[0]+dAb, o1=op&&op.ab1>0?op.ab1:hv[1]+dAb, igual=Math.abs(o0-hv[0])<1e-9&&Math.abs(o1-hv[1])<1e-9;
   const ex=qs.find(q=>Math.abs(q[4]-a)<0.005||Math.abs(somaA(q[7])-a)<0.005);
   const fora=a<Math.min(...qs.map(q=>q[4]))-0.005||a>Math.max(...qs.map(q=>q[4]))+0.005;
   if(ex&&igual)return {tipo:'norma',q:ex,esp:ex[7].slice(),L:ex[8].slice(),l:ex[9].slice(),ref:ex[1],pag:ex[6],r:ex[5],a:somaA(ex[7]),o0,o1,hv};
-  let e,L,u,w,b;
-  if(ex){e=ex[7].slice();L=ex[8].slice();b=ex;u=ex;w=null}
-  else{b=qs.reduce((m,q)=>!m||Math.abs(q[4]-a)<Math.abs(m[4]-a)?q:m,null); e=pdAdapta(b[7],a); const R=pdEstimaL(qs,hv,a,e); L=R.L; u=R.u; w=R.w!==R.u?R.w:null}
-  let c=0; L=L.map((x,i)=>{c+=e[i]; const t=c/somaA(e); return x+(o0-hv[0])*(1-t)+(o1-hv[1])*t});
-  return {tipo:'estimada',q:b,u:u,w:w,esp:e,L:L,l:pdArred(L),ref:b[1],pag:b[6],r:b[5],a:a,fora:ex?false:fora,o0,o1,hv,dAb:(o0-hv[0])||(o1-hv[1])};
+  if(!cal)return {tipo:'sem',q:ex||qs[0],ref:'',pag:(ex||qs[0])[6],vaos:qs.map(q=>q[4]).sort((x,y)=>x-y).filter((x,i,A)=>!i||x!==A[i-1]),o0,o1,hv,ex:!!ex};
+  const b=ex||qs.reduce((m,q)=>!m||Math.abs(q[4]-a)<Math.abs(m[4]-a)?q:m,null), e=ex?ex[7].slice():pdAdapta(b[7],a), aa=somaA(e);
+  const Pm=Object.assign({},pd.P,{wd:cal[0],wcs:cal[1]}), C=pdCalc(aa,e,o0,Pm,o1);
+  return {tipo:'estimada',q:b,esp:e,L:C.L,l:pdArred(C.L),ref:b[1],pag:b[6],r:b[5],a:aa,fora:ex?false:fora,o0,o1,hv,cal,dAb:(o0-hv[0])||(o1-hv[1])};
 }
 function pdErroSit(p,k,v){ /* validação cruzada: cada quadro da variante estimado a partir dos restantes */
   const qs=Q042.filter(q=>q[0]===p&&q[2]===k&&q[3]===v), hv=pdAltV(p,k,v), E=[];
@@ -5421,7 +5423,7 @@ function pdPrevia(){
   const mo=PEND_E7173[V.mont||pd.tipo||'IV'];
   const html=`<div class="pdPrevB"><div class="pdRow"><b>Ficha de pendulagem · vão ${pdSel+1}</b><span class="xdir"><button id="pdPrevX">Descarregar (Excel)</button><button id="pdPrevP">Imprimir</button><button id="pdPrevF">Fechar</button></span></div>
     <div class="xnota">${L?`Lanço <b>${esc((L.via?L.via+' · ':'')+'nº '+(L.num||'?'))}</b> · `:''}Poste <b>${esc(V.de||'?')}</b> → <b>${esc(V.para||'?')}</b> · vão <b>${fmt(R.a)} m</b> · abertura nos postes <b>${pdAbTxt(R)}</b><br>
-    Tipo de pendulagem: <b>${esc(PD_SIT[k]||k)}</b>${sv?` · variante <b>${esc(R.v)}</b> · ${sv.tipo==='norma'?'quadro '+esc(sv.ref):'estimativa a partir do quadro '+esc(sv.ref)}`:' · '+refTxt(R.D)}<br>Pêndulo: ${esc(mo?mo.n:'')}</div>
+    Tipo de pendulagem: <b>${esc(PD_SIT[k]||k)}</b>${sv?` · variante <b>${esc(R.v)}</b> · ${sv.tipo==='norma'?'quadro '+esc(sv.ref):'calculado (espaços do quadro '+esc(sv.ref)+')'}`:' · '+refTxt(R.D)}<br>Pêndulo: ${esc(mo?mo.n:'')}</div>
     ${k==='NS'?pdSVG(R):pdEsq(R.p,k,R.v,sv.pag,pdSVGg(R))}${k!=='NS'?pdNotaSoma(sv.q):''}${tabX(cab,linhas)}
     <div class="xks" style="margin-top:10px"><div class="xk"><b>${R.C.x.length}</b><span>pêndulos</span></div><div class="xk"><b>${fmt(r2(somaA(R.C.l)))}</b><span>m de cabo Bz 12 (Σ l)</span></div><div class="xk"><b>${fmt(esp[esp.length-1])}</b><span>m do último pêndulo ao poste</span></div></div></div>`;
   let o=$('#pdPrev'); if(!o){o=document.createElement('div');o.id='pdPrev';document.body.appendChild(o)}
@@ -5501,18 +5503,18 @@ function rPendRes(){
 function pdSitR(a,k0,vr0,op){
   const ab=pdAbertura(), p=pdParte(ab), k=k0||pd.sit||'NS', vr=k0?vr0:pd.vr, vs=pdVars(p,k), v=vs.some(x=>x[0]===vr)?vr:(vs[0]?vs[0][0]:'');
   if(!op&&!k0){const V=pdVaos()[pdSel]; op=pdOp(V)}
-  const E=pdEstSit(p,k,v,a,ab,op); if(!E)return null;
+  const E=pdEstSit(p,k,v,a,ab,op); pdSitR.sem=null; if(!E)return null; if(E.tipo==='sem'){pdSitR.sem=E;return null}
   let cum=0; const x=E.esp.slice(0,-1).map(d=>{cum+=d;return cum});
   return {a:a,ab:E.o0,ab0:E.o0,ab1:E.o1,p:p,k:k,v:v,E:E,D:{tipo:E.tipo==='norma'?'norma':'adaptada',ref:E.ref,esp:E.esp},C:{x:x,L:E.L,l:E.l},nor:null};
 }
 function rPendSit(a){
-  const R=pdSitR(a); if(!R){$('#pdRes').innerHTML='<div class="empty">Não há quadros desta situação nesta Parte da norma.</div>';return}
+  const R=pdSitR(a); if(!R){const S=pdSitR.sem; $('#pdRes').innerHTML=S?`<div class="difbar"><b>Sem valores garantidos para este vão.</b> A norma só fixa os pêndulos desta variante para os vãos <b>${S.vaos.map(fmt).join(' · ')} m</b>${S.ex?' (e com as aberturas nos postes da norma)':''}. Nesta variante (rampa do fio de contacto ou equipamento no vão) o cálculo não reproduz os quadros com erro de 0,5 cm, por isso a app não estima valores intermédios. Usa um destes vãos ou pede o quadro ao projeto.</div>`:'<div class="empty">Não há quadros desta situação nesta Parte da norma.</div>'; return}
   const {E,C,p,k,v}=R, ab=R.ab, cab=[['Pêndulo'],['Ao poste (m)',1],['Entre (m)',1],['L (m)',1],['l a cortar',1]];
   const linhas=C.x.map((xx,i)=>[String(i+1),fmt(r2(xx)),fmt(E.esp[i]),C.L[i].toFixed(3),`<b>${C.l[i].toFixed(2)}</b>`]);
-  const er=E.tipo==='estimada'?pdErroSit(p,k,v):null, nome=`IT.CAT.042-0${p}`;
+  const nome=`IT.CAT.042-0${p}`;
   const topo=E.tipo==='norma'?`Quadro <b>${esc(E.ref)}</b> da ${nome}, pág. ${E.pag} do PDF${E.r?` · r = ${fmt(E.r)} m`:''}. Os valores são os impressos na norma.`
-    :`<b>Estimativa</b> ${E.w?`por interpolação dos quadros <b>${esc(E.u[1])}</b> (${fmt(E.u[4])} m) e <b>${esc(E.w[1])}</b> (${fmt(E.w[4])} m)`:`a partir do quadro <b>${esc(E.ref)}</b> (${fmt(E.q[4])} m, pág. ${E.pag})`}, com espaços ajustados${(Math.abs(E.o0-E.hv[0])>1e-9||Math.abs(E.o1-E.hv[1])>1e-9)?`. Aberturas nos postes: ${pdAbTxt(R)} em vez de ${fmt(E.hv[0])} / ${fmt(E.hv[1])} m da norma`:''}.`;
-  const aviso=E.tipo==='estimada'?`<div class="difbar">Vão sem quadro na norma${E.fora?' e fora do intervalo de vãos desta variante (extrapolação)':''}: confirma com o projeto.${er?` Validação cruzada nesta variante: erro mediano ${(er.med*1000).toFixed(0)} mm, 95% abaixo de ${(er.p95*1000).toFixed(0)} mm, máximo ${(er.max*1000).toFixed(0)} mm.`:' Sem outros vãos desta variante para validar.'}</div>`:'';
+    :`<b>Calculado</b> (física do vão com a abertura de cada poste), com espaços adaptados do quadro <b>${esc(E.ref)}</b> (${fmt(E.q[4])} m, pág. ${E.pag})${(Math.abs(E.o0-E.hv[0])>1e-9||Math.abs(E.o1-E.hv[1])>1e-9)?`. Aberturas nos postes: ${pdAbTxt(R)} em vez de ${fmt(E.hv[0])} / ${fmt(E.hv[1])} m da norma`:''}.`;
+  const aviso=E.tipo==='estimada'?`<div class="xnota">Vão sem quadro na norma${E.fora?' e fora do intervalo de vãos desta variante':''}. O cálculo desta variante foi validado contra os quadros da norma: erro máximo de <b>${E.cal[2]} mm</b> (limite 5 mm)${E.cal[3]&&E.cal[3].length?`; o quadro ${esc(E.cal[3].join(', '))} tem gralha na norma e ficou de fora da validação`:''}.</div>`:'';
   $('#pdRes').innerHTML=`<div class="xnota">${esc(PD_SIT[k])} · variante <b>${esc(v)}</b> · abertura nos postes (norma): <b>${pdAbTxt({ab0:E.hv[0],ab1:E.hv[1]})}</b>. ${topo}</div>${aviso}${pdNotaSoma(E.q)}${pdEsq(p,k,v,E.pag,pdSVGg(R))}${tabX(cab,linhas)}
     <div class="xks" style="margin-top:10px"><div class="xk"><b>${C.x.length}</b><span>pêndulos</span></div>
     <div class="xk"><b>${fmt(r2(somaA(C.l)))}</b><span>m de cabo Bz 12 (Σ l)</span></div>
@@ -5544,7 +5546,7 @@ function rPendMulti(){
   const por=new Map(); V.forEach(v=>{const k=(v.mont||pd.tipo||'IV');por.set(k,(por.get(k)||0)+1)});
   mat.innerHTML=`<div class="xks"><div class="xk"><b>${V.length}</b><span>vãos</span></div><div class="xk"><b>${fmt(r2(somaA(pdVaosLista())))}</b><span>m de lanço (Σ vãos)</span></div><div class="xk"><b>${T.tp}</b><span>pêndulos</span></div></div>
     <div class="xnota"><b>Material (desenho E-7173)</b><div class="lRes">${[...T.mat].map(([c,q])=>{const pi=pecaPorCod.get(c);return `<span class="lChip"><b class="mono">${c}</b> ${esc(pi!=null?PEC[pi][3]:'')} · <b>${q} un</b></span>`}).join('')+(T.tc>0?`<span class="lChip"><b class="mono">01.100.02</b> Cabo Bz 12 · <b>${fmt(T.tc)} m</b></span>`:'')}</div></div>
-    ${T.sem.length?`<div class="xnota"><b>Atenção:</b> sem quadro da norma para o(s) vão(s) ${T.sem.join(', ')} (vão em falta ou tipo de pendulagem sem quadros): não entram no material.</div>`:''}
+    ${T.sem.length?`<div class="xnota"><b>Atenção:</b> sem valores garantidos para o(s) vão(s) ${T.sem.join(', ')} (vão em falta, ou variante sem quadro para este vão: a app só calcula onde reproduz a norma com erro ≤ 0,5 cm): não entram no material.</div>`:''}
     <div class="xnota">${pdLanco()?'Este material já está na lista de material do lanço.':'<b>Atenção:</b> não há lanço escolhido (passo 2), por isso este material ainda não entra na lista.'}</div>`;
 }
 function rPendVal(){
