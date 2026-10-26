@@ -191,6 +191,14 @@ tr.det table.g th{position:static}
 .kpis span{font-size:11.5px;color:var(--muted)}
 .kpis .eur{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .kpis button.k{all:unset;cursor:pointer;display:block}
+.cmenos td:nth-child(6),.cmenos th:nth-child(6),.cmenos td:nth-child(8),.cmenos th:nth-child(8),.cmenos td:nth-child(9),.cmenos th:nth-child(9){display:none}
+.pk{display:flex;flex-direction:column;gap:2px}
+.pkt{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}.pkt b{font:600 22px var(--mono)}.pkt span{color:var(--muted);font-size:12.5px}
+.pkr{display:grid;grid-template-columns:minmax(120px,1.3fr) 3fr minmax(96px,.8fr);gap:12px;align-items:center;padding:6px 8px;border-radius:4px}
+.pkr[data-fam]{cursor:pointer}.pkr[data-fam]:hover,.pkr[data-fam]:focus{background:var(--hover,rgba(0,0,0,.05));outline:none}
+.pkr small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.pn{font-size:13px;font-weight:600}.pb{height:12px;background:rgba(0,0,0,.06);border-radius:3px;overflow:hidden}.pb i{display:block;height:100%;background:#F9D115;border-radius:3px}
+.pkr.ot .pb i{background:#d9d2a8}.pv{text-align:right;font:600 13px var(--mono)}
 .tm{display:block;width:100%;max-width:980px;height:auto;margin:0 auto}
 .tm .b{cursor:pointer;stroke:var(--sheet);stroke-width:2}
 .tm .b:hover{filter:brightness(.94)}
@@ -1575,7 +1583,7 @@ function ligaOrd(sel,o,redraw){
     redraw();
   },'ord');
 }
-var AVISOVAL=false, cruzOrd={c:'cod',d:1}, famFecha={}, cruzGrupo=true, MEDX=null, cruzFase='', cruzEst='', cruzData=false, SAVEQ=null, DIRTY=false, LASTHASH='', PASTA=null, FICH=null, LASTBACKUP=0, DRAFTHASH='', EX=null, OCABERTA=null, OCREVER=null, OCRI=0, SUGMAP=null, catAgrupa=false, OCNOVA=false, OCNOVA_PENDENTE=null, ocVista='verbas';
+var AVISOVAL=false, cruzOrd={c:'cod',d:1}, famFecha={}, cruzGrupo=true, cruzMais=false, MEDX=null, cruzFase='', cruzEst='', cruzData=false, SAVEQ=null, DIRTY=false, LASTHASH='', PASTA=null, FICH=null, LASTBACKUP=0, DRAFTHASH='', EX=null, OCABERTA=null, OCREVER=null, OCRI=0, SUGMAP=null, catAgrupa=false, OCNOVA=false, OCNOVA_PENDENTE=null, ocVista='verbas';
 var flt={stk:'',art:'',est:'',med:'',medQue:'',ne:'',neEst:'',gr:'',ext:'',extUso:'',mat:'',matQue:'rec',matOrd:'exc',obr:'',obrQue:'',obrObra:''};
 var OBRAS=[], oi=-1;
 var ST=novaObra('','Obra sem nome');   /* obra ativa; enquanto oi<0 é só um rascunho */
@@ -5364,9 +5372,11 @@ function renderCruz(){
     '<div><b>'+eurz(T.comp)+' €</b><span>já encomendado</span><div class="eur">desvio de preço '+(T.desv>0?'+':'')+eurz(T.desv)+' €</div></div>'+
     '<div><b style="color:var(--amber)">'+eurz(T.falta)+' €</b><span>por comprar</span><div class="eur">'+T.nFalta+' artigos</div></div>'+
     '<div><b style="color:var(--red)">'+eurz(T.parado)+' €</b><span>comprado que não faz falta</span><div class="eur">'+T.nParado+' artigos</div></div></div>';
+  h+='<div class="card" style="margin-bottom:10px"><div class="cb">'+cruzFaixa(Dd)+'</div></div>';
   var chips=[['','Todos'],['compr','Por comprar'],['ok','Coberto'],['mais','Comprado a mais'],['saiu','Saiu da medição'],['fora','Fora da medição']];
   h+='<div class="chips">'+chips.map(function(c){ return '<button class="chipb'+(cruzEst===c[0]?' on':'')+'" data-est="'+c[0]+'">'+c[1]+'<b>'+(C[c[0]]||0)+'</b></button>' }).join('')+
-    '<label style="margin-left:auto;font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cruzGrupo"'+(cruzGrupo?' checked':'')+'>por família</label>'+
+    '<label style="margin-left:auto;font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cruzMais"'+(cruzMais?' checked':'')+'>mais colunas</label>'+
+    '<label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cruzGrupo"'+(cruzGrupo?' checked':'')+'>por família</label>'+
     '<input id="cruzQ" placeholder="Filtrar código ou designação…" value="'+esc(cruzQ)+'" style="max-width:260px"></div>';
   h+='<div class="card"><div class="tw" id="cruzTbl" style="max-height:none"></div></div>';
   $('#cruzBox').innerHTML=h;
@@ -5378,8 +5388,21 @@ function renderCruz(){
   $$('#cruzBox [data-est]').forEach(function(e){ e.addEventListener('click',function(){ cruzEst=e.dataset.est; renderCruz() }) });
   var cpm=$('#cruzPm'); if(cpm)cpm.addEventListener('click',porMedirZeros);
   var cd=$('#cruzData'); if(cd)cd.addEventListener('change',function(){ cruzData=cd.checked; renderCruz() });
+  var cm=$('#cruzMais'); if(cm)cm.addEventListener('change',function(){ cruzMais=cm.checked; $('#cruzTbl').classList.toggle('cmenos',!cruzMais) });
+  $('#cruzTbl').classList.toggle('cmenos',!cruzMais);
   var cg=$('#cruzGrupo'); if(cg)cg.addEventListener('change',function(){ cruzGrupo=cg.checked; cruzTabela(Dd) });
   var cq=$('#cruzQ'); if(cq)cq.addEventListener('input',function(){ cruzQ=cq.value; cruzTabela(Dd) });
+}
+function cruzFaixa(Dd){
+  var P={ok:0,parcial:0,nao:0,mais:0,outros:0}, N={ok:0,parcial:0,nao:0,mais:0,outros:0};
+  Dd.rows.forEach(function(r){ var k=(r.e==='ok'||r.e==='parcial'||r.e==='nao'||r.e==='mais')?r.e:'outros'; N[k]++; P[k]+=(k==='ok'?r.needV:(k==='parcial'||k==='nao')?r.needV:(k==='mais'?r.needV:r.excV)) });
+  var seg=[['ok','Coberto','var(--ok)'],['parcial','Comprado em parte','#C98A00'],['nao','Por comprar','var(--red)'],['mais','Comprado a mais','#7A5BB5'],['outros','Fora / saiu da medição','#8A8F98']];
+  var tot=seg.reduce(function(a,x){ return a+P[x[0]] },0)||1;
+  var h='<div style="display:flex;height:16px;border-radius:4px;overflow:hidden;gap:2px">';
+  seg.forEach(function(x){ if(P[x[0]]>0)h+='<div style="width:'+(P[x[0]]/tot*100).toFixed(2)+'%;background:'+x[2]+'" data-tip="'+esc(x[1]+'\n'+N[x[0]]+' artigos · '+eurz(P[x[0]])+' €')+'"></div>' });
+  h+='</div><div style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:9px;font-size:12px">';
+  seg.forEach(function(x){ if(N[x[0]])h+='<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+x[2]+';margin-right:6px"></i>'+x[1]+' <b>'+N[x[0]]+'</b> <span style="color:var(--muted)">· '+eurz(P[x[0]])+' €</span></span>' });
+  return h+'</div>';
 }
 function cruzTabela(Dd){
   var f=lower(cruzQ), est=cruzEst;
@@ -5517,6 +5540,21 @@ function svgTreemap(items,vazio){
   });
   return g+'</svg>';
 }
+function listaParado(items,vazio){
+  items=items.filter(function(i){ return i.v>0.5 }).sort(function(a,b){ return b.v-a.v });
+  if(!items.length)return '<div class="empty"><b>'+esc(vazio||'Nada parado')+'</b></div>';
+  var tot=items.reduce(function(s2,i){ return s2+i.v },0), mx=items[0].v, NMAX=8, vis=items.slice(0,NMAX), resto=items.slice(NMAX);
+  if(resto.length){ var rv=resto.reduce(function(s2,i){ return s2+i.v },0), rn=resto.reduce(function(s2,i){ return s2+i.n },0); vis.push({k:'Outras '+resto.length+' famílias',v:rv,n:rn,outras:true}) }
+  var h='<div class="pk"><div class="pkt"><b>'+eurz(tot)+' €</b><span>parados em '+items.length+(items.length===1?' família':' famílias')+'</span></div>';
+  vis.forEach(function(i){
+    var w=Math.max(1.5,i.v/mx*100), pc=i.v/tot*100;
+    h+='<div class="pkr'+(i.outras?' ot':'')+'"'+(i.outras?'':' data-fam="'+esc(i.k)+'" tabindex="0" title="Ver o material desta família"')+'>'+
+      '<span class="pn">'+esc(i.k)+'<small>'+i.n+(i.n===1?' material':' materiais')+'</small></span>'+
+      '<span class="pb"><i style="width:'+w.toFixed(1)+'%"></i></span>'+
+      '<span class="pv">'+eurz(i.v)+' €<small>'+(pc<1?'<1':Math.round(pc))+'%</small></span></div>';
+  });
+  return h+'</div>';
+}
 function paradoPorFam(lista){            /* lista de {fam,v} */
   var M={}; lista.forEach(function(x){ var m=M[x.fam]||(M[x.fam]={k:x.fam||'Sem família',v:0,n:0}); m.v+=x.v; m.n++ });
   return Object.keys(M).map(function(k){ return M[k] });
@@ -5618,7 +5656,7 @@ function renderResumo(modo){
      '</div></div></div>';
 
   var pg=[]; G.forEach(function(L){ if(L.sobra>1e-9&&L.qgr>0)pg.push({fam:L.fam,v:L.vsobra}) });
-  h+='<div class="card"><h3>Dinheiro parado <span class="n">sobras, por família · clica para ver o material</span></h3><div class="cb">'+svgTreemap(paradoPorFam(pg),'Sem sobras')+'</div></div>';
+  h+='<div class="card"><h3>Dinheiro parado <span class="n">sobras, por família · clica para ver o material</span></h3><div class="cb">'+listaParado(paradoPorFam(pg),'Sem sobras')+'</div></div>';
   }
   if(modo==='obra'){
   var fcR=faseCurso(ST), npm=0, vpm=0, semJ=0;
@@ -5641,7 +5679,7 @@ function renderResumo(modo){
      '<div class="bl"><span>Linhas de NE · guias</span><b>'+ST.ne.length+' · '+ST.gr.length+'</b></div>'+
      '</div></div></div>';
   var pgo=[]; pecasObra(ST).forEach(function(r){ if(r.sobra>1e-9&&r.qgr>0)pgo.push({fam:r.fam,v:r.sobra*(r.pu||r.puMed||0)}) });
-  h+='<div class="card"><h3>Dinheiro parado nesta obra <span class="n">material recebido que a medição não pede</span></h3><div class="cb">'+svgTreemap(paradoPorFam(pgo),'Sem material parado')+'</div></div>';
+  h+='<div class="card"><h3>Dinheiro parado nesta obra <span class="n">material recebido que a medição não pede</span></h3><div class="cb">'+listaParado(paradoPorFam(pgo),'Sem material parado')+'</div></div>';
   var A=avisos();
   h+='<div class="card"><h3>Avisos <span class="n">'+(A.length||'nenhum')+'</span></h3><div class="cb" style="padding:0">';
   if(!A.length){
