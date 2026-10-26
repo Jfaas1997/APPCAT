@@ -1513,10 +1513,14 @@ async function autoOS(o,file){
   try{
     const ja=await ok(sb.from('os_interdicoes').select('id').eq('obra_id',o.id).eq('numero',a.numero));
     if(ja.length)return {msg:'OS '+a.numero+' já existia: o PDF ficou guardado e a OS não foi alterada.'};
+    let ps=a.periodos.filter(p=>p.dia&&p.ini&&p.fim),meu='';
+    const tr=[...new Set(ps.flatMap(p=>String(p.trab||'').split(/[,; ]+/).filter(Boolean)))].sort((x,y)=>x-y);
+    if(tr.length){const v=await formulario('OS '+a.numero+': qual é o nosso trabalho?',[{id:'t',rotulo:'Nº do nosso trabalho (a OS tem: '+tr.join(', ')+')',ph:'ex.: '+tr[0]}],'Aplicar');
+      meu=v&&v.t?String(v.t).trim():'';
+      if(meu)ps=ps.filter(p=>!p.trab||String(p.trab).split(/[,; ]+/).includes(meu)).map(p=>Object.assign({},p,{trab:meu}))}
     const os=(await ok(sb.from('os_interdicoes').insert({obra_id:o.id,numero:a.numero,semana:a.semana||null}).select('id')))[0];
-    const ps=a.periodos.filter(p=>p.dia&&p.ini&&p.fim);
     if(ps.length)await ok(sb.from('os_periodos').insert(ps.map(p=>{const ini=new Date(p.dia+'T'+p.ini),fi=new Date(p.dia+'T'+p.fim);if(fi<=ini)fi.setDate(fi.getDate()+1);return {os_id:os.id,inicio:ini.toISOString(),fim:fi.toISOString(),trabalhos:p.trab||null}})));
-    return {novo:1,msg:'OS '+a.numero+' criada com '+ps.length+' período'+(ps.length===1?'':'s')+(ps.length?'. Confirma em «Períodos» quais são os do nosso trabalho.':'. Não encontrei períodos: escreve-os em «Períodos».'),erro:ps.length?0:1}
+    return {novo:1,msg:'OS '+a.numero+' criada com '+ps.length+' período'+(ps.length===1?'':'s')+(ps.length?(meu?' (só os do trabalho '+meu+')':'. Sem trabalho indicado, ficaram todos: apaga em «Períodos» os que não são nossos.'):'. Não encontrei períodos: escreve-os em «Períodos».'),erro:ps.length?0:1}
   }catch(e){return {msg:file.name+': guardado, mas a OS não foi criada ('+erroTxt(e)+').',erro:1}}
 }
 async function lerOS(o,file,fim){
