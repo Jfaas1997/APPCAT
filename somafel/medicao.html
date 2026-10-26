@@ -424,6 +424,13 @@ table.lan input[data-f="tipo"]{width:110px}
 .pdPrevB{background:var(--sheet);color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:16px;max-width:980px;width:100%;margin:auto}
 #pdPrev{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);overflow:auto;padding:24px 16px;display:flex}
 #pdPrev[hidden]{display:none!important}
+.fCab{display:flex;align-items:stretch;border:1.5px solid #2B3038;min-height:15mm;margin:10px 0;color:#2B3038;background:#fff}
+.fCab .lg{display:flex;align-items:center;justify-content:center;padding:2mm 5mm;border-right:1.5px solid #2B3038;min-width:42mm}.fCab .lg img{max-height:11mm;max-width:38mm;display:block}
+.fCab .ti{flex:1;padding:2mm 4mm;display:flex;flex-direction:column;justify-content:center}.fCab .ti b{font-size:14pt;line-height:1.1}.fCab .ti span{font-size:9pt;color:#555}
+.fCab .fo{padding:2mm 4mm;border-left:1.5px solid #2B3038;text-align:right;display:flex;flex-direction:column;justify-content:center;font-size:9pt;color:#555;min-width:30mm}
+.fRod{display:flex;justify-content:space-between;gap:12px;font-size:8pt;color:#555;border-top:1px solid #bbb;margin-top:12px;padding-top:4px}
+.fAss{display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;margin-top:10mm;font-size:8pt;color:#555}.fAss div{border-top:1px solid #2B3038;padding-top:2px}
+@media print{.noPr{display:none!important}}
 @media print{body>*:not(#pdPrev){display:none!important}#pdPrev{position:static;background:none;padding:0;display:block}.pdPrevB{border:0;max-width:none}.pdPrevB .xdir{display:none}}
 .pdEsqN{margin:4px 0 10px;border:1px solid var(--rule);border-radius:4px;background:#fff;padding:0}.pdEsqN img{display:block;width:100%;height:auto}.pdEsqN figcaption{font-size:11px;color:#555;padding:4px 8px;border-top:1px solid #ddd}
 .pdSvg{width:100%;height:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:4px 0 10px}
@@ -5425,11 +5432,14 @@ function pdPrevia(){
   const cab=[['Pêndulo'],['Ao poste (m)',1],['Entre (m)',1],['L (m)',1],['l a cortar',1]], esp=R.D.esp;
   const linhas=R.C.x.map((xx,i)=>[String(i+1),fmt(r2(xx)),fmt(esp[i]),R.C.L[i].toFixed(3),`<b>${R.C.l[i].toFixed(2)}</b>`]);
   const mo=PEND_E7173[V.mont||pd.tipo||'IV'];
-  const html=`<div class="pdPrevB"><div class="pdRow"><b>Ficha de pendulagem · vão ${pdSel+1}</b><span class="xdir"><button id="pdPrevX">Descarregar (Excel)</button><button id="pdPrevP">Imprimir</button><button id="pdPrevF">Fechar</button></span></div>
-    <div class="xnota">${L?`Lanço <b>${esc((L.via?L.via+' · ':'')+'nº '+(L.num||'?'))}</b> · `:''}Poste <b>${esc(V.de||'?')}</b> → <b>${esc(V.para||'?')}</b> · vão <b>${fmt(R.a)} m</b> · abertura nos postes <b>${pdAbTxt(R)}</b><br>
+  const logo=(document.querySelector('header img.logo')||{}).src||'', nV=pdVaos().length, hoje=new Date().toLocaleDateString('pt-PT');
+  const fCab=`<div class="fCab"><div class="lg">${logo?`<img alt="Somafel" src="${logo}">`:'<b>SOMAFEL</b>'}</div><div class="ti"><b>Ficha de pendulagem</b><span>${esc(st.nome||'')}${L?' · lanço '+esc((L.via?L.via+' · ':'')+'nº '+(L.num||'?')):''}</span></div><div class="fo"><span>${esc(PD_SIT[k]||k)}</span><b>Vão ${pdSel+1} / ${nV}</b></div></div>`;
+  const rod=`<div class="fRod"><span>${hoje}</span><span>Valores dos quadros da IT.CAT.042. A norma e os desenhos da IP prevalecem.</span></div><div class="fAss"><div>Elaborado</div><div>Verificado</div><div>Aprovado</div></div>`;
+  const html=`<div class="pdPrevB"><div class="pdRow noPr"><b>Pré-visualização da ficha</b><span class="xdir"><button id="pdPrevX">Descarregar (Excel)</button><button id="pdPrevP">Imprimir</button><button id="pdPrevF">Fechar</button></span></div>
+    ${fCab}<div class="xnota">${L?`Lanço <b>${esc((L.via?L.via+' · ':'')+'nº '+(L.num||'?'))}</b> · `:''}Poste <b>${esc(V.de||'?')}</b> → <b>${esc(V.para||'?')}</b> · vão <b>${fmt(R.a)} m</b> · abertura nos postes <b>${pdAbTxt(R)}</b><br>
     Tipo de pendulagem: <b>${esc(PD_SIT[k]||k)}</b>${sv?` · variante <b>${esc(R.v)}</b> · ${sv.tipo==='norma'?'quadro '+esc(sv.ref):'calculado (espaços do quadro '+esc(sv.ref)+')'}`:' · '+refTxt(R.D)}<br>Pêndulo: ${esc(mo?mo.n:'')}</div>
     ${k==='NS'?pdSVG(R):pdEsq(R.p,k,R.v,sv.pag,pdSVGg(R))}${k!=='NS'?pdNotaSoma(sv.q):''}${tabX(cab,linhas)}
-    <div class="xks" style="margin-top:10px"><div class="xk"><b>${R.C.x.length}</b><span>pêndulos</span></div><div class="xk"><b>${fmt(r2(somaA(R.C.l)))}</b><span>m de cabo Bz 12 (Σ l)</span></div><div class="xk"><b>${fmt(esp[esp.length-1])}</b><span>m do último pêndulo ao poste</span></div></div></div>`;
+    <div class="xks" style="margin-top:10px"><div class="xk"><b>${R.C.x.length}</b><span>pêndulos</span></div><div class="xk"><b>${fmt(r2(somaA(R.C.l)))}</b><span>m de cabo Bz 12 (Σ l)</span></div><div class="xk"><b>${fmt(esp[esp.length-1])}</b><span>m do último pêndulo ao poste</span></div></div>${rod}</div>`;
   let o=$('#pdPrev'); if(!o){o=document.createElement('div');o.id='pdPrev';document.body.appendChild(o)}
   o.innerHTML=html; o.hidden=false;
 }
