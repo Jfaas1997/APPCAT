@@ -1915,11 +1915,15 @@ function renderPDedit(){
      '<button data-act="intAdd">+ Associar interdição do dia</button></div><div class="bb">';
   if(!(p.ints||[]).length){ h+='<div class="empty">Sem interdições associadas. As interdições da data são associadas automaticamente ao criar a parte diária.</div>' }
   else{
-    h+='<table><thead><tr><th>O.S.</th><th>Entre</th><th>e</th><th>Via</th><th class="num">Previstas</th><th class="num">Efetivas</th><th>Motivo do desvio</th><th class="w1"></th></tr></thead><tbody>';
+    h+='<table><thead><tr><th>O.S.</th><th>Entre</th><th>e</th><th>Via</th><th class="num">Concedidas</th><th class="num">Efetivamente trabalhadas</th><th>Motivo do desvio</th><th class="w1"></th></tr></thead><tbody>';
     p.ints.forEach(function(id){
       var i=porId(ST.int,id); if(!i)return;
       h+='<tr><td class="mono">'+esc(i.os||'')+'</td><td>'+esc(i.de||'')+'</td><td>'+esc(i.ate||'')+'</td><td>'+esc(i.via||'')+'</td>'+
-         '<td class="num">'+esc(i.cI||'')+'–'+esc(i.cF||'')+'</td><td class="num">'+esc(i.tI||'')+'–'+esc(i.tF||'')+'</td>'+
+         '<td class="num">'+esc(i.cI||'')+'–'+esc(i.cF||'')+'</td><td class="num" style="white-space:nowrap">'+
+         '<input class="mono num" data-ti="'+id+'" data-tk="tI" value="'+esc(i.tI||'')+'" placeholder="--:--" style="width:56px"> – '+
+         '<input class="mono num" data-ti="'+id+'" data-tk="tF" value="'+esc(i.tF||'')+'" placeholder="--:--" style="width:56px">'+
+         (dur(i.cI,i.cF)&&!(i.tI||i.tF)?' <button data-tconc="'+id+'" title="Trabalhou-se todo o tempo concedido">= concedidas</button>':'')+
+         (dur(i.tI,i.tF)?' <b class="mono">'+hdec(dur(i.tI,i.tF))+' h</b>':'')+'</td>'+
          '<td>'+esc(i.motivo||'')+'</td><td class="w1"><button class="x" data-desassoc="'+id+'">×</button></td></tr>';
     });
     h+='</tbody></table>';
@@ -2187,6 +2191,7 @@ function ligaPD(p){
   bind('#pdWrap','change',function(e){
     if(p.bloq)return;
     var t=e.target,k=t.dataset.k;
+    if(t.dataset.ti){ var it=porId(ST.int,t.dataset.ti); if(it){ it[t.dataset.tk]=(hm(t.value)==null?'':hstr(hm(t.value))) } setTimeout(function(){renderPDedit();encheMeses()},0); return }
     if(t.dataset.l!=null&&k){ var l=p.lin[+t.dataset.l]; l[k]=k==='qt'?num(t.value):t.value;
       if(k==='cod'){ var a=look(t.value); if(a){l.des='';l.un=a.un} } setTimeout(renderPDedit,0); return }
     if(t.dataset.r&&k){ var arr=p[t.dataset.r]; var o=arr[+t.dataset.i];
@@ -2232,6 +2237,7 @@ function ligaPD(p){
       var livres=ST.int.filter(function(i){return i.data===p.data&&p.ints.indexOf(i.id)<0});
       if(!livres.length){ toast('Não há mais interdições registadas em '+ptbr(p.data)+'.'); return }
       livres.forEach(function(i){p.ints.push(i.id)}); renderPDedit(); return }
+    if(b.dataset.tconc){ var ic=porId(ST.int,b.dataset.tconc); if(ic){ ic.tI=ic.cI; ic.tF=ic.cF } renderPDedit(); return }
     if(b.dataset.desassoc){ p.ints=p.ints.filter(function(x){return x!==b.dataset.desassoc}); renderPDedit(); return }
     if(b.dataset.linDel!=null&&b.dataset.linDel!==''){ p.lin.splice(+b.dataset.linDel,1); renderPDedit(); return }
     if(b.dataset.add){ p[b.dataset.add].push({nome:'',qt:1,tipo:''}); renderPDedit();
@@ -2261,25 +2267,28 @@ function renderInt(){
     '<th class="num w1">h</th><th class="w1">Estado</th><th>Motivo do desvio</th><th style="width:150px">Perdas dentro do trabalhado</th><th class="w1"></th></tr></thead><tbody>';
   if(!rows.length)h+='<tr><td colspan="18"><div class="empty">Sem interdições registadas.</div></td></tr>';
   rows.forEach(function(i){
-    var hh=horasInt(i);
+    var hh=horasInt(i), pdI=pdDaInt(i.id), trava=!!(i.os&&(i.cI||i.cF)&&!intEdita[i.id]);
+    function ro(k,w){ return '<td class="w1 mono num">'+esc(i[k]||'')+'</td>' }
+    function cl(k,w){ return trava?ro(k):hcell(i,k) }
     var est= hh.conc<=0? '<span class="chip none">—</span>'
       : !fechada(i)? '<span class="chip wait">por fechar</span>'
       : hh.trab<=0? '<span class="chip bad">não trabalhada</span>'
       : hh.trab<hh.conc-1e-9? '<span class="chip warn">−'+hdec(hh.conc-hh.trab)+'</span>'
       : '<span class="chip ok">100%</span>';
     h+='<tr>'+
-      '<td class="w1"><input type="date" data-i="'+i.id+'" data-k="data" value="'+esc(i.data)+'" style="width:130px"></td>'+
+      '<td class="w1">'+(trava?'<span class="mono">'+esc(ptbr(i.data))+'</span>':'<input type="date" data-i="'+i.id+'" data-k="data" value="'+esc(i.data)+'" style="width:130px">')+'</td>'+
       '<td class="w1">'+diaSem(i.data).slice(0,3)+'</td><td class="w1 mono">'+(i.data?semana(i.data):'')+'</td>'+
-      '<td><input data-i="'+i.id+'" data-k="de" value="'+esc(i.de||'')+'"></td>'+
+      (trava?'<td>'+esc(i.de||'')+'</td><td>'+esc(i.ate||'')+'</td><td class="w1">'+esc(i.via||'')+'</td><td class="w1 mono">'+esc(i.os||'')+'</td>'
+        :'<td><input data-i="'+i.id+'" data-k="de" value="'+esc(i.de||'')+'"></td>'+
       '<td><input data-i="'+i.id+'" data-k="ate" value="'+esc(i.ate||'')+'"></td>'+
       '<td class="w1"><input data-i="'+i.id+'" data-k="via" value="'+esc(i.via||'')+'" style="width:52px"></td>'+
-      '<td class="w1"><input data-i="'+i.id+'" data-k="os" value="'+esc(i.os||'')+'" class="mono" style="width:64px"></td>'+
-      hcell(i,'ptI')+hcell(i,'ptF')+hcell(i,'cI')+hcell(i,'cF')+hcell(i,'tI')+hcell(i,'tF')+
+      '<td class="w1"><input data-i="'+i.id+'" data-k="os" value="'+esc(i.os||'')+'" class="mono" style="width:64px"></td>')+
+      cl('ptI')+cl('ptF')+cl('cI')+cl('cF')+(pdI?ro('tI')+ro('tF'):hcell(i,'tI')+hcell(i,'tF'))+
       '<td class="num w1">'+(hh.trab?hdec(hh.trab):'—')+'</td>'+
-      '<td class="w1">'+est+'</td>'+
+      '<td class="w1">'+est+(pdI?'<div><a href="#" data-pdabre="'+esc(pdI.id)+'" class="hint" title="As horas trabalhadas preenchem-se na parte diária">'+esc(pdI.num||'PD')+' ›</a></div>':(i.os?'<div class="hint" title="Associa esta interdição a uma parte diária e preenche lá as horas trabalhadas">sem parte diária</div>':''))+'</td>'+
       '<td><input data-i="'+i.id+'" data-k="motivo" list="dlCausas" value="'+esc(i.motivo||'')+'" placeholder="motivo do desvio"></td>'+
       '<td><input data-i="'+i.id+'" data-k="perdas" list="dlCausas" value="'+esc(i.perdas||'')+'" placeholder="ex.: manobras de máquinas"></td>'+
-      '<td class="w1"><button class="x" data-del="'+i.id+'">×</button></td></tr>';
+      '<td class="w1">'+(i.os&&(i.cI||i.cF)?'<button data-edita="'+i.id+'" title="'+(trava?'Corrigir os dados da OS':'Voltar a fixar os dados da OS')+'">'+(trava?'✎':'🔒')+'</button> ':'')+'<button class="x" data-del="'+i.id+'">×</button></td></tr>';
   });
   h+='</tbody></table>';
   $('#intBox').innerHTML=(intVis==='l')?'<div class="pad">'+intLinhaTempoHtml(rows)+'</div>':h;
@@ -2305,6 +2314,10 @@ function renderInt(){
     setTimeout(render,0);
   });
   bind('#intBox','click',function(e){
+    var pa=e.target.closest('[data-pdabre]');
+    if(pa){ e.preventDefault(); pdAberta=pa.dataset.pdabre; vista='pd'; render(); return }
+    var ed=e.target.closest('[data-edita]');
+    if(ed){ var k0=ed.dataset.edita; if(intEdita[k0])delete intEdita[k0]; else intEdita[k0]=1; renderInt(); return }
     var tl=e.target.closest('[data-tl]');
     if(tl){ var it0=porId(ST.int,tl.dataset.tl); if(it0){ flt.int=it0.data; $('#fInt').value=it0.data; intVis='t'; renderInt() } return }
     var d=e.target.closest('[data-del]'); if(!d)return;
@@ -2319,6 +2332,8 @@ function renderInt(){
     }
   });
 }
+var intEdita={};
+function pdDaInt(id){ return ST.pd.filter(function(p){ return (p.ints||[]).indexOf(id)>=0 })[0]||null }
 function hcell(i,k){ return '<td class="w1"><input data-i="'+i.id+'" data-k="'+k+'" value="'+esc(i[k]||'')+'" class="mono num" placeholder="--:--" style="width:54px"></td>' }
 
 /* ---------- RECURSOS ---------- */
