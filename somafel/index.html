@@ -924,7 +924,7 @@ async function vObra(id){
     try{await ok(sb.from('obra_pessoas').insert(v.p.map(pid=>({obra_id:id,pessoa_id:pid}))));aviso('Pessoas atribuídas.');vObra(id)}catch(e){aviso(erroTxt(e),true)}};
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
-async function vDocs(){const o=S.obra;titulo('OS e planos',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
+async function vDocs(){const o=S.obra;DOCCACHE.velho=true;titulo('OS e planos',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
 async function editaContrato(obraId,c){
   const v=await formulario(c?'Editar contrato':'Novo contrato',[
     {id:'nome',rotulo:'Nome do contrato',obrig:true,valor:c?c.nome:'',ph:'ex.: Contrato inicial'},
@@ -1332,9 +1332,12 @@ async function modulosObra(o,vista){
   const el=$('#mod');if(!el)return;
   let nEst=0,os=[],partes=[];
   try{
-    const r=await sb.from('estruturas').select('id',{count:'exact',head:true}).eq('obra_id',o.id);if(r.error)throw r.error;nEst=r.count||0;
-    os=await ok(sb.from('os_interdicoes').select('*, os_periodos(count)').eq('obra_id',o.id).order('numero'));
-    partes=await ok(sb.from('partes_diarias').select('id,data,estado,trabalho,observacoes,comentario,hora_registo,autor:pessoas!autor_id(nome),fotos(id,caminho,ignorada,copiada_onedrive),parte_linhas(*)').eq('obra_id',o.id).order('data',{ascending:false}).limit(100));
+    const dc=vista==='docs';
+    const [r,os0,pa]=await Promise.all([
+      dc?Promise.resolve({count:0}):sb.from('estruturas').select('id',{count:'exact',head:true}).eq('obra_id',o.id),
+      ok(sb.from('os_interdicoes').select('*, os_periodos(count)').eq('obra_id',o.id).order('numero')),
+      dc?Promise.resolve([]):ok(sb.from('partes_diarias').select('id,data,estado,trabalho,observacoes,comentario,hora_registo,autor:pessoas!autor_id(nome),fotos(id,caminho,ignorada,copiada_onedrive),parte_linhas(*)').eq('obra_id',o.id).order('data',{ascending:false}).limit(100))]);
+    if(r.error)throw r.error;nEst=r.count||0;os=os0;partes=pa;
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const edita=true; // gestores editam estruturas e OS
   let h='';
@@ -1405,16 +1408,19 @@ async function valCons(o){
 }
 function nomeSeguro(n){return n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(-120)||'ficheiro'}
 function tamTxt(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB'}
-let DOCQ='',DOCCAT='os';
+let DOCQ='',DOCCAT='os',DOCCACHE={id:null,t:null,velho:false};
 const DOCCURTO={os:'Ordens de serviço',pdt:'PDT',esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparações',desenhos:'Desenhos',documentos:'Outros'};
 const DOCHINT={os:'Põe aqui as OS recebidas. Num PDF, a app lê o número, a semana e os períodos e cria a OS sozinha (aparece na tabela mais abaixo).',pdt:'Um ficheiro por dia. O nome com a data (14-10-2026 ou 2026-10-14) coloca-o no dia certo no telemóvel.',esq_eletricos:'Esquemas elétricos. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',esq_sinalizacao:'Esquemas de sinalização. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',pecas_projeto:'Peças de projeto (desenhos, listas, memórias). Escreve «OS 4104» no nome para as ligar à OS.',preparacao:'Preparações dos trabalhos. Escreve «OS 4104» no nome para as ligar à OS.',desenhos:'Desenhos desta obra (PDF, imagens). Ficam disponíveis no telemóvel da equipa.',documentos:'Outros documentos da obra.'};
 async function docsObra(o){
   const el=$('#docs');if(!el)return;
   let todos=[];
   try{
-    for(const c of Object.keys(CATDOC)){
-      const r=await sb.storage.from('documentos').list(o.id+'/'+c,{limit:500,sortBy:{column:'created_at',order:'desc'}});if(r.error)throw r.error;
-      (r.data||[]).filter(x=>x.id).forEach(x=>{const nome=x.name.replace(/^[0-9a-f]{8}__/,'');todos.push({cat:c,path:o.id+'/'+c+'/'+x.name,nome,tam:(x.metadata&&x.metadata.size)||0,os:osDoc(nome),dia:diaDoc(nome)||(x.created_at||'').slice(0,10)})})}
+    if(DOCCACHE.id===o.id&&DOCCACHE.t&&!DOCCACHE.velho)todos=DOCCACHE.t;
+    else{
+      const rs=await Promise.all(Object.keys(CATDOC).map(c=>sb.storage.from('documentos').list(o.id+'/'+c,{limit:500,sortBy:{column:'created_at',order:'desc'}}).then(r=>({c,r}))));
+      for(const {c,r} of rs){if(r.error)throw r.error;
+        (r.data||[]).filter(x=>x.id).forEach(x=>{const nome=x.name.replace(/^[0-9a-f]{8}__/,'');todos.push({cat:c,path:o.id+'/'+c+'/'+x.name,nome,tam:(x.metadata&&x.metadata.size)||0,os:osDoc(nome),dia:diaDoc(nome)||(x.created_at||'').slice(0,10)})})}
+      DOCCACHE={id:o.id,t:todos,velho:false}}
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',chave=['os','pdt','esq_eletricos','esq_sinalizacao','pecas_projeto','preparacao','desenhos','documentos'];
   const n=c=>todos.filter(x=>x.cat===c).length;
@@ -1439,13 +1445,14 @@ async function docsObra(o){
       k++;
       if(DOCCAT==='os'){const a=await autoOS(o,f);if(a.msg)aviso(a.msg,!!a.erro);if(a.novo)criou=true}}
     if(k&&DOCCAT!=='os')aviso(k+' ficheiro'+(k===1?'':'s')+' carregado'+(k===1?'':'s')+'.');
+    DOCCACHE.velho=true;
     if(criou)modulosObra(o,'docs');else docsObra(o)};
   el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{DOCCAT=b.dataset.dc;docsObra(o)});
   const qi=$('#dq');qi.oninput=()=>{DOCQ=qi.value;const p=qi.selectionStart;docsObra(o).then(()=>{const t=$('#dq');if(t){t.focus();try{t.setSelectionRange(p,p)}catch(e){}}})};
   const up=$('#dup');if(up){up.onclick=()=>$('#dfi').click();$('#dfi').onchange=ev=>{const fs=[...ev.target.files];ev.target.value='';if(fs.length)sobe(fs)};
     const dz=$('#dz');dz.ondragover=e=>{e.preventDefault();dz.style.outline='2px dashed #F9D115'};dz.ondragleave=()=>{dz.style.outline=''};dz.ondrop=e=>{e.preventDefault();dz.style.outline='';sobe([...e.dataTransfer.files])}}
   el.querySelectorAll('[data-da]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.da,600);if(r.error){aviso(erroTxt(r.error),true);return}window.open(r.data.signedUrl,'_blank','noopener')});
-  el.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{const x=todos.find(y=>y.path===b.dataset.dd);if(!await confirmar('Apagar «'+x.nome+'»?','Apagar'))return;const r=await sb.storage.from('documentos').remove([x.path]);if(r.error){aviso(erroTxt(r.error),true);return}docsObra(o)});
+  el.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{const x=todos.find(y=>y.path===b.dataset.dd);if(!await confirmar('Apagar «'+x.nome+'»?','Apagar'))return;const r=await sb.storage.from('documentos').remove([x.path]);if(r.error){aviso(erroTxt(r.error),true);return}DOCCACHE.velho=true;docsObra(o)});
 }
 
 /* ---------- exportar tudo ---------- */
