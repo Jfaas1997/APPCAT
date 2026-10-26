@@ -5234,7 +5234,7 @@ function pdVaos(){
   return pd.vaos}
 function pdVaosLista(){return pdVaos().map(v=>pdNum(v.a)).filter(a=>a>=4)}
 function pdVaoM(v){return PEND_E7173[v.mont||pd.tipo||'IV']||PEND_E7173.IV}
-function pdVaoR(v){const a=pdNum(v.a); if(!(a>=4))return null; const k=v.sit||'NS'; return k==='NS'?pdVao(a,null,pdOp(v)):pdSitR(a,k,v.vr,pdOp(v))}
+function pdVaoR(v){const a=pdNum(v.a); if(!(a>=4))return null; const k=v.sit||'NS'; if(k==='NS'){const R=pdVao(a,null,pdOp(v)); return R.bloq?null:R} return pdSitR(a,k,v.vr,pdOp(v))}
 function pdCalcLanco(){
   const mat=new Map(), sem=[]; let tp=0,tc=0;
   pdVaos().forEach((v,i)=>{const R=pdVaoR(v); if(!R){sem.push(i+1);return}
@@ -5301,6 +5301,7 @@ function pdCalc(a,esp,ab,P,ab1){
   const l=L.map(v=>Math.floor((v-P.desc)*100+0.5+1e-9)/100);
   return {x,L,l,d,cs,F};
 }
+const PD_SO_NORMA=true; /* por agora só valem os quadros da norma (vão e aberturas da norma); pôr false para voltar a calcular os vãos intermédios */
 function pdPNS(p){ /* parâmetros dos vãos N/S: com os valores por defeito, a Parte 01 usa o ajuste aos 93 quadros (erro máx. 2,1 mm em vez de 5,1 mm) */
   return (p===1&&pd.P.wd===PD_DEF.wd&&pd.P.wcs===PD_DEF.wcs)?Object.assign({},pd.P,{wd:0.8162,wcs:0.5537}):pd.P }
 function pdOp(v){ /* aberturas próprias do vão nos dois postes (opcionais) */
@@ -5313,6 +5314,9 @@ function pdVao(a,esp,op){
   const nor=D.tipo==='norma'&&Math.abs(ab-ab1)<1e-9&&(Math.abs(ab-1.4)<1e-9||Math.abs(ab-1.6)<1e-9)?pdNorma(a):null;
   /* quadro da norma: valem os valores impressos (L e l); só se o quadro tiver gralha (>20 mm face ao modelo) fica o modelo, com aviso */
   if(nor&&nor[2].length===C.L.length&&nor[3]&&nor[3].length===C.L.length&&C.L.every((v,i)=>Math.abs(v-nor[2][i])<=0.02)){C.Lm=C.L; C.L=nor[2].slice(); C.l=nor[3].slice(); C.daNorma=true}
+  if(PD_SO_NORMA){ const std=Math.abs(ab-ab1)<1e-9&&(Math.abs(ab-1.4)<1e-9||Math.abs(ab-1.6)<1e-9);
+    const m=!std?'as aberturas nos postes não são as da norma (1,40 m ou 1,60 m iguais nos dois postes)':esp?'os espaços entre pêndulos foram alterados':D.tipo!=='norma'?'a norma não tem quadro para o vão de '+fmt(a)+' m (só tem vãos de 18 a 64 m, de 0,5 em 0,5 m)':!C.daNorma?'o quadro '+esc(D.ref)+' da norma tem valores impressos errados (ver Gralha da norma)':null;
+    if(m)return {a:aa,ab,ab0:ab,ab1,D,C,nor:null,bloq:m} }
   return {a:aa,ab,ab0:ab,ab1,D,C,nor};
 }
 function pdValida(p){
@@ -5353,7 +5357,7 @@ function pdEstSit(p,k,v,a,ab,op){
   const ex=qs.find(q=>Math.abs(q[4]-a)<0.005||Math.abs(somaA(q[7])-a)<0.005);
   const fora=a<Math.min(...qs.map(q=>q[4]))-0.005||a>Math.max(...qs.map(q=>q[4]))+0.005;
   if(ex&&igual)return {tipo:'norma',q:ex,esp:ex[7].slice(),L:ex[8].slice(),l:ex[9].slice(),ref:ex[1],pag:ex[6],r:ex[5],a:somaA(ex[7]),o0,o1,hv};
-  if(!cal)return {tipo:'sem',q:ex||qs[0],ref:'',pag:(ex||qs[0])[6],vaos:qs.map(q=>q[4]).sort((x,y)=>x-y).filter((x,i,A)=>!i||x!==A[i-1]),o0,o1,hv,ex:!!ex};
+  if(!cal||PD_SO_NORMA)return {tipo:'sem',q:ex||qs[0],ref:'',pag:(ex||qs[0])[6],vaos:qs.map(q=>q[4]).sort((x,y)=>x-y).filter((x,i,A)=>!i||x!==A[i-1]),o0,o1,hv,ex:!!ex};
   const b=ex||qs.reduce((m,q)=>!m||Math.abs(q[4]-a)<Math.abs(m[4]-a)?q:m,null), e=ex?ex[7].slice():pdAdapta(b[7],a), aa=somaA(e);
   const Pm=Object.assign({},pd.P,{wd:cal[0],wcs:cal[1]}), C=pdCalc(aa,e,o0,Pm,o1);
   return {tipo:'estimada',q:b,esp:e,L:C.L,l:pdArred(C.L),ref:b[1],pag:b[6],r:b[5],a:aa,fora:ex?false:fora,o0,o1,hv,cal,dAb:(o0-hv[0])||(o1-hv[1])};
@@ -5413,7 +5417,7 @@ function pdOpAberto(){return pdOp(pdVaos()[pdSel])}
 function pdRAberto(){ /* resultado do vão aberto (NS ou situação) */
   const a=Number(String(pd.a).replace(',','.')); if(!(a>=4))return null;
   if((pd.sit||'NS')!=='NS')return pdSitR(a);
-  const esp=pd.esp&&Math.abs(pd.espA-a)<1e-9?pd.esp:null; return pdVao(a,esp,pdOpAberto());
+  const esp=pd.esp&&Math.abs(pd.espA-a)<1e-9?pd.esp:null; const R=pdVao(a,esp,pdOpAberto()); return R.bloq?null:R;
 }
 function pdPrevia(){
   const R=pdRAberto(); if(!R){toast('Escreve o comprimento do vão.',2500);return}
@@ -5478,6 +5482,7 @@ function rPendRes(){
     if((pd.sit||'NS')!=='NS'){ rPendSit(a); return }
     const esp=pd.esp&&Math.abs(pd.espA-a)<1e-9?pd.esp:null;
     const R=pdVao(a,esp,pdOpAberto()), {C,D,nor}=R;
+    if(R.bloq){ $('#pdRes').innerHTML=`<div class="difbar"><b>Sem valores garantidos para este vão:</b> ${R.bloq}. Por agora a app só dá os pêndulos dos quadros da norma (IT.CAT.042), com as aberturas da norma. Este vão não entra no material do lanço.</div>`; rPendVal(); return }
     let cum=0;
     const linhas=C.x.map((xx,i)=>{cum=xx;
       const Ln=nor?nor[2][i]:null, dlt=Ln!=null?(C.L[i]-Ln)*1000:null;
@@ -5508,7 +5513,7 @@ function pdSitR(a,k0,vr0,op){
   return {a:a,ab:E.o0,ab0:E.o0,ab1:E.o1,p:p,k:k,v:v,E:E,D:{tipo:E.tipo==='norma'?'norma':'adaptada',ref:E.ref,esp:E.esp},C:{x:x,L:E.L,l:E.l},nor:null};
 }
 function rPendSit(a){
-  const R=pdSitR(a); if(!R){const S=pdSitR.sem; $('#pdRes').innerHTML=S?`<div class="difbar"><b>Sem valores garantidos para este vão.</b> A norma só fixa os pêndulos desta variante para os vãos <b>${S.vaos.map(fmt).join(' · ')} m</b>${S.ex?' (e com as aberturas nos postes da norma)':''}. Nesta variante (rampa do fio de contacto ou equipamento no vão) o cálculo não reproduz os quadros com erro de 0,5 cm, por isso a app não estima valores intermédios. Usa um destes vãos ou pede o quadro ao projeto.</div>`:'<div class="empty">Não há quadros desta situação nesta Parte da norma.</div>'; return}
+  const R=pdSitR(a); if(!R){const S=pdSitR.sem; $('#pdRes').innerHTML=S?`<div class="difbar"><b>Sem valores garantidos para este vão.</b> A norma só fixa os pêndulos desta variante para os vãos <b>${S.vaos.map(fmt).join(' · ')} m</b>${S.ex?' (e com as aberturas nos postes da norma)':''}. Por agora a app só dá os pêndulos dos quadros da norma, com as aberturas da norma; não calcula valores intermédios. Usa um destes vãos ou pede o quadro ao projeto.</div>`:'<div class="empty">Não há quadros desta situação nesta Parte da norma.</div>'; return}
   const {E,C,p,k,v}=R, ab=R.ab, cab=[['Pêndulo'],['Ao poste (m)',1],['Entre (m)',1],['L (m)',1],['l a cortar',1]];
   const linhas=C.x.map((xx,i)=>[String(i+1),fmt(r2(xx)),fmt(E.esp[i]),C.L[i].toFixed(3),`<b>${C.l[i].toFixed(2)}</b>`]);
   const nome=`IT.CAT.042-0${p}`;
@@ -5546,7 +5551,7 @@ function rPendMulti(){
   const por=new Map(); V.forEach(v=>{const k=(v.mont||pd.tipo||'IV');por.set(k,(por.get(k)||0)+1)});
   mat.innerHTML=`<div class="xks"><div class="xk"><b>${V.length}</b><span>vãos</span></div><div class="xk"><b>${fmt(r2(somaA(pdVaosLista())))}</b><span>m de lanço (Σ vãos)</span></div><div class="xk"><b>${T.tp}</b><span>pêndulos</span></div></div>
     <div class="xnota"><b>Material (desenho E-7173)</b><div class="lRes">${[...T.mat].map(([c,q])=>{const pi=pecaPorCod.get(c);return `<span class="lChip"><b class="mono">${c}</b> ${esc(pi!=null?PEC[pi][3]:'')} · <b>${q} un</b></span>`}).join('')+(T.tc>0?`<span class="lChip"><b class="mono">01.100.02</b> Cabo Bz 12 · <b>${fmt(T.tc)} m</b></span>`:'')}</div></div>
-    ${T.sem.length?`<div class="xnota"><b>Atenção:</b> sem valores garantidos para o(s) vão(s) ${T.sem.join(', ')} (vão em falta, ou variante sem quadro para este vão: a app só calcula onde reproduz a norma com erro ≤ 0,5 cm): não entram no material.</div>`:''}
+    ${T.sem.length?`<div class="xnota"><b>Atenção:</b> sem valores garantidos para o(s) vão(s) ${T.sem.join(', ')} (vão em falta, ou variante sem quadro para este vão: por agora a app só dá os quadros da norma, com as aberturas da norma): não entram no material.</div>`:''}
     <div class="xnota">${pdLanco()?'Este material já está na lista de material do lanço.':'<b>Atenção:</b> não há lanço escolhido (passo 2), por isso este material ainda não entra na lista.'}</div>`;
 }
 function rPendVal(){
@@ -5577,7 +5582,7 @@ function pdExporta(multi){
   }else{
     const a=Number(String(pd.a).replace(',','.')); if(!(a>=4))return;
     if((pd.sit||'NS')!=='NS'){const RS=pdSitR(a); if(!RS)return; pdFicha(wb,RS,'Vão '+fmt(RS.a)+' m '+String(RS.E.ref).slice(0,10)); XLSX.writeFile(wb,'pendulagem_'+RS.k+'_'+RS.v+'_'+fmt(RS.a).replace(/[^\d.,]/g,'')+'m.xlsx'); return}
-    const esp=pd.esp&&Math.abs(pd.espA-a)<1e-9?pd.esp:null, R=pdVao(a,esp,pdOpAberto());
+    const esp=pd.esp&&Math.abs(pd.espA-a)<1e-9?pd.esp:null, R=pdVao(a,esp,pdOpAberto()); if(R.bloq)return;
     pdFicha(wb,R,'Vão '+fmt(R.a)+' m');
     XLSX.writeFile(wb,'pendulagem_vao_'+fmt(R.a).replace(/[^\d.,]/g,'')+'m.xlsx');
   }
