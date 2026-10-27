@@ -390,7 +390,7 @@ function casca(){
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
    +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e planos</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medições CAT</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
-     +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button>':'')
+     +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button><button class="tab" data-v="esq">'+ico('norma')+'<span>Esquemas</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="forn">'+IC.pessoas+'<span>Fornecedores</span></button><button class="tab" data-v="equip">'+IC.def+'<span>Equipamentos</span></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
    +'<div class="sfoot"><button class="tema" id="bTema">'+ico('auto')+'<span>Tema</span></button><button class="tema" id="bSair">'+IC.sair+'<span>Sair</span></button></div></nav>'
    +'<header><span class="ccchip" id="hCC" hidden></span><h1 id="hT">Obras</h1><span class="hint" id="hSub"></span><span class="hsave" id="hSave" hidden><i></i><span></span></span><span class="hsp"></span><span class="quem"><b>'+esc(S.eu.nome)+'</b> <span class="pill">'+PAPEL[S.eu.papel]+'</span></span><button id="bNova" class="pri" hidden>+ Nova obra</button><button id="bAjuda" aria-label="Ajuda">?</button></header>'
@@ -718,7 +718,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');void pg.offsetWidth;if(!app)pg.classList.add('entra');
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,forn:vForn,equip:vEquip,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas')}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,pessoal:vPessoal,forn:vForn,equip:vEquip,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas'),esq:vEsquemas}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
   posiciona();
   if(S.obra&&gestor()&&!app&&S.obra.id!=='livre'){const oid=S.obra.id;clearTimeout(window.__pw);window.__pw=setTimeout(()=>{if(S.obra&&S.obra.id===oid&&!APPV[S.vista]){frameApp(S.obra,'med');setTimeout(()=>{if(S.obra&&S.obra.id===oid)frameApp(S.obra,'rct')},2500)}},700)}
 }
@@ -1474,6 +1474,75 @@ async function docsObra(o){
     try{await ok(sb.from('os_interdicoes').insert({obra_id:o.id,numero:v.n,semana:v.s||null}));aviso('OS criada.');refaz()}catch(e){aviso(erroTxt(e),true)}};
   el.querySelectorAll('[data-da]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.da,600);if(r.error){aviso(erroTxt(r.error),true);return}window.open(r.data.signedUrl,'_blank','noopener')});
   el.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{const x=todos.find(y=>y.path===b.dataset.dd);if(!await confirmar('Apagar «'+x.nome+'»?','Apagar'))return;const r=await sb.storage.from('documentos').remove([x.path]);if(r.error){aviso(erroTxt(r.error),true);return}DOCCACHE.velho=true;docsObra(o)});
+}
+
+/* ---------- biblioteca de esquemas (sinalização e elétricos) ---------- */
+let ESQT='sinalizacao';
+const normPK=v=>{v=String(v||'').trim();const m=/^(\d{1,3})\s*[.,+]\s*(\d{3})$/.exec(v);return m?m[1]+'+'+m[2]:v};
+async function vEsquemas(){
+  titulo('Esquemas');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(4,'b')+'</div>';
+  let L,SN;
+  try{L=await ok(sb.from('esquemas').select('*').order('nome'));SN=await ok(sb.from('esquema_sinais').select('esquema_id,confirmado').limit(5000))}
+  catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  const adm=admin(),sin=ESQT==='sinalizacao',F=L.filter(x=>x.tipo===ESQT),cnt={};
+  SN.forEach(x=>{const c=cnt[x.esquema_id]||(cnt[x.esquema_id]={n:0,ok:0});c.n++;if(x.confirmado)c.ok++});
+  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Esquemas</h2><p class="sub" style="margin:0">Biblioteca comum a todas as obras. Em cada obra associas os que precisas. Nos esquemas de sinalização ficam também os sinais e os PK, para preencher os PDT.</p></div><span class="sp"></span>'
+   +(adm?'<button class="pri" id="esUp">Carregar PDF…</button><input type="file" id="esFi" accept="application/pdf" multiple hidden>':'')+'</div>'
+   +'<div style="display:flex;gap:6px;margin:0 0 12px"><button data-et="sinalizacao" class="'+(sin?'pri':'')+'">Sinalização <span style="opacity:.7">'+L.filter(x=>x.tipo==='sinalizacao').length+'</span></button><button data-et="eletrico" class="'+(!sin?'pri':'')+'">Elétricos <span style="opacity:.7">'+L.filter(x=>x.tipo==='eletrico').length+'</span></button></div>'
+   +(F.length?'<div class="card" style="padding:0"><table><thead><tr><th>'+(sin?'Estação':'Esquema')+'</th>'+(sin?'<th>Ficheiro</th><th>Sinais</th>':'<th>Via</th><th>Troço</th>')+'<th></th></tr></thead><tbody>'
+     +F.map(x=>{const c=cnt[x.id]||{n:0,ok:0};return '<tr><td><b>'+esc(sin?(x.estacao||x.nome):x.nome)+'</b></td>'
+       +(sin?'<td>'+esc(x.nome)+'</td><td>'+(c.n?'<b>'+c.ok+'</b> de '+c.n+' confirmados':'<span class="hint">por ler</span>')+'</td>':'<td>'+esc(x.via||'—')+'</td><td>'+esc(x.troco||'—')+'</td>')
+       +'<td class="ac"><button data-ea="'+x.id+'">Abrir</button>'+(sin?'<button data-es="'+x.id+'">Sinais</button>':'')+(adm?'<button data-ee="'+x.id+'">Editar</button><button class="perigo" data-ed="'+x.id+'">Apagar</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>'
+     :'<div class="vazio"><h2>Ainda não há esquemas '+(sin?'de sinalização':'elétricos')+'</h2><p>'+(adm?'Carrega os PDF com «Carregar PDF…».':'O administrador ainda não carregou nenhum.')+'</p></div>')+'</div>';
+  pg.querySelectorAll('[data-et]').forEach(b=>b.onclick=()=>{ESQT=b.dataset.et;vEsquemas()});
+  const pasta=()=>'_org/'+S.eu.organizacao_id+'/esquemas_'+(sin?'sinalizacao':'eletricos')+'/';
+  if(adm){
+    $('#esUp').onclick=()=>$('#esFi').click();
+    $('#esFi').onchange=async ev=>{const fs=[...ev.target.files];ev.target.value='';let n=0;
+      for(const f of fs){const nome=f.name.replace(/\.pdf$/i,'').replace(/_/g,' ');
+        const r=await sb.storage.from('documentos').upload(pasta()+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(f.name),f,{contentType:'application/pdf'});
+        if(r.error){aviso(f.name+': '+erroTxt(r.error),true);continue}
+        try{await ok(sb.from('esquemas').insert({organizacao_id:S.eu.organizacao_id,tipo:ESQT,nome,estacao:sin?nome:null,ficheiro:r.data.path,criado_por:S.eu.id}));n++}catch(e){aviso(erroTxt(e),true)}}
+      if(n)aviso(n+' esquema'+(n===1?'':'s')+' carregado'+(n===1?'':'s')+'.');vEsquemas()};
+    pg.querySelectorAll('[data-ee]').forEach(b=>b.onclick=async()=>{const x=L.find(y=>y.id===b.dataset.ee);
+      const v=await formulario('Editar esquema',[{id:'n',rotulo:'Nome',valor:x.nome,obrig:true}].concat(sin?[{id:'e',rotulo:'Estação',valor:x.estacao||''}]:[{id:'v',rotulo:'Via',valor:x.via||'',ph:'ex.: VA, VD'},{id:'t',rotulo:'Troço',valor:x.troco||'',ph:'ex.: 197-29 ao 204-13'}]),'Guardar');if(!v)return;
+      try{await ok(sb.from('esquemas').update(sin?{nome:v.n,estacao:v.e||null}:{nome:v.n,via:v.v||null,troco:v.t||null}).eq('id',x.id));vEsquemas()}catch(e){aviso(erroTxt(e),true)}});
+    pg.querySelectorAll('[data-ed]').forEach(b=>b.onclick=async()=>{const x=L.find(y=>y.id===b.dataset.ed);
+      if(!await confirmar('Apagar «'+x.nome+'»'+(sin?' e os sinais lidos?':'?')+' O ficheiro PDF não é apagado do armazenamento.','Apagar'))return;
+      try{await ok(sb.from('esquemas').delete().eq('id',x.id));vEsquemas()}catch(e){aviso(erroTxt(e),true)}});
+  }
+  pg.querySelectorAll('[data-ea]').forEach(b=>b.onclick=async()=>{const x=L.find(y=>y.id===b.dataset.ea);const r=await sb.storage.from('documentos').createSignedUrl(x.ficheiro,600);if(r.error){aviso(erroTxt(r.error),true);return}window.open(r.data.signedUrl,'_blank','noopener')});
+  pg.querySelectorAll('[data-es]').forEach(b=>b.onclick=()=>sinaisEsq(L.find(y=>y.id===b.dataset.es),adm,vEsquemas));
+}
+async function sinaisEsq(e,adm,fim){
+  const w=janela('Sinais · '+(e.estacao||e.nome),true);w.el.style.cssText+=';width:min(1400px,96vw);max-width:96vw';
+  const u=await sb.storage.from('documentos').createSignedUrl(e.ficheiro,3600);
+  let L;async function carrega(){L=await ok(sb.from('esquema_sinais').select('*').eq('esquema_id',e.id).order('pk').order('sinal'))}
+  try{await carrega()}catch(x){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(x))+'</div>';return}
+  const inp=(x,k,wd,ph)=>'<input data-i="'+x.id+'" data-k="'+k+'" value="'+esc(x[k]||'')+'" style="width:'+wd+'"'+(ph?' placeholder="'+ph+'"':'')+(adm?'':' disabled')+'>';
+  function desenha(){
+    const ok0=L.filter(x=>x.confirmado).length;
+    w.corpo.innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;height:72vh">'
+     +'<div style="min-height:0">'+(u.data?'<iframe src="'+esc(u.data.signedUrl)+'" style="width:100%;height:100%;border:1px solid var(--rule);border-radius:6px;background:#fff"></iframe>':'<p class="hint">Não consegui abrir o PDF.</p>')+'</div>'
+     +'<div style="min-height:0;overflow:auto"><p class="hint" style="margin:0 0 8px">'+ok0+' de '+L.length+' sinais confirmados. Só os confirmados entram nos PDT. O PK escreve-se como 198+247.</p>'
+     +(L.length?'<table><thead><tr><th>Sinal</th><th>Linha</th><th>Via</th><th>PK</th><th>Obs.</th><th title="Confirmado">✔</th><th></th></tr></thead><tbody>'
+       +L.map(x=>'<tr><td>'+inp(x,'sinal','78px')+'</td><td>'+inp(x,'linha','56px')+'</td><td>'+inp(x,'via','44px')+'</td><td>'+inp(x,'pk','84px','000+000')+'</td><td>'+inp(x,'obs','120px')+'</td>'
+         +'<td><input type="checkbox" data-c="'+x.id+'"'+(x.confirmado?' checked':'')+(adm?'':' disabled')+'></td><td>'+(adm?'<button class="x" data-x="'+x.id+'">×</button>':'')+'</td></tr>').join('')+'</tbody></table>'
+       :'<p class="hint">Ainda não há sinais lidos para este esquema.</p>')
+     +(adm?'<div class="bt" style="justify-content:flex-start;margin-top:10px"><button id="sN">+ Sinal</button><button id="sT">Confirmar todos</button></div>':'')+'</div></div>'
+     +'<div class="bt"><button id="sF">Fechar</button></div>';
+    $('#sF',w.corpo).onclick=()=>{w.fecha();fim&&fim()};
+    if(!adm)return;
+    w.corpo.querySelectorAll('input[data-i]').forEach(i=>i.onchange=async()=>{const k=i.dataset.k;let v=i.value.trim();if(k==='pk'){v=normPK(v);i.value=v}
+      try{await ok(sb.from('esquema_sinais').update({[k]:v||null,confirmado:false}).eq('id',i.dataset.i));await carrega();desenha()}catch(x){aviso(erroTxt(x),true)}});
+    w.corpo.querySelectorAll('[data-c]').forEach(i=>i.onchange=async()=>{try{await ok(sb.from('esquema_sinais').update({confirmado:i.checked}).eq('id',i.dataset.c));await carrega();desenha()}catch(x){aviso(erroTxt(x),true)}});
+    w.corpo.querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('esquema_sinais').delete().eq('id',b.dataset.x));await carrega();desenha()}catch(x){aviso(erroTxt(x),true)}});
+    $('#sN',w.corpo).onclick=async()=>{const v=await formulario('Novo sinal',[{id:'s',rotulo:'Sinal',obrig:true,ph:'ex.: S12/M12'},{id:'l',rotulo:'Linha',ph:'ex.: Linha do Norte'},{id:'v',rotulo:'Via',ph:'A, D…'},{id:'p',rotulo:'PK',ph:'198+247'}],'Adicionar');if(!v)return;
+      try{await ok(sb.from('esquema_sinais').insert({esquema_id:e.id,sinal:v.s,linha:v.l||null,via:v.v||null,pk:normPK(v.p)||null}));await carrega();desenha()}catch(x){aviso(erroTxt(x),true)}};
+    $('#sT',w.corpo).onclick=async()=>{if(!await confirmar('Confirmar todos os sinais deste esquema? Só o faças depois de os veres no desenho.','Confirmar todos'))return;
+      try{await ok(sb.from('esquema_sinais').update({confirmado:true}).eq('esquema_id',e.id));await carrega();desenha()}catch(x){aviso(erroTxt(x),true)}};
+  }
+  desenha();
 }
 
 /* ---------- exportar tudo ---------- */
