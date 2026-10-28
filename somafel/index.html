@@ -924,7 +924,7 @@ async function vObra(id){
     try{await ok(sb.from('obra_pessoas').insert(v.p.map(pid=>({obra_id:id,pessoa_id:pid}))));aviso('Pessoas atribuídas.');vObra(id)}catch(e){aviso(erroTxt(e),true)}};
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
-const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','esq_eletricos','esq_sinalizacao'];
+const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
 async function vProj(){const o=S.obra;DOCCACHE.velho=true;if(!PROJCATS.includes(DOCCAT))DOCCAT='pecas_projeto';titulo('Projeto',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod"><div id="docs"></div></div></div>';docsObra(o)}
 async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('OS e PDT',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
 async function editaContrato(obraId,c){
@@ -1380,7 +1380,7 @@ async function modulosObra(o,vista){
 }
 
 /* ---------- desenhos e documentos (bucket «documentos») ---------- */
-const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
+const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',odt:"ODT's",esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
 const osDoc=n=>{const m=/\bOS\s*[-_ ]*(\d{3,5})|ordem\s+de\s+servi[cç]o\s*n?[oº.]*\s*(\d{3,5})/i.exec(n||'');return m?(m[1]||m[2]):''};
 const diaDoc=n=>{n=n||'';let m=/(\d{4})[-_.](\d{2})[-_.](\d{2})/.exec(n);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=/(\d{2})[-_.](\d{2})[-_.](\d{4})/.exec(n);if(m)return m[3]+'-'+m[2]+'-'+m[1];m=/(20\d{2})(\d{2})(\d{2})/.exec(n);return m?m[1]+'-'+m[2]+'-'+m[3]:''};
 async function resumoApps(o){
@@ -1408,8 +1408,8 @@ async function valCons(o){
 function nomeSeguro(n){return n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(-120)||'ficheiro'}
 function tamTxt(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB'}
 let OSLISTA=[],DOCQ='',DOCCAT='os',DOCCACHE={id:null,t:null,velho:false};
-const DOCCURTO={os:'Ordens de serviço',pdt:'PDT',esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparações',desenhos:'Desenhos',documentos:'Outros'};
-const DOCHINT={os:'Põe aqui as OS recebidas. Num PDF, a app lê o número, a semana e os períodos e cria a OS sozinha (aparece na tabela mais abaixo).',pdt:'Um ficheiro por dia. O nome com a data (14-10-2026 ou 2026-10-14) coloca-o no dia certo no telemóvel.',esq_eletricos:'Esquemas elétricos. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',esq_sinalizacao:'Esquemas de sinalização. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',pecas_projeto:'Peças de projeto (desenhos, listas, memórias). Escreve «OS 4104» no nome para as ligar à OS.',preparacao:'Preparações dos trabalhos. Escreve «OS 4104» no nome para as ligar à OS.',desenhos:'Desenhos desta obra (PDF, imagens). Ficam disponíveis no telemóvel da equipa.',documentos:'Outros documentos da obra.'};
+const DOCCURTO={os:'Ordens de serviço',pdt:'PDT',odt:"ODT's",esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparações',desenhos:'Desenhos',documentos:'Outros'};
+const DOCHINT={odt:'ODT recebidas (um ficheiro por dia). Escreve a data no nome (26.10.2026 ou 26-10-2026) para ficarem no dia certo.',os:'Põe aqui as OS recebidas. Num PDF, a app lê o número, a semana e os períodos e cria a OS sozinha (aparece na tabela mais abaixo).',pdt:'Um ficheiro por dia. O nome com a data (14-10-2026 ou 2026-10-14) coloca-o no dia certo no telemóvel.',esq_eletricos:'Esquemas elétricos. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',esq_sinalizacao:'Esquemas de sinalização. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',pecas_projeto:'Peças de projeto (desenhos, listas, memórias). Escreve «OS 4104» no nome para as ligar à OS.',preparacao:'Preparações dos trabalhos. Escreve «OS 4104» no nome para as ligar à OS.',desenhos:'Desenhos desta obra (PDF, imagens). Ficam disponíveis no telemóvel da equipa.',documentos:'Outros documentos da obra.'};
 const diaCurto=t=>{const d=new Date(t);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')};
 function tabelaOS(L,okq){
   const usados=new Set(),filtro=DOCQ.toLowerCase();
@@ -1437,7 +1437,7 @@ async function docsObra(o){
     EAS=await ok(sb.from('obra_esquemas').select('esquemas(*)').eq('obra_id',o.id)).then(r=>r.map(x=>x.esquemas).filter(Boolean));
     PDTS=await ok(sb.from('pdts').select('*').eq('obra_id',o.id).order('dia',{ascending:false})).catch(()=>[]);
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
-  const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',proj=S.vista==='proj',chave=proj?PROJCATS:['os','pdt','esq_eletricos','esq_sinalizacao'];
+  const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',proj=S.vista==='proj',chave=proj?PROJCATS:['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
   const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c)+(c==='pdt'?PDTS.length:0);
   const okq=x=>!q||(x.nome+' '+x.os+' '+(x.dia?fmtData(x.dia):'')+' '+DOCCURTO[x.cat]).toLowerCase().includes(q);
   const linha=(x,mc)=>'<tr><td>'+(x.dia?fmtData(x.dia):'—')+'</td>'+(mc?'<td><span class="hint">'+DOCCURTO[x.cat]+'</span></td>':'')+'<td class="mono">'+(x.os||'<span class="hint">—</span>')+'</td><td>'+esc(x.nome)+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+esc(x.path)+'">Abrir</button><button class="perigo" data-dd="'+esc(x.path)+'">Apagar</button></td></tr>';
