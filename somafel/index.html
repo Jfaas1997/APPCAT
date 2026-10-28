@@ -1421,7 +1421,7 @@ function tabelaOS(L,okq){
   const bt=(f,i,n)=>'<button data-da="'+esc(f.path)+'" title="'+esc(f.nome)+'">Abrir'+(n>1?' '+(i+1):'')+'</button>';
   return '<table><thead><tr><th>OS</th><th>Semana</th><th>Períodos</th><th>Ficheiro</th><th></th></tr></thead><tbody>'
     +linhas.map(({x,fs})=>'<tr><td><b>'+esc(x.numero)+'</b></td><td>'+esc(x.semana||'—')+'</td><td>'+per(x)+'</td><td>'+(fs.length?fs.map(f=>esc(f.nome)).join('<br>'):'<span class="hint">sem ficheiro</span>')+'</td>'
-      +'<td class="ac">'+fs.map((f,i)=>bt(f,i,fs.length)).join('')+'<button data-op="'+x.id+'">Períodos</button><button class="perigo" data-od="'+x.id+'">Apagar</button></td></tr>').join('')
+      +'<td class="ac">'+fs.map((f,i)=>bt(f,i,fs.length)).join('')+'<button data-pdt="'+x.id+'">Criar PDT</button><button data-op="'+x.id+'">Períodos</button><button class="perigo" data-od="'+x.id+'">Apagar</button></td></tr>').join('')
     +soltos.map(f=>'<tr><td><span class="hint">—</span></td><td></td><td></td><td>'+esc(f.nome)+'</td><td class="ac">'+bt(f,0,1)+'<button class="perigo" data-dd="'+esc(f.path)+'">Apagar</button></td></tr>').join('')
     +'</tbody></table>'}
 async function docsObra(o){
@@ -1474,6 +1474,7 @@ async function docsObra(o){
   el.querySelectorAll('[data-eas]').forEach(b=>b.onclick=()=>sinaisEsq(EAS.find(y=>y.id===b.dataset.eas),admin(),null));
   el.querySelectorAll('[data-eat]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_esquemas').delete().eq('obra_id',o.id).eq('esquema_id',b.dataset.eat));refaz()}catch(e){aviso(erroTxt(e),true)}});
   el.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>periodosOS(OSLISTA.find(x=>x.id===b.dataset.op),refaz));
+  el.querySelectorAll('[data-pdt]').forEach(b=>b.onclick=()=>criaPDT(o,OSLISTA.find(x=>x.id===b.dataset.pdt)));
   el.querySelectorAll('[data-od]').forEach(b=>b.onclick=async()=>{const x=OSLISTA.find(y=>y.id===b.dataset.od);
     if(!await confirmar('Apagar a OS '+x.numero+' e os seus períodos? O ficheiro da OS não é apagado.','Apagar'))return;
     try{await ok(sb.from('os_interdicoes').delete().eq('id',x.id));refaz()}catch(e){aviso(erroTxt(e),true)}});
@@ -1646,6 +1647,184 @@ async function autoOS(o,file){
     return {numero:a.numero,novo:1,msg:'OS '+a.numero+' criada com '+ps.length+' período'+(ps.length===1?'':'s')+(ps.length?(meu?' (só os do trabalho '+meu+')':'. Sem trabalho indicado, ficaram todos: apaga em «Períodos» os que não são nossos.'):'. Não encontrei períodos: escreve-os em «Períodos».'),erro:ps.length?0:1}
   }catch(e){return {msg:file.name+': guardado, mas a OS não foi criada ('+erroTxt(e)+').',erro:1}}
 }
+
+/* ---------- PDT (programa diário de trabalhos) a partir da OS ---------- */
+/* leitura completa de uma OS a partir dos itens de texto do PDF (x,y,t por página) */
+function osCompleta(paginas){
+  const linhas=[],itens=[];
+  paginas.forEach((its,pi)=>{const m=new Map();
+    its.forEach(it=>{itens.push({x:it.x,y:it.y-pi*10000,t:it.t});const y=Math.round(it.y/3);(m.get(y)||m.set(y,[]).get(y)).push(it)});
+    [...m.entries()].sort((a,b)=>b[0]-a[0]).forEach(([y,l])=>linhas.push(l.sort((a,b)=>a.x-b.x).map(i=>i.t).join(' ').replace(/\s+/g,' ').trim()))});
+  const ix=re=>linhas.findIndex(l=>re.test(l));
+  const sec=(a,b)=>{const i=ix(a);if(i<0)return [];let j=b?linhas.findIndex((l,k)=>k>i&&b.test(l)):-1;if(j<0)j=linhas.length;return linhas.slice(i+1,j)};
+  const r={tipo:'',interdicao:'',corte:'',aparelhos:[],postes:[],protTrans:'',agentes:[],chefe:[],notas:''};
+  const tp=sec(/^TIPO DE TRABALHO/i,/^PER[ÍI]ODOS/i).filter(l=>/^-/.test(l));
+  r.tipo=tp.map(l=>l.replace(/^-\s*/,'')).join(' ');
+  const ct=sec(/^CONDI[ÇC][ÕO]ES T[ÉE]CNICAS/i,/^TRO[ÇC]O/i).join(' ');
+  ct.split(/(?=Interdi[çc][ãa]o d|Corte de tens)/i).map(s=>s.trim()).filter(Boolean).forEach(s=>{
+    if(/^Interdi/i.test(s))r.interdicao=s.replace(/\s*-\s+(?=[A-ZÇ]{2,})/g,'-');else if(/^Corte/i.test(s))r.corte=s});
+  r.interdicao=r.interdicao.replace(/AMEAL-\s*SUL/g,'AMEAL-SUL');r.corte=r.corte.replace(/AMEAL-\s*SUL/g,'AMEAL-SUL');
+  const ap=sec(/^APARELHOS DE CORTE/i,/^PROTE[ÇC][ÕO]ES/i).join(' ');
+  ap.split(/;\s*|\.\s*$/).map(s=>s.trim().replace(/\.$/,'')).filter(Boolean).forEach(s=>{
+    const par=[...s.matchAll(/\(([^)]*)\)/g)].map(m=>m[1]);
+    r.postes.push(par.join(' / '));
+    r.aparelhos.push(s.replace(/\s*\/\s*\([^)]*\)/g,'').replace(/\s+-\s+/g,' ').replace(/\s+/g,' ').trim())});
+  const pr=sec(/^PROTE[ÇC][ÕO]ES/i,/^AGENTES/i),it=pr.findIndex(l=>/^Transversais/i.test(l));
+  if(it>=0)r.protTrans=pr.slice(it+1).join(' ').replace(/^-\s*/,'').trim();
+  const nt=sec(/^NOTAS/i,/^Preparou/i);r.notas=nt.join(' ').trim();
+  /* tabelas por colunas */
+  const tabela=(hdrRe,fimRe)=>{
+    const h=itens.filter(i=>hdrRe.test(i.t));if(!h.length)return [];
+    const hy=h[0].y;const cab=itens.filter(i=>Math.abs(i.y-hy)<4).sort((a,b)=>a.x-b.x);
+    const fim=itens.filter(i=>fimRe.test(i.t)&&i.y<hy).sort((a,b)=>b.y-a.y)[0];const yfim=fim?fim.y:-1e9;
+    const col=cab.map(c=>c.x),pri=cab.findIndex(c=>/Matr/i.test(c.t));
+    const corpo=itens.filter(i=>i.y<hy-4&&i.y>yfim+ (fim?4:0)&&!/^(Nº Interno|Gerado|Página)/.test(i.t));
+    const xi=i=>{let k=0;col.forEach((c,n)=>{if(i.x>=c-((col[n]-(col[n-1]||c))>0?(col[n]-(col[n-1]||c))*0.45:0))k=n});return k};
+    const anc=corpo.filter(i=>xi(i)===pri&&/^(\d{5,8}|-)$/.test(i.t)).sort((a,b)=>b.y-a.y);
+    const linhasT=anc.map(a=>({y:a.y,c:cab.map(()=>[])}));
+    corpo.forEach(i=>{let bi=0,bd=1e9;anc.forEach((a,n)=>{const d=Math.abs(a.y-i.y);if(d<bd){bd=d;bi=n}});if(linhasT[bi])linhasT[bi].c[xi(i)].push(i)});
+    return linhasT.map(l=>l.c.map(c=>c.sort((a,b)=>b.y-a.y||a.x-b.x).map(i=>i.t).join(' ').replace(/\s+/g,' ').trim())).map(c=>{const o={};cab.forEach((h,n)=>o[h.t.replace(/[^\wÀ-ÿ]/g,'')]=c[n]);return o})};
+  r.agentes=tabela(/^Fun[çc][ãa]o$/i,/^Chefe dos Trabalhos/i).filter(a=>a.Nome&&!/Dire/.test(a['Função']||''));
+  r.chefe=tabela(/^Trb$/i,/^Meios Ferrovi/i);
+  return r}
+
+/* preenche o modelo PDT (docx) célula a célula; d = dados de um dia */
+const W_NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main',XML_NS='http://www.w3.org/XML/1998/namespace';
+function pdtXml(xml,d){
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  const tbl=doc.getElementsByTagNameNS(W_NS,'tbl')[0];
+  const filhos=(n,nome)=>[...n.childNodes].filter(x=>x.localName===nome);
+  const rows=()=>filhos(tbl,'tr'),cel=(r,c)=>filhos(rows()[r],'tc')[c];
+  const setP=(p,txt,juntar)=>{
+    txt=String(txt==null?'':txt);const ts=[...p.getElementsByTagNameNS(W_NS,'t')];
+    const novoT=(r,s)=>{const t=doc.createElementNS(W_NS,'w:t');t.setAttributeNS(XML_NS,'xml:space','preserve');t.textContent=s;r.appendChild(t)};
+    if(ts.length&&!juntar&&txt.indexOf('\n')<0){ts[0].textContent=txt;ts[0].setAttributeNS(XML_NS,'xml:space','preserve');ts.slice(1).forEach(t=>t.textContent='');return}
+    if(!juntar)ts.forEach(t=>{t.textContent=''});
+    if(!txt)return;
+    const rs=[...p.getElementsByTagNameNS(W_NS,'r')];let src=rs[rs.length-1],rpr=src&&filhos(src,'rPr')[0];
+    if(!rpr){const ppr=filhos(p,'pPr')[0];rpr=ppr&&filhos(ppr,'rPr')[0]}
+    const r=doc.createElementNS(W_NS,'w:r');if(rpr)r.appendChild(rpr.cloneNode(true));
+    txt.split('\n').forEach((s,i)=>{if(i)r.appendChild(doc.createElementNS(W_NS,'w:br'));novoT(r,s)});
+    p.appendChild(r)};
+  const set=(r,c,txt,n,juntar)=>{const t=cel(r,c);if(!t)return;const ps=filhos(t,'p');const p=ps[n==null?0:(n<0?ps.length+n:n)];if(p)setP(p,txt,juntar)};
+  const limpa=tr=>{[...tr.getElementsByTagNameNS(W_NS,'t')].forEach(t=>t.textContent='')};
+  const grupo=(ini,fim,lista,preenche)=>{ /* linhas ini..fim; clona a última se faltarem */
+    const n=fim-ini+1;for(let k=n;k<lista.length;k++){const base=rows()[fim],cl=base.cloneNode(true);limpa(cl);base.parentNode.insertBefore(cl,base.nextSibling);fim++}
+    for(let k=0;k<=fim-ini;k++){const r=ini+k;if(k<lista.length)preenche(r,lista[k],k);else rows()[r]&&[...rows()[r].getElementsByTagNameNS(W_NS,'t')].forEach(t=>{if(t.textContent==='…')t.textContent=''})}};
+  const L=(a,i)=>(a&&a[i])||'';
+  /* de baixo para cima: as linhas clonadas não alteram os índices de cima */
+  set(53,0,'',0); /* assinaturas ficam em branco */
+  set(50,0,d.contactos||'',0);
+  set(48,0,d.coord||'',0);
+  grupo(43,45,d.scpvi||[],(r,v,k)=>{set(r,0,L(v,0)||String(k+1));set(r,1,L(v,1));set(r,2,L(v,2));set(r,3,L(v,3))});
+  grupo(37,40,d.maquinas||[],(r,v)=>{for(let c=0;c<9;c++)set(r,c,L(v,c))});
+  grupo(31,32,d.pessoal||[],(r,v)=>{for(let c=0;c<4;c++)set(r,c,L(v,c))});
+  grupo(23,26,d.terra||[],(r,v)=>{for(let c=0;c<3;c++)set(r,c,L(v,c))});
+  set(21,1,d.protTrans||'',0);
+  for(let c=0;c<8;c++){set(19,c+1,L(d.aparelhos,c));set(20,c+1,L(d.postes,c))}
+  [15,16].forEach((r,k)=>{const v=(d.lim||[])[k];if(v)set(r,1,'Estação: '+L(v,0)+'    Linha: '+L(v,1)+'    Via: '+L(v,2)+'    Sinal: '+L(v,3)+'    km: '+L(v,4),0)});
+  grupo(9,10,d.frentes||[],(r,v,k)=>{set(r,0,'FT '+(k+1));set(r,1,L(v,0));set(r,2,L(v,1))});
+  set(6,1,d.ms2||'',0);set(5,1,d.ms1||'',0);
+  set(4,4,d.per2||'',0);set(3,4,d.per1||'',0);set(4,1,d.entidade||'',0);set(3,1,d.trabalho||'',0);
+  set(1,2,d.data||'',1);set(1,1,'Semana '+(d.semana||'')+' / '+(d.ano||''),1);
+  set(1,1,d.os||'',0,true);
+  return new XMLSerializer().serializeToString(doc)}
+
+function carregaJs(url,teste){return teste()?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar um componente (sem rede?).'));document.head.appendChild(s)})}
+const carregaZip=()=>carregaJs('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',()=>window.JSZip);
+async function carregaPrev(){await carregaZip();await carregaJs('https://cdn.jsdelivr.net/npm/docx-preview@0.3.3/dist/docx-preview.min.js',()=>window.docx)}
+async function itensPdf(buf){await carregaPdfJs();const pdf=await pdfjsLib.getDocument({data:buf}).promise,P=[];
+  for(let i=1;i<=pdf.numPages;i++){const tc=await (await pdf.getPage(i)).getTextContent();P.push(tc.items.filter(it=>it.str.trim()).map(it=>({x:it.transform[4],y:it.transform[5],t:it.str})))}
+  return P}
+const PDTMOD=()=>'_org/'+S.eu.organizacao_id+'/modelos/pdt_modelo.docx';
+async function pdtModelo(){const r=await sb.storage.from('documentos').download(PDTMOD());return r.error?null:await r.data.arrayBuffer()}
+async function pdtBaseGet(id){try{const r=await ok(sb.from('pdt_base').select('dados').eq('obra_id',id));return r[0]?r[0].dados:{}}catch(e){return {}}}
+const semAc=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[-_.]/g,' ').replace(/\s+/g,' ').trim();
+const titulado=t=>String(t||'').toLowerCase().replace(/-/g,' ').replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase());
+async function pdtSinais(obraId){
+  try{const r=await ok(sb.from('obra_esquemas').select('esquemas(tipo,estacao,esquema_sinais(sinal,linha,via,pk,confirmado))').eq('obra_id',obraId));
+    return r.map(x=>x.esquemas).filter(e=>e&&e.tipo==='sinalizacao')}catch(e){return []}}
+function acharSinal(esqs,est,sinalTxt){
+  const ne=semAc(est),cand=String(sinalTxt||'').split('/').map(x=>semAc(x)).filter(Boolean);
+  for(const e of esqs){if(semAc(e.estacao)!==ne)continue;
+    for(const c of cand){const s=(e.esquema_sinais||[]).find(x=>x.confirmado&&semAc(x.sinal).split(' ')[0]===c.split(' ')[0]);if(s)return s}}
+  return null}
+const hhmm=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+const dmy=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+function diasOS(os){
+  const m=new Map();(os.os_periodos||[]).slice().sort((a,b)=>a.inicio<b.inicio?-1:1).forEach(p=>{const a=new Date(p.inicio),b=new Date(p.fim),k=dmy(a);(m.get(k)||m.set(k,{d:a,p:[]}).get(k)).p.push(hhmm(a)+' às '+hhmm(b))});
+  return [...m.entries()].map(([k,v])=>({k,d:v.d,p:v.p}))}
+function pdtCampos(txt){return String(txt||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(';').map(x=>x.trim()))}
+function pdtDescarrega(nome,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+async function pdtDocx(modBuf,d){await carregaZip();const z=await JSZip.loadAsync(modBuf),xml=await z.file('word/document.xml').async('string');z.file('word/document.xml',pdtXml(xml,d));return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
+async function pdtPdf(buffers){
+  await carregaPrev();let el=document.getElementById('pdtPrint');if(el)el.remove();
+  el=document.createElement('div');el.id='pdtPrint';document.body.appendChild(el);
+  if(!document.getElementById('pdtPrintCss')){const st=document.createElement('style');st.id='pdtPrintCss';st.textContent='#pdtPrint{display:none}@media print{body>*:not(#pdtPrint){display:none!important}#pdtPrint{display:block!important;position:static}#pdtPrint .docx-wrapper{background:none!important;padding:0!important}#pdtPrint .docx-wrapper>section.docx{box-shadow:none!important;margin:0 auto!important;min-height:0!important;padding:0!important;width:auto!important;break-after:page}@page{size:A4;margin:14mm 0}}';document.head.appendChild(st)}
+  for(const b of buffers){const c=document.createElement('div');el.appendChild(c);await docx.renderAsync(b,c,null,{inWrapper:true,breakPages:true,ignoreHeight:true})}
+  const fim=()=>{window.removeEventListener('afterprint',fim);setTimeout(()=>{const e=document.getElementById('pdtPrint');if(e)e.remove()},500)};
+  window.addEventListener('afterprint',fim);await new Promise(r=>setTimeout(r,400));window.print()}
+async function criaPDT(o,os){
+  const w=janela('PDT · OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A ler a OS…</p>';
+  let mod,base,oc,esqs;
+  try{
+    mod=await pdtModelo();
+    if(!mod){
+      if(!admin()){w.corpo.innerHTML='<p class="msg e">Falta carregar o modelo do PDT. Pede a um administrador.</p>';return}
+      w.corpo.innerHTML='<p>Falta o modelo do PDT (o teu «PDT MODELO.docx»). Carrega-o uma vez: fica guardado só na tua organização.</p><p><input type="file" id="pdMod" accept=".docx"></p>';
+      $('#pdMod',w.corpo).onchange=async e=>{const f=e.target.files[0];if(!f)return;const r=await sb.storage.from('documentos').upload(PDTMOD(),f,{upsert:true,contentType:f.type||'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+        if(r.error){aviso(erroTxt(r.error),true);return}w.fecha();aviso('Modelo guardado.');criaPDT(o,os)};return}
+    base=await pdtBaseGet(o.id);esqs=await pdtSinais(o.id);
+    const f=(DOCCACHE.t||[]).find(x=>x.cat==='os'&&x.os===String(os.numero)&&/\.pdf$/i.test(x.nome));
+    oc=null;if(f){const r=await sb.storage.from('documentos').download(f.path);if(!r.error)oc=osCompleta(await itensPdf(await r.data.arrayBuffer()))}
+  }catch(e){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
+  oc=oc||{tipo:'',interdicao:'',corte:'',aparelhos:[],postes:[],protTrans:'',agentes:[],chefe:[]};
+  /* limites a partir do texto da interdição + sinais confirmados */
+  const lim=[['','','','',''],['','','','','']],it=oc.interdicao||'';
+  const mm=it.match(/esta[çc][õo]es\s+de\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s+e\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s*\.?\s*$/);
+  const via=(it.match(/via\s+(ASCENDENTE|DESCENDENTE)/i)||[])[1],viaL=via?(/^A/i.test(via)?'A':'D'):'';
+  if(mm){[[mm[1],mm[2]],[mm[3],mm[4]]].forEach(([e,p],i)=>{const sg=((p||'').match(/SINAL\s+([A-Z0-9\/]+)/i)||[])[1]||'',ach=sg?acharSinal(esqs,e,sg):null;
+    lim[i]=[titulado(e),base.linha||'Linha do Norte',viaL,sg,ach?ach.pk:'']})}
+  const dias=diasOS(os),per=(oc.agentes||[]).map(a=>a['Função']+'- '+a['Matrícula']+' '+a.Nome+' '+(a.TpAtivid||'')+' '+(a['Telemóvel']||'')+(a['Observação']?' ('+a['Observação']+')':'')).map(s=>s.replace(/\s+/g,' ').trim());
+  (oc.chefe||[]).forEach(c=>per.push('Chefe dos Trabalhos- '+c.Nome+' '+(c.TpAtivid||'')+' '+(c.PrestServ||'')+' '+(c['Telemóvel']||'')));
+  const ta=(id,rot,val,rows,ph)=>'<label>'+rot+'</label><textarea id="'+id+'" rows="'+rows+'" style="width:100%;font:13px ui-monospace,Consolas,monospace" placeholder="'+esc(ph||'')+'">'+esc(val||'')+'</textarea>';
+  const inp=(id,rot,val,larg)=>'<div style="flex:'+(larg||1)+';min-width:120px"><label>'+rot+'</label><input id="'+id+'" value="'+esc(val||'')+'"></div>';
+  w.corpo.innerHTML='<div style="max-height:72vh;overflow:auto;padding-right:6px">'
+   +(oc.tipo?'':'<p class="msg e">Não encontrei o PDF desta OS nos documentos: preenche à mão o que falta.</p>')
+   +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+inp('pd_trab','Trabalho nº',(dias.length&&((os.os_periodos||[])[0]||{}).trabalhos)||base.trabalho||'1')+inp('pd_ent','Entidade executante',oc.tipo,3)+'</div>'
+   +ta('pd_ms1','Trabalho ao abrigo das MS – interdição',oc.interdicao,2)+ta('pd_ms2','Corte de tensão',oc.corte,2)
+   +'<label>Limites de interdição (estação · linha · via · sinal · km)</label>'+lim.map((l,i)=>'<div style="display:flex;gap:6px;margin-bottom:4px">'+l.map((v,k)=>'<input data-lim="'+i+'" data-k="'+k+'" value="'+esc(v)+'" placeholder="'+['Estação','Linha','Via','Sinal','km'][k]+'" style="flex:'+(k<2?2:1)+';min-width:0">').join('')+'</div>').join('')
+   +'<p class="hint">Os km vêm dos sinais confirmados na biblioteca de esquemas associados à obra; se estiverem em branco, escreve-os.</p>'
+   +'<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+ta('pd_ap','Aparelhos de corte (um por linha, máx. 8)',(oc.aparelhos||[]).join('\n'),4)+'</div><div style="flex:1;min-width:240px">'+ta('pd_po','Postes / km limite (um por linha, pela mesma ordem)',(oc.postes||[]).map(x=>'').join('\n'),4,(oc.postes||[]).map(x=>'OS: '+x).join('  |  '))+'</div></div>'
+   +ta('pd_pt','Proteções transversais',oc.protTrans,2)
+   +ta('pd_fr','Frentes de trabalho — localização ; descrição (uma por linha)',base.frentes,3,'LN / VA / 199+700 ao 200+900 ; Instalação de ferragens…')
+   +ta('pd_te','Ligações à terra — local ; trabalhador ; nº da carta',base.terra,3,'1 - 40-079/07 VA 199-23 / 199+700 ; Nome ; Nº E240729')
+   +ta('pd_pe','CVI / PVI — nome ; documento CVI ; documento PVI ; trabalho a efetuar',base.pessoal,3,'Nome ; E 251005 ; ; Condutor da dresine')
+   +ta('pd_ma','Material circulante — tipo ; UIC ; ICS/DCV ; entrada local ; ordem ; saída local ; ordem ; km início ; km fim',base.maquinas,3)
+   +ta('pd_sc','Sinais complementares — nº ; localização ; resp. colocação ; resp. retirada',base.scpvi,3,'1 ; SCPVI Nº3 199+200 ; Nome ; Nome')
+   +ta('pd_co','Coordenação das atividades',base.coord,2)
+   +ta('pd_ct','Contactos e observações (preenchido a partir da OS)',per.join('\n'),5)
+   +'<label>Dias a gerar</label><div id="pd_dias">'+(dias.length?dias.map((d,i)=>'<label class="chk"><input type="checkbox" data-dia="'+i+'" checked> '+d.k+' · '+d.p.join(' e ')+'</label>').join(''):'<span class="hint">Esta OS não tem períodos.</span>')+'</div></div>'
+   +'<div class="bt"><button type="button" class="cancela">Cancelar</button><button type="button" id="pdW" class="pri">Word</button><button type="button" id="pdP" class="pri">PDF</button></div>';
+  w.corpo.querySelector('.cancela').onclick=w.fecha;
+  const v=id=>w.corpo.querySelector('#'+id).value;
+  const gera=async modo=>{
+    const sel=[...w.corpo.querySelectorAll('[data-dia]:checked')].map(c=>dias[+c.dataset.dia]);if(!sel.length){aviso('Escolhe pelo menos um dia.',true);return}
+    const L2=[0,1].map(i=>[...w.corpo.querySelectorAll('[data-lim="'+i+'"]')].map(x=>x.value.trim()));
+    const sm=(os.semana||'').split('/'),comum={os:os.numero,ano:sm[0]||'',semana:sm[1]||'',trabalho:v('pd_trab'),entidade:v('pd_ent'),ms1:v('pd_ms1'),ms2:v('pd_ms2'),
+      lim:L2.filter(l=>l.some(Boolean)),aparelhos:v('pd_ap').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8),postes:v('pd_po').split('\n').map(x=>x.trim()).slice(0,8),protTrans:v('pd_pt'),
+      frentes:pdtCampos(v('pd_fr')),terra:pdtCampos(v('pd_te')),pessoal:pdtCampos(v('pd_pe')),maquinas:pdtCampos(v('pd_ma')),scpvi:pdtCampos(v('pd_sc')),coord:v('pd_co'),contactos:v('pd_ct')};
+    const bt=w.corpo.querySelector('.bt');bt.querySelectorAll('button').forEach(b=>b.disabled=true);
+    try{
+      try{await ok(sb.from('pdt_base').upsert({obra_id:o.id,dados:{linha:L2[0][1]||base.linha||'',trabalho:comum.trabalho,frentes:v('pd_fr'),terra:v('pd_te'),pessoal:v('pd_pe'),maquinas:v('pd_ma'),scpvi:v('pd_sc'),coord:v('pd_co')},atualizado_em:new Date().toISOString()}))}catch(e){}
+      const sufixo=viaL?' V'+viaL:'',out=[];
+      for(const d of sel){const per=d.p;out.push({nome:'OS '+os.numero+' PDT '+d.k.replace(/\//g,'-')+sufixo,buf:await pdtDocx(mod,Object.assign({},comum,{data:d.k,per1:per[0]||'',per2:per.slice(1).join('; ')}))})}
+      if(modo==='pdf'){w.fecha();await pdtPdf(out.map(x=>x.buf));return}
+      if(out.length===1)pdtDescarrega(out[0].nome+'.docx',new Blob([out[0].buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+      else{await carregaZip();const z=new JSZip();out.forEach(x=>z.file(x.nome+'.docx',x.buf));pdtDescarrega('OS '+os.numero+' PDT.zip',await z.generateAsync({type:'blob'}))}
+      aviso(out.length+' PDT gerado'+(out.length===1?'':'s')+'.');w.fecha()
+    }catch(e){aviso(erroTxt(e),true);bt.querySelectorAll('button').forEach(b=>b.disabled=false)}};
+  $('#pdW',w.corpo).onclick=()=>gera('word');$('#pdP',w.corpo).onclick=()=>gera('pdf')}
 async function lerOS(o,file,fim){
   let linhas;
   try{linhas=await textoPdf(await file.arrayBuffer())}catch(e){aviso(erroTxt(e),true);return}
