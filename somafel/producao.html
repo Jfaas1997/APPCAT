@@ -1045,6 +1045,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 <div id="toast"></div>
 <div id="eqpModal" class="modalOverlay" hidden><div class="modalBox" id="eqpModalBox"></div></div>
 <div id="selModal" class="modalOverlay" hidden><div class="modalBox" id="selModalBox"></div></div>
+<div id="rubSel" class="modalOverlay" hidden><div class="modalBox" id="rubSelBox" style="max-width:900px"></div></div>
 <div id="rubricaModal" class="modalOverlay" hidden><div class="modalBox" id="rubricaModalBox"></div></div>
 
 <script>/*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -1948,6 +1949,7 @@ function renderPDedit(){
 
   /* trabalhos */
   h+='<div class="box"><div class="bh">Trabalhos executados<span class="sp"></span>'+
+     '<button class="pri" data-act="rubAbre" title="Escolhe as rubricas do contrato numa lista, sem teres de saber os códigos">Escolher rubrica…</button>'+
      '<button data-act="linAdd">+ Linha</button>'+
      '<button data-act="linAddSR" title="Trabalho necessário mas sem rubrica no contrato e não faturável. Fica na parte diária (unidade vg, quantidade 1) e registado no separador «Sem rubrica».">+ Sem rubrica</button>'+
      '<button data-act="linAddAberta" title="Regista uma frente que ainda não tens quantidade para fechar. Podes continuá-la numa próxima parte diária.">+ Frente em curso</button></div><div class="bb">'+
@@ -1970,7 +1972,7 @@ function renderPDedit(){
          '<td class="w1"><button class="x" data-lin-del="'+ix+'">×</button></td></tr>';
       return;
     }
-    h+='<tr'+(aberta?' class="linaberta"':'')+'><td><input data-l="'+ix+'" data-k="cod" list="artList" value="'+esc(l.cod||'')+'" class="mono"></td>'+
+    h+='<tr'+(aberta?' class="linaberta"':'')+'><td style="white-space:nowrap"><input data-l="'+ix+'" data-k="cod" list="artList" value="'+esc(l.cod||'')+'" class="mono" style="width:calc(100% - 34px)"> <button data-rubpick="'+ix+'" title="Escolher a rubrica numa lista" style="padding:2px 7px">▾</button></td>'+
        '<td>'+(a?'<span title="'+esc(a.des)+'">'+esc(a.des)+'</span>':'<input data-l="'+ix+'" data-k="des" value="'+esc(l.des||'')+'" placeholder="designação livre">')+'</td>'+
        '<td class="w1 mono">'+esc(a?a.un:(l.un||''))+'</td>'+
        '<td><input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'"></td>'+
@@ -2127,6 +2129,79 @@ function renderSelModal(){
   });
   ov.addEventListener('click',function(e){ if(e.target===ov){ selModal=null; renderSelModal() } });
 })();
+/* ---------- ESCOLHER RUBRICA DO CONTRATO (parte diária) ---------- */
+var rubSel=null; /* {q, cap, ix (linha a preencher, -1 = acrescentar linhas), n (acrescentadas)} */
+function rubCap1(cod){ return String(cod||'').split('.')[0] }
+function rubItens(p){
+  var tp=p.tipo||'cat', q=lower(rubSel.q||'').trim(), ac=acumArt(tp,'contrato'), out=[];
+  ST.art.forEach(function(a){
+    if((a.tipo||'cat')!==tp||(a.origem||'contrato')!=='contrato'||!a.cod)return;
+    if(rubSel.cap&&rubCap1(a.cod)!==rubSel.cap)return;
+    if(q){ var hay=lower(a.cod+' '+a.des); if(!q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0}))return }
+    var ex=(ac[chaveRub(a.cod,'contrato')]||{qt:0}).qt;
+    out.push({a:a,ex:ex,saldo:num(a.qt)-ex});
+  });
+  out.sort(function(x,y){return naturalCmp(x.a.cod,y.a.cod)});
+  return out;
+}
+function rubListaHtml(p){
+  var it=rubItens(p);
+  if(!it.length)return '<div class="empty">'+(ST.art.length?'Nenhuma rubrica com este filtro.':'Ainda não há rubricas do contrato. Importa o mapa de quantidades em «Artigos».')+'</div>';
+  var h='<table><thead><tr><th style="width:110px">N.º Art.º</th><th>Designação</th><th class="w1">Un.</th><th class="num">Contrato</th><th class="num">Executado</th><th class="num">Saldo</th></tr></thead><tbody>';
+  it.slice(0,300).forEach(function(r){
+    var a=r.a;
+    h+='<tr data-rubsel="'+esc(a.cod)+'" style="cursor:pointer"><td class="mono"><b>'+esc(a.cod)+'</b></td><td>'+esc(a.des)+'</td><td class="mono">'+esc(a.un)+'</td>'+
+       '<td class="num mono">'+qtf(a.qt)+'</td><td class="num mono">'+qtf(r.ex)+'</td><td class="num mono" style="'+(r.saldo<-1e-9?'color:var(--bad,#b00020)':'')+'">'+qtf(r.saldo)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(it.length>300)h+='<div class="hint" style="margin-top:6px">Mostradas 300 de '+it.length+'. Afina a pesquisa ou escolhe um capítulo.</div>';
+  return h;
+}
+function renderRubSel(){
+  var ov=$('#rubSel'); if(!ov)return;
+  var p=(rubSel&&vista==='pd'&&pdAberta)?porId(ST.pd,pdAberta):null;
+  if(!p){ rubSel=null; ov.hidden=true; return }
+  ov.hidden=false;
+  var tp=p.tipo||'cat', caps={};
+  ST.art.forEach(function(a){ if((a.tipo||'cat')===tp&&(a.origem||'contrato')==='contrato'&&a.cod)caps[rubCap1(a.cod)]=1 });
+  var h='<div style="display:flex;justify-content:space-between;align-items:start;gap:10px"><div><h3>Escolher rubrica do contrato</h3>'+
+    '<div class="hint">'+(rubSel.ix>=0?'Clica na rubrica para a pôr na linha '+(rubSel.ix+1)+'.':'Clica numa rubrica para a acrescentar à parte diária. Podes escolher várias seguidas.')+'</div></div>'+
+    '<button id="rubFechar" class="pri">'+(rubSel.n?'Concluir ('+rubSel.n+')':'Fechar')+'</button></div>'+
+    '<div class="selbar"><input type="search" id="rubQ" placeholder="Procurar por código ou palavras da designação…" value="'+esc(rubSel.q||'')+'" style="flex:1;min-width:200px" autocomplete="off">'+
+    '<select id="rubCap"><option value="">Todos os capítulos</option>'+Object.keys(caps).sort(naturalCmp).map(function(c){ var d=capDes(c); return '<option value="'+esc(c)+'"'+(c===rubSel.cap?' selected':'')+'>'+esc(c+(d?' — '+d:''))+'</option>' }).join('')+'</select></div>'+
+    '<div id="rubList" style="max-height:60vh;overflow:auto">'+rubListaHtml(p)+'</div>';
+  $('#rubSelBox').innerHTML=h;
+}
+(function(){
+  var box=$('#rubSelBox'), ov=$('#rubSel');
+  if(!box||!ov)return;
+  function fecha(){
+    var p=porId(ST.pd,pdAberta), n=rubSel?rubSel.n:0;
+    rubSel=null; ov.hidden=true; render();
+    if(n){ setTimeout(function(){ var els=$$('#pdWrap input[data-k="qt"]'); var e=els[els.length-1]; if(e){ e.focus(); e.select&&e.select() } },30) }
+  }
+  box.addEventListener('input',function(e){
+    if(e.target.id!=='rubQ'||!rubSel)return;
+    rubSel.q=e.target.value; var p=porId(ST.pd,pdAberta); if(p)$('#rubList').innerHTML=rubListaHtml(p);
+  });
+  box.addEventListener('change',function(e){
+    if(e.target.id!=='rubCap'||!rubSel)return;
+    rubSel.cap=e.target.value; renderRubSel(); var q=$('#rubQ'); if(q)q.focus();
+  });
+  box.addEventListener('click',function(e){
+    if(!rubSel)return;
+    if(e.target.id==='rubFechar'){ fecha(); return }
+    var tr=e.target.closest('[data-rubsel]'); if(!tr)return;
+    var p=porId(ST.pd,pdAberta); if(!p)return;
+    if(p.bloq){ avisoBloq(p); return }
+    var a=look(tr.dataset.rubsel); if(!a)return;
+    if(rubSel.ix>=0&&p.lin[rubSel.ix]){ var l=p.lin[rubSel.ix]; l.cod=a.cod; l.des=''; l.un=a.un; rubSel.n=1; fecha(); return }
+    p.lin.push({cod:a.cod,des:'',un:a.un,qt:null,pki:'',pkf:''});
+    rubSel.n++; tr.style.background='var(--soft)'; toast(a.cod+' acrescentada.');
+    var bt=$('#rubFechar'); if(bt)bt.textContent='Concluir ('+rubSel.n+')';
+  });
+  ov.addEventListener('click',function(e){ if(e.target===ov)fecha() });
+})();
 function resumoRecBox(titulo,contagens,vazio){
   var chaves=Object.keys(contagens);
   var h='<div class="box"><div class="bh">'+esc(titulo)+'</div><div class="bb">';
@@ -2218,6 +2293,8 @@ function ligaPD(p){
     if(b.dataset.act==='eqAbre'){ selModal={k:'eq',q:'',cat:'',todos:false}; renderSelModal(); setTimeout(function(){ var q=$('#selQ'); if(q)q.focus() },20); return }
     if(b.dataset.pesrm){ ligaPessoaPD(p,b.dataset.pesrm,false); render(); return }
     if(b.dataset.eqrm){ ligaEquipPD(p,b.dataset.eqrm,false); render(); return }
+    if(b.dataset.act==='rubAbre'){ rubSel={q:'',cap:'',ix:-1,n:0}; renderRubSel(); setTimeout(function(){ var q=$('#rubQ'); if(q)q.focus() },20); return }
+    if(b.dataset.rubpick!=null&&b.dataset.rubpick!==''){ rubSel={q:'',cap:'',ix:+b.dataset.rubpick,n:0}; renderRubSel(); setTimeout(function(){ var q=$('#rubQ'); if(q)q.focus() },20); return }
     if(b.dataset.act==='linAdd'){ p.lin.push({cod:'',des:'',un:'',qt:1,pki:'',pkf:''}); renderPDedit();
       setTimeout(function(){var els=$$('#pdWrap input[data-k="cod"]');if(els.length)els[els.length-1].focus()},20); return }
     if(b.dataset.act==='linAddSR'){ p.lin.push({cod:'',des:'',un:'vg',qt:1,pki:'',pkf:'',semRub:true}); renderPDedit();
@@ -6428,6 +6505,7 @@ $('#cmdk').addEventListener('click',function(e){ if(e.target.id==='cmdk')cmdFech
 document.addEventListener('keydown',function(e){
   if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){ e.preventDefault(); cmdAbre(); return }
   if(e.key==='Escape'&&!$('#cmdk').hidden)cmdFecha();
+  else if(e.key==='Escape'&&rubSel){ rubSel=null; $('#rubSel').hidden=true; render() }
   else if(e.key==='Escape'&&selModal){ selModal=null; renderSelModal() }
 });
 
