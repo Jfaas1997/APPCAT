@@ -107,13 +107,13 @@ const filaDel=id=>idb('fila','readwrite',s=>s.delete(id));
 const docGet=k=>idb('docs','readonly',s=>s.get(k));
 const docPut=(k,v)=>idb('docs','readwrite',s=>s.put(v,k));
 const docKeys=()=>idb('docs','readonly',s=>s.getAllKeys());
-const CATDOC={cat_caderno_piq:'Caderno de Piquetagem',cat_caderno_mont:'Caderno de Montagem',cat_planta_piq:'Planta de Piquetagem',cat_planta_piq_ex:'Planta de Piquetagem Existente',cat_esq_eletrico:'Esquema Elétrico',cat_esq_lancos:'Esquema de Lanços',rct_diagrama:'Diagrama',rct_caminho_cabos:'Caminho de Cabos',desenhos:'Outros desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
+const CATDOC={cat_caderno_piq:'Caderno de Piquetagem',cat_caderno_mont:'Caderno de Montagem',cat_planta_piq:'Planta de Piquetagem',cat_planta_piq_ex:'Planta de Piquetagem Existente',cat_esq_eletrico:'Esquema Elétrico',cat_esq_lancos:'Esquema de Lanços',desenhos_rct:'Desenhos RCT',desenhos:'Outros desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
 const osDoc=n=>{const m=/\bOS\s*[-_ ]*(\d{3,5})|ordem\s+de\s+servi[cç]o\s*n?[oº.]*\s*(\d{3,5})/i.exec(n||'');return m?(m[1]||m[2]):''};
 const diaDoc=n=>{n=n||'';let m=/(\d{4})[-_.](\d{2})[-_.](\d{2})/.exec(n);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=/(\d{2})[-_.](\d{2})[-_.](\d{4})/.exec(n);if(m)return m[3]+'-'+m[2]+'-'+m[1];m=/(20\d{2})(\d{2})(\d{2})/.exec(n);return m?m[1]+'-'+m[2]+'-'+m[3]:''};
 const tamTxt=b=>b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB';
 /* lista de ficheiros da obra: vem do servidor quando há rede e fica guardada para quando não houver */
 const CONV=()=>!!(S.eu&&S.eu.papel==='convidado');
-const CATS_CONV=['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','rct_diagrama','rct_caminho_cabos','desenhos','esq_eletricos','esq_sinalizacao','os'];
+const CATS_CONV=['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','desenhos_rct','desenhos','esq_eletricos','esq_sinalizacao','os'];
 async function listaDocs(obraId){
   if(navigator.onLine){
     try{const l=[];
@@ -353,7 +353,7 @@ async function vEsq(){
 
 
 /* Projeto: desenhos e documentos desta obra */
-async function vProj(){ const cats=CONV()?['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','rct_diagrama','rct_caminho_cabos','desenhos']:['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','rct_diagrama','rct_caminho_cabos','desenhos','documentos'];
+async function vProj(){ const cats=CONV()?['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','desenhos_rct','desenhos']:['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','desenhos_rct','desenhos','documentos'];
   $('#m').innerHTML=cab('Projeto',CONV()?'Desenhos do projeto.':'Desenhos e documentos desta obra.')+'<input id="bq" type="search" placeholder="Procurar…" autocomplete="off"><div id="bl" style="margin-top:10px">'+Mov.skel(3)+'</div>'; $('#vv').onclick=()=>vai('obra',S.obra);
   const l=(await listaDocs(S.obra)).filter(x=>cats.includes(x.cat)), tem=new Set(await docKeys()); if(S.vista!=='proj')return;
   const pinta=()=>{ const q=semAc($('#bq').value).split(/\s+/).filter(Boolean), el=$('#bl'); if(!el)return; const f=l.filter(x=>q.every(t=>semAc(x.nome).includes(t)));
