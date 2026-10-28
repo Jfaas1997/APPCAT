@@ -6,3 +6,8 @@ window.Mov={
   conta:function(el,para,ms){if(matchMedia('(prefers-reduced-motion:reduce)').matches){el.textContent=para;return}var t0=performance.now(),de=+el.dataset.v||0;ms=ms||500;
     (function f(t){var k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=Math.round(de+(para-de)*e);if(k<1)requestAnimationFrame(f);else el.dataset.v=para})(t0)}
 };
+
+/* movimento: enquanto se edita, as linhas não voltam a animar */
+(function(){var t;function c(){var d=document.documentElement;d.classList.add('mv-calmo');clearTimeout(t);t=setTimeout(function(){d.classList.remove('mv-calmo')},700)}
+['input','change','keydown'].forEach(function(e){document.addEventListener(e,c,true)});
+document.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('table,.box,.modalBox,.jan,form'))c()},true)})();
