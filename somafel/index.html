@@ -1897,12 +1897,34 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     const mini=k==='ma'?'min-width:'+(cols.reduce((a,c)=>a+c[1],0)*52)+'px':'';
     el.innerHTML='<div class="pdx"><div style="'+mini+'"><div class="pdh">'+cols.map(c=>'<span style="flex:'+c[1]+'">'+c[0]+'</span>').join('')+'</div>'
       +G[k].map((r,i)=>'<div class="pdr">'+cols.map((c,j)=>'<input style="flex:'+c[1]+'" data-r="'+i+'" data-c="'+j+'" value="'+esc(r[j]||'')+'"'+(dl&&j===(k==='te'?1:0)?' list="'+dl+'"':'')+'>').join('')+(fixo?'<span style="width:24px"></span>':'<button class="x" data-del="'+i+'" title="Tirar linha">×</button>')+'</div>').join('')+'</div></div>'
-      +(fixo||G[k].length>=(PDTMAX[k]||9)?'':'<button class="sm" data-add="'+k+'">+ Linha</button>');
+      +(fixo||G[k].length>=(PDTMAX[k]||9)?'':'<button class="sm" data-add="'+k+'">+ Linha</button>')+(k==='te'||k==='pe'?' <button class="sm" data-imp="'+k+'">Importar de Pessoal…</button>':'');
+    const im=el.querySelector('[data-imp]');if(im)im.onclick=()=>importaPessoal(k);
     el.querySelectorAll('input[data-r]').forEach(inp=>inp.oninput=()=>{G[k][+inp.dataset.r][+inp.dataset.c]=inp.value;agenda()});
     el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{G[k].splice(+b.dataset.del,1);desenhaG(k);agenda()});
     const a=el.querySelector('[data-add]');if(a)a.onclick=()=>{G[k].push(cols.map(()=>''));desenhaG(k);agenda();const ins=el.querySelectorAll('.pdr:last-of-type input');if(ins[0])ins[0].focus()};
     /* Enter na última célula acrescenta linha */
     el.querySelectorAll('input[data-r]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'&&+inp.dataset.r===G[k].length-1&&+inp.dataset.c===cols.length-1&&!fixo&&G[k].length<(PDTMAX[k]||9)){e.preventDefault();G[k].push(cols.map(()=>''));desenhaG(k);agenda();const ins=el.querySelectorAll('.pdr:last-of-type input');if(ins[0])ins[0].focus()}})}
+  /* importar pessoas e certificados da Central (Pessoal) */
+  const curto=n=>{const t=String(n||'').trim().split(/\s+/);return t.length>2?t[0]+' '+t[t.length-1]:t.join(' ')};
+  async function importaPessoal(k){
+    const w=janela(k==='pe'?'Importar CVI / PVI de Pessoal':'Importar trabalhadores com NE+VT CAT',true);w.corpo.innerHTML='<p class="hint">A ler Pessoal…</p>';
+    let L;try{L=await ok(sb.from('certificados').select('validade,notas,tipo:tipos_certificado(nome),pessoa:pessoal(id,nome,funcao,estado)'))}catch(e){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
+    const tipos=k==='pe'?['CVI','PVI']:['NE+VT CAT','NE+VT'],ref=(()=>{const d=diaAtual().k.split('/');return d[2]+'-'+d[1]+'-'+d[0]})();
+    const m=new Map();L.filter(c=>c.pessoa&&c.tipo&&tipos.includes(c.tipo.nome)&&c.pessoa.estado!=='inativo'&&c.pessoa.estado!=='saiu').forEach(c=>{const e=m.get(c.pessoa.id)||m.set(c.pessoa.id,{p:c.pessoa,c:{}}).get(c.pessoa.id);e.c[c.tipo.nome]=c});
+    const ps=[...m.values()].sort((a,b)=>a.p.nome.localeCompare(b.p.nome,'pt'));
+    const txtC=(c,nome)=>c?(nome+(c.validade?' · val. '+dmy(new Date(c.validade+'T12:00:00')):'')):'';
+    const estC=c=>!c?'':(!c.validade?'<span class="hint">sem validade</span>':c.validade<ref?'<span style="color:var(--red)">caducado</span>':'<span class="hint">válido</span>');
+    w.corpo.innerHTML='<input id="ipQ" placeholder="Procurar pessoa" style="margin-bottom:8px"><div style="max-height:52vh;overflow:auto" id="ipL"></div><p class="hint">Os certificados em Pessoal não têm o nº da carta: fica o tipo e a validade, e podes escrever o número por cima na tabela.</p><div class="bt"><button class="n">Cancelar</button><button class="pri" id="ipOk">Adicionar</button></div>';
+    const desenha=()=>{const q=semAc($('#ipQ',w.corpo).value);$('#ipL',w.corpo).innerHTML=ps.filter(e=>!q||semAc(e.p.nome).includes(q)).map(e=>{const ja=G[k].some(r=>semAc(r[k==='pe'?0:1])===semAc(curto(e.p.nome)));
+      return '<label style="display:flex;gap:8px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--rule)"><input type="checkbox" data-i="'+e.p.id+'"'+(ja?' disabled':'')+'> <b style="flex:1">'+esc(e.p.nome)+(ja?' <span class="hint">(já está)</span>':'')+'</b><span class="hint">'+esc(e.p.funcao||'')+'</span>'+tipos.filter(t=>e.c[t]).map(t=>'<span style="min-width:150px">'+esc(t)+' '+estC(e.c[t])+'</span>').join('')+'</label>'}).join('')||'<p class="hint">Ninguém com estes certificados.</p>'};
+    desenha();$('#ipQ',w.corpo).oninput=desenha;w.corpo.querySelector('.n').onclick=w.fecha;
+    $('#ipOk',w.corpo).onclick=()=>{
+      const esc2=[...w.corpo.querySelectorAll('[data-i]:checked')].map(c=>m.get(c.dataset.i));
+      esc2.forEach(e=>{if(G[k].length>=PDTMAX[k])return;
+        if(k==='pe')G[k].push([curto(e.p.nome),txtC(e.c.CVI,'CVI'),txtC(e.c.PVI,'PVI'),'']);
+        else{const c=e.c['NE+VT CAT']||e.c['NE+VT'];G[k].push(['',curto(e.p.nome),txtC(c,'NE+VT CAT')])}});
+      G[k]=G[k].filter(r=>r.some(x=>String(x).trim()));
+      w.fecha();desenhaG(k);agenda();if(esc2.length)aviso(esc2.length+' pessoa'+(esc2.length===1?'':'s')+' adicionada'+(esc2.length===1?'':'s')+'.')}}
   ['fr','lim','ap','te','pe','ma','sc'].forEach(desenhaG);
   ov.querySelectorAll('[data-t]').forEach(i=>i.oninput=()=>{T[i.dataset.t]=i.value;agenda()});
   ov.querySelectorAll('[data-dia]').forEach(c=>c.onchange=()=>{c.checked?sel.add(+c.dataset.dia):sel.delete(+c.dataset.dia);agenda()});
