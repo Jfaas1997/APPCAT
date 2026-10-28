@@ -1772,7 +1772,7 @@ function pdtDeForm(numero,sem,F,dia){
     data:dia.k,per1:per[0]||'',per2:per.slice(1).join('; ')}}
 const carregaPdfLibs=async()=>{await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>window.html2canvas);await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>window.jspdf)};
 /* PDF sem janela de impressão: desenha o PDT e corta nas duas páginas do modelo */
-async function pdtPdfBlob(buf){
+async function pdtPdfBlob(buf,png){
   await carregaPrev();await carregaPdfLibs();
   const box=document.createElement('div');box.style.cssText='position:fixed;left:-12000px;top:0;width:900px;background:#fff';document.body.appendChild(box);
   try{
@@ -1786,14 +1786,64 @@ async function pdtPdfBlob(buf){
     fatias.forEach(([a,b],n)=>{const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;c.getContext('2d').drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
       let w=210,h=w*c.height/c.width;const topo=n?12:0;if(h>297-topo){h=297-topo;w=h*c.width/c.height}
       if(n)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,topo,w,h)});
+    if(png){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=6;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-2*m){h=PH-2*m;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,(PH-h)/2,w,h)}
     return pdf.output('blob')
   }finally{box.remove()}}
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
-function pdtExportaDlg(nomeFn,bufFn){
+/* ---------- esquema elétrico em anexo: marcação e exportação ---------- */
+const PDTBASEC=new Map();
+async function pdtBaseEsq(path,pag){
+  const k=path+'|'+(pag||1);if(PDTBASEC.has(k))return PDTBASEC.get(k);
+  const u=await sb.storage.from('documentos').createSignedUrl(path,600);if(u.error)throw u.error;
+  const buf=await (await fetch(u.data.signedUrl)).arrayBuffer();await carregaPdfJs();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise,pg=await pdf.getPage(Math.min(pag||1,pdf.numPages)),v0=pg.getViewport({scale:1}),sc=Math.min(4,3400/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc});
+  const c=document.createElement('canvas');c.width=Math.round(v.width);c.height=Math.round(v.height);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+  await pg.render({canvasContext:x,viewport:v}).promise;
+  /* corta as margens em branco do desenho */
+  const d=x.getImageData(0,0,c.width,c.height).data,W=c.width,H=c.height;let x0=W,y0=H,x1=0,y1=0;
+  for(let yy=0;yy<H;yy+=2){for(let xx=0;xx<W;xx+=2){const i=(yy*W+xx)*4;if(d[i]<235||d[i+1]<235||d[i+2]<235){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy}}}
+  if(x1>x0&&y1>y0){const pd=Math.round(Math.max(W,H)*.012);x0=Math.max(0,x0-pd);y0=Math.max(0,y0-pd);x1=Math.min(W,x1+pd);y1=Math.min(H,y1+pd);
+    const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(c,x0,y0,c2.width,c2.height,0,0,c2.width,c2.height);PDTBASEC.set(k,c2);return c2}
+  PDTBASEC.set(k,c);return c}
+const PDTCOR={corte:'#16a34a',trab:'#e11d1d',terra:'#f08a00',seta:'#2563eb'};
+function pdtMarcas(ctx,W,H,marks,extra){
+  const lw=W*0.0030,fs=W*0.0115;ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.font='600 '+fs+'px Arial,sans-serif';ctx.textBaseline='middle';
+  const caixa=(t,x,y,cor)=>{const w=ctx.measureText(t).width+fs*.8;ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(x,y-fs*.75,w,fs*1.5);ctx.strokeStyle=cor||'#222';ctx.lineWidth=lw*.35;ctx.strokeRect(x,y-fs*.75,w,fs*1.5);ctx.fillStyle=cor||'#111';ctx.fillText(t,x+fs*.4,y)};
+  (extra?marks.concat([extra]):marks).forEach(m=>{
+    if(m.t==='linha'&&m.p&&m.p.length){ctx.strokeStyle=PDTCOR.corte;ctx.lineWidth=lw*1.7;ctx.beginPath();m.p.forEach((q,i)=>i?ctx.lineTo(q[0]*W,q[1]*H):ctx.moveTo(q[0]*W,q[1]*H));if(m.p.length===1)ctx.lineTo(m.p[0][0]*W+.1,m.p[0][1]*H);ctx.stroke()}
+    else if(m.t==='ret'){ctx.strokeStyle=PDTCOR.trab;ctx.lineWidth=lw*1.2;ctx.strokeRect(m.x*W,m.y*H,m.w*W,m.h*H)}
+    else if(m.t==='terra'){const r=fs*.95;ctx.fillStyle=PDTCOR.terra;ctx.beginPath();ctx.arc(m.x*W,m.y*H,r,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=lw*.5;ctx.stroke();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(String(m.n||''),m.x*W,m.y*H+fs*.04);ctx.textAlign='left'}
+    else if(m.t==='seta'){const x1=m.x1*W,y1=m.y1*H,x2=m.x2*W,y2=m.y2*H;ctx.strokeStyle=PDTCOR.seta;ctx.fillStyle=PDTCOR.seta;ctx.lineWidth=lw*.7;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+      const a=Math.atan2(y2-y1,x2-x1),h=fs*1.1;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(a-.4),y2-h*Math.sin(a-.4));ctx.lineTo(x2-h*Math.cos(a+.4),y2-h*Math.sin(a+.4));ctx.closePath();ctx.fill();
+      if(m.txt)caixa(m.txt,x1,y1,PDTCOR.seta)}
+    else if(m.t==='txt'&&m.txt)caixa(m.txt,m.x*W,m.y*H,'#111')});
+  ctx.restore()}
+async function pdtAnexoPng(ax,titulo){
+  const base=await pdtBaseEsq(ax.path,ax.page),W=base.width,H=base.height,bar=Math.round(W*.04),leg=Math.round(W*.045),c=document.createElement('canvas');c.width=W;c.height=H+bar+leg;
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);const fs=W*.016;x.font='700 '+fs+'px Arial,sans-serif';x.fillStyle='#111';x.textBaseline='middle';x.fillText(titulo||'ANEXO · Esquema elétrico',W*.012,bar/2);
+  x.drawImage(base,0,bar);x.save();x.translate(0,bar);pdtMarcas(x,W,H,ax.marks||[]);x.restore();
+  const used=t=>(ax.marks||[]).some(m=>m.t===t),it=[];if(used('linha'))it.push(['corte','Via interdita e corte de tensão']);if(used('ret'))it.push(['trab','Local dos trabalhos']);if(used('terra'))it.push(['terra','Ligação à terra (VT / LC)']);
+  let px=W*.012;const py=bar+H+leg/2,f2=W*.0125;x.font='600 '+f2+'px Arial,sans-serif';
+  it.forEach(([k,t])=>{x.fillStyle=PDTCOR[k];if(k==='terra'){x.beginPath();x.arc(px+f2*.6,py,f2*.6,0,7);x.fill()}else x.fillRect(px,py-f2*.4,f2*2.2,f2*.8);x.fillStyle='#111';x.fillText(t,px+f2*2.6,py);px+=f2*3.4+x.measureText(t).width+W*.02});
+  return {url:c.toDataURL('image/png'),jpg:c.toDataURL('image/jpeg',.9),w:c.width,h:c.height}}
+async function pdtAnexaDocx(bufDocx,png){
+  await carregaZip();const z=await JSZip.loadAsync(bufDocx);let xml=await z.file('word/document.xml').async('string'),rels=await z.file('word/_rels/document.xml.rels').async('string');
+  z.file('word/media/anexo_esq.png',png.url.split(',')[1],{base64:true});
+  rels=rels.replace('</Relationships>','<Relationship Id="rIdAnexoEsq" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/anexo_esq.png"/></Relationships>');z.file('word/_rels/document.xml.rels',rels);
+  const i=xml.lastIndexOf('<w:sectPr'),j=xml.indexOf('</w:sectPr>',i)+'</w:sectPr>'.length;let sect=xml.slice(i,j);
+  const fim=sect.replace(/<w:type [^>]*\/>/,'').replace('<w:pgSz','<w:type w:val="nextPage"/><w:pgSz').replace(/<w:pgSz [^>]*\/>/,'<w:pgSz w:w="16840" w:h="11910" w:orient="landscape"/>');
+  const quebra='<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr>'+sect+'</w:pPr></w:p>';
+  const mw=26.0*360000,mh=15.6*360000,r=Math.min(mw/png.w,mh/png.h),cx=Math.round(png.w*r),cy=Math.round(png.h*r);
+  const img='<w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="9001" name="Anexo esquema eletrico"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9001" name="anexo_esq.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdAnexoEsq"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+  xml=xml.slice(0,i)+quebra+img+fim+xml.slice(j);z.file('word/document.xml',xml);
+  return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
+const pdtAnexoTitulo=(os,dia)=>'ANEXO · Esquema elétrico · OS '+os+' · '+dia;
+
+function pdtExportaDlg(nomeFn,bufFn,anexoFn){
   const w=janela('Exportar PDT');w.corpo.innerHTML='<p class="hint">Escolhe o formato.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 16px"><button class="pri" data-f="docx">Word (.docx)</button><button class="pri" data-f="pdf">PDF</button></div><div class="bt"><button class="n">Cancelar</button></div>';
   w.corpo.querySelector('.n').onclick=w.fecha;
   w.corpo.querySelectorAll('[data-f]').forEach(b=>b.onclick=async()=>{const t=b.textContent;w.corpo.querySelectorAll('[data-f]').forEach(x=>x.disabled=true);b.textContent='A gerar…';
-    try{const buf=await bufFn();if(b.dataset.f==='docx')pdtDescarrega(nomeFn()+'.docx',new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));else pdtDescarrega(nomeFn()+'.pdf',await pdtPdfBlob(buf));w.fecha()}
+    try{const buf=await bufFn(),png=anexoFn?await anexoFn():null;if(b.dataset.f==='docx')pdtDescarrega(nomeFn()+'.docx',new Blob([png?await pdtAnexaDocx(buf,png):buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));else pdtDescarrega(nomeFn()+'.pdf',await pdtPdfBlob(buf,png));w.fecha()}
     catch(e){aviso(erroTxt(e),true);b.textContent=t;w.corpo.querySelectorAll('[data-f]').forEach(x=>x.disabled=false)}})}
 async function pdtVer(o,r,fim){return pdtEdita(o,r,fim)}
 async function pdtVerAntigo(o,r,fim){
@@ -1813,7 +1863,7 @@ function pdtLiga(el,o,fim){
   const R=b=>PDTS.find(x=>x.id===b.dataset[Object.keys(b.dataset)[0]]);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>pdtVer(o,R(b),fim));
   el.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>pdtEdita(o,R(b),fim));
-  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r))});
+  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r),()=>r.dados.annex&&r.dados.annex.on?pdtAnexoPng(r.dados.annex,pdtAnexoTitulo(r.numero_os,r.dados.dia.k)):null)});
   el.querySelectorAll('[data-px]').forEach(b=>b.onclick=async()=>{const r=R(b);if(!await confirmar('Apagar o '+pdtNome(r)+'?','Apagar'))return;try{await ok(sb.from('pdts').delete().eq('id',r.id));aviso('PDT apagado.');fim&&fim()}catch(e){aviso(erroTxt(e),true)}})}
 async function criaPDT(o,os,fim,ed){
   const w=janela((ed?'Editar PDT · ':'PDT · ')+'OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A preparar…</p>';
@@ -1945,11 +1995,12 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     }catch(e){if(meu===gen){P.innerHTML='<div style="padding:30px;color:#fdd">'+esc(erroTxt(e))+'</div>';$('#pdSt',ov).textContent=''}}}
   /* documentos de consulta: OS, esquemas de sinalização e elétricos da obra */
   const DOCV={os:null,sin:[],ele:[]},V=$('#edV',ov);let tabAt='pdt';
-  (async()=>{try{
+  const docvP=(async()=>{try{
       const f=(DOCCACHE.t||[]).find(x=>x.cat==='os'&&x.os===String(os.numero)&&/\.pdf$/i.test(x.nome));if(f)DOCV.os=[{nome:f.nome,path:f.path}];
       const r=await ok(sb.from('obra_esquemas').select('esquemas(id,tipo,nome,estacao,via,troco,ficheiro)').eq('obra_id',o.id));
       r.map(x=>x.esquemas).filter(Boolean).forEach(e=>{const it={nome:(e.tipo==='sinalizacao'?(e.estacao||e.nome):e.nome)+(e.via||e.troco?' · '+[e.via,e.troco].filter(Boolean).join(' '):''),path:e.ficheiro};if(e.tipo==='sinalizacao')DOCV.sin.push(it);else DOCV.ele.push(it)})}catch(e){}})();
   async function abreDoc(k){
+    await docvP;if(k==='ele')return abreMarcador();
     const lista=(k==='os'?DOCV.os:DOCV[k])||[],vazio={os:'Não encontrei o PDF desta OS nos documentos.',sin:'Não há esquemas de sinalização associados a esta obra (OS e PDT → Esquemas de sinalização → Associar da biblioteca).',ele:'Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).'}[k];
     if(!lista.length){V.innerHTML='<div style="padding:30px;color:#eee">'+esc(vazio)+'</div>';return}
     V.innerHTML='<div style="display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'+(lista.length>1?'<select id="edVs" style="max-width:420px">'+lista.map((x,i)=>'<option value="'+i+'">'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(lista[0].nome)+'</b>')+'<span class="sp"></span><button class="sm" id="edVn">Abrir noutra janela</button></div><iframe id="edVi" style="flex:1;border:0;background:#fff;width:100%"></iframe>';
@@ -1958,6 +2009,67 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   ov.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{tabAt=b.dataset.tab;ov.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('pri',x===b));
     const pdt=tabAt==='pdt';P.style.display=pdt?'':'none';V.style.display=pdt?'none':'flex';['pdZm','pdZf','pdZp','pdP1','pdP2','pdJan'].forEach(id=>$('#'+id,ov).style.display=pdt?'':'none');
     if(pdt)setTimeout(aplicaZoom,30);else await abreDoc(tabAt)});
+
+  /* marcador do esquema elétrico (anexo do PDT) */
+  const AX=(()=>{const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&r.dados.annex)||PDTS.find(r=>r.dados.annex)||{dados:{}}).dados.annex);return src?JSON.parse(JSON.stringify(src)):{path:'',nome:'',page:1,marks:[],on:true}})();
+  const axSave=()=>AX.path&&AX.on?{path:AX.path,nome:AX.nome,page:AX.page||1,marks:AX.marks,on:true}:null;
+  const axPng=()=>AX.path&&AX.on?pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k)):Promise.resolve(null);
+  async function abreMarcador(){
+    const lista=DOCV.ele||[];
+    if(!lista.length&&!AX.path){V.innerHTML='<div style="padding:30px;color:#eee">Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).</div>';return}
+    const opcoes=lista.slice();if(AX.path&&!opcoes.some(x=>x.path===AX.path))opcoes.unshift({nome:AX.nome||'Esquema do PDT',path:AX.path});
+    if(!AX.path){AX.path=opcoes[0].path;AX.nome=opcoes[0].nome}
+    const FER=[['mover','Mover'],['linha','Via interdita / corte'],['ret','Local dos trabalhos'],['terra','Ligação à terra'],['seta','Etiqueta com seta'],['txt','Texto'],['apaga','Apagar']];
+    V.innerHTML='<div class="mkb" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'
+      +(opcoes.length>1?'<select id="mkS" style="max-width:300px">'+opcoes.map((x,i)=>'<option value="'+i+'"'+(x.path===AX.path?' selected':'')+'>'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(opcoes[0].nome)+'</b>')
+      +'<span style="width:8px"></span>'+FER.map(f=>'<button class="sm" data-fe="'+f[0]+'">'+f[1]+'</button>').join('')
+      +'<span class="sp"></span><button class="sm" id="mkU">Desfazer</button><button class="sm perigo" id="mkL">Limpar</button><button class="sm" id="mkF">Ajustar</button>'
+      +'<label style="display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px"><input type="checkbox" id="mkOn"'+(AX.on?' checked':'')+'> Anexar ao PDT</label></div>'
+      +'<div id="mkVp" style="flex:1;min-height:0;position:relative;overflow:hidden;background:#555;touch-action:none"><div id="mkSt" style="position:absolute;left:0;top:0;transform-origin:0 0"><canvas id="mkB" style="display:block"></canvas><canvas id="mkO" style="position:absolute;left:0;top:0"></canvas></div><div id="mkMsg" style="position:absolute;left:12px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;padding:5px 10px;border-radius:6px;font-size:12.5px"></div></div>';
+    const vp=$('#mkVp',V),st=$('#mkSt',V),cb=$('#mkB',V),co=$('#mkO',V),msg=$('#mkMsg',V);let tool='mover',pts=[],drag=null,tr={s:1,x:0,y:0};
+    const ajuda={mover:'Arrasta para mover; roda do rato para ampliar.',linha:'Clica nos pontos da via (Shift = reta). Duplo clique ou Enter termina.',ret:'Arrasta para desenhar o retângulo dos trabalhos.',terra:'Clica onde está a ligação à terra.',seta:'Arrasta da etiqueta até ao ponto que queres indicar.',txt:'Clica onde queres escrever.',apaga:'Clica numa marca para a apagar.'};
+    const aplica=()=>{st.style.transform='translate('+tr.x+'px,'+tr.y+'px) scale('+tr.s+')'};
+    const ajusta=()=>{if(!cb.width)return;tr.s=Math.min(vp.clientWidth/cb.width,vp.clientHeight/cb.height);tr.x=(vp.clientWidth-cb.width*tr.s)/2;tr.y=(vp.clientHeight-cb.height*tr.s)/2;aplica()};
+    const redesenha=extra=>{const x=co.getContext('2d');x.clearRect(0,0,co.width,co.height);pdtMarcas(x,co.width,co.height,AX.marks,extra)};
+    const marca=(a)=>{tool=a;V.querySelectorAll('[data-fe]').forEach(b=>b.classList.toggle('pri',b.dataset.fe===a));msg.textContent=ajuda[a];pts=[];drag=null;redesenha();vp.style.cursor=a==='mover'?'grab':'crosshair'};
+    const pos=e=>{const r=co.getBoundingClientRect();return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]};
+    const muda=()=>{sujo=true;redesenha()};
+    const termina=()=>{if(pts.length>=2){AX.marks.push({t:'linha',p:pts});muda()}pts=[];redesenha()};
+    const perto=(m,p)=>{const W=co.width,H=co.height,d=(a,b)=>Math.hypot((a[0]-b[0])*W,(a[1]-b[1])*H);
+      if(m.t==='linha'){let best=1e9;for(let i=0;i<m.p.length;i++){best=Math.min(best,d(m.p[i],p));if(i){const a=m.p[i-1],b=m.p[i];for(let k=1;k<10;k++)best=Math.min(best,d([a[0]+(b[0]-a[0])*k/10,a[1]+(b[1]-a[1])*k/10],p))}}return best}
+      if(m.t==='ret'){const cx=[[m.x,m.y],[m.x+m.w,m.y],[m.x,m.y+m.h],[m.x+m.w,m.y+m.h]];let b=Math.min(...cx.map(c=>d(c,p)));for(let k=0;k<=10;k++){b=Math.min(b,d([m.x+m.w*k/10,m.y],p),d([m.x+m.w*k/10,m.y+m.h],p),d([m.x,m.y+m.h*k/10],p),d([m.x+m.w,m.y+m.h*k/10],p))}return b}
+      if(m.t==='seta')return Math.min(d([m.x1,m.y1],p),d([m.x2,m.y2],p));return d([m.x,m.y],p)};
+    co.onpointerdown=async e=>{
+      if(e.button===1||tool==='mover'){drag={k:'pan',x:e.clientX,y:e.clientY,tx:tr.x,ty:tr.y};co.setPointerCapture(e.pointerId);vp.style.cursor='grabbing';return}
+      const p=pos(e);
+      if(tool==='linha'){if(e.detail>1){termina();return}let q=p;if(e.shiftKey&&pts.length)q=[p[0],pts[pts.length-1][1]];pts.push(q);redesenha({t:'linha',p:pts});return}
+      if(tool==='ret'||tool==='seta'){drag={k:tool,p0:p};co.setPointerCapture(e.pointerId);return}
+      if(tool==='terra'){AX.marks.push({t:'terra',x:p[0],y:p[1],n:AX.marks.filter(m=>m.t==='terra').length+1});muda();return}
+      if(tool==='txt'){const v=await formulario('Texto no esquema',[{id:'t',rotulo:'Texto',obrig:true,ph:'ex.: Poste 199-27'}],'Adicionar');if(v&&v.t){AX.marks.push({t:'txt',x:p[0],y:p[1],txt:v.t});muda()}return}
+      if(tool==='apaga'){let bi=-1,bd=co.width*.02;AX.marks.forEach((m,i)=>{const d=perto(m,p);if(d<bd){bd=d;bi=i}});if(bi>=0){AX.marks.splice(bi,1);muda()}}};
+    co.onpointermove=e=>{
+      if(drag&&drag.k==='pan'){tr.x=drag.tx+e.clientX-drag.x;tr.y=drag.ty+e.clientY-drag.y;aplica();return}
+      const p=pos(e);
+      if(drag&&drag.k==='ret'){const x=Math.min(drag.p0[0],p[0]),y=Math.min(drag.p0[1],p[1]);redesenha({t:'ret',x,y,w:Math.abs(p[0]-drag.p0[0]),h:Math.abs(p[1]-drag.p0[1])});return}
+      if(drag&&drag.k==='seta'){redesenha({t:'seta',x1:drag.p0[0],y1:drag.p0[1],x2:p[0],y2:p[1],txt:''});return}
+      if(tool==='linha'&&pts.length){let q=p;if(e.shiftKey)q=[p[0],pts[pts.length-1][1]];redesenha({t:'linha',p:pts.concat([q])})}};
+    co.onpointerup=async e=>{
+      if(!drag)return;const d=drag;drag=null;vp.style.cursor=tool==='mover'?'grab':'crosshair';if(d.k==='pan')return;const p=pos(e);
+      if(d.k==='ret'){const w=Math.abs(p[0]-d.p0[0]),h=Math.abs(p[1]-d.p0[1]);if(w*co.width>6&&h*co.height>6){AX.marks.push({t:'ret',x:Math.min(d.p0[0],p[0]),y:Math.min(d.p0[1],p[1]),w,h});muda()}else redesenha();return}
+      if(d.k==='seta'){if(Math.hypot((p[0]-d.p0[0])*co.width,(p[1]-d.p0[1])*co.height)<10){redesenha();return}
+        redesenha({t:'seta',x1:d.p0[0],y1:d.p0[1],x2:p[0],y2:p[1],txt:''});const v=await formulario('Etiqueta',[{id:'t',rotulo:'Texto da etiqueta',obrig:true,ph:'ex.: Via interdita e corte de tensão'}],'Adicionar');
+        if(v&&v.t){AX.marks.push({t:'seta',x1:d.p0[0],y1:d.p0[1],x2:p[0],y2:p[1],txt:v.t});muda()}else redesenha()}};
+    co.ondblclick=()=>{if(tool==='linha')termina()};
+    vp.onwheel=e=>{e.preventDefault();const r=vp.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,f=e.deltaY<0?1.15:1/1.15,ns=Math.min(8,Math.max(.05,tr.s*f));tr.x=mx-(mx-tr.x)*ns/tr.s;tr.y=my-(my-tr.y)*ns/tr.s;tr.s=ns;aplica()};
+    const tk=e=>{if(!document.body.contains(V)||V.style.display==='none')return;if(e.key==='Enter'&&tool==='linha'&&pts.length)termina();if(e.key==='Escape'&&pts.length){pts=[];redesenha()}};document.addEventListener('keydown',tk);
+    V.querySelectorAll('[data-fe]').forEach(b=>b.onclick=()=>marca(b.dataset.fe));
+    $('#mkU',V).onclick=()=>{AX.marks.pop();muda()};
+    $('#mkL',V).onclick=async()=>{if(AX.marks.length&&await confirmar('Apagar todas as marcas deste esquema?','Limpar')){AX.marks=[];muda()}};
+    $('#mkF',V).onclick=ajusta;$('#mkOn',V).onchange=e=>{AX.on=e.target.checked;sujo=true};
+    const carrega=async()=>{msg.textContent='A carregar o esquema…';try{const b=await pdtBaseEsq(AX.path,AX.page);cb.width=co.width=b.width;cb.height=co.height=b.height;cb.getContext('2d').drawImage(b,0,0);redesenha();ajusta();marca(tool==='mover'&&AX.marks.length?'mover':tool)}catch(e){msg.textContent='Não consegui abrir o esquema: '+erroTxt(e)}};
+    const sl=$('#mkS',V);if(sl)sl.onchange=async()=>{const o2=opcoes[+sl.value];if(o2.path!==AX.path&&AX.marks.length&&!await confirmar('Mudar de esquema mantém as marcas, mas podem ficar fora do sítio. Continuar?','Mudar')){sl.value=opcoes.findIndex(x=>x.path===AX.path);return}AX.path=o2.path;AX.nome=o2.nome;sujo=true;carrega()};
+    await carrega();marca('mover')}
+
   let jan=null;
   const ajJan=()=>{try{const w=jan.document.querySelector('.docx-wrapper'),s0=jan.document.querySelector('section.docx');if(w&&s0)w.style.zoom=Math.max(.5,(jan.innerWidth-40)/s0.offsetWidth)}catch(e){}};
   const atualizaJan=()=>{try{if(!jan||jan.closed)return;const d=jan.document.getElementById('c');d.innerHTML=P.innerHTML;d.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'});ajJan()}catch(e){}};
@@ -1982,7 +2094,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   $('#pdX',ov).onclick=pedeFechar;
   const doc1=async()=>pdtDocx(mod,pdtDeForm(os.numero,os.semana||(ed&&ed.dados.sem)||'',F2(),diaAtual()));
   const nome=()=>pdtNome({numero_os:os.numero,dados:{F:F2(),dia:diaAtual()}});
-  $('#pdExp',ov).onclick=()=>pdtExportaDlg(nome,doc1);
+  $('#pdExp',ov).onclick=()=>pdtExportaDlg(nome,doc1,axPng);
   $('#pdOk',ov).onclick=async()=>{
     const escolhidos=ed?[ed.dados.dia]:[...sel].sort((a,b)=>a-b).map(i=>dias[i]);if(!escolhidos.length){aviso('Escolhe pelo menos um dia.',true);return}
     const f2=F2(),ja=ed?[]:escolhidos.filter(d=>PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d)));
@@ -1991,8 +2103,8 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     try{
       try{await ok(sb.from('pdt_base').upsert({obra_id:o.id,dados:{linha:f2.lim[0][1]||'',trabalho:f2.trab,frentes:f2.fr,terra:f2.te,pessoal:f2.pe,maquinas:f2.ma,scpvi:f2.sc,coord:f2.co},atualizado_em:new Date().toISOString()}))}catch(e){}
       const agora=new Date().toISOString();
-      if(ed){const p=diaAtual();await ok(sb.from('pdts').update({dados:{F:f2,dia:{k:p.k,p:p.p},sem:ed.dados.sem},atualizado_em:agora}).eq('id',ed.id))}
-      else await ok(sb.from('pdts').upsert(escolhidos.map(d=>({obra_id:o.id,numero_os:String(os.numero),dia:isoDia(d.d),dados:{F:f2,dia:{k:d.k,p:d.p},sem:os.semana||''},atualizado_em:agora})),{onConflict:'obra_id,numero_os,dia'}));
+      if(ed){const p=diaAtual();await ok(sb.from('pdts').update({dados:{F:f2,dia:{k:p.k,p:p.p},sem:ed.dados.sem,annex:axSave()},atualizado_em:agora}).eq('id',ed.id))}
+      else await ok(sb.from('pdts').upsert(escolhidos.map(d=>({obra_id:o.id,numero_os:String(os.numero),dia:isoDia(d.d),dados:{F:f2,dia:{k:d.k,p:d.p},sem:os.semana||'',annex:axSave()},atualizado_em:agora})),{onConflict:'obra_id,numero_os,dia'}));
       aviso(ed?'PDT guardado.':escolhidos.length+' PDT criado'+(escolhidos.length===1?'':'s')+'.');sujo=false;fecha();DOCCAT='pdt';fim&&fim()
     }catch(e){aviso(erroTxt(e),true);$('#pdOk',ov).disabled=false}}}
 
