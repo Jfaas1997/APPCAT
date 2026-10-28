@@ -1484,7 +1484,7 @@ async function docsObra(o){
   const bn=$('#nos');if(bn)bn.onclick=async()=>{
     const v=await formulario('Nova OS',[{id:'n',rotulo:'Número da OS',obrig:true,ph:'ex.: 4104'},{id:'s',rotulo:'Semana',ph:'ex.: 2026/39'}],'Criar OS');if(!v)return;
     try{await ok(sb.from('os_interdicoes').insert({obra_id:o.id,numero:v.n,semana:v.s||null}));aviso('OS criada.');refaz()}catch(e){aviso(erroTxt(e),true)}};
-  el.querySelectorAll('[data-da]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.da,600);if(r.error){aviso(erroTxt(r.error),true);return}window.open(r.data.signedUrl,'_blank','noopener')});
+  el.querySelectorAll('[data-da]').forEach(b=>b.onclick=async()=>{if(/\.(dwg|dxf)$/i.test(b.dataset.da)){dwgAbre(b.dataset.da);return}const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.da,600);if(r.error){aviso(erroTxt(r.error),true);return}window.open(r.data.signedUrl,'_blank','noopener')});
   el.querySelectorAll('[data-dd]').forEach(b=>b.onclick=async()=>{const x=todos.find(y=>y.path===b.dataset.dd);if(!await confirmar('Apagar «'+x.nome+'»?','Apagar'))return;const r=await sb.storage.from('documentos').remove([x.path]);if(r.error){aviso(erroTxt(r.error),true);return}DOCCACHE.velho=true;docsObra(o)});
 }
 
@@ -1796,6 +1796,13 @@ async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Fa
 /* ---------- esquema elétrico em anexo: marcação e exportação ---------- */
 const PDTBASEC=new Map();
 const PDTPG=new Map();
+function carregaDwg(){return window.DwgView?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='dwgview.js?v=1';s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar o visualizador de DWG.'));document.head.appendChild(s)})}
+async function dwgAbre(path){const nome=decodeURIComponent(String(path).split('/').pop()).replace(/^[0-9a-f]{8}__/,'');
+  const w=janela(nome,true);w.el.style.cssText+=';width:min(1400px,97vw);max-width:97vw';w.corpo.innerHTML='<div id="dwgV" style="height:70vh;border-radius:6px"></div><div class="bt"><a id="dwgD" class="btn" style="text-decoration:none">Descarregar</a><button class="n">Fechar</button></div><p class="hint">Rato: arrastar move, roda amplia, duplo clique ajusta. «Camadas» liga e desliga camadas.</p>';
+  w.corpo.querySelector('.n').onclick=w.fecha;const box=w.corpo.querySelector('#dwgV');box.textContent='A abrir…';
+  try{await carregaDwg();const u=await sb.storage.from('documentos').createSignedUrl(path,600);if(u.error)throw u.error;const r=await fetch(u.data.signedUrl);if(!r.ok)throw new Error('Falhou o descarregamento.');const b=await r.arrayBuffer();
+    const d=w.corpo.querySelector('#dwgD');d.href=URL.createObjectURL(new Blob([b]));d.download=nome;DwgView.abre(box,b,{nome})}
+  catch(e){box.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>'}}
 async function pdtBaseEsq(path,pag){
   const k=path+'|'+(pag||1);if(PDTBASEC.has(k))return PDTBASEC.get(k);
   const u=await sb.storage.from('documentos').createSignedUrl(path,600);if(u.error)throw u.error;
