@@ -924,7 +924,7 @@ async function vObra(id){
     try{await ok(sb.from('obra_pessoas').insert(v.p.map(pid=>({obra_id:id,pessoa_id:pid}))));aviso('Pessoas atribuídas.');vObra(id)}catch(e){aviso(erroTxt(e),true)}};
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
-const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','esq_eletricos','esq_sinalizacao','porOS'];
+const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','esq_eletricos','esq_sinalizacao'];
 async function vProj(){const o=S.obra;DOCCACHE.velho=true;if(!PROJCATS.includes(DOCCAT))DOCCAT='pecas_projeto';titulo('Projeto',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod"><div id="docs"></div></div></div>';docsObra(o)}
 async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('OS e PDT',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
 async function editaContrato(obraId,c){
@@ -1441,7 +1441,7 @@ async function docsObra(o){
   const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c)+(c==='pdt'?PDTS.length:0);
   const okq=x=>!q||(x.nome+' '+x.os+' '+(x.dia?fmtData(x.dia):'')+' '+DOCCURTO[x.cat]).toLowerCase().includes(q);
   const linha=(x,mc)=>'<tr><td>'+(x.dia?fmtData(x.dia):'—')+'</td>'+(mc?'<td><span class="hint">'+DOCCURTO[x.cat]+'</span></td>':'')+'<td class="mono">'+(x.os||'<span class="hint">—</span>')+'</td><td>'+esc(x.nome)+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+esc(x.path)+'">Abrir</button><button class="perigo" data-dd="'+esc(x.path)+'">Apagar</button></td></tr>';
-  let h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px">'+chave.map(c=>'<button data-dc="'+c+'" class="'+(DOCCAT===c?'pri':'')+'">'+DOCCURTO[c]+' <span style="opacity:.7">'+n(c)+'</span></button>').join('')+(proj?'':'<button data-dc="porOS" class="'+(porOS?'pri':'')+'">Por OS</button>')+'</div>'
+  let h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px">'+chave.map(c=>'<button data-dc="'+c+'" class="'+(DOCCAT===c?'pri':'')+'">'+DOCCURTO[c]+' <span style="opacity:.7">'+n(c)+'</span></button>').join('')+'</div>'
     +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px"><input type="search" id="dq" placeholder="Procurar em todos os documentos" value="'+esc(DOCQ)+'" style="min-width:260px;max-width:520px"></div>';
   if(porOS){const m={};todos.filter(x=>chave.includes(x.cat)).filter(okq).forEach(x=>{(m[x.os||'']=m[x.os||'']||[]).push(x)});
     const ks=Object.keys(m).sort((a,b)=>a===''?1:b===''?-1:(+b)-(+a));
@@ -1858,7 +1858,7 @@ async function pdtEdita(o,r,fim){const os=OSLISTA.find(x=>String(x.numero)===Str
 function pdtTabela(){
   if(!PDTS.length)return '<p class="hint" style="margin:14px">Ainda não há PDT criados. Em «Ordens de serviço» usa «Criar PDT» na OS.</p>';
   return '<table><thead><tr><th>Dia</th><th>OS</th><th>PDT</th><th></th></tr></thead><tbody>'+PDTS.map(r=>'<tr><td>'+esc(r.dados.dia.k)+'</td><td class="mono">'+esc(r.numero_os)+'</td><td>'+esc(pdtNome(r))+'<br><span class="hint">'+esc((r.dados.dia.p||[]).join(' e '))+'</span></td>'
-    +'<td class="ac"><button data-pv="'+r.id+'">Ver</button><button data-pe="'+r.id+'">Editar</button><button data-pw="'+r.id+'">Exportar</button><button class="perigo" data-px="'+r.id+'">Apagar</button></td></tr>').join('')+'</tbody></table>'}
+    +'<td class="ac"><button data-pv="'+r.id+'">Ver</button><button data-pw="'+r.id+'">Exportar</button><button class="perigo" data-px="'+r.id+'">Apagar</button></td></tr>').join('')+'</tbody></table>'}
 function pdtLiga(el,o,fim){
   const R=b=>PDTS.find(x=>x.id===b.dataset[Object.keys(b.dataset)[0]]);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>pdtVer(o,R(b),fim));
