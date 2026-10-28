@@ -1773,11 +1773,13 @@ function pdtDeForm(numero,sem,F,dia){
     data:dia.k,per1:per[0]||'',per2:per.slice(1).join('; ')}}
 const carregaPdfLibs=async()=>{await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>window.html2canvas);await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>window.jspdf)};
 /* PDF sem janela de impressão: desenha o PDT e corta nas duas páginas do modelo */
+function pdtEspaco(root){const al=[...root.querySelectorAll('p')].find(p=>/^\s*2 de 2\s*$/.test(p.textContent));if(!al)return;const tr=al.closest('tr');if(!tr||tr.previousElementSibling&&tr.previousElementSibling.dataset.esp)return;
+  const sp=document.createElement('tr');sp.dataset.esp='1';sp.style.height='56px';sp.innerHTML='<td colspan="60" style="border:0;padding:0;background:#fff"></td>';tr.parentNode.insertBefore(sp,tr)}
 async function pdtPdfBlob(buf,png){
   await carregaPrev();await carregaPdfLibs();
   const box=document.createElement('div');box.style.cssText='position:fixed;left:-12000px;top:0;width:900px;background:#fff';document.body.appendChild(box);
   try{
-    await docx.renderAsync(buf,box,null,{inWrapper:true,breakPages:true,ignoreHeight:true});
+    await docx.renderAsync(buf,box,null,{inWrapper:true,breakPages:true,ignoreHeight:true});pdtEspaco(box);
     const wr=box.querySelector('.docx-wrapper');if(wr)wr.style.cssText='background:#fff;padding:0';
     const sec=box.querySelector('section.docx');sec.style.cssText+=';box-shadow:none;margin:0;min-height:0';
     const cv=await html2canvas(sec,{scale:2,backgroundColor:'#fff'}),sc=cv.width/sec.getBoundingClientRect().width;
@@ -1785,7 +1787,7 @@ async function pdtPdfBlob(buf,png){
     if(alvo){const tr=alvo.closest('tr');if(tr)corte=Math.round((tr.getBoundingClientRect().top-sec.getBoundingClientRect().top)*sc)}
     const pdf=new jspdf.jsPDF({unit:'mm',format:'a4'}),fatias=corte<cv.height-20?[[0,corte],[corte,cv.height]]:[[0,cv.height]];
     fatias.forEach(([a,b],n)=>{const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;c.getContext('2d').drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
-      let w=210,h=w*c.height/c.width;const topo=n?12:0;if(h>297-topo){h=297-topo;w=h*c.width/c.height}
+      let w=210,h=w*c.height/c.width;const topo=n?12:0,mb=12;if(h>297-topo-mb){h=297-topo-mb;w=h*c.width/c.height}
       if(n)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,topo,w,h)});
     if(png){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=10,mb=22;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-m-mb){h=PH-m-mb;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,m+(PH-m-mb-h)/2,w,h)}
     return pdf.output('blob')
@@ -1864,7 +1866,7 @@ async function pdtVer(o,r,fim){return pdtEdita(o,r,fim)}
 async function pdtVerAntigo(o,r,fim){
   const w=janela(pdtNome(r),true);w.el.style.cssText+=';width:min(1250px,97vw);max-width:97vw';w.corpo.innerHTML='<p class="hint">A abrir…</p>';
   try{await carregaPrev();const buf=await pdtBuf(r);w.corpo.innerHTML='<div id="pvC" style="height:80vh;overflow:auto;background:#777;border-radius:6px"></div><div class="bt"><button id="pvE">Editar</button><button id="pvW">Word</button><button id="pvP" class="pri">PDF</button><button id="pvF">Fechar</button></div>';
-    await docx.renderAsync(buf,$('#pvC',w.corpo),null,{inWrapper:true,breakPages:true,ignoreHeight:true});const wp=$('#pvC .docx-wrapper',w.corpo);if(wp)wp.style.zoom=Math.max(1,Math.min(1.6,($('#pvC',w.corpo).clientWidth-30)/820));
+    await docx.renderAsync(buf,$('#pvC',w.corpo),null,{inWrapper:true,breakPages:true,ignoreHeight:true});pdtEspaco($('#pvC',w.corpo));const wp=$('#pvC .docx-wrapper',w.corpo);if(wp)wp.style.zoom=Math.max(1,Math.min(1.6,($('#pvC',w.corpo).clientWidth-30)/820));
     $('#pvF',w.corpo).onclick=w.fecha;$('#pvE',w.corpo).onclick=()=>{w.fecha();pdtEdita(o,r,fim)};
     $('#pvW',w.corpo).onclick=()=>pdtDescarrega(pdtNome(r)+'.docx',new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
     $('#pvP',w.corpo).onclick=async e=>{e.target.disabled=true;try{pdtDescarrega(pdtNome(r)+'.pdf',await pdtPdfBlob(buf))}catch(x){aviso(erroTxt(x),true)}e.target.disabled=false}
@@ -2004,7 +2006,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     const meu=++gen;
     try{await carregaPrev();const buf=await pdtDocx(mod,pdtDeForm(os.numero,os.semana||(ed&&ed.dados.sem)||'',F2(),diaAtual()));if(meu!==gen)return;
       const c=document.createElement('div');c.style.cssText='position:absolute;left:-9999px;top:0;width:900px';document.body.appendChild(c);
-      await docx.renderAsync(buf,c,null,{inWrapper:true,breakPages:true,ignoreHeight:true});
+      await docx.renderAsync(buf,c,null,{inWrapper:true,breakPages:true,ignoreHeight:true});pdtEspaco(c);
       const y=P.scrollTop;P.innerHTML='';while(c.firstChild)P.appendChild(c.firstChild);c.remove();aplicaZoom();P.scrollTop=y;$('#pdSt',ov).textContent='';atualizaJan();
       P.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'})
     }catch(e){if(meu===gen){P.innerHTML='<div style="padding:30px;color:#fdd">'+esc(erroTxt(e))+'</div>';$('#pdSt',ov).textContent=''}}}
