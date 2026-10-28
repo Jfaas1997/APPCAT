@@ -1787,7 +1787,7 @@ async function pdtPdfBlob(buf,png){
     fatias.forEach(([a,b],n)=>{const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;c.getContext('2d').drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
       let w=210,h=w*c.height/c.width;const topo=n?12:0;if(h>297-topo){h=297-topo;w=h*c.width/c.height}
       if(n)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,topo,w,h)});
-    if(png){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=6;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-2*m){h=PH-2*m;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,(PH-h)/2,w,h)}
+    if(png){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=10,mb=22;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-m-mb){h=PH-m-mb;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,m+(PH-m-mb-h)/2,w,h)}
     return pdf.output('blob')
   }finally{box.remove()}}
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
@@ -1848,7 +1848,7 @@ async function pdtAnexaDocx(bufDocx,png){
   const i=xml.lastIndexOf('<w:sectPr'),j=xml.indexOf('</w:sectPr>',i)+'</w:sectPr>'.length;let sect=xml.slice(i,j);
   const fim=sect.replace(/<w:type [^>]*\/>/,'').replace('<w:pgSz','<w:type w:val="nextPage"/><w:pgSz').replace(/<w:pgSz [^>]*\/>/,'<w:pgSz w:w="16840" w:h="11910" w:orient="landscape"/>');
   const quebra='<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr>'+sect+'</w:pPr></w:p>';
-  const mw=26.0*360000,mh=15.6*360000,r=Math.min(mw/png.w,mh/png.h),cx=Math.round(png.w*r),cy=Math.round(png.h*r);
+  const mw=25.0*360000,mh=14.4*360000,r=Math.min(mw/png.w,mh/png.h),cx=Math.round(png.w*r),cy=Math.round(png.h*r);
   const img='<w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="9001" name="Anexo esquema eletrico"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9001" name="anexo_esq.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdAnexoEsq"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
   xml=xml.slice(0,i)+quebra+img+fim+xml.slice(j);z.file('word/document.xml',xml);
   return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
