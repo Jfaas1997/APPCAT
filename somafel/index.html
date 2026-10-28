@@ -1735,7 +1735,8 @@ function pdtXml(xml,d){
 
 function carregaJs(url,teste){return teste()?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar um componente (sem rede?).'));document.head.appendChild(s)})}
 const carregaZip=()=>carregaJs('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',()=>window.JSZip);
-async function carregaPrev(){await carregaZip();await carregaJs('https://cdn.jsdelivr.net/npm/docx-preview@0.3.3/dist/docx-preview.min.js',()=>window.docx)}
+async function carregaPrev(){if(!document.getElementById('pdtPrevCss')){const st=document.createElement('style');st.id='pdtPrevCss';st.textContent='.docx-wrapper header,.docx-wrapper footer{display:block!important;min-height:0!important;padding:0!important;background:none!important;border:0!important;gap:0!important;grid-area:auto!important;flex-wrap:nowrap!important}.docx-wrapper,.docx-wrapper section.docx{color:#000!important}.docx-wrapper section.docx{background:#fff!important}';document.head.appendChild(st)}
+  await carregaZip();await carregaJs('https://cdn.jsdelivr.net/npm/docx-preview@0.3.3/dist/docx-preview.min.js',()=>window.docx)}
 async function itensPdf(buf){await carregaPdfJs();const pdf=await pdfjsLib.getDocument({data:buf}).promise,P=[];
   for(let i=1;i<=pdf.numPages;i++){const tc=await (await pdf.getPage(i)).getTextContent();P.push(tc.items.filter(it=>it.str.trim()).map(it=>({x:it.transform[4],y:it.transform[5],t:it.str})))}
   return P}
