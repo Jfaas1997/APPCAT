@@ -1435,9 +1435,10 @@ async function docsObra(o){
         (r.data||[]).filter(x=>x.id).forEach(x=>{const nome=x.name.replace(/^[0-9a-f]{8}__/,'');todos.push({cat:c,path:o.id+'/'+c+'/'+x.name,nome,tam:(x.metadata&&x.metadata.size)||0,os:osDoc(nome),dia:diaDoc(nome)||(x.created_at||'').slice(0,10)})})}
       DOCCACHE={id:o.id,t:todos,velho:false}}
     EAS=await ok(sb.from('obra_esquemas').select('esquemas(*)').eq('obra_id',o.id)).then(r=>r.map(x=>x.esquemas).filter(Boolean));
+    PDTS=await ok(sb.from('pdts').select('*').eq('obra_id',o.id).order('dia',{ascending:false})).catch(()=>[]);
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',proj=S.vista==='proj',chave=proj?PROJCATS:['os','pdt','esq_eletricos','esq_sinalizacao'];
-  const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c);
+  const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c)+(c==='pdt'?PDTS.length:0);
   const okq=x=>!q||(x.nome+' '+x.os+' '+(x.dia?fmtData(x.dia):'')+' '+DOCCURTO[x.cat]).toLowerCase().includes(q);
   const linha=(x,mc)=>'<tr><td>'+(x.dia?fmtData(x.dia):'—')+'</td>'+(mc?'<td><span class="hint">'+DOCCURTO[x.cat]+'</span></td>':'')+'<td class="mono">'+(x.os||'<span class="hint">—</span>')+'</td><td>'+esc(x.nome)+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+esc(x.path)+'">Abrir</button><button class="perigo" data-dd="'+esc(x.path)+'">Apagar</button></td></tr>';
   let h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px">'+chave.map(c=>'<button data-dc="'+c+'" class="'+(DOCCAT===c?'pri':'')+'">'+DOCCURTO[c]+' <span style="opacity:.7">'+n(c)+'</span></button>').join('')+(proj?'':'<button data-dc="porOS" class="'+(porOS?'pri':'')+'">Por OS</button>')+'</div>'
@@ -1449,6 +1450,7 @@ async function docsObra(o){
     const ehOS=DOCCAT==='os';
     h+='<div class="card" style="padding:0" id="dz"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--rule)"><b>'+CATDOC[DOCCAT]+'</b><button class="pri" id="dup">Adicionar ficheiros…</button>'+(ehEA?'<button id="eaA">Associar da biblioteca…</button>':'')+(ehOS?'<button id="nos">+ Nova OS</button>':'')+'<span class="hint">'+tot+(tot===1?' ficheiro':' ficheiros')+' · ou arrasta os ficheiros para aqui</span><input type="file" id="dfi" multiple hidden></div>'
       +'<p class="hint" style="margin:10px 14px 0">'+esc(DOCHINT[DOCCAT])+'</p>'
+      +(DOCCAT==='pdt'?pdtTabela():'')
       +(ehEA&&EA.length?'<table><thead><tr><th>Da biblioteca</th><th>Via / troço</th><th></th></tr></thead><tbody>'+EA.map(x=>'<tr><td><b>'+esc(x.tipo==='sinalizacao'?(x.estacao||x.nome):x.nome)+'</b></td><td>'+esc([x.via,x.troco].filter(Boolean).join(' · ')||'—')+'</td><td class="ac"><button data-eab="'+x.id+'">Abrir</button>'+(x.tipo==='sinalizacao'?'<button data-eas="'+x.id+'">Sinais</button>':'')+'<button data-eat="'+x.id+'">Tirar da obra</button></td></tr>').join('')+'</tbody></table>':'')
       +(ehOS?tabelaOS(L,okq):L.length?'<table><thead><tr><th>Dia</th><th>OS</th><th>Ficheiro</th><th class="n">Tamanho</th><th></th></tr></thead><tbody>'+L.map(x=>linha(x,false)).join('')+'</tbody></table>':(ehEA&&EA.length&&!tot?'':'<p class="hint" style="margin:14px">'+(tot?'Nada com esse texto.':'Ainda não há ficheiros.')+'</p>'))+'</div>';
   }
@@ -1474,7 +1476,8 @@ async function docsObra(o){
   el.querySelectorAll('[data-eas]').forEach(b=>b.onclick=()=>sinaisEsq(EAS.find(y=>y.id===b.dataset.eas),admin(),null));
   el.querySelectorAll('[data-eat]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_esquemas').delete().eq('obra_id',o.id).eq('esquema_id',b.dataset.eat));refaz()}catch(e){aviso(erroTxt(e),true)}});
   el.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>periodosOS(OSLISTA.find(x=>x.id===b.dataset.op),refaz));
-  el.querySelectorAll('[data-pdt]').forEach(b=>b.onclick=()=>criaPDT(o,OSLISTA.find(x=>x.id===b.dataset.pdt)));
+  el.querySelectorAll('[data-pdt]').forEach(b=>b.onclick=()=>criaPDT(o,OSLISTA.find(x=>x.id===b.dataset.pdt),refaz));
+  pdtLiga(el,o,refaz);
   el.querySelectorAll('[data-od]').forEach(b=>b.onclick=async()=>{const x=OSLISTA.find(y=>y.id===b.dataset.od);
     if(!await confirmar('Apagar a OS '+x.numero+' e os seus períodos? O ficheiro da OS não é apagado.','Apagar'))return;
     try{await ok(sb.from('os_interdicoes').delete().eq('id',x.id));refaz()}catch(e){aviso(erroTxt(e),true)}});
@@ -1757,74 +1760,120 @@ function diasOS(os){
 function pdtCampos(txt){return String(txt||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(';').map(x=>x.trim()))}
 function pdtDescarrega(nome,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
 async function pdtDocx(modBuf,d){await carregaZip();const z=await JSZip.loadAsync(modBuf),xml=await z.file('word/document.xml').async('string');z.file('word/document.xml',pdtXml(xml,d));return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
-async function pdtPdf(buffers){
-  await carregaPrev();let el=document.getElementById('pdtPrint');if(el)el.remove();
-  el=document.createElement('div');el.id='pdtPrint';document.body.appendChild(el);
-  if(!document.getElementById('pdtPrintCss')){const st=document.createElement('style');st.id='pdtPrintCss';st.textContent='#pdtPrint{display:none}@media print{body>*:not(#pdtPrint){display:none!important}#pdtPrint{display:block!important;position:static}#pdtPrint .docx-wrapper{background:none!important;padding:0!important}#pdtPrint .docx-wrapper>section.docx{box-shadow:none!important;margin:0 auto!important;min-height:0!important;padding:0!important;width:auto!important;break-after:page}@page{size:A4;margin:14mm 0}}';document.head.appendChild(st)}
-  for(const b of buffers){const c=document.createElement('div');el.appendChild(c);await docx.renderAsync(b,c,null,{inWrapper:true,breakPages:true,ignoreHeight:true})}
-  const fim=()=>{window.removeEventListener('afterprint',fim);setTimeout(()=>{const e=document.getElementById('pdtPrint');if(e)e.remove()},500)};
-  window.addEventListener('afterprint',fim);await new Promise(r=>setTimeout(r,400));window.print()}
-async function criaPDT(o,os){
-  const w=janela('PDT · OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A ler a OS…</p>';
-  let mod,base,oc,esqs;
+let PDTS=[];
+const isoDia=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function pdtNome(r){const k=r.dados.dia.k,v=/DESCENDENTE/i.test(r.dados.F.ms1||'')?' VD':/ASCENDENTE/i.test(r.dados.F.ms1||'')?' VA':'';return 'OS '+r.numero_os+' PDT '+k.replace(/\//g,'-')+v}
+function pdtDeForm(numero,sem,F,dia){
+  const sm=String(sem||'').split('/'),per=dia.p||[];
+  return {os:numero,ano:sm[0]||'',semana:sm[1]||'',trabalho:F.trab,entidade:F.ent,ms1:F.ms1,ms2:F.ms2,lim:(F.lim||[]).filter(l=>l.some(Boolean)),
+    aparelhos:String(F.ap||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8),postes:String(F.po||'').split('\n').map(x=>x.trim()).slice(0,8),protTrans:F.pt,
+    frentes:pdtCampos(F.fr),terra:pdtCampos(F.te),pessoal:pdtCampos(F.pe),maquinas:pdtCampos(F.ma),scpvi:pdtCampos(F.sc),coord:F.co,contactos:F.ct,
+    data:dia.k,per1:per[0]||'',per2:per.slice(1).join('; ')}}
+const carregaPdfLibs=async()=>{await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>window.html2canvas);await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>window.jspdf)};
+/* PDF sem janela de impressão: desenha o PDT e corta nas duas páginas do modelo */
+async function pdtPdfBlob(buf){
+  await carregaPrev();await carregaPdfLibs();
+  const box=document.createElement('div');box.style.cssText='position:fixed;left:-12000px;top:0;width:900px;background:#fff';document.body.appendChild(box);
+  try{
+    await docx.renderAsync(buf,box,null,{inWrapper:true,breakPages:true,ignoreHeight:true});
+    const wr=box.querySelector('.docx-wrapper');if(wr)wr.style.cssText='background:#fff;padding:0';
+    const sec=box.querySelector('section.docx');sec.style.cssText+=';box-shadow:none;margin:0;min-height:0';
+    const cv=await html2canvas(sec,{scale:2,backgroundColor:'#fff'}),sc=cv.width/sec.getBoundingClientRect().width;
+    let corte=cv.height;const alvo=[...sec.querySelectorAll('p')].find(p=>/^\s*2 de 2\s*$/.test(p.textContent));
+    if(alvo){const tr=alvo.closest('tr');if(tr)corte=Math.round((tr.getBoundingClientRect().top-sec.getBoundingClientRect().top)*sc)}
+    const pdf=new jspdf.jsPDF({unit:'mm',format:'a4'}),fatias=corte<cv.height-20?[[0,corte],[corte,cv.height]]:[[0,cv.height]];
+    fatias.forEach(([a,b],n)=>{const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;c.getContext('2d').drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
+      let w=210,h=w*c.height/c.width;const topo=n?12:0;if(h>297-topo){h=297-topo;w=h*c.width/c.height}
+      if(n)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,topo,w,h)});
+    return pdf.output('blob')
+  }finally{box.remove()}}
+async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
+async function pdtVer(o,r,fim){
+  const w=janela(pdtNome(r),true);w.corpo.innerHTML='<p class="hint">A abrir…</p>';
+  try{await carregaPrev();const buf=await pdtBuf(r);w.corpo.innerHTML='<div id="pvC" style="height:72vh;overflow:auto;background:#777;border-radius:6px"></div><div class="bt"><button id="pvE">Editar</button><button id="pvW">Word</button><button id="pvP" class="pri">PDF</button><button id="pvF">Fechar</button></div>';
+    await docx.renderAsync(buf,$('#pvC',w.corpo),null,{inWrapper:true,breakPages:true,ignoreHeight:true});
+    $('#pvF',w.corpo).onclick=w.fecha;$('#pvE',w.corpo).onclick=()=>{w.fecha();pdtEdita(o,r,fim)};
+    $('#pvW',w.corpo).onclick=()=>pdtDescarrega(pdtNome(r)+'.docx',new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+    $('#pvP',w.corpo).onclick=async e=>{e.target.disabled=true;try{pdtDescarrega(pdtNome(r)+'.pdf',await pdtPdfBlob(buf))}catch(x){aviso(erroTxt(x),true)}e.target.disabled=false}
+  }catch(e){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>'}}
+async function pdtEdita(o,r,fim){const os=OSLISTA.find(x=>String(x.numero)===String(r.numero_os))||{numero:r.numero_os,semana:r.dados.sem,os_periodos:[]};return criaPDT(o,os,fim,r)}
+function pdtTabela(){
+  if(!PDTS.length)return '<p class="hint" style="margin:14px">Ainda não há PDT criados. Em «Ordens de serviço» usa «Criar PDT» na OS.</p>';
+  return '<table><thead><tr><th>Dia</th><th>OS</th><th>PDT</th><th></th></tr></thead><tbody>'+PDTS.map(r=>'<tr><td>'+esc(r.dados.dia.k)+'</td><td class="mono">'+esc(r.numero_os)+'</td><td>'+esc(pdtNome(r))+'<br><span class="hint">'+esc((r.dados.dia.p||[]).join(' e '))+'</span></td>'
+    +'<td class="ac"><button data-pv="'+r.id+'">Ver</button><button data-pe="'+r.id+'">Editar</button><button data-pw="'+r.id+'">Word</button><button data-pf="'+r.id+'">PDF</button><button class="perigo" data-px="'+r.id+'">Apagar</button></td></tr>').join('')+'</tbody></table>'}
+function pdtLiga(el,o,fim){
+  const R=b=>PDTS.find(x=>x.id===b.dataset[Object.keys(b.dataset)[0]]);
+  el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>pdtVer(o,R(b),fim));
+  el.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>pdtEdita(o,R(b),fim));
+  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=async()=>{const r=R(b);try{pdtDescarrega(pdtNome(r)+'.docx',new Blob([await pdtBuf(r)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))}catch(e){aviso(erroTxt(e),true)}});
+  el.querySelectorAll('[data-pf]').forEach(b=>b.onclick=async()=>{const r=R(b);b.disabled=true;try{pdtDescarrega(pdtNome(r)+'.pdf',await pdtPdfBlob(await pdtBuf(r)))}catch(e){aviso(erroTxt(e),true)}b.disabled=false});
+  el.querySelectorAll('[data-px]').forEach(b=>b.onclick=async()=>{const r=R(b);if(!await confirmar('Apagar o '+pdtNome(r)+'?','Apagar'))return;try{await ok(sb.from('pdts').delete().eq('id',r.id));aviso('PDT apagado.');fim&&fim()}catch(e){aviso(erroTxt(e),true)}})}
+async function criaPDT(o,os,fim,ed){
+  const w=janela((ed?'Editar PDT · ':'PDT · ')+'OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A preparar…</p>';
+  let mod,base,oc=null,esqs=[];
   try{
     mod=await pdtModelo();
     if(!mod){
       if(!admin()){w.corpo.innerHTML='<p class="msg e">Falta carregar o modelo do PDT. Pede a um administrador.</p>';return}
       w.corpo.innerHTML='<p>Falta o modelo do PDT (o teu «PDT MODELO.docx»). Carrega-o uma vez: fica guardado só na tua organização.</p><p><input type="file" id="pdMod" accept=".docx"></p>';
       $('#pdMod',w.corpo).onchange=async e=>{const f=e.target.files[0];if(!f)return;const r=await sb.storage.from('documentos').upload(PDTMOD(),f,{upsert:true,contentType:f.type||'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-        if(r.error){aviso(erroTxt(r.error),true);return}w.fecha();aviso('Modelo guardado.');criaPDT(o,os)};return}
-    base=await pdtBaseGet(o.id);esqs=await pdtSinais(o.id);
-    const f=(DOCCACHE.t||[]).find(x=>x.cat==='os'&&x.os===String(os.numero)&&/\.pdf$/i.test(x.nome));
-    oc=null;if(f){const r=await sb.storage.from('documentos').download(f.path);if(!r.error)oc=osCompleta(await itensPdf(await r.data.arrayBuffer()))}
+        if(r.error){aviso(erroTxt(r.error),true);return}w.fecha();aviso('Modelo guardado.');criaPDT(o,os,fim,ed)};return}
+    base=await pdtBaseGet(o.id);
+    if(!ed){esqs=await pdtSinais(o.id);
+      const f=(DOCCACHE.t||[]).find(x=>x.cat==='os'&&x.os===String(os.numero)&&/\.pdf$/i.test(x.nome));
+      if(f){const r=await sb.storage.from('documentos').download(f.path);if(!r.error)oc=osCompleta(await itensPdf(await r.data.arrayBuffer()))}}
   }catch(e){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
-  oc=oc||{tipo:'',interdicao:'',corte:'',aparelhos:[],postes:[],protTrans:'',agentes:[],chefe:[]};
-  /* limites a partir do texto da interdição + sinais confirmados */
-  const lim=[['','','','',''],['','','','','']],it=oc.interdicao||'';
-  const mm=it.match(/esta[çc][õo]es\s+de\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s+e\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s*\.?\s*$/);
-  const via=(it.match(/via\s+(ASCENDENTE|DESCENDENTE)/i)||[])[1],viaL=via?(/^A/i.test(via)?'A':'D'):'';
-  if(mm){[[mm[1],mm[2]],[mm[3],mm[4]]].forEach(([e,p],i)=>{const sg=((p||'').match(/SINAL\s+([A-Z0-9\/]+)/i)||[])[1]||'',ach=sg?acharSinal(esqs,e,sg):null;
-    lim[i]=[titulado(e),base.linha||'Linha do Norte',viaL,sg,ach?ach.pk:'']})}
-  const dias=diasOS(os),per=(oc.agentes||[]).map(a=>a['Função']+'- '+a['Matrícula']+' '+a.Nome+' '+(a.TpAtivid||'')+' '+(a['Telemóvel']||'')+(a['Observação']?' ('+a['Observação']+')':'')).map(s=>s.replace(/\s+/g,' ').trim());
-  (oc.chefe||[]).forEach(c=>per.push('Chefe dos Trabalhos- '+c.Nome+' '+(c.TpAtivid||'')+' '+(c.PrestServ||'')+' '+(c['Telemóvel']||'')));
+  let F,aviso0='';
+  if(ed)F=Object.assign({},ed.dados.F);
+  else{
+    oc=oc||(aviso0='<p class="msg e">Não encontrei o PDF desta OS nos documentos: preenche à mão o que falta.</p>',{tipo:'',interdicao:'',corte:'',aparelhos:[],postes:[],protTrans:'',agentes:[],chefe:[]});
+    const lim=[['','','','',''],['','','','','']],it=oc.interdicao||'';
+    const mm=it.match(/esta[çc][õo]es\s+de\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s+e\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s*\.?\s*$/);
+    const via=(it.match(/via\s+(ASCENDENTE|DESCENDENTE)/i)||[])[1],viaL=via?(/^A/i.test(via)?'A':'D'):'';
+    if(mm){[[mm[1],mm[2]],[mm[3],mm[4]]].forEach(([e,p],i)=>{const sg=((p||'').match(/SINAL\s+([A-Z0-9\/]+)/i)||[])[1]||'',ach=sg?acharSinal(esqs,e,sg):null;
+      lim[i]=[titulado(e),base.linha||'Linha do Norte',viaL,sg,ach?ach.pk:'']})}
+    const per=(oc.agentes||[]).map(a=>a['Função']+'- '+a['Matrícula']+' '+a.Nome+' '+(a.TpAtivid||'')+' '+(a['Telemóvel']||'')+(a['Observação']?' ('+a['Observação']+')':'')).map(s=>s.replace(/\s+/g,' ').trim());
+    (oc.chefe||[]).forEach(c=>per.push('Chefe dos Trabalhos- '+c.Nome+' '+(c.TpAtivid||'')+' '+(c.PrestServ||'')+' '+(c['Telemóvel']||'')));
+    F={trab:((os.os_periodos||[])[0]||{}).trabalhos||base.trabalho||'1',ent:oc.tipo,ms1:oc.interdicao,ms2:oc.corte,lim,ap:(oc.aparelhos||[]).join('\n'),po:'',pt:oc.protTrans,
+      fr:base.frentes||'',te:base.terra||'',pe:base.pessoal||'',ma:base.maquinas||'',sc:base.scpvi||'',co:base.coord||'',ct:per.join('\n')}}
+  const phPo=oc&&(oc.postes||[]).filter(Boolean).length?'OS: '+oc.postes.filter(Boolean).join('  |  '):'';
+  const dias=ed?[ed.dados.dia]:diasOS(os);
   const ta=(id,rot,val,rows,ph)=>'<label>'+rot+'</label><textarea id="'+id+'" rows="'+rows+'" style="width:100%;font:13px ui-monospace,Consolas,monospace" placeholder="'+esc(ph||'')+'">'+esc(val||'')+'</textarea>';
   const inp=(id,rot,val,larg)=>'<div style="flex:'+(larg||1)+';min-width:120px"><label>'+rot+'</label><input id="'+id+'" value="'+esc(val||'')+'"></div>';
-  w.corpo.innerHTML='<div style="max-height:72vh;overflow:auto;padding-right:6px">'
-   +(oc.tipo?'':'<p class="msg e">Não encontrei o PDF desta OS nos documentos: preenche à mão o que falta.</p>')
-   +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+inp('pd_trab','Trabalho nº',(dias.length&&((os.os_periodos||[])[0]||{}).trabalhos)||base.trabalho||'1')+inp('pd_ent','Entidade executante',oc.tipo,3)+'</div>'
-   +ta('pd_ms1','Trabalho ao abrigo das MS – interdição',oc.interdicao,2)+ta('pd_ms2','Corte de tensão',oc.corte,2)
-   +'<label>Limites de interdição (estação · linha · via · sinal · km)</label>'+lim.map((l,i)=>'<div style="display:flex;gap:6px;margin-bottom:4px">'+l.map((v,k)=>'<input data-lim="'+i+'" data-k="'+k+'" value="'+esc(v)+'" placeholder="'+['Estação','Linha','Via','Sinal','km'][k]+'" style="flex:'+(k<2?2:1)+';min-width:0">').join('')+'</div>').join('')
-   +'<p class="hint">Os km vêm dos sinais confirmados na biblioteca de esquemas associados à obra; se estiverem em branco, escreve-os.</p>'
-   +'<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+ta('pd_ap','Aparelhos de corte (um por linha, máx. 8)',(oc.aparelhos||[]).join('\n'),4)+'</div><div style="flex:1;min-width:240px">'+ta('pd_po','Postes / km limite (um por linha, pela mesma ordem)',(oc.postes||[]).map(x=>'').join('\n'),4,(oc.postes||[]).map(x=>'OS: '+x).join('  |  '))+'</div></div>'
-   +ta('pd_pt','Proteções transversais',oc.protTrans,2)
-   +ta('pd_fr','Frentes de trabalho — localização ; descrição (uma por linha)',base.frentes,3,'LN / VA / 199+700 ao 200+900 ; Instalação de ferragens…')
-   +ta('pd_te','Ligações à terra — local ; trabalhador ; nº da carta',base.terra,3,'1 - 40-079/07 VA 199-23 / 199+700 ; Nome ; Nº E240729')
-   +ta('pd_pe','CVI / PVI — nome ; documento CVI ; documento PVI ; trabalho a efetuar',base.pessoal,3,'Nome ; E 251005 ; ; Condutor da dresine')
-   +ta('pd_ma','Material circulante — tipo ; UIC ; ICS/DCV ; entrada local ; ordem ; saída local ; ordem ; km início ; km fim',base.maquinas,3)
-   +ta('pd_sc','Sinais complementares — nº ; localização ; resp. colocação ; resp. retirada',base.scpvi,3,'1 ; SCPVI Nº3 199+200 ; Nome ; Nome')
-   +ta('pd_co','Coordenação das atividades',base.coord,2)
-   +ta('pd_ct','Contactos e observações (preenchido a partir da OS)',per.join('\n'),5)
-   +'<label>Dias a gerar</label><div id="pd_dias">'+(dias.length?dias.map((d,i)=>'<label class="chk"><input type="checkbox" data-dia="'+i+'" checked> '+d.k+' · '+d.p.join(' e ')+'</label>').join(''):'<span class="hint">Esta OS não tem períodos.</span>')+'</div></div>'
-   +'<div class="bt"><button type="button" class="cancela">Cancelar</button><button type="button" id="pdW" class="pri">Word</button><button type="button" id="pdP" class="pri">PDF</button></div>';
+  w.corpo.innerHTML='<div style="max-height:72vh;overflow:auto;padding-right:6px">'+aviso0
+   +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+inp('pd_trab','Trabalho nº',F.trab)+inp('pd_ent','Entidade executante',F.ent,3)+'</div>'
+   +ta('pd_ms1','Trabalho ao abrigo das MS – interdição',F.ms1,2)+ta('pd_ms2','Corte de tensão',F.ms2,2)
+   +'<label>Limites de interdição (estação · linha · via · sinal · km)</label>'+(F.lim||[]).map((l,i)=>'<div style="display:flex;gap:6px;margin-bottom:4px">'+l.map((v,k)=>'<input data-lim="'+i+'" data-k="'+k+'" value="'+esc(v)+'" placeholder="'+['Estação','Linha','Via','Sinal','km'][k]+'" style="flex:'+(k<2?2:1)+';min-width:0">').join('')+'</div>').join('')
+   +'<p class="hint">Os km vêm dos sinais confirmados nos esquemas associados à obra; se estiverem em branco, escreve-os.</p>'
+   +'<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+ta('pd_ap','Aparelhos de corte (um por linha, máx. 8)',F.ap,4)+'</div><div style="flex:1;min-width:240px">'+ta('pd_po','Postes / km limite (um por linha, pela mesma ordem)',F.po,4,phPo)+'</div></div>'
+   +ta('pd_pt','Proteções transversais',F.pt,2)
+   +ta('pd_fr','Frentes de trabalho — localização ; descrição (uma por linha)',F.fr,3,'LN / VA / 199+700 ao 200+900 ; Instalação de ferragens…')
+   +ta('pd_te','Ligações à terra — local ; trabalhador ; nº da carta',F.te,3,'1 - 40-079/07 VA 199-23 / 199+700 ; Nome ; Nº E240729')
+   +ta('pd_pe','CVI / PVI — nome ; documento CVI ; documento PVI ; trabalho a efetuar',F.pe,3,'Nome ; E 251005 ; ; Condutor da dresine')
+   +ta('pd_ma','Material circulante — tipo ; UIC ; ICS/DCV ; entrada local ; ordem ; saída local ; ordem ; km início ; km fim',F.ma,3)
+   +ta('pd_sc','Sinais complementares — nº ; localização ; resp. colocação ; resp. retirada',F.sc,3,'1 ; SCPVI Nº3 199+200 ; Nome ; Nome')
+   +ta('pd_co','Coordenação das atividades',F.co,2)
+   +ta('pd_ct','Contactos e observações',F.ct,5)
+   +(ed?'<label>Períodos do dia (separados por «;»)</label><input id="pd_per" value="'+esc((ed.dados.dia.p||[]).join(' ; '))+'">'
+      :'<label>Dias a gerar</label><div>'+(dias.length?dias.map((d,i)=>'<label class="chk"><input type="checkbox" data-dia="'+i+'" checked> '+d.k+' · '+d.p.join(' e ')+(PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d))?' <span class="hint">(já existe)</span>':'')+'</label>').join(''):'<span class="hint">Esta OS não tem períodos.</span>')+'</div>')
+   +'</div><div class="bt"><button type="button" class="cancela">Cancelar</button><button type="button" id="pdG" class="pri">'+(ed?'Guardar':'Criar PDT')+'</button></div>';
   w.corpo.querySelector('.cancela').onclick=w.fecha;
   const v=id=>w.corpo.querySelector('#'+id).value;
-  const gera=async modo=>{
-    const sel=[...w.corpo.querySelectorAll('[data-dia]:checked')].map(c=>dias[+c.dataset.dia]);if(!sel.length){aviso('Escolhe pelo menos um dia.',true);return}
-    const L2=[0,1].map(i=>[...w.corpo.querySelectorAll('[data-lim="'+i+'"]')].map(x=>x.value.trim()));
-    const sm=(os.semana||'').split('/'),comum={os:os.numero,ano:sm[0]||'',semana:sm[1]||'',trabalho:v('pd_trab'),entidade:v('pd_ent'),ms1:v('pd_ms1'),ms2:v('pd_ms2'),
-      lim:L2.filter(l=>l.some(Boolean)),aparelhos:v('pd_ap').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8),postes:v('pd_po').split('\n').map(x=>x.trim()).slice(0,8),protTrans:v('pd_pt'),
-      frentes:pdtCampos(v('pd_fr')),terra:pdtCampos(v('pd_te')),pessoal:pdtCampos(v('pd_pe')),maquinas:pdtCampos(v('pd_ma')),scpvi:pdtCampos(v('pd_sc')),coord:v('pd_co'),contactos:v('pd_ct')};
-    const bt=w.corpo.querySelector('.bt');bt.querySelectorAll('button').forEach(b=>b.disabled=true);
+  $('#pdG',w.corpo).onclick=async()=>{
+    const sel=ed?[ed.dados.dia]:[...w.corpo.querySelectorAll('[data-dia]:checked')].map(c=>dias[+c.dataset.dia]);if(!sel.length){aviso('Escolhe pelo menos um dia.',true);return}
+    const F2={trab:v('pd_trab'),ent:v('pd_ent'),ms1:v('pd_ms1'),ms2:v('pd_ms2'),lim:[0,1].map(i=>[...w.corpo.querySelectorAll('[data-lim="'+i+'"]')].map(x=>x.value.trim())),ap:v('pd_ap'),po:v('pd_po'),pt:v('pd_pt'),
+      fr:v('pd_fr'),te:v('pd_te'),pe:v('pd_pe'),ma:v('pd_ma'),sc:v('pd_sc'),co:v('pd_co'),ct:v('pd_ct')};
+    const ja=ed?[]:sel.filter(d=>PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d)));
+    if(ja.length&&!await confirmar('Já existe PDT de '+ja.map(d=>d.k).join(', ')+'. Substituir pelo que está no formulário?','Substituir'))return;
+    $('#pdG',w.corpo).disabled=true;
     try{
-      try{await ok(sb.from('pdt_base').upsert({obra_id:o.id,dados:{linha:L2[0][1]||base.linha||'',trabalho:comum.trabalho,frentes:v('pd_fr'),terra:v('pd_te'),pessoal:v('pd_pe'),maquinas:v('pd_ma'),scpvi:v('pd_sc'),coord:v('pd_co')},atualizado_em:new Date().toISOString()}))}catch(e){}
-      const sufixo=viaL?' V'+viaL:'',out=[];
-      for(const d of sel){const per=d.p;out.push({nome:'OS '+os.numero+' PDT '+d.k.replace(/\//g,'-')+sufixo,buf:await pdtDocx(mod,Object.assign({},comum,{data:d.k,per1:per[0]||'',per2:per.slice(1).join('; ')}))})}
-      if(modo==='pdf'){w.fecha();await pdtPdf(out.map(x=>x.buf));return}
-      if(out.length===1)pdtDescarrega(out[0].nome+'.docx',new Blob([out[0].buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
-      else{await carregaZip();const z=new JSZip();out.forEach(x=>z.file(x.nome+'.docx',x.buf));pdtDescarrega('OS '+os.numero+' PDT.zip',await z.generateAsync({type:'blob'}))}
-      aviso(out.length+' PDT gerado'+(out.length===1?'':'s')+'.');w.fecha()
-    }catch(e){aviso(erroTxt(e),true);bt.querySelectorAll('button').forEach(b=>b.disabled=false)}};
-  $('#pdW',w.corpo).onclick=()=>gera('word');$('#pdP',w.corpo).onclick=()=>gera('pdf')}
+      try{await ok(sb.from('pdt_base').upsert({obra_id:o.id,dados:{linha:F2.lim[0][1]||base.linha||'',trabalho:F2.trab,frentes:F2.fr,terra:F2.te,pessoal:F2.pe,maquinas:F2.ma,scpvi:F2.sc,coord:F2.co},atualizado_em:new Date().toISOString()}))}catch(e){}
+      const agora=new Date().toISOString();
+      if(ed){const p=ed.dados.dia;const per=w.corpo.querySelector('#pd_per')?v('pd_per').split(';').map(x=>x.trim()).filter(Boolean):p.p;
+        await ok(sb.from('pdts').update({dados:{F:F2,dia:{k:p.k,p:per},sem:ed.dados.sem},atualizado_em:agora}).eq('id',ed.id))}
+      else await ok(sb.from('pdts').upsert(sel.map(d=>({obra_id:o.id,numero_os:String(os.numero),dia:isoDia(d.d),dados:{F:F2,dia:{k:d.k,p:d.p},sem:os.semana||''},atualizado_em:agora})),{onConflict:'obra_id,numero_os,dia'}));
+      aviso(ed?'PDT guardado.':sel.length+' PDT criado'+(sel.length===1?'':'s')+'. Estão no separador PDT.');w.fecha();DOCCAT='pdt';fim&&fim()
+    }catch(e){aviso(erroTxt(e),true);$('#pdG',w.corpo).disabled=false}}}
 async function lerOS(o,file,fim){
   let linhas;
   try{linhas=await textoPdf(await file.arrayBuffer())}catch(e){aviso(erroTxt(e),true);return}
