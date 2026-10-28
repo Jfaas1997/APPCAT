@@ -314,6 +314,15 @@ dl.dd dt{color:var(--pm)}dl.dd dd{margin:0;text-align:right;font-family:var(--f-
 tbody tr,.lin{animation:mv-in .22s var(--mv-ease) both}
 tbody tr:nth-child(2),.lin:nth-child(2){animation-delay:.02s}tbody tr:nth-child(3),.lin:nth-child(3){animation-delay:.04s}
 tbody tr:nth-child(4),.lin:nth-child(4){animation-delay:.06s}tbody tr:nth-child(n+5),.lin:nth-child(n+5){animation-delay:.08s}
+/* linhas: só animam ao entrar num ecrã, não enquanto se edita; só as 12 primeiras (tabelas grandes ficam leves) */
+tbody tr:nth-child(n+13),.lin:nth-child(n+13){animation:none}
+html.mv-calmo tbody tr,html.mv-calmo .lin{animation:none!important}
+/* linha nova ou alterada: brilho curto */
+@keyframes mv-novo{0%{background-color:rgba(249,209,21,.42)}100%{background-color:transparent}}
+tr.mv-novo>td,.mv-novo{animation:mv-novo 1.6s ease-out}
+/* toque: resposta imediata */
+button:active:not(:disabled),a.btn:active{transform:scale(.97)}
+
 /* cartões clicáveis: pequena elevação */
 .card.obra,.obra{transition:transform var(--mv-t) var(--mv-ease),box-shadow var(--mv-t) var(--mv-ease),border-color .15s}
 .card.obra:hover,.obra:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.10)}
@@ -1092,5 +1101,9 @@ $('menu').addEventListener('click',function(e){ var b=e.target.closest('button[d
 
 </script>
 <script>try{ if(new URLSearchParams(location.search).get('movel')){ document.addEventListener('DOMContentLoaded',function(){ var h=document.querySelector('header.top'); if(!h)return; var b=document.createElement('button'); b.textContent='← App de Obra'; b.style.cssText='margin-right:6px'; b.onclick=function(){ location.href='obra.html' }; h.insertBefore(b,h.firstChild) }) } }catch(e){}</script>
+<script>/* movimento: enquanto se edita, as linhas não voltam a animar */
+(function(){var t;function c(){var d=document.documentElement;d.classList.add('mv-calmo');clearTimeout(t);t=setTimeout(function(){d.classList.remove('mv-calmo')},700)}
+['input','change','keydown'].forEach(function(e){document.addEventListener(e,c,true)});
+document.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('table,.box,.modalBox,.jan,form'))c()},true)})();</script>
 </body>
 </html>

@@ -777,6 +777,15 @@ body.obraAtiva .tab[data-n="g"],body.obraAtiva .sgrp[data-n="g"]{display:none!im
 tbody tr,.lin{animation:mv-in .22s var(--mv-ease) both}
 tbody tr:nth-child(2),.lin:nth-child(2){animation-delay:.02s}tbody tr:nth-child(3),.lin:nth-child(3){animation-delay:.04s}
 tbody tr:nth-child(4),.lin:nth-child(4){animation-delay:.06s}tbody tr:nth-child(n+5),.lin:nth-child(n+5){animation-delay:.08s}
+/* linhas: só animam ao entrar num ecrã, não enquanto se edita; só as 12 primeiras (tabelas grandes ficam leves) */
+tbody tr:nth-child(n+13),.lin:nth-child(n+13){animation:none}
+html.mv-calmo tbody tr,html.mv-calmo .lin{animation:none!important}
+/* linha nova ou alterada: brilho curto */
+@keyframes mv-novo{0%{background-color:rgba(249,209,21,.42)}100%{background-color:transparent}}
+tr.mv-novo>td,.mv-novo{animation:mv-novo 1.6s ease-out}
+/* toque: resposta imediata */
+button:active:not(:disabled),a.btn:active{transform:scale(.97)}
+
 /* cartões clicáveis: pequena elevação */
 .card.obra,.obra{transition:transform var(--mv-t) var(--mv-ease),box-shadow var(--mv-t) var(--mv-ease),border-color .15s}
 .card.obra:hover,.obra:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.10)}
@@ -1963,7 +1972,7 @@ function renderPDedit(){
     var fechadaL=!aberta&&((l.cod||l.des))&&!ehSemRub(l);
     var autoDif=fechadaL&&l.auto&&l.auto!==autoDe(p.data);
     if(l.semRub){
-      h+='<tr class="linsr"><td><span class="chip warn">sem rubrica</span></td>'+
+      h+='<tr class="linsr'+(MV_NOVO.has(l)?' mv-novo':'')+'"><td><span class="chip warn">sem rubrica</span></td>'+
          '<td><input data-l="'+ix+'" data-k="des" value="'+esc(l.des||'')+'" placeholder="o que foi feito"></td>'+
          '<td class="w1 mono">vg</td><td class="num mono" style="padding-right:14px">1</td>'+
          '<td><input data-l="'+ix+'" data-k="pki" value="'+esc(l.pki||'')+'" class="mono"></td>'+
@@ -1972,7 +1981,7 @@ function renderPDedit(){
          '<td class="w1"><button class="x" data-lin-del="'+ix+'">×</button></td></tr>';
       return;
     }
-    h+='<tr'+(aberta?' class="linaberta"':'')+'><td style="white-space:nowrap"><input data-l="'+ix+'" data-k="cod" list="artList" value="'+esc(l.cod||'')+'" class="mono" style="width:calc(100% - 34px)"> <button data-rubpick="'+ix+'" title="Escolher a rubrica numa lista" style="padding:2px 7px">▾</button></td>'+
+    h+='<tr class="'+(aberta?'linaberta':'')+(MV_NOVO.has(l)?' mv-novo':'')+'"><td style="white-space:nowrap"><input data-l="'+ix+'" data-k="cod" list="artList" value="'+esc(l.cod||'')+'" class="mono" style="width:calc(100% - 34px)"> <button data-rubpick="'+ix+'" title="Escolher a rubrica numa lista" style="padding:2px 7px">▾</button></td>'+
        '<td>'+(a?'<span title="'+esc(a.des)+'">'+esc(a.des)+'</span>':'<input data-l="'+ix+'" data-k="des" value="'+esc(l.des||'')+'" placeholder="designação livre">')+'</td>'+
        '<td class="w1 mono">'+esc(a?a.un:(l.un||''))+'</td>'+
        '<td><input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'"></td>'+
@@ -2130,6 +2139,8 @@ function renderSelModal(){
   ov.addEventListener('click',function(e){ if(e.target===ov){ selModal=null; renderSelModal() } });
 })();
 /* ---------- ESCOLHER RUBRICA DO CONTRATO (parte diária) ---------- */
+var MV_NOVO=new WeakSet(); /* linhas acabadas de criar: brilham uma vez */
+function mvNovo(o){ MV_NOVO.add(o); setTimeout(function(){ MV_NOVO.delete(o) },1800); return o }
 var rubSel=null; /* {q, cap, ix (linha a preencher, -1 = acrescentar linhas), n (acrescentadas)} */
 function rubCap1(cod){ return String(cod||'').split('.')[0] }
 function rubItens(p){
@@ -2195,8 +2206,8 @@ function renderRubSel(){
     var p=porId(ST.pd,pdAberta); if(!p)return;
     if(p.bloq){ avisoBloq(p); return }
     var a=look(tr.dataset.rubsel); if(!a)return;
-    if(rubSel.ix>=0&&p.lin[rubSel.ix]){ var l=p.lin[rubSel.ix]; l.cod=a.cod; l.des=''; l.un=a.un; rubSel.n=1; fecha(); return }
-    p.lin.push({cod:a.cod,des:'',un:a.un,qt:null,pki:'',pkf:''});
+    if(rubSel.ix>=0&&p.lin[rubSel.ix]){ var l=p.lin[rubSel.ix]; l.cod=a.cod; l.des=''; l.un=a.un; mvNovo(l); rubSel.n=1; fecha(); return }
+    p.lin.push(mvNovo({cod:a.cod,des:'',un:a.un,qt:null,pki:'',pkf:''}));
     rubSel.n++; tr.style.background='var(--soft)'; toast(a.cod+' acrescentada.');
     var bt=$('#rubFechar'); if(bt)bt.textContent='Concluir ('+rubSel.n+')';
   });
@@ -2295,15 +2306,15 @@ function ligaPD(p){
     if(b.dataset.eqrm){ ligaEquipPD(p,b.dataset.eqrm,false); render(); return }
     if(b.dataset.act==='rubAbre'){ rubSel={q:'',cap:'',ix:-1,n:0}; renderRubSel(); setTimeout(function(){ var q=$('#rubQ'); if(q)q.focus() },20); return }
     if(b.dataset.rubpick!=null&&b.dataset.rubpick!==''){ rubSel={q:'',cap:'',ix:+b.dataset.rubpick,n:0}; renderRubSel(); setTimeout(function(){ var q=$('#rubQ'); if(q)q.focus() },20); return }
-    if(b.dataset.act==='linAdd'){ p.lin.push({cod:'',des:'',un:'',qt:1,pki:'',pkf:''}); renderPDedit();
+    if(b.dataset.act==='linAdd'){ p.lin.push(mvNovo({cod:'',des:'',un:'',qt:1,pki:'',pkf:''})); renderPDedit();
       setTimeout(function(){var els=$$('#pdWrap input[data-k="cod"]');if(els.length)els[els.length-1].focus()},20); return }
-    if(b.dataset.act==='linAddSR'){ p.lin.push({cod:'',des:'',un:'vg',qt:1,pki:'',pkf:'',semRub:true}); renderPDedit();
+    if(b.dataset.act==='linAddSR'){ p.lin.push(mvNovo({cod:'',des:'',un:'vg',qt:1,pki:'',pkf:'',semRub:true})); renderPDedit();
       setTimeout(function(){var els=$$('#pdWrap input[data-k="des"]');if(els.length)els[els.length-1].focus()},20); return }
-    if(b.dataset.act==='linAddAberta'){ p.lin.push({cod:'',des:'',un:'',qt:null,pki:'',pkf:'',estado:'aberta',frenteId:uid()}); renderPDedit();
+    if(b.dataset.act==='linAddAberta'){ p.lin.push(mvNovo({cod:'',des:'',un:'',qt:null,pki:'',pkf:'',estado:'aberta',frenteId:uid()})); renderPDedit();
       setTimeout(function(){var els=$$('#pdWrap input[data-k="des"]');if(els.length)els[els.length-1].focus()},20); return }
     if(b.dataset.continua){
       var fr=frentesAbertas(p.tipo).filter(function(x){return x.frenteId===b.dataset.continua})[0];
-      if(fr)p.lin.push({cod:fr.cod||'',des:fr.des||'',un:'',qt:null,pki:fr.pki||'',pkf:fr.pkf||'',estado:'aberta',frenteId:fr.frenteId});
+      if(fr)p.lin.push(mvNovo({cod:fr.cod||'',des:fr.des||'',un:'',qt:null,pki:fr.pki||'',pkf:fr.pkf||'',estado:'aberta',frenteId:fr.frenteId}));
       renderPDedit(); return }
     if(b.dataset.fechaLinha!=null&&b.dataset.fechaLinha!==''){
       var lf=p.lin[+b.dataset.fechaLinha];
@@ -2353,7 +2364,7 @@ function renderInt(){
       : hh.trab<=0? '<span class="chip bad">não trabalhada</span>'
       : hh.trab<hh.conc-1e-9? '<span class="chip warn">−'+hdec(hh.conc-hh.trab)+'</span>'
       : '<span class="chip ok">100%</span>';
-    h+='<tr>'+
+    h+='<tr'+(MV_NOVO.has(i)?' class="mv-novo"':'')+'>'+
       '<td class="w1">'+(trava?'<span class="mono">'+esc(ptbr(i.data))+'</span>':'<input type="date" data-i="'+i.id+'" data-k="data" value="'+esc(i.data)+'" style="width:130px">')+'</td>'+
       '<td class="w1">'+diaSem(i.data).slice(0,3)+'</td><td class="w1 mono">'+(i.data?semana(i.data):'')+'</td>'+
       (trava?'<td>'+esc(i.de||'')+'</td><td>'+esc(i.ate||'')+'</td><td class="w1">'+esc(i.via||'')+'</td><td class="w1 mono">'+esc(i.os||'')+'</td>'
@@ -5443,7 +5454,7 @@ $('#ptoModos').addEventListener('click',function(e){ var b=e.target.closest('[da
 $('#bArtNovo').addEventListener('click',function(){ ST.art.unshift({id:uid(),tipo:flt.tipo,origem:flt.origem||'contrato',cod:'',des:'',un:'un',qt:0,pu:0,aini:0}); buildIX(); renderArt();
   setTimeout(function(){var e=$('#artBox input[data-k="cod"]');if(e)e.focus()},20) });
 $('#bIntNova').addEventListener('click',function(){
-  ST.int.unshift({id:uid(),tipo:flt.tipo,data:hoje(),de:'',ate:'',via:'',os:'',ptI:'',ptF:'',cI:'',cF:'',tI:'',tF:'',motivo:''}); render() });
+  ST.int.unshift(mvNovo({id:uid(),tipo:flt.tipo,data:hoje(),de:'',ate:'',via:'',os:'',ptI:'',ptF:'',cI:'',cF:'',tI:'',tF:'',motivo:''})); render() });
 $('#bIntSem').addEventListener('click',function(){
   var d=prompt('Primeiro dia da semana a criar (AAAA-MM-DD):',hoje()); if(!d)return;
   d=dstr(d); var mod=ST.int.filter(function(i){return (i.tipo||'cat')===flt.tipo})[0]||{};
@@ -5476,7 +5487,7 @@ $('#bIntOS').addEventListener('click',async function(){
     if(!novas.length){ toast(ja?'As interdições das OS já estão todas na lista ('+ja+').':(semP?'As OS ainda não têm períodos lidos.':'Ainda não há OS nesta obra (Central › OS e PDT).')); return }
     var txt='Criar <b>'+novas.length+'</b> '+(novas.length===1?'interdição':'interdições')+' a partir das OS?<br><br>'+novas.slice(0,12).map(function(n){ return esc(ptbr(n.data))+' · OS '+esc(n.os)+' · '+esc(n.ptI)+' às '+esc(n.ptF)+(n.de||n.ate?' · '+esc(n.de)+(n.ate?' – '+esc(n.ate):''):'') }).join('<br>')+(novas.length>12?'<br>… e mais '+(novas.length-12):'')+(ja?'<br><br>('+ja+' já existiam e não mudam.)':'')+'<br><br>O concedido começa igual ao previsto. As horas trabalhadas preenchem-se na parte diária.';
     if(!(await nmSim(txt,'Criar')))return;
-    novas.forEach(function(n){ ST.int.unshift({id:uid(),tipo:flt.tipo,data:n.data,de:n.de,ate:n.ate,via:n.via,os:n.os,ptI:n.ptI,ptF:n.ptF,cI:n.ptI,cF:n.ptF,tI:'',tF:'',motivo:''}) });
+    novas.forEach(function(n){ ST.int.unshift(mvNovo({id:uid(),tipo:flt.tipo,data:n.data,de:n.de,ate:n.ate,via:n.via,os:n.os,ptI:n.ptI,ptF:n.ptF,cI:n.ptI,cF:n.ptF,tI:'',tF:'',motivo:''})) });
     render(); toast(novas.length===1?'1 interdição criada.':novas.length+' interdições criadas.');
   }catch(e){ toast('Não consegui ler as OS: '+((e&&e.message)||e)) }
 });
@@ -6849,5 +6860,9 @@ $('#pdLista').addEventListener('keydown',function(e){ if((e.key==='Enter'||e.key
 })();
 
 </script>
+<script>/* movimento: enquanto se edita, as linhas não voltam a animar */
+(function(){var t;function c(){var d=document.documentElement;d.classList.add('mv-calmo');clearTimeout(t);t=setTimeout(function(){d.classList.remove('mv-calmo')},700)}
+['input','change','keydown'].forEach(function(e){document.addEventListener(e,c,true)});
+document.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('table,.box,.modalBox,.jan,form'))c()},true)})();</script>
 </body>
 </html>
