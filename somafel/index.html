@@ -924,6 +924,9 @@ async function vObra(id){
     try{await ok(sb.from('obra_pessoas').insert(v.p.map(pid=>({obra_id:id,pessoa_id:pid}))));aviso('Pessoas atribuídas.');vObra(id)}catch(e){aviso(erroTxt(e),true)}};
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
+const temSub=c=>/^(cat|rct)_/.test(c||''),bonito=n=>String(n||'').replace(/_/g,' ').replace(/\s+/g,' ').trim(),natCmp=(a,b)=>String(a).localeCompare(String(b),'pt',{numeric:true});
+const kmDoc=n=>{const m=/(?:^|[^0-9])(\d{3})[-_]\d{2}/.exec(String(n||'').replace(/^\s*\d+(\.\d+)?\s*-\s*/,''));return m?'Km '+m[1]:'Outros'};
+const baseVer=n=>{const m=/^(.*?)[\s_-]*[Vv](\d+)(\.[A-Za-z0-9]+)?$/.exec(String(n||'').trim());return m?{b:m[1].replace(/[\s_-]+$/,'').toLowerCase(),v:+m[2]}:{b:String(n).toLowerCase(),v:0}};
 const PROJCATS=['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','rct_diagrama','rct_caminho_cabos','pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
 async function vProj(){const o=S.obra;DOCCACHE.velho=true;if(!PROJCATS.includes(DOCCAT))DOCCAT='cat_caderno_piq';titulo('Projeto',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod"><div id="docs"></div></div></div>';docsObra(o)}
 async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('OS e PDT',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
@@ -1433,13 +1436,16 @@ async function docsObra(o){
       const rs=await Promise.all(Object.keys(CATDOC).map(c=>sb.storage.from('documentos').list(o.id+'/'+c,{limit:500,sortBy:{column:'created_at',order:'desc'}}).then(r=>({c,r}))));
       for(const {c,r} of rs){if(r.error)throw r.error;
         (r.data||[]).filter(x=>x.id).forEach(x=>{const nome=x.name.replace(/^[0-9a-f]{8}__/,'');todos.push({cat:c,path:o.id+'/'+c+'/'+x.name,nome,tam:(x.metadata&&x.metadata.size)||0,os:osDoc(nome),dia:diaDoc(nome)||(x.created_at||'').slice(0,10)})})}
+      const pastas=[];rs.forEach(({c,r})=>{if(temSub(c))(r.data||[]).filter(x=>!x.id).forEach(x=>pastas.push({c,sub:x.name}))});
+      if(pastas.length){const rs2=await Promise.all(pastas.map(pp=>sb.storage.from('documentos').list(o.id+'/'+pp.c+'/'+pp.sub,{limit:1000,sortBy:{column:'name',order:'asc'}}).then(r=>({pp,r}))));
+        rs2.forEach(({pp,r})=>{if(r.error)throw r.error;(r.data||[]).filter(x=>x.id).forEach(x=>{const nome=x.name.replace(/^[0-9a-f]{8}__/,'');todos.push({cat:pp.c,sub:pp.sub.replace(/_/g,' '),subRaw:pp.sub,path:o.id+'/'+pp.c+'/'+pp.sub+'/'+x.name,nome,tam:(x.metadata&&x.metadata.size)||0,os:'',dia:''})})})}
       DOCCACHE={id:o.id,t:todos,velho:false}}
     EAS=await ok(sb.from('obra_esquemas').select('esquemas(*)').eq('obra_id',o.id)).then(r=>r.map(x=>x.esquemas).filter(Boolean));
     PDTS=await ok(sb.from('pdts').select('*').eq('obra_id',o.id).order('dia',{ascending:false})).catch(()=>[]);
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
   const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',proj=S.vista==='proj',chave=proj?PROJCATS:['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
   const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c)+(c==='pdt'?PDTS.length:0);
-  const okq=x=>!q||(x.nome+' '+x.os+' '+(x.dia?fmtData(x.dia):'')+' '+DOCCURTO[x.cat]).toLowerCase().includes(q);
+  const okq=x=>!q||(x.nome+' '+(x.sub||'')+' '+x.os+' '+(x.dia?fmtData(x.dia):'')+' '+DOCCURTO[x.cat]).toLowerCase().includes(q);
   const linha=(x,mc)=>'<tr><td>'+(x.dia?fmtData(x.dia):'—')+'</td>'+(mc?'<td><span class="hint">'+DOCCURTO[x.cat]+'</span></td>':'')+'<td class="mono">'+(x.os||'<span class="hint">—</span>')+'</td><td>'+esc(x.nome)+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+esc(x.path)+'">Abrir</button><button class="perigo" data-dd="'+esc(x.path)+'">Apagar</button></td></tr>';
   let h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px">'+chave.map(c=>'<button data-dc="'+c+'" class="'+(DOCCAT===c?'pri':'')+'">'+DOCCURTO[c]+' <span style="opacity:.7">'+n(c)+'</span></button>').join('')+'</div>'
     +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px"><input type="search" id="dq" placeholder="Procurar em todos os documentos" value="'+esc(DOCQ)+'" style="min-width:260px;max-width:520px"></div>';
@@ -1448,15 +1454,32 @@ async function docsObra(o){
     h+=ks.length?ks.map(k=>'<div class="sec">'+(k?'OS '+esc(k):'Sem OS associada')+'</div><div class="card" style="padding:0"><table><thead><tr><th>Dia</th><th>Tipo</th><th>OS</th><th>Ficheiro</th><th class="n">Tamanho</th><th></th></tr></thead><tbody>'+m[k].sort((a,b)=>a.cat.localeCompare(b.cat)||b.dia.localeCompare(a.dia)).map(x=>linha(x,true)).join('')+'</tbody></table></div>').join(''):'<p class="hint">Ainda não há documentos.</p>';
   }else{const L=todos.filter(x=>x.cat===DOCCAT).filter(okq),tot=todos.filter(x=>x.cat===DOCCAT).length,EA=ESQCAT[DOCCAT]?EAS.filter(x=>x.tipo===ESQCAT[DOCCAT]&&(!q||(x.nome+' '+(x.estacao||'')+' '+(x.via||'')+' '+(x.troco||'')).toLowerCase().includes(q))):[],ehEA=!!ESQCAT[DOCCAT];
     const ehOS=DOCCAT==='os';
-    h+='<div class="card" style="padding:0" id="dz"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--rule)"><b>'+CATDOC[DOCCAT]+'</b><button class="pri" id="dup">Adicionar ficheiros…</button>'+(ehEA?'<button id="eaA">Associar da biblioteca…</button>':'')+(ehOS?'<button id="nos">+ Nova OS</button>':'')+'<span class="hint">'+tot+(tot===1?' ficheiro':' ficheiros')+' · ou arrasta os ficheiros para aqui</span><input type="file" id="dfi" multiple hidden></div>'
+    h+='<div class="card" style="padding:0" id="dz"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--rule)"><b>'+CATDOC[DOCCAT]+'</b><button class="pri" id="dup">Adicionar ficheiros…</button>'+(temSub(DOCCAT)?'<button id="dpa">Carregar pasta…</button><input type="file" id="dpi" webkitdirectory multiple hidden>':'')+(ehEA?'<button id="eaA">Associar da biblioteca…</button>':'')+(ehOS?'<button id="nos">+ Nova OS</button>':'')+'<span class="hint" id="dprog">'+tot+(tot===1?' ficheiro':' ficheiros')+' · ou arrasta os ficheiros para aqui</span><input type="file" id="dfi" multiple hidden></div>'
       +'<p class="hint" style="margin:10px 14px 0">'+esc(DOCHINT[DOCCAT])+'</p>'
       +(DOCCAT==='pdt'?pdtTabela():'')
       +(ehEA&&EA.length?'<table><thead><tr><th>Da biblioteca</th><th>Via / troço</th><th></th></tr></thead><tbody>'+EA.map(x=>'<tr><td><b>'+esc(x.tipo==='sinalizacao'?(x.estacao||x.nome):x.nome)+'</b></td><td>'+esc([x.via,x.troco].filter(Boolean).join(' · ')||'—')+'</td><td class="ac"><button data-eab="'+x.id+'">Abrir</button>'+(x.tipo==='sinalizacao'?'<button data-eas="'+x.id+'">Sinais</button>':'')+'<button data-eat="'+x.id+'">Tirar da obra</button></td></tr>').join('')+'</tbody></table>':'')
-      +(ehOS?tabelaOS(L,okq):L.length?'<table><thead><tr><th>Dia</th><th>OS</th><th>Ficheiro</th><th class="n">Tamanho</th><th></th></tr></thead><tbody>'+L.map(x=>linha(x,false)).join('')+'</tbody></table>':(ehEA&&EA.length&&!tot?'':'<p class="hint" style="margin:14px">'+(tot?'Nada com esse texto.':'Ainda não há ficheiros.')+'</p>'))+'</div>';
+      +(temSub(DOCCAT)?tabelaSub(L,tot):ehOS?tabelaOS(L,okq):L.length?'<table><thead><tr><th>Dia</th><th>OS</th><th>Ficheiro</th><th class="n">Tamanho</th><th></th></tr></thead><tbody>'+L.map(x=>linha(x,false)).join('')+'</tbody></table>':(ehEA&&EA.length&&!tot?'':'<p class="hint" style="margin:14px">'+(tot?'Nada com esse texto.':'Ainda não há ficheiros.')+'</p>'))+'</div>';
   }
   h+='<p class="hint" style="margin-top:12px">Estes ficheiros ficam disponíveis no telemóvel da equipa. Cada um aparece na OS a que o ligares (escreve «OS 4104» no nome).</p>';
   el.innerHTML=h;
-  const sobe=async fs=>{let k=0,criou=false;for(const f of fs){
+  const sobePastaOuSub=async(fs,dePasta)=>{
+    let L=fs.map(f=>{const rel=(f.webkitRelativePath||'').split('/').filter(Boolean);return {f,sub:rel.length>2?rel[1]:''}});
+    L=L.filter(x=>!/^(thumbs\.db|desktop\.ini)$/i.test(x.f.name)&&!/^~\$/.test(x.f.name));
+    if(DOCCAT==='cat_caderno_mont'){ /* só a versão mais recente de cada caderno; subpasta = quilómetro */
+      const best={};L.forEach(x=>{const b=baseVer(x.f.name.replace(/\.[^.]+$/,''));const k=(x.sub||'')+'|'+b.b;if(!best[k]||b.v>best[k].v)best[k]={v:b.v,x}});L=Object.values(best).map(y=>y.x);
+      L.forEach(x=>{if(!x.sub)x.sub=kmDoc(x.f.name)})}
+    else if(!dePasta||L.every(x=>!x.sub)){const v=await formulario('Subpasta',[{id:'s',rotulo:'Subpasta (opcional)',ph:'ex.: Via 1, Estação, Troço A'}],'Carregar');if(!v)return;L.forEach(x=>{if(!x.sub)x.sub=(v.s||'').trim()})}
+    const ja=new Set(todos.filter(x=>x.cat===DOCCAT).map(x=>(x.subRaw||'')+'|'+x.nome.toLowerCase()));
+    const fila=L.filter(x=>{const nm=nomeSeguro(x.f.name).toLowerCase(),sr=x.sub?nomeSeguro(x.sub):'';return !ja.has(sr+'|'+nm)}),repetidos=L.length-fila.length;
+    if(!fila.length){aviso('Todos os ficheiros já estavam carregados.');return}
+    let k=0,i=0,falhas=0;const st=$('#dprog');const tick=()=>{if(st)st.textContent='A carregar '+k+'/'+fila.length+'…'};tick();
+    const unidade=async()=>{while(i<fila.length){const {f,sub}=fila[i++];if(f.size>50*1048576){aviso(f.name+' tem mais de 50 MB.',true);falhas++;continue}
+      const sr=sub?nomeSeguro(sub)+'/':'';const r=await sb.storage.from('documentos').upload(o.id+'/'+DOCCAT+'/'+sr+crypto.randomUUID().slice(0,8)+'__'+nomeSeguro(f.name),f,{contentType:f.type||'application/octet-stream'});
+      if(r.error){falhas++;aviso(f.name+': '+erroTxt(r.error),true)}else k++;tick()}};
+    await Promise.all([unidade(),unidade(),unidade(),unidade()]);
+    aviso(k+' ficheiro'+(k===1?'':'s')+' carregado'+(k===1?'':'s')+(repetidos?' · '+repetidos+' já existiam':'')+(falhas?' · '+falhas+' com erro':'')+'.',!!falhas&&!k);
+    DOCCACHE.velho=true;docsObra(o)};
+  const sobe=async fs=>{if(temSub(DOCCAT))return sobePastaOuSub(fs,false);let k=0,criou=false;for(const f of fs){
       if(f.size>50*1048576){aviso(f.name+' tem mais de 50 MB.',true);continue}
       let nm=f.name,au=null;
       if(DOCCAT==='os'){au=await autoOS(o,f);if(au.msg)aviso(au.msg,!!au.erro);if(au.novo)criou=true;if(au.numero&&osDoc(nm)!==String(au.numero))nm='OS '+au.numero+' '+nm}
@@ -1468,6 +1491,7 @@ async function docsObra(o){
     if(criou&&!proj)modulosObra(o,'docs');else docsObra(o)};
   el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{DOCCAT=b.dataset.dc;docsObra(o)});
   const qi=$('#dq');qi.oninput=()=>{DOCQ=qi.value;const p=qi.selectionStart;docsObra(o).then(()=>{const t=$('#dq');if(t){t.focus();try{t.setSelectionRange(p,p)}catch(e){}}})};
+  const dpa=$('#dpa');if(dpa){dpa.onclick=()=>$('#dpi').click();$('#dpi').onchange=ev=>{const fs=[...ev.target.files];ev.target.value='';if(fs.length)sobePastaOuSub(fs,true)}}
   const up=$('#dup');if(up){up.onclick=()=>$('#dfi').click();$('#dfi').onchange=ev=>{const fs=[...ev.target.files];ev.target.value='';if(fs.length)sobe(fs)};
     const dz=$('#dz');dz.ondragover=e=>{e.preventDefault();dz.style.outline='2px dashed #F9D115'};dz.ondragleave=()=>{dz.style.outline=''};dz.ondrop=e=>{e.preventDefault();dz.style.outline='';sobe([...e.dataTransfer.files])}}
   const refaz=()=>{DOCCACHE.velho=true;if(proj)docsObra(o);else modulosObra(o,'docs')};
@@ -1796,6 +1820,9 @@ async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Fa
 /* ---------- esquema elétrico em anexo: marcação e exportação ---------- */
 const PDTBASEC=new Map();
 const PDTPG=new Map();
+function tabelaSub(L,tot){if(!L.length)return '<p class="hint" style="margin:14px">'+(tot?'Nada com esse texto.':'Ainda não há ficheiros.')+'</p>';
+  const m={};L.forEach(x=>(m[x.sub||'']=m[x.sub||'']||[]).push(x));const ks=Object.keys(m).sort((a,b)=>a===''?-1:b===''?1:natCmp(a,b));
+  return '<table><thead><tr><th>Ficheiro</th><th class="n">Tamanho</th><th></th></tr></thead>'+ks.map(k=>'<tbody>'+(ks.length>1||k?'<tr><td colspan="3" style="background:var(--sheet);font-weight:700;padding:8px 14px">'+(k?esc(k):'Sem subpasta')+' <span class="hint">· '+m[k].length+'</span></td></tr>':'')+m[k].sort((a,b)=>natCmp(a.nome,b.nome)).map(x=>'<tr><td>'+esc(bonito(x.nome))+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+esc(x.path)+'">Abrir</button><button class="perigo" data-dd="'+esc(x.path)+'">Apagar</button></td></tr>').join('')+'</tbody>').join('')+'</table>'}
 function carregaDwg(){return window.DwgView?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='dwgview.js?v=1';s.onload=res;s.onerror=()=>rej(new Error('Não consegui carregar o visualizador de DWG.'));document.head.appendChild(s)})}
 async function dwgAbre(path){const nome=decodeURIComponent(String(path).split('/').pop()).replace(/^[0-9a-f]{8}__/,'');
   const w=janela(nome,true);w.el.style.cssText+=';width:min(1400px,97vw);max-width:97vw';w.corpo.innerHTML='<div id="dwgV" style="height:70vh;border-radius:6px"></div><div class="bt"><a id="dwgD" class="btn" style="text-decoration:none">Descarregar</a><button class="n">Fechar</button></div><p class="hint">Rato: arrastar move, roda amplia, duplo clique ajusta. «Camadas» liga e desliga camadas.</p>';
