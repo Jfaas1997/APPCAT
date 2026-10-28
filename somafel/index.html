@@ -1350,10 +1350,10 @@ async function modulosObra(o,vista){
   {const SR=[];partes.forEach(p=>(p.parte_linhas||[]).filter(l=>l.tipo==='sem_rubrica').forEach(l=>SR.push({d:p.data,t:l.descricao,q:l.quantidade,e:p.estado,a:p.autor&&p.autor.nome})));
    if(SR.length){SR.sort((x,y)=>y.d<x.d?-1:1);h+='<div class="sec">Trabalhos sem rubrica ('+SR.length+')</div><div class="card" style="padding:4px 8px"><table><thead><tr><th>Dia</th><th>Trabalho</th><th>Quem</th><th>Parte</th></tr></thead><tbody>'+SR.map(x=>'<tr><td>'+fmtData(x.d)+'</td><td>'+esc(x.t||'')+(x.q!=null?' × '+esc(x.q):'')+'</td><td>'+esc(x.a||'')+'</td><td><span class="pill '+((ESTADO[x.e]||['',''])[1])+'">'+((ESTADO[x.e]||[x.e])[0])+'</span></td></tr>').join('')+'</tbody></table></div>'}}
   h+='<div class="sec">Estruturas<span class="sp"></span><button id="ies">Importar lista…</button></div><div class="card"><p class="hint" style="margin:0"><b>'+nEst+'</b> estrutura'+(nEst===1?'':'s')+' nesta obra. É a lista que aparece no telemóvel na parte diária.</p></div>';
-  const hV=h;h='<div id="docs"></div>';
+  const hV=h;h='<div id="esqObra"></div><div id="docs"></div>';
   OSLISTA=os;
   el.innerHTML=vista==='docs'?h:hV;
-  if(vista==='docs')docsObra(o);else{resumoApps(o);valCons(o)}
+  if(vista==='docs'){esqObra(o);docsObra(o)}else{resumoApps(o);valCons(o)}
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>verParte(partes.find(p=>p.id===b.dataset.pv),o,()=>modulosObra(o,vista)));
   if($('#cf'))$('#cf').onclick=()=>copiaFotos(o);
   if($('#los'))$('#los').onclick=()=>$('#losf').click();
@@ -1543,6 +1543,32 @@ async function sinaisEsq(e,adm,fim){
       try{await ok(sb.from('esquema_sinais').update({confirmado:true}).eq('esquema_id',e.id));await carrega();desenha()}catch(x){aviso(erroTxt(x),true)}};
   }
   desenha();
+}
+
+/* ---------- esquemas associados à obra ---------- */
+async function esqObra(o){
+  const el=$('#esqObra');if(!el)return;
+  let A,L;try{[A,L]=await Promise.all([ok(sb.from('obra_esquemas').select('esquema_id').eq('obra_id',o.id)),ok(sb.from('esquemas').select('id,tipo,nome,estacao,via,troco').order('nome'))])}
+  catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
+  const ids=new Set(A.map(x=>x.esquema_id)),meus=L.filter(x=>ids.has(x.id)),TN={sinalizacao:'Sinalização',eletrico:'Elétrico'};
+  el.innerHTML='<div class="sec">Esquemas desta obra<span class="sp"></span><button id="eoA">Associar esquemas…</button></div>'
+    +(meus.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Tipo</th><th>Esquema</th><th>Via / troço</th><th></th></tr></thead><tbody>'
+      +meus.sort((a,b)=>a.tipo.localeCompare(b.tipo)||a.nome.localeCompare(b.nome,'pt')).map(x=>'<tr><td>'+TN[x.tipo]+'</td><td><b>'+esc(x.tipo==='sinalizacao'?(x.estacao||x.nome):x.nome)+'</b></td><td>'+esc([x.via,x.troco].filter(Boolean).join(' · ')||'—')+'</td><td class="ac"><button data-eoR="'+x.id+'">Tirar da obra</button></td></tr>').join('')+'</tbody></table></div>'
+      :'<div class="card"><p class="hint" style="margin:0">Ainda não há esquemas associados. Escolhe da biblioteca (separador «Esquemas») os de sinalização e elétricos que esta obra usa: são os que aparecem ao criar um PDT.</p></div>');
+  el.querySelectorAll('[data-eoR]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_esquemas').delete().eq('obra_id',o.id).eq('esquema_id',b.dataset.eoR));esqObra(o)}catch(e){aviso(erroTxt(e),true)}});
+  $('#eoA').onclick=()=>{
+    const w=janela('Associar esquemas a '+(o.nome||'esta obra'),true),sel=new Set(ids);let q='';
+    const lista=()=>{const f=q.toLowerCase();
+      return ['sinalizacao','eletrico'].map(t=>{const F=L.filter(x=>x.tipo===t&&(!f||(x.nome+' '+(x.estacao||'')+' '+(x.via||'')+' '+(x.troco||'')).toLowerCase().includes(f)));
+        return '<div class="sec" style="margin-top:10px">'+TN[t]+' <span class="hint">'+F.length+'</span></div>'+(F.length?F.map(x=>'<label class="chk" style="display:flex;gap:8px;padding:3px 0"><input type="checkbox" data-e="'+x.id+'"'+(sel.has(x.id)?' checked':'')+'> <span>'+esc(x.nome)+(x.via||x.troco?' <span class="hint">· '+esc([x.via,x.troco].filter(Boolean).join(' · '))+'</span>':'')+'</span></label>').join(''):'<p class="hint">Nada na biblioteca.</p>')}).join('')};
+    const pinta=()=>{w.corpo.querySelector('#eoL').innerHTML=lista();w.corpo.querySelectorAll('[data-e]').forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.e):sel.delete(c.dataset.e)})};
+    w.corpo.innerHTML='<input type="search" id="eoQ" placeholder="Procurar" style="width:100%"><div id="eoL" style="max-height:55vh;overflow:auto"></div><div class="bt"><button id="eoC">Cancelar</button><button class="pri" id="eoS">Guardar</button></div>';
+    pinta();$('#eoQ',w.corpo).oninput=e=>{q=e.target.value;pinta()};$('#eoC',w.corpo).onclick=w.fecha;
+    $('#eoS',w.corpo).onclick=async()=>{const novos=[...sel].filter(x=>!ids.has(x)),tirar=[...ids].filter(x=>!sel.has(x));
+      try{if(novos.length)await ok(sb.from('obra_esquemas').insert(novos.map(x=>({obra_id:o.id,esquema_id:x}))));
+        for(const x of tirar)await ok(sb.from('obra_esquemas').delete().eq('obra_id',o.id).eq('esquema_id',x));
+        w.fecha();aviso('Esquemas da obra atualizados.');esqObra(o)}catch(e){aviso(erroTxt(e),true)}};
+  };
 }
 
 /* ---------- exportar tudo ---------- */
