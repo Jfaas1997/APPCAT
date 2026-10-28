@@ -9639,5 +9639,7 @@ render();
 (function(){var t;function c(){var d=document.documentElement;d.classList.add('mv-calmo');clearTimeout(t);t=setTimeout(function(){d.classList.remove('mv-calmo')},700)}
 ['input','change','keydown'].forEach(function(e){document.addEventListener(e,c,true)});
 document.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('table,.box,.modalBox,.jan,form'))c()},true)})();</script>
+<style>#nmSemBase{cursor:pointer;padding-right:36px!important}#nmSemBase::after{content:'\00d7';position:absolute;right:13px;top:7px;font-size:18px;line-height:1;opacity:.7}html.semBaseF #nmSemBase{display:none!important}@media(max-width:700px){#nmSemBase{top:auto!important;bottom:72px;max-width:92vw!important;width:max-content}}</style>
+<script>document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('#nmSemBase');if(a)document.documentElement.classList.add('semBaseF')});</script>
 </body>
 </html>
