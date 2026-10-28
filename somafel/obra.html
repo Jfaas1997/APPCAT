@@ -112,13 +112,16 @@ const osDoc=n=>{const m=/\bOS\s*[-_ ]*(\d{3,5})|ordem\s+de\s+servi[cç]o\s*n?[o�
 const diaDoc=n=>{n=n||'';let m=/(\d{4})[-_.](\d{2})[-_.](\d{2})/.exec(n);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=/(\d{2})[-_.](\d{2})[-_.](\d{4})/.exec(n);if(m)return m[3]+'-'+m[2]+'-'+m[1];m=/(20\d{2})(\d{2})(\d{2})/.exec(n);return m?m[1]+'-'+m[2]+'-'+m[3]:''};
 const tamTxt=b=>b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB';
 /* lista de ficheiros da obra: vem do servidor quando há rede e fica guardada para quando não houver */
+const temSub=c=>/^(cat|rct)_/.test(c||''),bonito=n=>String(n||'').replace(/_/g,' ').replace(/\s+/g,' ').trim();
 const CONV=()=>!!(S.eu&&S.eu.papel==='convidado');
 const CATS_CONV=['cat_caderno_piq','cat_caderno_mont','cat_planta_piq','cat_planta_piq_ex','cat_esq_eletrico','cat_esq_lancos','rct_diagrama','rct_caminho_cabos','desenhos','esq_eletricos','esq_sinalizacao','os'];
 async function listaDocs(obraId){
   if(navigator.onLine){
     try{const l=[];
       for(const c of (CONV()?CATS_CONV:Object.keys(CATDOC))){const r=await sb.storage.from('documentos').list(obraId+'/'+c,{limit:500});if(r.error)throw r.error;
-        (r.data||[]).filter(x=>x.id).forEach(x=>l.push({cat:c,path:obraId+'/'+c+'/'+x.name,nome:x.name.replace(/^[0-9a-f]{8}__/,''),tam:(x.metadata&&x.metadata.size)||0}))}
+        (r.data||[]).filter(x=>x.id).forEach(x=>l.push({cat:c,path:obraId+'/'+c+'/'+x.name,nome:x.name.replace(/^[0-9a-f]{8}__/,''),tam:(x.metadata&&x.metadata.size)||0}));
+        if(temSub(c))for(const d of (r.data||[]).filter(x=>!x.id)){const r2=await sb.storage.from('documentos').list(obraId+'/'+c+'/'+d.name,{limit:1000});if(r2.error)throw r2.error;
+          (r2.data||[]).filter(x=>x.id).forEach(x=>l.push({cat:c,sub:d.name.replace(/_/g,' '),path:obraId+'/'+c+'/'+d.name+'/'+x.name,nome:x.name.replace(/^[0-9a-f]{8}__/,''),tam:(x.metadata&&x.metadata.size)||0}))}}
       await cachePut('docs:'+obraId,l);return l}catch(e){}}
   return (await cacheGet('docs:'+obraId))||[]}
 async function abreDoc(x){
@@ -358,7 +361,9 @@ async function vProj(){ const cats=CONV()?['cat_caderno_piq','cat_caderno_mont',
   const l=(await listaDocs(S.obra)).filter(x=>cats.includes(x.cat)), tem=new Set(await docKeys()); if(S.vista!=='proj')return;
   const pinta=()=>{ const q=semAc($('#bq').value).split(/\s+/).filter(Boolean), el=$('#bl'); if(!el)return; const f=l.filter(x=>q.every(t=>semAc(x.nome).includes(t)));
     if(!l.length){ el.innerHTML='<div class="card"><p class="hint" style="margin:0">Ainda não há desenhos nem documentos nesta obra.</p></div>'; return }
-    el.innerHTML=cats.map(c=>{ const v=f.filter(x=>x.cat===c); return v.length?'<div class="sec">'+CATDOC[c]+'</div><div class="card" style="padding:4px 16px">'+v.map(x=>'<div class="lin" data-p="'+esc(x.path)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+(x.tam?tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join('')+'</div>':'' }).join('')||'<div class="card"><p class="hint" style="margin:0">Nada encontrado.</p></div>';
+    el.innerHTML=cats.map(c=>{ const v=f.filter(x=>x.cat===c); if(!v.length)return '';const ln=x=>'<div class="lin" data-p="'+esc(x.path)+'" style="cursor:pointer"><div class="t"><b>'+esc(temSub(c)?bonito(x.nome):x.nome)+'</b><small>'+(x.tam?tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>';
+      const gs={}; v.forEach(x=>(gs[x.sub||'']=gs[x.sub||'']||[]).push(x)); const ks=Object.keys(gs).sort((a,b)=>a===''?-1:b===''?1:a.localeCompare(b,'pt',{numeric:true}));
+      return '<div class="sec">'+CATDOC[c]+'</div><div class="card" style="padding:4px 16px">'+ks.map(k=>(k?'<div style="font-weight:700;padding:10px 0 2px">'+esc(k)+' <span class="hint">· '+gs[k].length+'</span></div>':'')+gs[k].sort((a,b)=>a.nome.localeCompare(b.nome,'pt',{numeric:true})).map(ln).join('')).join('')+'</div>' }).join('')||'<div class="card"><p class="hint" style="margin:0">Nada encontrado.</p></div>';
     el.querySelectorAll('[data-p]').forEach(d=>d.onclick=async()=>{ const x=l.find(y=>y.path===d.dataset.p); await abreDoc(x); tem.add(x.path); pinta() }) };
   $('#bq').oninput=pinta; pinta() }
 /* ---------- normas, desenhos, peças e simulador (consulta, sem rede depois de abertos uma vez) ---------- */
