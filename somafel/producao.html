@@ -927,6 +927,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
       <span class="seg" id="intVis"><button data-iv="t" class="on">Tabela</button><button data-iv="l">Linha do tempo</button></span>
       <button id="bIntNova" class="sp">+ Interdição</button>
       <button id="bIntSem">+ Semana</button>
+      <button id="bIntOS" class="pri" hidden title="Cria as interdições a partir das OS lidas na Central">Importar das OS</button>
     </div>
     <div class="scroll"><div id="intBox"></div></div>
     <div class="foot" id="ftInt"></div>
@@ -2291,6 +2292,7 @@ function renderInt(){
       '<td class="w1">'+(i.os&&(i.cI||i.cF)?'<button data-edita="'+i.id+'" title="'+(trava?'Corrigir os dados da OS':'Voltar a fixar os dados da OS')+'">'+(trava?'✎':'🔒')+'</button> ':'')+'<button class="x" data-del="'+i.id+'">×</button></td></tr>';
   });
   h+='</tbody></table>';
+  var bOS=$('#bIntOS'); if(bOS)bOS.hidden=!(NM&&NM.ob&&!NM.soLeitura);
   $('#intBox').innerHTML=(intVis==='l')?'<div class="pad">'+intLinhaTempoHtml(rows)+'</div>':h;
   $$('#intVis button').forEach(function(b){ b.classList.toggle('on',b.dataset.iv===intVis) });
   enchecausas();
@@ -5363,6 +5365,33 @@ $('#bIntSem').addEventListener('click',function(){
       ptI:mod.ptI||'',ptF:mod.ptF||'',cI:'',cF:'',tI:'',tF:'',motivo:''});
   }
   render(); toast('Criada a semana de '+ptbr(d)+'.');
+});
+
+/* ---------- importar interdições das OS (lidas na Central) ---------- */
+function lxHora(d){ var p=new Intl.DateTimeFormat('pt-PT',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d), o={};
+  p.forEach(function(x){ o[x.type]=x.value }); return {data:o.year+'-'+o.month+'-'+o.day, hm:o.hour+':'+o.minute} }
+$('#bIntOS').addEventListener('click',async function(){
+  if(!(NM&&NM.ob)){ toast('Disponível dentro de uma obra.'); return }
+  try{
+    var q1=await sb.from('os_interdicoes').select('id,numero,semana,os_periodos(inicio,fim)').eq('obra_id',NM.ob.id);
+    if(q1.error)throw q1.error;
+    var q2=await sb.from('pdts').select('numero_os,dia,dados').eq('obra_id',NM.ob.id);
+    var pd={}; (q2.data||[]).forEach(function(r){ pd[String(r.numero_os)+'|'+r.dia]=r.dados||{} });
+    var novas=[], ja=0, semP=0;
+    (q1.data||[]).forEach(function(o){
+      var ps=(o.os_periodos||[]); if(!ps.length)semP++;
+      ps.forEach(function(p){
+        var a=lxHora(new Date(p.inicio)), b=lxHora(new Date(p.fim));
+        if(ST.int.some(function(i){ return String(i.os||'')===String(o.numero)&&i.data===a.data })){ ja++; return }
+        var lim=((pd[String(o.numero)+'|'+a.data]||{}).lim||[]).filter(function(r){ return r&&(r[0]||r[2]) });
+        novas.push({os:String(o.numero),data:a.data,ptI:a.hm,ptF:b.hm,de:lim[0]?lim[0][0]||'':'',ate:lim[1]?lim[1][0]||'':'',via:lim[0]?lim[0][2]||'':''}) }) });
+    novas.sort(function(x,y){ return x.data.localeCompare(y.data) });
+    if(!novas.length){ toast(ja?'As interdições das OS já estão todas na lista ('+ja+').':(semP?'As OS ainda não têm períodos lidos.':'Ainda não há OS nesta obra (Central › OS e PDT).')); return }
+    var txt='Criar <b>'+novas.length+'</b> '+(novas.length===1?'interdição':'interdições')+' a partir das OS?<br><br>'+novas.slice(0,12).map(function(n){ return esc(ptbr(n.data))+' · OS '+esc(n.os)+' · '+esc(n.ptI)+' às '+esc(n.ptF)+(n.de||n.ate?' · '+esc(n.de)+(n.ate?' – '+esc(n.ate):''):'') }).join('<br>')+(novas.length>12?'<br>… e mais '+(novas.length-12):'')+(ja?'<br><br>('+ja+' já existiam e não mudam.)':'')+'<br><br>O concedido começa igual ao previsto. As horas trabalhadas preenchem-se na parte diária.';
+    if(!(await nmSim(txt,'Criar')))return;
+    novas.forEach(function(n){ ST.int.unshift({id:uid(),tipo:flt.tipo,data:n.data,de:n.de,ate:n.ate,via:n.via,os:n.os,ptI:n.ptI,ptF:n.ptF,cI:n.ptI,cF:n.ptF,tI:'',tF:'',motivo:''}) });
+    render(); toast(novas.length===1?'1 interdição criada.':novas.length+' interdições criadas.');
+  }catch(e){ toast('Não consegui ler as OS: '+((e&&e.message)||e)) }
 });
 
 /* ---------- impressão da parte diária ---------- */
