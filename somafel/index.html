@@ -1767,7 +1767,7 @@ function pdtNome(r){const k=r.dados.dia.k,v=/DESCENDENTE/i.test(r.dados.F.ms1||'
 function pdtDeForm(numero,sem,F,dia){
   const sm=String(sem||'').split('/'),per=dia.p||[];
   return {os:numero,ano:sm[0]||'',semana:sm[1]||'',trabalho:F.trab,entidade:F.ent,ms1:F.ms1,ms2:F.ms2,lim:(F.lim||[]).filter(l=>l.some(Boolean)),
-    aparelhos:String(F.ap||'').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8),postes:String(F.po||'').split('\n').map(x=>x.trim()).slice(0,8),protTrans:F.pt,
+    aparelhos:String(F.ap||'').split('\n').map(x=>x.trim()).slice(0,8),postes:String(F.po||'').split('\n').map(x=>x.trim()).slice(0,8),protTrans:F.pt,
     frentes:pdtCampos(F.fr),terra:pdtCampos(F.te),pessoal:pdtCampos(F.pe),maquinas:pdtCampos(F.ma),scpvi:pdtCampos(F.sc),coord:F.co,contactos:F.ct,
     data:dia.k,per1:per[0]||'',per2:per.slice(1).join('; ')}}
 const carregaPdfLibs=async()=>{await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>window.html2canvas);await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>window.jspdf)};
@@ -1789,7 +1789,8 @@ async function pdtPdfBlob(buf){
     return pdf.output('blob')
   }finally{box.remove()}}
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
-async function pdtVer(o,r,fim){
+async function pdtVer(o,r,fim){return pdtEdita(o,r,fim)}
+async function pdtVerAntigo(o,r,fim){
   const w=janela(pdtNome(r),true);w.el.style.cssText+=';width:min(1250px,97vw);max-width:97vw';w.corpo.innerHTML='<p class="hint">A abrir…</p>';
   try{await carregaPrev();const buf=await pdtBuf(r);w.corpo.innerHTML='<div id="pvC" style="height:80vh;overflow:auto;background:#777;border-radius:6px"></div><div class="bt"><button id="pvE">Editar</button><button id="pvW">Word</button><button id="pvP" class="pri">PDF</button><button id="pvF">Fechar</button></div>';
     await docx.renderAsync(buf,$('#pvC',w.corpo),null,{inWrapper:true,breakPages:true,ignoreHeight:true});const wp=$('#pvC .docx-wrapper',w.corpo);if(wp)wp.style.zoom=Math.max(1,Math.min(1.6,($('#pvC',w.corpo).clientWidth-30)/820));
@@ -1837,44 +1838,115 @@ async function criaPDT(o,os,fim,ed){
     (oc.chefe||[]).forEach(c=>per.push('Chefe dos Trabalhos- '+c.Nome+' '+(c.TpAtivid||'')+' '+(c.PrestServ||'')+' '+(c['Telemóvel']||'')));
     F={trab:((os.os_periodos||[])[0]||{}).trabalhos||base.trabalho||'1',ent:oc.tipo,ms1:oc.interdicao,ms2:oc.corte,lim,ap:(oc.aparelhos||[]).join('\n'),po:'',pt:oc.protTrans,
       fr:base.frentes||'',te:base.terra||'',pe:base.pessoal||'',ma:base.maquinas||'',sc:base.scpvi||'',co:base.coord||'',ct:per.join('\n')}}
-  const phPo=oc&&(oc.postes||[]).filter(Boolean).length?'OS: '+oc.postes.filter(Boolean).join('  |  '):'';
-  const dias=ed?[ed.dados.dia]:diasOS(os);
-  const ta=(id,rot,val,rows,ph)=>'<label>'+rot+'</label><textarea id="'+id+'" rows="'+rows+'" style="width:100%;font:13px ui-monospace,Consolas,monospace" placeholder="'+esc(ph||'')+'">'+esc(val||'')+'</textarea>';
-  const inp=(id,rot,val,larg)=>'<div style="flex:'+(larg||1)+';min-width:120px"><label>'+rot+'</label><input id="'+id+'" value="'+esc(val||'')+'"></div>';
-  w.corpo.innerHTML='<div style="max-height:72vh;overflow:auto;padding-right:6px">'+aviso0
-   +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+inp('pd_trab','Trabalho nº',F.trab)+inp('pd_ent','Entidade executante',F.ent,3)+'</div>'
-   +ta('pd_ms1','Trabalho ao abrigo das MS – interdição',F.ms1,2)+ta('pd_ms2','Corte de tensão',F.ms2,2)
-   +'<label>Limites de interdição (estação · linha · via · sinal · km)</label>'+(F.lim||[]).map((l,i)=>'<div style="display:flex;gap:6px;margin-bottom:4px">'+l.map((v,k)=>'<input data-lim="'+i+'" data-k="'+k+'" value="'+esc(v)+'" placeholder="'+['Estação','Linha','Via','Sinal','km'][k]+'" style="flex:'+(k<2?2:1)+';min-width:0">').join('')+'</div>').join('')
-   +'<p class="hint">Os km vêm dos sinais confirmados nos esquemas associados à obra; se estiverem em branco, escreve-os.</p>'
-   +'<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:240px">'+ta('pd_ap','Aparelhos de corte (um por linha, máx. 8)',F.ap,4)+'</div><div style="flex:1;min-width:240px">'+ta('pd_po','Postes / km limite (um por linha, pela mesma ordem)',F.po,4,phPo)+'</div></div>'
-   +ta('pd_pt','Proteções transversais',F.pt,2)
-   +ta('pd_fr','Frentes de trabalho — localização ; descrição (uma por linha)',F.fr,3,'LN / VA / 199+700 ao 200+900 ; Instalação de ferragens…')
-   +ta('pd_te','Ligações à terra — local ; trabalhador ; nº da carta',F.te,3,'1 - 40-079/07 VA 199-23 / 199+700 ; Nome ; Nº E240729')
-   +ta('pd_pe','CVI / PVI — nome ; documento CVI ; documento PVI ; trabalho a efetuar',F.pe,3,'Nome ; E 251005 ; ; Condutor da dresine')
-   +ta('pd_ma','Material circulante — tipo ; UIC ; ICS/DCV ; entrada local ; ordem ; saída local ; ordem ; km início ; km fim',F.ma,3)
-   +ta('pd_sc','Sinais complementares — nº ; localização ; resp. colocação ; resp. retirada',F.sc,3,'1 ; SCPVI Nº3 199+200 ; Nome ; Nome')
-   +ta('pd_co','Coordenação das atividades',F.co,2)
-   +ta('pd_ct','Contactos e observações',F.ct,5)
-   +(ed?'<label>Períodos do dia (separados por «;»)</label><input id="pd_per" value="'+esc((ed.dados.dia.p||[]).join(' ; '))+'">'
-      :'<label>Dias a gerar</label><div>'+(dias.length?dias.map((d,i)=>'<label class="chk"><input type="checkbox" data-dia="'+i+'" checked> '+d.k+' · '+d.p.join(' e ')+(PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d))?' <span class="hint">(já existe)</span>':'')+'</label>').join(''):'<span class="hint">Esta OS não tem períodos.</span>')+'</div>')
-   +'</div><div class="bt"><button type="button" class="cancela">Cancelar</button><button type="button" id="pdG" class="pri">'+(ed?'Guardar':'Criar PDT')+'</button></div>';
-  w.corpo.querySelector('.cancela').onclick=w.fecha;
-  const v=id=>w.corpo.querySelector('#'+id).value;
-  $('#pdG',w.corpo).onclick=async()=>{
-    const sel=ed?[ed.dados.dia]:[...w.corpo.querySelectorAll('[data-dia]:checked')].map(c=>dias[+c.dataset.dia]);if(!sel.length){aviso('Escolhe pelo menos um dia.',true);return}
-    const F2={trab:v('pd_trab'),ent:v('pd_ent'),ms1:v('pd_ms1'),ms2:v('pd_ms2'),lim:[0,1].map(i=>[...w.corpo.querySelectorAll('[data-lim="'+i+'"]')].map(x=>x.value.trim())),ap:v('pd_ap'),po:v('pd_po'),pt:v('pd_pt'),
-      fr:v('pd_fr'),te:v('pd_te'),pe:v('pd_pe'),ma:v('pd_ma'),sc:v('pd_sc'),co:v('pd_co'),ct:v('pd_ct')};
-    const ja=ed?[]:sel.filter(d=>PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d)));
+  const dias=ed?[ed.dados.dia]:diasOS(os);w.fecha();pdtEditor(o,os,fim,ed,F,dias,mod)}
+const PDTCOLS={
+  ap:[['Aparelho de corte',3],['Poste / km limite dos trabalhos',3]],
+  fr:[['Localização (Linha / Via / km / AMV)',3],['Descrição dos trabalhos',5]],
+  te:[['Local (VT via/km · LC poste)',4],['Trabalhador qualificado',3],['Nº da carta',2]],
+  pe:[['Nome',3],['Doc. CVI',2],['Doc. PVI',2],['Trabalho a efetuar',4]],
+  ma:[['Tipo de máquina',3],['UIC / NEV / NIN',3],['ICS / DCV',2],['Entrada: local',2],['Ordem',1],['Saída: local',2],['Ordem',1],['km início',2],['km fim',2]],
+  sc:[['Nº',1],['Localização',4],['Resp. colocação',3],['Resp. retirada',3]]};
+const PDTMAX={ap:8,fr:6,te:8,pe:8,ma:8,sc:8};
+const pdtLinhas=(txt)=>pdtCampos(txt);
+function pdtEditor(o,os,fim,ed,F,dias,mod){
+  const G={};
+  const zip=(a,b)=>{const A=String(a||'').split('\n'),B=String(b||'').split('\n'),n=Math.max(A.length,B.length),r=[];for(let i=0;i<n;i++)r.push([(A[i]||'').trim(),(B[i]||'').trim()]);return r.filter(x=>x[0]||x[1])};
+  G.ap=zip(F.ap,F.po);['fr','te','pe','ma','sc'].forEach(k=>G[k]=pdtLinhas(F[k]).map(r=>{const n=PDTCOLS[k].length;while(r.length<n)r.push('');return r.slice(0,n)}));
+  G.lim=(F.lim&&F.lim.length?F.lim:[['','','','',''],['','','','','']]).map(r=>r.slice());while(G.lim.length<2)G.lim.push(['','','','','']);
+  const T={trab:F.trab||'',ent:F.ent||'',ms1:F.ms1||'',ms2:F.ms2||'',pt:F.pt||'',co:F.co||'',ct:F.ct||'',per:ed?(ed.dados.dia.p||[]).join(' ; '):''};
+  const sug={};['pe','te','ma'].forEach(k=>{const s=new Set();PDTS.forEach(r=>pdtLinhas(r.dados.F[k]).forEach(l=>{if(l[0])s.add(l[0]);if(k==='te'&&l[1])s.add(l[1])}));G[k].forEach(l=>{if(l[0])s.add(l[0])});sug[k]=[...s]});
+  const sel=new Set(dias.map((d,i)=>i));
+  const ov=document.createElement('div');ov.id='pdtEd';ov.style.cssText='position:fixed;inset:0;z-index:40;background:var(--paper);display:flex;flex-direction:column';document.body.appendChild(ov);
+  const sec=(tit,corpo,aberto)=>'<details class="pdS"'+(aberto?' open':'')+'><summary>'+tit+'</summary><div class="pdB">'+corpo+'</div></details>';
+  const area=(k,rot,rows)=>'<label>'+rot+'</label><textarea data-t="'+k+'" rows="'+(rows||2)+'">'+esc(T[k])+'</textarea>';
+  const grid=(k,rot,dica)=>'<div class="pdG" data-g="'+k+'"></div>';
+  ov.innerHTML='<style>#pdtEd .pdS{border:1px solid var(--rule);border-radius:8px;background:var(--sheet);margin:0 0 10px}#pdtEd summary{cursor:pointer;padding:9px 12px;font-weight:600;font-size:13.5px}#pdtEd .pdB{padding:4px 12px 12px}#pdtEd label{font-size:12px;color:var(--muted);display:block;margin:8px 0 3px}'
+   +'#pdtEd .pdr{display:flex;gap:5px;margin-bottom:5px;align-items:center}#pdtEd .pdr input{padding:6px 8px;font-size:13px;min-width:0}#pdtEd .pdh{display:flex;gap:5px;font-size:11px;color:var(--muted);margin-bottom:2px;padding-right:30px}#pdtEd .pdx{overflow-x:auto}'
+   +'#pdtEd textarea{font-size:13px}#pdtEd .tb{display:flex;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--rule);background:var(--sheet);flex-wrap:wrap}#pdtEd .tb b{font-size:14px}#pdtEd .sp{flex:1}'
+   +'#pdtEd .cs{display:grid;grid-template-columns:minmax(400px,46%) 1fr;flex:1;min-height:0}#pdtEd .cf{overflow:auto;padding:12px 14px}#pdtEd .cp{overflow:auto;background:#6b6f76;position:relative}'
+   +'@media(max-width:900px){#pdtEd .cs{grid-template-columns:1fr}#pdtEd .cs[data-m="f"] .cp,#pdtEd .cs[data-m="p"] .cf{display:none}}</style>'
+   +'<div class="tb"><b>'+(ed?'Editar PDT':'Novo PDT')+' · OS '+esc(os.numero)+'</b><span id="pdSt" class="hint"></span><span class="sp"></span>'
+   +'<button id="pdMob" class="sm" style="display:none">Pré-visualizar</button><button class="sm" id="pdZm">−</button><button class="sm" id="pdZf">Ajustar</button><button class="sm" id="pdZp">+</button><button class="sm" id="pdP1">Pág. 1</button><button class="sm" id="pdP2">Pág. 2</button>'
+   +'<button id="pdW">Word</button><button id="pdF">PDF</button><button class="pri" id="pdOk">'+(ed?'Guardar':'Criar PDT')+'</button><button id="pdX">Fechar</button></div>'
+   +'<div class="cs" data-m="f"><div class="cf" id="edF">'
+   +(ed?sec('Dia','<label>Dia</label><input value="'+esc(ed.dados.dia.k)+'" disabled><label>Períodos do dia (separados por «;»)</label><input data-t="per" value="'+esc(T.per)+'">',true)
+        :sec('Dias a gerar','<div>'+(dias.length?dias.map((d,i)=>'<label class="chk" style="display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13px"><input type="checkbox" data-dia="'+i+'" checked> '+d.k+' · '+d.p.join(' e ')+(PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d))?' <span class="hint">(já existe, será substituído)</span>':'')+'</label>').join(''):'<span class="hint">Esta OS não tem períodos.</span>')+'<p class="hint">A pré-visualização mostra o primeiro dia marcado; os dados são iguais para todos.</p></div>',true))
+   +sec('Geral','<div style="display:flex;gap:8px"><div style="flex:1"><label>Trabalho nº</label><input data-t="trab" value="'+esc(T.trab)+'"></div><div style="flex:4"><label>Entidade executante</label><input data-t="ent" value="'+esc(T.ent)+'"></div></div>'+area('ms1','Trabalho ao abrigo das MS · interdição',2)+area('ms2','Corte de tensão',2),true)
+   +sec('Frentes de trabalho','<div class="pdG" data-g="fr"></div>',true)
+   +sec('Limites de interdição','<div class="pdG" data-g="lim"></div><p class="hint">Os km vêm dos sinais confirmados nos esquemas da obra. Se vierem em branco, escreve-os.</p>',true)
+   +sec('Corte de tensão: aparelhos e postes limite','<div class="pdG" data-g="ap"></div>',true)
+   +sec('Proteções transversais','<textarea data-t="pt" rows="2">'+esc(T.pt)+'</textarea>',false)
+   +sec('Ligações à terra','<div class="pdG" data-g="te"></div>',true)
+   +sec('Condutor / piloto de via interdita','<div class="pdG" data-g="pe"></div>',true)
+   +sec('Material circulante','<div class="pdG" data-g="ma"></div>',true)
+   +sec('Sinais complementares (SCPVI)','<div class="pdG" data-g="sc"></div>',true)
+   +sec('Coordenação, contactos e observações',area('co','Coordenação das atividades',2)+area('ct','Contactos e observações',6),false)
+   +'<datalist id="dl_pe"></datalist><datalist id="dl_te"></datalist><datalist id="dl_ma"></datalist></div><div class="cp" id="edP"><div style="padding:30px;color:#ddd">A preparar a pré-visualização…</div></div></div>';
+  ['pe','te','ma'].forEach(k=>$('#dl_'+k,ov).innerHTML=sug[k].map(x=>'<option value="'+esc(x)+'">').join(''));
+  /* tabelas por linha */
+  let t0=0;const agenda=()=>{clearTimeout(t0);$('#pdSt',ov).textContent='a atualizar…';t0=setTimeout(prev,550)};
+  const FIX={lim:[['Estação',3],['Linha',3],['Via',1],['Sinal',2],['km',2]]};
+  function desenhaG(k){
+    const el=ov.querySelector('[data-g="'+k+'"]'),cols=k==='lim'?FIX.lim:PDTCOLS[k],fixo=k==='lim',dl=sug[k]?'dl_'+k:'';
+    const mini=k==='ma'?'min-width:'+(cols.reduce((a,c)=>a+c[1],0)*52)+'px':'';
+    el.innerHTML='<div class="pdx"><div style="'+mini+'"><div class="pdh">'+cols.map(c=>'<span style="flex:'+c[1]+'">'+c[0]+'</span>').join('')+'</div>'
+      +G[k].map((r,i)=>'<div class="pdr">'+cols.map((c,j)=>'<input style="flex:'+c[1]+'" data-r="'+i+'" data-c="'+j+'" value="'+esc(r[j]||'')+'"'+(dl&&j===(k==='te'?1:0)?' list="'+dl+'"':'')+'>').join('')+(fixo?'<span style="width:24px"></span>':'<button class="x" data-del="'+i+'" title="Tirar linha">×</button>')+'</div>').join('')+'</div></div>'
+      +(fixo||G[k].length>=(PDTMAX[k]||9)?'':'<button class="sm" data-add="'+k+'">+ Linha</button>');
+    el.querySelectorAll('input[data-r]').forEach(inp=>inp.oninput=()=>{G[k][+inp.dataset.r][+inp.dataset.c]=inp.value;agenda()});
+    el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{G[k].splice(+b.dataset.del,1);desenhaG(k);agenda()});
+    const a=el.querySelector('[data-add]');if(a)a.onclick=()=>{G[k].push(cols.map(()=>''));desenhaG(k);agenda();const ins=el.querySelectorAll('.pdr:last-of-type input');if(ins[0])ins[0].focus()};
+    /* Enter na última célula acrescenta linha */
+    el.querySelectorAll('input[data-r]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'&&+inp.dataset.r===G[k].length-1&&+inp.dataset.c===cols.length-1&&!fixo&&G[k].length<(PDTMAX[k]||9)){e.preventDefault();G[k].push(cols.map(()=>''));desenhaG(k);agenda();const ins=el.querySelectorAll('.pdr:last-of-type input');if(ins[0])ins[0].focus()}})}
+  ['fr','lim','ap','te','pe','ma','sc'].forEach(desenhaG);
+  ov.querySelectorAll('[data-t]').forEach(i=>i.oninput=()=>{T[i.dataset.t]=i.value;agenda()});
+  ov.querySelectorAll('[data-dia]').forEach(c=>c.onchange=()=>{c.checked?sel.add(+c.dataset.dia):sel.delete(+c.dataset.dia);agenda()});
+  /* estado → dados */
+  const lin=k=>G[k].filter(r=>r.some(x=>String(x).trim())).map(r=>r.map(x=>String(x).replace(/;/g,',').trim()).join(' ; ')).join('\n');
+  const F2=()=>({trab:T.trab,ent:T.ent,ms1:T.ms1,ms2:T.ms2,lim:G.lim.map(r=>r.map(x=>x.trim())),ap:G.ap.map(r=>r[0]).join('\n'),po:G.ap.map(r=>r[1]).join('\n'),pt:T.pt,fr:lin('fr'),te:lin('te'),pe:lin('pe'),ma:lin('ma'),sc:lin('sc'),co:T.co,ct:T.ct});
+  const diaAtual=()=>{if(ed)return {k:ed.dados.dia.k,p:T.per.split(';').map(x=>x.trim()).filter(Boolean)};const i=[...sel].sort((a,b)=>a-b)[0];return dias[i]||{k:dmy(new Date()),p:[]}};
+  /* pré-visualização */
+  const P=$('#edP',ov);let zoom=null,gen=0;
+  const aplicaZoom=()=>{const w=P.querySelector('.docx-wrapper');if(!w)return;w.style.zoom=zoom||Math.max(.5,(P.clientWidth-28)/(P.querySelector('section.docx')?P.querySelector('section.docx').offsetWidth:800))};
+  async function prev(){
+    const meu=++gen;
+    try{await carregaPrev();const buf=await pdtDocx(mod,pdtDeForm(os.numero,os.semana||(ed&&ed.dados.sem)||'',F2(),diaAtual()));if(meu!==gen)return;
+      const c=document.createElement('div');c.style.cssText='position:absolute;left:-9999px;top:0;width:900px';document.body.appendChild(c);
+      await docx.renderAsync(buf,c,null,{inWrapper:true,breakPages:true,ignoreHeight:true});
+      const y=P.scrollTop;P.innerHTML='';while(c.firstChild)P.appendChild(c.firstChild);c.remove();aplicaZoom();P.scrollTop=y;$('#pdSt',ov).textContent='';
+      P.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'})
+    }catch(e){if(meu===gen){P.innerHTML='<div style="padding:30px;color:#fdd">'+esc(erroTxt(e))+'</div>';$('#pdSt',ov).textContent=''}}}
+  prev();
+  $('#pdZm',ov).onclick=()=>{zoom=Math.max(.4,((P.querySelector('.docx-wrapper')||{style:{}}).style.zoom||1)*.85);aplicaZoom()};
+  $('#pdZp',ov).onclick=()=>{zoom=Math.min(3,((P.querySelector('.docx-wrapper')||{style:{}}).style.zoom||1)*1.18);aplicaZoom()};
+  $('#pdZf',ov).onclick=()=>{zoom=null;aplicaZoom()};
+  $('#pdP1',ov).onclick=()=>{P.scrollTo({top:0,behavior:'smooth'})};
+  $('#pdP2',ov).onclick=()=>{const p=[...P.querySelectorAll('p')].find(x=>/^\s*2 de 2\s*$/.test(x.textContent));if(p)p.closest('tr').scrollIntoView({behavior:'smooth',block:'start'})};
+  const narrow=()=>window.innerWidth<=900,cs=ov.querySelector('.cs'),mob=$('#pdMob',ov);
+  const ajM=()=>{mob.style.display=narrow()?'':'none'};ajM();window.addEventListener('resize',ajM);
+  mob.onclick=()=>{const v=cs.dataset.m==='f';cs.dataset.m=v?'p':'f';mob.textContent=v?'Editar':'Pré-visualizar';if(v)setTimeout(aplicaZoom,50)};
+  window.addEventListener('resize',aplicaZoom);
+  const fecha=()=>{window.removeEventListener('resize',ajM);window.removeEventListener('resize',aplicaZoom);document.removeEventListener('keydown',tec);gen++;ov.remove()};
+  const tec=e=>{if(e.key==='Escape'&&!document.querySelector('.ov'))pedeFechar()};document.addEventListener('keydown',tec);
+  let sujo=false;ov.addEventListener('input',()=>{sujo=true});
+  const pedeFechar=async()=>{if(!sujo||await confirmar('Fechar sem guardar as alterações?','Fechar'))fecha()};
+  $('#pdX',ov).onclick=pedeFechar;
+  const doc1=async()=>pdtDocx(mod,pdtDeForm(os.numero,os.semana||(ed&&ed.dados.sem)||'',F2(),diaAtual()));
+  const nome=()=>pdtNome({numero_os:os.numero,dados:{F:F2(),dia:diaAtual()}});
+  $('#pdW',ov).onclick=async()=>{try{pdtDescarrega(nome()+'.docx',new Blob([await doc1()],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))}catch(e){aviso(erroTxt(e),true)}};
+  $('#pdF',ov).onclick=async e=>{e.target.disabled=true;try{pdtDescarrega(nome()+'.pdf',await pdtPdfBlob(await doc1()))}catch(x){aviso(erroTxt(x),true)}e.target.disabled=false};
+  $('#pdOk',ov).onclick=async()=>{
+    const escolhidos=ed?[ed.dados.dia]:[...sel].sort((a,b)=>a-b).map(i=>dias[i]);if(!escolhidos.length){aviso('Escolhe pelo menos um dia.',true);return}
+    const f2=F2(),ja=ed?[]:escolhidos.filter(d=>PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d)));
     if(ja.length&&!await confirmar('Já existe PDT de '+ja.map(d=>d.k).join(', ')+'. Substituir pelo que está no formulário?','Substituir'))return;
-    $('#pdG',w.corpo).disabled=true;
+    $('#pdOk',ov).disabled=true;
     try{
-      try{await ok(sb.from('pdt_base').upsert({obra_id:o.id,dados:{linha:F2.lim[0][1]||base.linha||'',trabalho:F2.trab,frentes:F2.fr,terra:F2.te,pessoal:F2.pe,maquinas:F2.ma,scpvi:F2.sc,coord:F2.co},atualizado_em:new Date().toISOString()}))}catch(e){}
+      try{await ok(sb.from('pdt_base').upsert({obra_id:o.id,dados:{linha:f2.lim[0][1]||'',trabalho:f2.trab,frentes:f2.fr,terra:f2.te,pessoal:f2.pe,maquinas:f2.ma,scpvi:f2.sc,coord:f2.co},atualizado_em:new Date().toISOString()}))}catch(e){}
       const agora=new Date().toISOString();
-      if(ed){const p=ed.dados.dia;const per=w.corpo.querySelector('#pd_per')?v('pd_per').split(';').map(x=>x.trim()).filter(Boolean):p.p;
-        await ok(sb.from('pdts').update({dados:{F:F2,dia:{k:p.k,p:per},sem:ed.dados.sem},atualizado_em:agora}).eq('id',ed.id))}
-      else await ok(sb.from('pdts').upsert(sel.map(d=>({obra_id:o.id,numero_os:String(os.numero),dia:isoDia(d.d),dados:{F:F2,dia:{k:d.k,p:d.p},sem:os.semana||''},atualizado_em:agora})),{onConflict:'obra_id,numero_os,dia'}));
-      aviso(ed?'PDT guardado.':sel.length+' PDT criado'+(sel.length===1?'':'s')+'. Estão no separador PDT.');w.fecha();DOCCAT='pdt';fim&&fim()
-    }catch(e){aviso(erroTxt(e),true);$('#pdG',w.corpo).disabled=false}}}
+      if(ed){const p=diaAtual();await ok(sb.from('pdts').update({dados:{F:f2,dia:{k:p.k,p:p.p},sem:ed.dados.sem},atualizado_em:agora}).eq('id',ed.id))}
+      else await ok(sb.from('pdts').upsert(escolhidos.map(d=>({obra_id:o.id,numero_os:String(os.numero),dia:isoDia(d.d),dados:{F:f2,dia:{k:d.k,p:d.p},sem:os.semana||''},atualizado_em:agora})),{onConflict:'obra_id,numero_os,dia'}));
+      aviso(ed?'PDT guardado.':escolhidos.length+' PDT criado'+(escolhidos.length===1?'':'s')+'.');sujo=false;fecha();DOCCAT='pdt';fim&&fim()
+    }catch(e){aviso(erroTxt(e),true);$('#pdOk',ov).disabled=false}}}
+
 async function lerOS(o,file,fim){
   let linhas;
   try{linhas=await textoPdf(await file.arrayBuffer())}catch(e){aviso(erroTxt(e),true);return}
