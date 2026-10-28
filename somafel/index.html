@@ -1660,9 +1660,10 @@ function osCompleta(paginas){
     [...m.entries()].sort((a,b)=>b[0]-a[0]).forEach(([y,l])=>linhas.push(l.sort((a,b)=>a.x-b.x).map(i=>i.t).join(' ').replace(/\s+/g,' ').trim()))});
   const ix=re=>linhas.findIndex(l=>re.test(l));
   const sec=(a,b)=>{const i=ix(a);if(i<0)return [];let j=b?linhas.findIndex((l,k)=>k>i&&b.test(l)):-1;if(j<0)j=linhas.length;return linhas.slice(i+1,j)};
-  const r={tipo:'',interdicao:'',corte:'',aparelhos:[],postes:[],protTrans:'',agentes:[],chefe:[],notas:''};
+  const r={tipo:'',linha:'',interdicao:'',corte:'',aparelhos:[],postes:[],protTrans:'',agentes:[],chefe:[],notas:''};
   const tp=sec(/^TIPO DE TRABALHO/i,/^PER[ÍI]ODOS/i).filter(l=>/^-/.test(l));
   r.tipo=tp.map(l=>l.replace(/^-\s*/,'')).join(' ');
+  const ln=sec(/^TIPO DE TRABALHO/i,/^PER[ÍI]ODOS/i).map(l=>l.match(/^\(\s*\d+\s*\)\s*(.+)$/)).find(Boolean);r.linha=ln?ln[1].trim():'';
   const ct=sec(/^CONDI[ÇC][ÕO]ES T[ÉE]CNICAS/i,/^TRO[ÇC]O/i).join(' ');
   ct.split(/(?=Interdi[çc][ãa]o d|Corte de tens)/i).map(s=>s.trim()).filter(Boolean).forEach(s=>{
     if(/^Interdi/i.test(s))r.interdicao=s.replace(/\s*-\s+(?=[A-ZÇ]{2,})/g,'-');else if(/^Corte/i.test(s))r.corte=s});
@@ -1888,10 +1889,10 @@ async function criaPDT(o,os,fim,ed){
     const mm=it.match(/esta[çc][õo]es\s+de\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s+e\s+([A-ZÀ-Ý\- ]+?)\s*(?:\(([^)]*)\))?\s*\.?\s*$/);
     const via=(it.match(/via\s+(ASCENDENTE|DESCENDENTE)/i)||[])[1],viaL=via?(/^A/i.test(via)?'A':'D'):'';
     if(mm){[[mm[1],mm[2]],[mm[3],mm[4]]].forEach(([e,p],i)=>{const sg=((p||'').match(/SINAL\s+([A-Z0-9\/]+)/i)||[])[1]||'',ach=sg?acharSinal(esqs,e,sg):null;
-      lim[i]=[titulado(e),base.linha||'Linha do Norte',viaL,sg,ach?ach.pk:'']})}
+      lim[i]=[titulado(e),oc.linha||'',viaL,sg,ach?ach.pk:'']})}
     const per=(oc.agentes||[]).map(a=>a['Função']+'- '+a['Matrícula']+' '+a.Nome+' '+(a.TpAtivid||'')+' '+(a['Telemóvel']||'')+(a['Observação']?' ('+a['Observação']+')':'')).map(s=>s.replace(/\s+/g,' ').trim());
     (oc.chefe||[]).forEach(c=>per.push('Chefe dos Trabalhos- '+c.Nome+' '+(c.TpAtivid||'')+' '+(c.PrestServ||'')+' '+(c['Telemóvel']||'')));
-    F={trab:((os.os_periodos||[])[0]||{}).trabalhos||base.trabalho||'1',ent:oc.tipo,ms1:oc.interdicao,ms2:oc.corte,lim,ap:(oc.aparelhos||[]).join('\n'),po:'',pt:oc.protTrans,
+    F={trab:((os.os_periodos||[])[0]||{}).trabalhos||base.trabalho||'',ent:oc.tipo,ms1:oc.interdicao,ms2:oc.corte,lim,ap:(oc.aparelhos||[]).join('\n'),po:'',pt:oc.protTrans,
       fr:base.frentes||'',te:base.terra||'',pe:base.pessoal||'',ma:base.maquinas||'',sc:base.scpvi||'',co:base.coord||'',ct:per.join('\n')}}
   const dias=ed?[ed.dados.dia]:diasOS(os);w.fecha();pdtEditor(o,os,fim,ed,F,dias,mod)}
 const PDTCOLS={
@@ -1921,7 +1922,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
    +'#pdtEd .cs{display:grid;grid-template-columns:minmax(400px,46%) 1fr;flex:1;min-height:0}#pdtEd .cf{overflow:auto;padding:12px 14px}#pdtEd .cw{display:flex;flex-direction:column;min-height:0;min-width:0}#pdtEd .cp{overflow:auto;background:#6b6f76;position:relative;flex:1;min-height:0}'
    +'@media(max-width:900px){#pdtEd .cs{grid-template-columns:1fr}#pdtEd .cs[data-m="f"] .cw,#pdtEd .cs[data-m="p"] .cf{display:none}}</style>'
    +'<div class="tb"><b>'+(ed?'Editar PDT':'Novo PDT')+' · OS '+esc(os.numero)+'</b><span id="pdSt" class="hint"></span><span class="sp"></span>'
-   +'<span id="pdTabs" style="display:inline-flex;gap:4px"><button class="sm pri" data-tab="pdt">PDT</button><button class="sm" data-tab="os">OS</button><button class="sm" data-tab="sin">Sinalização</button><button class="sm" data-tab="ele">Elétrico</button></span>'
+   +'<span id="pdTabs" style="display:inline-flex;gap:4px"><button class="sm pri" data-tab="pdt">PDT</button><button class="sm" data-tab="os">OS</button><button class="sm" data-tab="sin">Sinalização</button><button class="sm" data-tab="ele">Elétrico</button><button class="sm" data-tab="cert">Certificados</button></span>'
    +'<button id="pdMob" class="sm" style="display:none">Pré-visualizar</button><button class="sm" id="pdZm">−</button><button class="sm" id="pdZf">Ajustar</button><button class="sm" id="pdZp">+</button><button class="sm" id="pdAmp" title="Esconde o formulário e mostra só o PDT">Só PDT</button><button class="sm" id="pdP1">Pág. 1</button><button class="sm" id="pdP2">Pág. 2</button>'
    +'<button id="pdExp">Exportar</button><button class="pri" id="pdOk">'+(ed?'Guardar':'Criar PDT')+'</button><button id="pdX">Fechar</button></div>'
    +'<div class="cs" data-m="f"><div class="cf" id="edF">'
@@ -2000,7 +2001,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
       const r=await ok(sb.from('obra_esquemas').select('esquemas(id,tipo,nome,estacao,via,troco,ficheiro)').eq('obra_id',o.id));
       r.map(x=>x.esquemas).filter(Boolean).forEach(e=>{const it={nome:(e.tipo==='sinalizacao'?(e.estacao||e.nome):e.nome)+(e.via||e.troco?' · '+[e.via,e.troco].filter(Boolean).join(' '):''),path:e.ficheiro};if(e.tipo==='sinalizacao')DOCV.sin.push(it);else DOCV.ele.push(it)})}catch(e){}})();
   async function abreDoc(k){
-    await docvP;if(k==='ele')return abreMarcador();
+    await docvP;if(k==='ele')return abreMarcador();if(k==='cert')return abreCert();
     const lista=(k==='os'?DOCV.os:DOCV[k])||[],vazio={os:'Não encontrei o PDF desta OS nos documentos.',sin:'Não há esquemas de sinalização associados a esta obra (OS e PDT → Esquemas de sinalização → Associar da biblioteca).',ele:'Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).'}[k];
     if(!lista.length){V.innerHTML='<div style="padding:30px;color:#eee">'+esc(vazio)+'</div>';return}
     V.innerHTML='<div style="display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'+(lista.length>1?'<select id="edVs" style="max-width:420px">'+lista.map((x,i)=>'<option value="'+i+'">'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(lista[0].nome)+'</b>')+'<span class="sp"></span><button class="sm" id="edVn">Abrir noutra janela</button></div><iframe id="edVi" style="flex:1;border:0;background:#fff;width:100%"></iframe>';
@@ -2009,6 +2010,27 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   ov.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{tabAt=b.dataset.tab;ov.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('pri',x===b));
     const pdt=tabAt==='pdt';P.style.display=pdt?'':'none';V.style.display=pdt?'none':'flex';['pdZm','pdZf','pdZp','pdP1','pdP2','pdAmp'].forEach(id=>$('#'+id,ov).style.display=pdt?'':'none');
     if(pdt)setTimeout(aplicaZoom,30);else await abreDoc(tabAt)});
+
+
+  /* certificados das pessoas (para ler o nº da carta) */
+  let CERT=null;
+  async function abreCert(){
+    V.innerHTML='<div style="padding:30px;color:#eee">A ler Pessoal…</div>';
+    if(!CERT){try{const [pe,ce]=await Promise.all([ok(sb.from('pessoal').select('id,nome,funcao,numero,estado').order('nome')),ok(sb.from('certificados').select('id,pessoal_id,validade,titulo,ficheiro,notas,tipo:tipos_certificado(nome)'))]);CERT={pe,ce}}catch(e){V.innerHTML='<div style="padding:30px;color:#fdd">'+esc(erroTxt(e))+'</div>';return}}
+    const nomesPdt=[...G.pe.map(r=>r[0]),...G.te.map(r=>r[1])].map(x=>semAc(x)).filter(Boolean);
+    const dePdt=CERT.pe.filter(p=>{const n=semAc(p.nome),t=n.split(' ');return nomesPdt.some(x=>{const a=x.split(' ');return n===x||(a.length>=2&&n.startsWith(a[0]+' ')&&n.endsWith(' '+a[a.length-1]))})});
+    V.innerHTML='<div style="padding:8px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="ctQ" placeholder="Procurar pessoa…" style="max-width:260px"><span id="ctP" style="display:flex;gap:5px;flex-wrap:wrap"></span></div><div id="ctC" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px"></div></div><div id="ctV" style="flex:1;min-height:0;background:#555;display:flex;align-items:center;justify-content:center;color:#eee">Escolhe uma pessoa e um certificado.</div>';
+    const Q=$('#ctQ',V),Pp=$('#ctP',V),Cc=$('#ctC',V),Vv=$('#ctV',V);let sel=null;
+    const mostraP=()=>{const q=semAc(Q.value),lista=q?CERT.pe.filter(p=>semAc(p.nome).includes(q)).slice(0,14):dePdt;Pp.innerHTML=lista.length?lista.map(p=>'<button class="sm'+(sel===p.id?' pri':'')+'" data-p="'+p.id+'">'+esc(p.nome)+'</button>').join(''):'<span class="hint" style="color:#ccc">'+(q?'Ninguém com esse nome.':'Ainda não há pessoas nas tabelas: procura pelo nome.')+'</span>';
+      Pp.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{sel=b.dataset.p;mostraP();mostraC()})};
+    const ref=(()=>{const d=diaAtual().k.split('/');return d[2]+'-'+d[1]+'-'+d[0]})();
+    const mostraC=()=>{const L=CERT.ce.filter(c=>c.pessoal_id===sel).sort((a,b)=>(a.tipo?a.tipo.nome:'').localeCompare(b.tipo?b.tipo.nome:''));
+      Cc.innerHTML=L.length?L.map(c=>'<button class="sm" data-c="'+c.id+'" title="'+esc(c.titulo||'')+'">'+esc(c.tipo?c.tipo.nome:c.titulo)+(c.validade?' · '+dmy(new Date(c.validade+'T12:00:00')):'')+(c.validade&&c.validade<ref?' <b style="color:var(--red)">caducado</b>':'')+(c.ficheiro?'':' <span class="hint">(sem ficheiro)</span>')+'</button>').join(''):'<span class="hint">Esta pessoa não tem certificados em Pessoal.</span>';
+      Cc.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{const c=CERT.ce.find(x=>x.id===b.dataset.c);Cc.querySelectorAll('[data-c]').forEach(x=>x.classList.toggle('pri',x===b));
+        if(!c.ficheiro){Vv.innerHTML='Este certificado não tem ficheiro carregado.'+(c.notas?'<br>'+esc(c.notas):'');return}
+        Vv.innerHTML='A abrir…';const u=await sb.storage.from('documentos').createSignedUrl(c.ficheiro,3600);if(u.error){Vv.textContent=erroTxt(u.error);return}
+        Vv.innerHTML='<iframe src="'+esc(u.data.signedUrl)+'" style="width:100%;height:100%;border:0;background:#fff"></iframe>'})};
+    Q.oninput=()=>{mostraP()};mostraP();if(dePdt.length===1){sel=dePdt[0].id;mostraP();mostraC()}}
 
   /* marcador do esquema elétrico (anexo do PDT) */
   const AX=(()=>{const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&r.dados.annex)||PDTS.find(r=>r.dados.annex)||{dados:{}}).dados.annex);return src?JSON.parse(JSON.stringify(src)):{path:'',nome:'',page:1,marks:[],on:true}})();
