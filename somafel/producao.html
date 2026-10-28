@@ -3796,7 +3796,9 @@ function renderMap(){
     (doMes?'<th class="num w1">Qt. mês</th><th class="num w1">Valor mês</th>':'')+
     '<th class="num w1">Qt. acum.</th><th class="num w1">Valor acum.</th><th class="num w1">%</th><th style="width:110px">Execução</th></tr></thead><tbody>';
   if(!rows.length)h+='<tr><td colspan="14"><div class="empty">Sem rubricas com este filtro.</div></td></tr>';
+  var nMapL=0;
   function linha(a){
+    if(++nMapL>LIMV.map)return '';
     var k=chaveRub(a.cod,a.origem);
     var e=acu[k]||{qt:0,val:0}, m=doMes?(doMes[k]||{qt:0,val:0}):null;
     var tot=num(a.qt)*num(a.pu), p=num(a.qt)?e.qt/num(a.qt):0;
@@ -3833,6 +3835,7 @@ function renderMap(){
       if(!ch.some(function(c){return capFechados[c]}))h+=linha(a);
     });
   } else rows.forEach(function(a){ h+=linha(a) });
+  h+=maisLinhasHtml('map',nMapL-LIMV.map,14);
   h+='</tbody></table>';
   $('#mapBox').innerHTML=h;
   $('#nMap').textContent=rows.length+' de '+ST.art.length;
@@ -3841,6 +3844,7 @@ function renderMap(){
     (doMes?' · auto '+mesNome(flt.mapMes)+' <b class="mono">'+eur(T.vm)+' €</b>':'')+
     ' · acumulado <b class="mono">'+eur(T.va)+' €</b> ('+(T.tot?pct(T.va/T.tot):'—')+')'+filtrado;
   bind('#mapBox','click',function(e){
+    var vm=e.target.closest('[data-vmais]'); if(vm){ LIMV.map=vm.dataset.todas?1e9:LIMV.map+150; renderMap(); return }
     var cr=e.target.closest('[data-cap]');
     if(cr){ capFechados[cr.dataset.cap]=!capFechados[cr.dataset.cap]; renderMap(); return }
     var tr=e.target.closest('[data-rubrica]'); if(!tr)return;
@@ -5242,6 +5246,9 @@ $('#bMatMod').addEventListener('click',function(){
 });
 
 /* ---------- ARTIGOS ---------- */
+var LIMV={art:150,map:150}; /* linhas desenhadas de cada vez nas tabelas grandes; o resto aparece com «Mostrar mais» */
+function maisLinhasHtml(k,total,cols){ return total>0?'<tr><td colspan="'+cols+'" style="text-align:center;padding:10px"><button data-vmais="'+k+'">Mostrar mais '+Math.min(150,total)+'</button> <button data-vmais="'+k+'" data-todas="1">Mostrar todas</button> <span class="hint">faltam '+total+'</span></td></tr>':'' }
+function debounce(fn,ms){ var t; return function(){ var a=arguments,s=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(s,a) },ms) } }
 function renderArt(){
   var f=lower(flt.art);
   var rows=ST.art.map(function(a,i){return {a:a,i:i}}).filter(function(r){
@@ -5260,9 +5267,10 @@ function renderArt(){
     '<th class="num w1">Quantidade</th><th class="num w1">Preço unit.</th><th class="num w1">Total</th>'+
     '<th class="num w1" title="Produção já executada antes de começar a usar esta app">Acum. anterior</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
   if(!rows.length)h+='<tr><td colspan="10"><div class="empty">Sem artigos'+(flt.origem?' nesta origem':'')+'. Usa <b>Importar mapa…</b> (Excel com N.º Art.º, Designação, Un., Qtd. e P.U.; o botão <b>Modelo do mapa</b> dá um exemplo) ou acrescenta linhas com <b>+ Artigo</b>.</div></td></tr>';
-  var T=0;
+  var T=0, nArt=0;
   rows.forEach(function(r){
     var a=r.a,t=num(a.qt)*num(a.pu); T+=t;
+    if(++nArt>LIMV.art)return;
     h+='<tr><td><input data-a="'+r.i+'" data-k="cod" value="'+esc(a.cod||'')+'" class="mono"></td>'+
        '<td><input data-a="'+r.i+'" data-k="des" value="'+esc(a.des||'')+'"></td>'+
        '<td><input data-a="'+r.i+'" data-k="un" value="'+esc(a.un||'')+'" class="mono"></td>'+
@@ -5274,6 +5282,7 @@ function renderArt(){
        '<td class="w1"><button data-adupl="'+r.i+'" title="Duplicar esta rubrica para outra origem (ex.: criar a mesma peça como Adicional)">⧉</button></td>'+
        '<td class="w1"><button class="x" data-adel="'+r.i+'">×</button></td></tr>';
   });
+  h+=maisLinhasHtml('art',rows.length-LIMV.art,10);
   h+='</tbody></table>';
   $('#artBox').innerHTML=oh+h;
   $('#bArtNovo').textContent=flt.origem?'+ Artigo · '+origemNome(flt.origem):'+ Artigo';
@@ -5403,14 +5412,14 @@ $('#bNovaPD').addEventListener('click',function(){ novaPD(ST.pd.length?ST.pd[ST.
 $('#bPdVoltar').addEventListener('click',function(){ pdAberta=null; render() });
 $('#bPdDup').addEventListener('click',function(){ var p=porId(ST.pd,pdAberta); if(p)novaPD(p) });
 $('#bPdImp').addEventListener('click',function(){ imprimeEBloqueia(porId(ST.pd,pdAberta)) });
-$('#fPd').addEventListener('input',function(){ flt.pd=this.value; renderPd() });
+$('#fPd').addEventListener('input',debounce(function(){ flt.pd=this.value; renderPd() },160));
 $('#fPdMes').addEventListener('change',function(){ flt.pdMes=this.value; renderPd() });
 $('#fPdEst').addEventListener('change',function(){ flt.pdEst=this.value; renderPd() });
 $('#intVis').addEventListener('click',function(e){ var b=e.target.closest('[data-iv]'); if(!b)return; intVis=b.dataset.iv; renderInt() });
-$('#fInt').addEventListener('input',function(){ flt.int=this.value; renderInt() });
+$('#fInt').addEventListener('input',debounce(function(){ flt.int=this.value; renderInt() },160));
 $('#fIntAno').addEventListener('change',function(){ flt.intAno=this.value; renderInt() });
 $('#fIntEst').addEventListener('change',function(){ flt.intEst=this.value; renderInt() });
-$('#fMap').addEventListener('input',function(){ flt.map=this.value; renderMap() });
+$('#fMap').addEventListener('input',debounce(function(){ flt.map=this.value; LIMV.map=150; renderMap() },160));
 $('#fMapMes').addEventListener('change',function(){ flt.mapMes=this.value; renderMap() });
 $('#fMapQue').addEventListener('change',function(){ flt.mapQue=this.value; renderMap() });
 $('#fOrigemMap').addEventListener('change',function(){ flt.origem=this.value; render() });
@@ -5421,7 +5430,8 @@ $('#bAdicNovo').addEventListener('click',function(){
   if(lower(nome)==='contrato'||ST.adicionais.some(function(x){return lower(x.nome)===lower(nome)})){ toast('Já existe uma origem com esse nome.'); return }
   ST.adicionais.push({id:uid(),nome:nome,data:hoje()}); render(); toast('Adicional criado. Já podes escolher esta origem numa rubrica.');
 });
-$('#fArt').addEventListener('input',function(){ flt.art=this.value; renderArt() });
+$('#fArt').addEventListener('input',debounce(function(){ flt.art=this.value; LIMV.art=150; renderArt() },160));
+$('#artBox').addEventListener('click',function(e){ var vm=e.target.closest('[data-vmais]'); if(vm){ LIMV.art=vm.dataset.todas?1e9:LIMV.art+150; renderArt() } });
 $('#mapModos').addEventListener('click',function(e){ var b=e.target.closest('[data-mm]'); if(!b)return; mapModo=b.dataset.mm; renderMap() });
 $('#ptoVistas').addEventListener('click',function(e){ var b=e.target.closest('[data-pv]'); if(!b)return; ptoVista=b.dataset.pv; ptoDetalhe=null; renderPto() });
 $('#bPtoImp').addEventListener('click',imprimePonto);
