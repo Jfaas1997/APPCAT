@@ -1789,9 +1789,9 @@ async function pdtPdfBlob(buf){
   }finally{box.remove()}}
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
 async function pdtVer(o,r,fim){
-  const w=janela(pdtNome(r),true);w.corpo.innerHTML='<p class="hint">A abrir…</p>';
-  try{await carregaPrev();const buf=await pdtBuf(r);w.corpo.innerHTML='<div id="pvC" style="height:72vh;overflow:auto;background:#777;border-radius:6px"></div><div class="bt"><button id="pvE">Editar</button><button id="pvW">Word</button><button id="pvP" class="pri">PDF</button><button id="pvF">Fechar</button></div>';
-    await docx.renderAsync(buf,$('#pvC',w.corpo),null,{inWrapper:true,breakPages:true,ignoreHeight:true});
+  const w=janela(pdtNome(r),true);w.el.style.cssText+=';width:min(1250px,97vw);max-width:97vw';w.corpo.innerHTML='<p class="hint">A abrir…</p>';
+  try{await carregaPrev();const buf=await pdtBuf(r);w.corpo.innerHTML='<div id="pvC" style="height:80vh;overflow:auto;background:#777;border-radius:6px"></div><div class="bt"><button id="pvE">Editar</button><button id="pvW">Word</button><button id="pvP" class="pri">PDF</button><button id="pvF">Fechar</button></div>';
+    await docx.renderAsync(buf,$('#pvC',w.corpo),null,{inWrapper:true,breakPages:true,ignoreHeight:true});const wp=$('#pvC .docx-wrapper',w.corpo);if(wp)wp.style.zoom=Math.max(1,Math.min(1.6,($('#pvC',w.corpo).clientWidth-30)/820));
     $('#pvF',w.corpo).onclick=w.fecha;$('#pvE',w.corpo).onclick=()=>{w.fecha();pdtEdita(o,r,fim)};
     $('#pvW',w.corpo).onclick=()=>pdtDescarrega(pdtNome(r)+'.docx',new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
     $('#pvP',w.corpo).onclick=async e=>{e.target.disabled=true;try{pdtDescarrega(pdtNome(r)+'.pdf',await pdtPdfBlob(buf))}catch(x){aviso(erroTxt(x),true)}e.target.disabled=false}
