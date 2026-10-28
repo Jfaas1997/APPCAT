@@ -1793,6 +1793,7 @@ async function pdtPdfBlob(buf,png){
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
 /* ---------- esquema elétrico em anexo: marcação e exportação ---------- */
 const PDTBASEC=new Map();
+const PDTPG=new Map();
 async function pdtBaseEsq(path,pag){
   const k=path+'|'+(pag||1);if(PDTBASEC.has(k))return PDTBASEC.get(k);
   const u=await sb.storage.from('documentos').createSignedUrl(path,600);if(u.error)throw u.error;
@@ -1804,8 +1805,8 @@ async function pdtBaseEsq(path,pag){
   const d=x.getImageData(0,0,c.width,c.height).data,W=c.width,H=c.height;let x0=W,y0=H,x1=0,y1=0;
   for(let yy=0;yy<H;yy+=2){for(let xx=0;xx<W;xx+=2){const i=(yy*W+xx)*4;if(d[i]<235||d[i+1]<235||d[i+2]<235){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy}}}
   if(x1>x0&&y1>y0){const pd=Math.round(Math.max(W,H)*.012);x0=Math.max(0,x0-pd);y0=Math.max(0,y0-pd);x1=Math.min(W,x1+pd);y1=Math.min(H,y1+pd);
-    const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(c,x0,y0,c2.width,c2.height,0,0,c2.width,c2.height);PDTBASEC.set(k,c2);return c2}
-  PDTBASEC.set(k,c);return c}
+    const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(c,x0,y0,c2.width,c2.height,0,0,c2.width,c2.height);PDTPG.set(k,{pg,sc,ox:x0,oy:y0});PDTBASEC.set(k,c2);return c2}
+  PDTPG.set(k,{pg,sc,ox:0,oy:0});PDTBASEC.set(k,c);return c}
 const PDTCOR={corte:'#16a34a',trab:'#e11d1d',terra:'#f08a00',seta:'#2563eb'};
 const pdtCfg=c=>Object.assign({alfa:85,esp:70,txt:80,circulo:25,num:100,marg:25,corta:1},c||{},{cor:Object.assign({},PDTCOR,(c||{}).cor||{})});
 function pdtMarcas(ctx,W,H,marks,extra,cfg0){
@@ -1827,7 +1828,10 @@ async function pdtAnexoPng(ax,titulo){
     mk.forEach(m=>{if(m.t==='linha')(m.p||[]).forEach(q=>P(q[0],q[1]));else if(m.t==='ret'){P(m.x,m.y);P(m.x+m.w,m.y+m.h)}else if(m.t==='terra')P(m.x,m.y);else if(m.t==='seta'){P(m.x1,m.y1);P(m.x2,m.y2)}else if(m.t==='txt')P(m.x,m.y)});
     if(c2>=a&&d>=b){const FW=full.width,FH=full.height,mg=cf.marg/100;let w=Math.max((c2-a)*FW,FW*.12),h=Math.max((d-b)*FH,FH*.12);const cx=(a+c2)/2*FW,cy=(b+d)/2*FH;w*=1+mg;h*=1+mg;
       const asp=26/15.6;if(w/h<asp)w=h*asp;else h=w/asp;w=Math.min(w,FW);h=Math.min(h,FH);sx=Math.max(0,Math.min(FW-w,cx-w/2));sy=Math.max(0,Math.min(FH-h,cy-h/2));
-      cw=w;ch=h;const Wc=Math.min(2600,Math.max(1600,Math.round(w))),k=document.createElement('canvas');k.width=Wc;k.height=Math.round(Wc*h/w);const kx=k.getContext('2d');kx.imageSmoothingQuality='high';kx.drawImage(full,sx,sy,w,h,0,0,k.width,k.height);base=k}}
+      cw=w;ch=h;const Wc=3000,k=document.createElement('canvas');k.width=Wc;k.height=Math.round(Wc*h/w);const kx=k.getContext('2d');kx.imageSmoothingQuality='high';kx.fillStyle='#fff';kx.fillRect(0,0,k.width,k.height);
+      const G=PDTPG.get(ax.path+'|'+(ax.page||1));let ok=false;
+      if(G){try{const s2=Wc/w*G.sc,tx=-(G.ox+sx)*Wc/w,ty=-(G.oy+sy)*Wc/w;await G.pg.render({canvasContext:kx,viewport:G.pg.getViewport({scale:s2}),transform:[1,0,0,1,tx,ty]}).promise;ok=true}catch(e){ok=false}}
+      if(!ok){kx.drawImage(full,sx,sy,w,h,0,0,k.width,k.height)}base=k}}
   const W=base.width,H=base.height,FWn=full.width,FHn=full.height,bar=Math.round(W*.04),leg=Math.round(W*.045),c=document.createElement('canvas');c.width=W;c.height=H+bar+leg;
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);const fs=W*.016;x.font='700 '+fs+'px Arial,sans-serif';x.fillStyle='#111';x.textBaseline='middle';x.fillText(titulo||'ANEXO · Esquema elétrico',W*.012,bar/2);
   x.drawImage(base,0,bar);x.save();x.translate(0,bar);x.beginPath();x.rect(0,0,W,H);x.clip();
@@ -2055,7 +2059,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     V.innerHTML='<div class="mkb" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'
       +(opcoes.length>1?'<select id="mkS" style="max-width:300px">'+opcoes.map((x,i)=>'<option value="'+i+'"'+(x.path===AX.path?' selected':'')+'>'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(opcoes[0].nome)+'</b>')
       +'<span style="width:8px"></span>'+FER.map(f=>'<button class="sm" data-fe="'+f[0]+'">'+f[1]+'</button>').join('')
-      +'<span class="sp"></span><button class="sm" id="mkU">Desfazer</button><button class="sm perigo" id="mkL">Limpar</button><button class="sm" id="mkE">Estilo</button><button class="sm" id="mkF">Ajustar</button>'
+      +'<span class="sp"></span><button class="sm" id="mkU">Desfazer</button><button class="sm perigo" id="mkL">Limpar</button><button class="sm" id="mkE">Estilo</button><button class="sm" id="mkF">Ajustar</button><button class="sm pri" id="mkPv">Pré-visualizar anexo</button>'
       +'<label style="display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px"><input type="checkbox" id="mkOn"'+(AX.on?' checked':'')+'> Anexar ao PDT</label></div>'
       +'<div id="mkEs" style="display:none;gap:14px;align-items:center;flex-wrap:wrap;padding:6px 12px;background:var(--sheet);border-bottom:1px solid var(--rule);font-size:12.5px"><style>#mkEs input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--rule)}#mkEs input[type=range]{width:110px;padding:0}#mkEs label{display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px}</style>'
       +[['corte','Corte de tensão'],['trab','Trabalhos'],['terra','Varas de terra']].map(c=>'<label>'+c[1]+' <input type="color" data-cor="'+c[0]+'" value="'+AX.cfg.cor[c[0]]+'"></label>').join('')
@@ -2104,6 +2108,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     $('#mkE',V).onclick=()=>{const e=$('#mkEs',V);e.style.display=e.style.display==='none'?'flex':'none';setTimeout(ajusta,30)};
     V.querySelectorAll('[data-cor]').forEach(i=>i.oninput=()=>{AX.cfg.cor[i.dataset.cor]=i.value;muda()});
     V.querySelectorAll('[data-n]').forEach(i=>i.oninput=()=>{AX.cfg[i.dataset.n]=i.dataset.n==='alfa'?100-(+i.value):+i.value;vals();muda()});
+    $('#mkPv',V).onclick=async e=>{const b=e.target;b.disabled=true;const t=b.textContent;b.textContent='A gerar…';try{const png=await pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k)),w=janela('Anexo · pré-visualização',true);w.el.style.cssText+=';width:min(1300px,97vw);max-width:97vw';w.corpo.innerHTML='<div style="max-height:80vh;overflow:auto;background:#777;padding:10px;border-radius:6px;text-align:center"><img style="max-width:100%;background:#fff" src="'+png.jpg+'"></div><div class="bt"><button class="n">Fechar</button></div>';w.corpo.querySelector('.n').onclick=w.fecha}catch(x){aviso(erroTxt(x),true)}b.textContent=t;b.disabled=false};
     $('#mkCorta',V).onchange=e=>{AX.cfg.corta=e.target.checked?1:0;muda()};$('#mkR',V).onclick=()=>{$('#mkCorta',V).checked=true;AX.cfg=pdtCfg({});V.querySelectorAll('[data-cor]').forEach(i=>i.value=AX.cfg.cor[i.dataset.cor]);V.querySelectorAll('[data-n]').forEach(i=>i.value=i.dataset.n==='alfa'?100-AX.cfg.alfa:AX.cfg[i.dataset.n]);vals();muda()};
     $('#mkF',V).onclick=ajusta;$('#mkOn',V).onchange=e=>{AX.on=e.target.checked;sujo=true};
     const carrega=async()=>{msg.textContent='A carregar o esquema…';try{const b=await pdtBaseEsq(AX.path,AX.page);cb.width=co.width=b.width;cb.height=co.height=b.height;cb.getContext('2d').drawImage(b,0,0);redesenha();ajusta();marca(tool==='mover'&&AX.marks.length?'mover':tool)}catch(e){msg.textContent='Não consegui abrir o esquema: '+erroTxt(e)}};
