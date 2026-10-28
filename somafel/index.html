@@ -1807,25 +1807,26 @@ async function pdtBaseEsq(path,pag){
     const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(c,x0,y0,c2.width,c2.height,0,0,c2.width,c2.height);PDTBASEC.set(k,c2);return c2}
   PDTBASEC.set(k,c);return c}
 const PDTCOR={corte:'#16a34a',trab:'#e11d1d',terra:'#f08a00',seta:'#2563eb'};
-function pdtMarcas(ctx,W,H,marks,extra){
-  const lw=W*0.0030,fs=W*0.0115;ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.font='600 '+fs+'px Arial,sans-serif';ctx.textBaseline='middle';
+const pdtCfg=c=>Object.assign({alfa:85,esp:70,txt:80},c||{},{cor:Object.assign({},PDTCOR,(c||{}).cor||{})});
+function pdtMarcas(ctx,W,H,marks,extra,cfg0){
+  const cfg=pdtCfg(cfg0),COR=cfg.cor,lw=W*0.0030*cfg.esp/100,fs=W*0.0115*cfg.txt/100,al=cfg.alfa/100;ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.font='600 '+fs+'px Arial,sans-serif';ctx.textBaseline='middle';
   const caixa=(t,x,y,cor)=>{const w=ctx.measureText(t).width+fs*.8;ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(x,y-fs*.75,w,fs*1.5);ctx.strokeStyle=cor||'#222';ctx.lineWidth=lw*.35;ctx.strokeRect(x,y-fs*.75,w,fs*1.5);ctx.fillStyle=cor||'#111';ctx.fillText(t,x+fs*.4,y)};
   (extra?marks.concat([extra]):marks).forEach(m=>{
-    if(m.t==='linha'&&m.p&&m.p.length){ctx.strokeStyle=PDTCOR.corte;ctx.lineWidth=lw*1.7;ctx.beginPath();m.p.forEach((q,i)=>i?ctx.lineTo(q[0]*W,q[1]*H):ctx.moveTo(q[0]*W,q[1]*H));if(m.p.length===1)ctx.lineTo(m.p[0][0]*W+.1,m.p[0][1]*H);ctx.stroke()}
-    else if(m.t==='ret'){ctx.strokeStyle=PDTCOR.trab;ctx.lineWidth=lw*1.2;ctx.strokeRect(m.x*W,m.y*H,m.w*W,m.h*H)}
-    else if(m.t==='terra'){const r=fs*.95;ctx.fillStyle=PDTCOR.terra;ctx.beginPath();ctx.arc(m.x*W,m.y*H,r,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=lw*.5;ctx.stroke();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(String(m.n||''),m.x*W,m.y*H+fs*.04);ctx.textAlign='left'}
-    else if(m.t==='seta'){const x1=m.x1*W,y1=m.y1*H,x2=m.x2*W,y2=m.y2*H;ctx.strokeStyle=PDTCOR.seta;ctx.fillStyle=PDTCOR.seta;ctx.lineWidth=lw*.7;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    if(m.t==='linha'&&m.p&&m.p.length){ctx.globalAlpha=al;ctx.strokeStyle=COR.corte;ctx.lineWidth=lw*1.7;ctx.beginPath();m.p.forEach((q,i)=>i?ctx.lineTo(q[0]*W,q[1]*H):ctx.moveTo(q[0]*W,q[1]*H));if(m.p.length===1)ctx.lineTo(m.p[0][0]*W+.1,m.p[0][1]*H);ctx.stroke();ctx.globalAlpha=1}
+    else if(m.t==='ret'){ctx.globalAlpha=al;ctx.strokeStyle=COR.trab;ctx.lineWidth=lw*1.2;ctx.strokeRect(m.x*W,m.y*H,m.w*W,m.h*H);ctx.globalAlpha=1}
+    else if(m.t==='terra'){const r=fs*.95;ctx.fillStyle=COR.terra;ctx.beginPath();ctx.arc(m.x*W,m.y*H,r,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=lw*.5;ctx.stroke();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(String(m.n||''),m.x*W,m.y*H+fs*.04);ctx.textAlign='left'}
+    else if(m.t==='seta'){const x1=m.x1*W,y1=m.y1*H,x2=m.x2*W,y2=m.y2*H;ctx.strokeStyle=COR.seta;ctx.fillStyle=COR.seta;ctx.lineWidth=lw*.7;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
       const a=Math.atan2(y2-y1,x2-x1),h=fs*1.1;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(a-.4),y2-h*Math.sin(a-.4));ctx.lineTo(x2-h*Math.cos(a+.4),y2-h*Math.sin(a+.4));ctx.closePath();ctx.fill();
-      if(m.txt)caixa(m.txt,x1,y1,PDTCOR.seta)}
+      if(m.txt)caixa(m.txt,x1,y1,COR.seta)}
     else if(m.t==='txt'&&m.txt)caixa(m.txt,m.x*W,m.y*H,'#111')});
   ctx.restore()}
 async function pdtAnexoPng(ax,titulo){
   const base=await pdtBaseEsq(ax.path,ax.page),W=base.width,H=base.height,bar=Math.round(W*.04),leg=Math.round(W*.045),c=document.createElement('canvas');c.width=W;c.height=H+bar+leg;
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);const fs=W*.016;x.font='700 '+fs+'px Arial,sans-serif';x.fillStyle='#111';x.textBaseline='middle';x.fillText(titulo||'ANEXO · Esquema elétrico',W*.012,bar/2);
-  x.drawImage(base,0,bar);x.save();x.translate(0,bar);pdtMarcas(x,W,H,ax.marks||[]);x.restore();
-  const used=t=>(ax.marks||[]).some(m=>m.t===t),it=[];if(used('linha'))it.push(['corte','Via interdita e corte de tensão']);if(used('ret'))it.push(['trab','Local dos trabalhos']);if(used('terra'))it.push(['terra','Ligação à terra (VT / LC)']);
+  x.drawImage(base,0,bar);x.save();x.translate(0,bar);pdtMarcas(x,W,H,ax.marks||[],null,ax.cfg);x.restore();const COR=pdtCfg(ax.cfg).cor;
+  const used=t=>(ax.marks||[]).some(m=>m.t===t),it=[];if(used('linha'))it.push(['corte','Zona de corte de tensão']);if(used('ret'))it.push(['trab','Zona dos trabalhos']);if(used('terra'))it.push(['terra','Varas de terra']);
   let px=W*.012;const py=bar+H+leg/2,f2=W*.0125;x.font='600 '+f2+'px Arial,sans-serif';
-  it.forEach(([k,t])=>{x.fillStyle=PDTCOR[k];if(k==='terra'){x.beginPath();x.arc(px+f2*.6,py,f2*.6,0,7);x.fill()}else x.fillRect(px,py-f2*.4,f2*2.2,f2*.8);x.fillStyle='#111';x.fillText(t,px+f2*2.6,py);px+=f2*3.4+x.measureText(t).width+W*.02});
+  it.forEach(([k,t])=>{x.fillStyle=COR[k];if(k==='terra'){x.beginPath();x.arc(px+f2*.6,py,f2*.6,0,7);x.fill()}else x.fillRect(px,py-f2*.4,f2*2.2,f2*.8);x.fillStyle='#111';x.fillText(t,px+f2*2.6,py);px+=f2*3.4+x.measureText(t).width+W*.02});
   return {url:c.toDataURL('image/png'),jpg:c.toDataURL('image/jpeg',.9),w:c.width,h:c.height}}
 async function pdtAnexaDocx(bufDocx,png){
   await carregaZip();const z=await JSZip.loadAsync(bufDocx);let xml=await z.file('word/document.xml').async('string'),rels=await z.file('word/_rels/document.xml.rels').async('string');
@@ -2033,26 +2034,29 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     Q.oninput=()=>{mostraP()};mostraP();if(dePdt.length===1){sel=dePdt[0].id;mostraP();mostraC()}}
 
   /* marcador do esquema elétrico (anexo do PDT) */
-  const AX=(()=>{const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&r.dados.annex)||PDTS.find(r=>r.dados.annex)||{dados:{}}).dados.annex);return src?JSON.parse(JSON.stringify(src)):{path:'',nome:'',page:1,marks:[],on:true}})();
-  const axSave=()=>AX.path&&AX.on?{path:AX.path,nome:AX.nome,page:AX.page||1,marks:AX.marks,on:true}:null;
+  const AX=(()=>{const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&r.dados.annex)||PDTS.find(r=>r.dados.annex)||{dados:{}}).dados.annex);return src?JSON.parse(JSON.stringify(src)):{path:'',nome:'',page:1,marks:[],on:true}})();AX.cfg=pdtCfg(AX.cfg);
+  const axSave=()=>AX.path&&AX.on?{path:AX.path,nome:AX.nome,page:AX.page||1,marks:AX.marks,cfg:AX.cfg,on:true}:null;
   const axPng=()=>AX.path&&AX.on?pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k)):Promise.resolve(null);
   async function abreMarcador(){
     const lista=DOCV.ele||[];
     if(!lista.length&&!AX.path){V.innerHTML='<div style="padding:30px;color:#eee">Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).</div>';return}
     const opcoes=lista.slice();if(AX.path&&!opcoes.some(x=>x.path===AX.path))opcoes.unshift({nome:AX.nome||'Esquema do PDT',path:AX.path});
     if(!AX.path){AX.path=opcoes[0].path;AX.nome=opcoes[0].nome}
-    const FER=[['mover','Mover'],['linha','Via interdita / corte'],['ret','Local dos trabalhos'],['terra','Ligação à terra'],['seta','Etiqueta com seta'],['txt','Texto'],['apaga','Apagar']];
+    const FER=[['mover','Mover'],['linha','Corte de tensão'],['ret','Zona dos trabalhos'],['terra','Varas de terra'],['apaga','Apagar']];
     V.innerHTML='<div class="mkb" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'
       +(opcoes.length>1?'<select id="mkS" style="max-width:300px">'+opcoes.map((x,i)=>'<option value="'+i+'"'+(x.path===AX.path?' selected':'')+'>'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(opcoes[0].nome)+'</b>')
       +'<span style="width:8px"></span>'+FER.map(f=>'<button class="sm" data-fe="'+f[0]+'">'+f[1]+'</button>').join('')
-      +'<span class="sp"></span><button class="sm" id="mkU">Desfazer</button><button class="sm perigo" id="mkL">Limpar</button><button class="sm" id="mkF">Ajustar</button>'
+      +'<span class="sp"></span><button class="sm" id="mkU">Desfazer</button><button class="sm perigo" id="mkL">Limpar</button><button class="sm" id="mkE">Estilo</button><button class="sm" id="mkF">Ajustar</button>'
       +'<label style="display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px"><input type="checkbox" id="mkOn"'+(AX.on?' checked':'')+'> Anexar ao PDT</label></div>'
+      +'<div id="mkEs" style="display:none;gap:14px;align-items:center;flex-wrap:wrap;padding:6px 12px;background:var(--sheet);border-bottom:1px solid var(--rule);font-size:12.5px"><style>#mkEs input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--rule)}#mkEs input[type=range]{width:110px;padding:0}#mkEs label{display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px}</style>'
+      +[['corte','Corte de tensão'],['trab','Trabalhos'],['terra','Varas de terra']].map(c=>'<label>'+c[1]+' <input type="color" data-cor="'+c[0]+'" value="'+AX.cfg.cor[c[0]]+'"></label>').join('')
+      +'<label>Transparência <input type="range" min="0" max="85" data-n="alfa" value="'+(100-AX.cfg.alfa)+'"><span class="hint" data-v="alfa"></span></label><label>Espessura <input type="range" min="20" max="200" data-n="esp" value="'+AX.cfg.esp+'"><span class="hint" data-v="esp"></span></label><label>Texto e círculos <input type="range" min="30" max="200" data-n="txt" value="'+AX.cfg.txt+'"><span class="hint" data-v="txt"></span></label><button class="sm" id="mkR">Repor</button></div>'
       +'<div id="mkVp" style="flex:1;min-height:0;position:relative;overflow:hidden;background:#555;touch-action:none"><div id="mkSt" style="position:absolute;left:0;top:0;transform-origin:0 0"><canvas id="mkB" style="display:block"></canvas><canvas id="mkO" style="position:absolute;left:0;top:0"></canvas></div><div id="mkMsg" style="position:absolute;left:12px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;padding:5px 10px;border-radius:6px;font-size:12.5px"></div></div>';
     const vp=$('#mkVp',V),st=$('#mkSt',V),cb=$('#mkB',V),co=$('#mkO',V),msg=$('#mkMsg',V);let tool='mover',pts=[],drag=null,tr={s:1,x:0,y:0};
-    const ajuda={mover:'Arrasta para mover; roda do rato para ampliar.',linha:'Clica nos pontos da via (Shift = reta). Duplo clique ou Enter termina.',ret:'Arrasta para desenhar o retângulo dos trabalhos.',terra:'Clica onde está a ligação à terra.',seta:'Arrasta da etiqueta até ao ponto que queres indicar.',txt:'Clica onde queres escrever.',apaga:'Clica numa marca para a apagar.'};
+    const ajuda={mover:'Arrasta para mover; roda do rato para ampliar.',linha:'Clica nos pontos da via (Shift = reta). Duplo clique ou Enter termina.',ret:'Arrasta para desenhar a zona dos trabalhos.',terra:'Clica onde está a vara de terra.',apaga:'Clica numa marca para a apagar.'};
     const aplica=()=>{st.style.transform='translate('+tr.x+'px,'+tr.y+'px) scale('+tr.s+')'};
     const ajusta=()=>{if(!cb.width)return;tr.s=Math.min(vp.clientWidth/cb.width,vp.clientHeight/cb.height);tr.x=(vp.clientWidth-cb.width*tr.s)/2;tr.y=(vp.clientHeight-cb.height*tr.s)/2;aplica()};
-    const redesenha=extra=>{const x=co.getContext('2d');x.clearRect(0,0,co.width,co.height);pdtMarcas(x,co.width,co.height,AX.marks,extra)};
+    const redesenha=extra=>{const x=co.getContext('2d');x.clearRect(0,0,co.width,co.height);pdtMarcas(x,co.width,co.height,AX.marks,extra,AX.cfg)};
     const marca=(a)=>{tool=a;V.querySelectorAll('[data-fe]').forEach(b=>b.classList.toggle('pri',b.dataset.fe===a));msg.textContent=ajuda[a];pts=[];drag=null;redesenha();vp.style.cursor=a==='mover'?'grab':'crosshair'};
     const pos=e=>{const r=co.getBoundingClientRect();return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]};
     const muda=()=>{sujo=true;redesenha()};
@@ -2087,6 +2091,11 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     V.querySelectorAll('[data-fe]').forEach(b=>b.onclick=()=>marca(b.dataset.fe));
     $('#mkU',V).onclick=()=>{AX.marks.pop();muda()};
     $('#mkL',V).onclick=async()=>{if(AX.marks.length&&await confirmar('Apagar todas as marcas deste esquema?','Limpar')){AX.marks=[];muda()}};
+    const vals=()=>V.querySelectorAll('[data-v]').forEach(sp=>sp.textContent=(sp.dataset.v==='alfa'?(100-AX.cfg[sp.dataset.v]):AX.cfg[sp.dataset.v])+'%');vals();
+    $('#mkE',V).onclick=()=>{const e=$('#mkEs',V);e.style.display=e.style.display==='none'?'flex':'none';setTimeout(ajusta,30)};
+    V.querySelectorAll('[data-cor]').forEach(i=>i.oninput=()=>{AX.cfg.cor[i.dataset.cor]=i.value;muda()});
+    V.querySelectorAll('[data-n]').forEach(i=>i.oninput=()=>{AX.cfg[i.dataset.n]=i.dataset.n==='alfa'?100-(+i.value):+i.value;vals();muda()});
+    $('#mkR',V).onclick=()=>{AX.cfg=pdtCfg({});V.querySelectorAll('[data-cor]').forEach(i=>i.value=AX.cfg.cor[i.dataset.cor]);V.querySelectorAll('[data-n]').forEach(i=>i.value=i.dataset.n==='alfa'?100-AX.cfg.alfa:AX.cfg[i.dataset.n]);vals();muda()};
     $('#mkF',V).onclick=ajusta;$('#mkOn',V).onchange=e=>{AX.on=e.target.checked;sujo=true};
     const carrega=async()=>{msg.textContent='A carregar o esquema…';try{const b=await pdtBaseEsq(AX.path,AX.page);cb.width=co.width=b.width;cb.height=co.height=b.height;cb.getContext('2d').drawImage(b,0,0);redesenha();ajusta();marca(tool==='mover'&&AX.marks.length?'mover':tool)}catch(e){msg.textContent='Não consegui abrir o esquema: '+erroTxt(e)}};
     const sl=$('#mkS',V);if(sl)sl.onchange=async()=>{const o2=opcoes[+sl.value];if(o2.path!==AX.path&&AX.marks.length&&!await confirmar('Mudar de esquema mantém as marcas, mas podem ficar fora do sítio. Continuar?','Mudar')){sl.value=opcoes.findIndex(x=>x.path===AX.path);return}AX.path=o2.path;AX.nome=o2.nome;sujo=true;carrega()};
