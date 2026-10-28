@@ -1866,7 +1866,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
    +'#pdtEd .cs{display:grid;grid-template-columns:minmax(400px,46%) 1fr;flex:1;min-height:0}#pdtEd .cf{overflow:auto;padding:12px 14px}#pdtEd .cp{overflow:auto;background:#6b6f76;position:relative}'
    +'@media(max-width:900px){#pdtEd .cs{grid-template-columns:1fr}#pdtEd .cs[data-m="f"] .cp,#pdtEd .cs[data-m="p"] .cf{display:none}}</style>'
    +'<div class="tb"><b>'+(ed?'Editar PDT':'Novo PDT')+' · OS '+esc(os.numero)+'</b><span id="pdSt" class="hint"></span><span class="sp"></span>'
-   +'<button id="pdMob" class="sm" style="display:none">Pré-visualizar</button><button class="sm" id="pdZm">−</button><button class="sm" id="pdZf">Ajustar</button><button class="sm" id="pdZp">+</button><button class="sm" id="pdP1">Pág. 1</button><button class="sm" id="pdP2">Pág. 2</button>'
+   +'<button id="pdMob" class="sm" style="display:none">Pré-visualizar</button><button class="sm" id="pdZm">−</button><button class="sm" id="pdZf">Ajustar</button><button class="sm" id="pdZp">+</button><button class="sm" id="pdAmp" title="Esconde o formulário e mostra só o PDT">Só PDT</button><button class="sm" id="pdJan" title="Abre o PDT noutra janela, que se atualiza sozinha">Nova janela</button><button class="sm" id="pdP1">Pág. 1</button><button class="sm" id="pdP2">Pág. 2</button>'
    +'<button id="pdW">Word</button><button id="pdF">PDF</button><button class="pri" id="pdOk">'+(ed?'Guardar':'Criar PDT')+'</button><button id="pdX">Fechar</button></div>'
    +'<div class="cs" data-m="f"><div class="cf" id="edF">'
    +(ed?sec('Dia','<label>Dia</label><input value="'+esc(ed.dados.dia.k)+'" disabled><label>Períodos do dia (separados por «;»)</label><input data-t="per" value="'+esc(T.per)+'">',true)
@@ -1912,9 +1912,16 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     try{await carregaPrev();const buf=await pdtDocx(mod,pdtDeForm(os.numero,os.semana||(ed&&ed.dados.sem)||'',F2(),diaAtual()));if(meu!==gen)return;
       const c=document.createElement('div');c.style.cssText='position:absolute;left:-9999px;top:0;width:900px';document.body.appendChild(c);
       await docx.renderAsync(buf,c,null,{inWrapper:true,breakPages:true,ignoreHeight:true});
-      const y=P.scrollTop;P.innerHTML='';while(c.firstChild)P.appendChild(c.firstChild);c.remove();aplicaZoom();P.scrollTop=y;$('#pdSt',ov).textContent='';
+      const y=P.scrollTop;P.innerHTML='';while(c.firstChild)P.appendChild(c.firstChild);c.remove();aplicaZoom();P.scrollTop=y;$('#pdSt',ov).textContent='';atualizaJan();
       P.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'})
     }catch(e){if(meu===gen){P.innerHTML='<div style="padding:30px;color:#fdd">'+esc(erroTxt(e))+'</div>';$('#pdSt',ov).textContent=''}}}
+  let jan=null;
+  const ajJan=()=>{try{const w=jan.document.querySelector('.docx-wrapper'),s0=jan.document.querySelector('section.docx');if(w&&s0)w.style.zoom=Math.max(.5,(jan.innerWidth-40)/s0.offsetWidth)}catch(e){}};
+  const atualizaJan=()=>{try{if(!jan||jan.closed)return;const d=jan.document.getElementById('c');d.innerHTML=P.innerHTML;d.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'});ajJan()}catch(e){}};
+  $('#pdJan',ov).onclick=()=>{jan=window.open('','pdtPrev','width=1100,height=900');if(!jan){aviso('O browser bloqueou a nova janela. Permite pop-ups para este site.',true);return}
+    jan.document.open();jan.document.write('<!doctype html><meta charset="utf-8"><title>PDT · OS '+esc(os.numero)+'</title><style>body{margin:0;background:#6b6f76}.docx-wrapper header,.docx-wrapper footer{display:block!important;min-height:0!important;padding:0!important;background:none!important;border:0!important}.docx-wrapper,.docx-wrapper section.docx{color:#000}.docx-wrapper section.docx{background:#fff!important}</style><div id="c"></div>');jan.document.close();
+    jan.onresize=ajJan;atualizaJan()};
+  $('#pdAmp',ov).onclick=e=>{const f=cs.dataset.f!=='1';cs.dataset.f=f?'1':'';cs.style.gridTemplateColumns=f?'1fr':'';ov.querySelector('.cf').style.display=f?'none':'';e.target.textContent=f?'Mostrar formulário':'Só PDT';setTimeout(aplicaZoom,50)};
   prev();
   $('#pdZm',ov).onclick=()=>{zoom=Math.max(.4,((P.querySelector('.docx-wrapper')||{style:{}}).style.zoom||1)*.85);aplicaZoom()};
   $('#pdZp',ov).onclick=()=>{zoom=Math.min(3,((P.querySelector('.docx-wrapper')||{style:{}}).style.zoom||1)*1.18);aplicaZoom()};
