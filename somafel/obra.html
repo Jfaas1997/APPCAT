@@ -432,7 +432,8 @@ async function visor(blob,nome){
   w.querySelector('#vp').onclick=()=>{ zoom=Math.min(4,zoom+.5); aplica() }; w.querySelector('#vm').onclick=()=>{ zoom=Math.max(1,zoom-.5); aplica() };
   const u=URL.createObjectURL(blob); const d=w.querySelector('#vd'); d.href=u; d.download=nome||'ficheiro';
   try{
-    if(/image\//.test(blob.type)||/\.(jpe?g|png)$/i.test(nome||'')){ vc.innerHTML='<img class="vi" src="'+u+'" alt="">'; pags.push(vc.firstChild) }
+    if(/\.(dwg|dxf)$/i.test(nome||'')){ await new Promise((res,rej)=>{ if(window.DwgView)return res(); const s=document.createElement('script'); s.src='dwgview.js?v=1'; s.onload=res; s.onerror=()=>rej(new Error('Não consegui carregar o visualizador de DWG.')); document.head.appendChild(s) }); w.querySelector('.vz').style.display='none'; vc.style.cssText+=';position:relative;height:calc(100vh - 56px);padding:0'; vc.innerHTML=''; DwgView.abre(vc,await blob.arrayBuffer(),{nome}) }
+    else if(/image\//.test(blob.type)||/\.(jpe?g|png)$/i.test(nome||'')){ vc.innerHTML='<img class="vi" src="'+u+'" alt="">'; pags.push(vc.firstChild) }
     else{ await carregaPdfJsM(); const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise; vc.innerHTML='';
       for(let n=1;n<=pdf.numPages;n++){ const pg=await pdf.getPage(n); const v0=pg.getViewport({scale:1}); const k=Math.min(3.5,Math.max(1.5,2600/v0.width)); const vp=pg.getViewport({scale:k});
         const c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height); c.className='vi'; vc.appendChild(c); pags.push(c); aplica();
