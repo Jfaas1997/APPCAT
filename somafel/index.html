@@ -1789,6 +1789,12 @@ async function pdtPdfBlob(buf){
     return pdf.output('blob')
   }finally{box.remove()}}
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
+function pdtExportaDlg(nomeFn,bufFn){
+  const w=janela('Exportar PDT');w.corpo.innerHTML='<p class="hint">Escolhe o formato.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 16px"><button class="pri" data-f="docx">Word (.docx)</button><button class="pri" data-f="pdf">PDF</button></div><div class="bt"><button class="n">Cancelar</button></div>';
+  w.corpo.querySelector('.n').onclick=w.fecha;
+  w.corpo.querySelectorAll('[data-f]').forEach(b=>b.onclick=async()=>{const t=b.textContent;w.corpo.querySelectorAll('[data-f]').forEach(x=>x.disabled=true);b.textContent='A gerar…';
+    try{const buf=await bufFn();if(b.dataset.f==='docx')pdtDescarrega(nomeFn()+'.docx',new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));else pdtDescarrega(nomeFn()+'.pdf',await pdtPdfBlob(buf));w.fecha()}
+    catch(e){aviso(erroTxt(e),true);b.textContent=t;w.corpo.querySelectorAll('[data-f]').forEach(x=>x.disabled=false)}})}
 async function pdtVer(o,r,fim){return pdtEdita(o,r,fim)}
 async function pdtVerAntigo(o,r,fim){
   const w=janela(pdtNome(r),true);w.el.style.cssText+=';width:min(1250px,97vw);max-width:97vw';w.corpo.innerHTML='<p class="hint">A abrir…</p>';
@@ -1802,13 +1808,12 @@ async function pdtEdita(o,r,fim){const os=OSLISTA.find(x=>String(x.numero)===Str
 function pdtTabela(){
   if(!PDTS.length)return '<p class="hint" style="margin:14px">Ainda não há PDT criados. Em «Ordens de serviço» usa «Criar PDT» na OS.</p>';
   return '<table><thead><tr><th>Dia</th><th>OS</th><th>PDT</th><th></th></tr></thead><tbody>'+PDTS.map(r=>'<tr><td>'+esc(r.dados.dia.k)+'</td><td class="mono">'+esc(r.numero_os)+'</td><td>'+esc(pdtNome(r))+'<br><span class="hint">'+esc((r.dados.dia.p||[]).join(' e '))+'</span></td>'
-    +'<td class="ac"><button data-pv="'+r.id+'">Ver</button><button data-pe="'+r.id+'">Editar</button><button data-pw="'+r.id+'">Word</button><button data-pf="'+r.id+'">PDF</button><button class="perigo" data-px="'+r.id+'">Apagar</button></td></tr>').join('')+'</tbody></table>'}
+    +'<td class="ac"><button data-pv="'+r.id+'">Ver</button><button data-pe="'+r.id+'">Editar</button><button data-pw="'+r.id+'">Exportar</button><button class="perigo" data-px="'+r.id+'">Apagar</button></td></tr>').join('')+'</tbody></table>'}
 function pdtLiga(el,o,fim){
   const R=b=>PDTS.find(x=>x.id===b.dataset[Object.keys(b.dataset)[0]]);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>pdtVer(o,R(b),fim));
   el.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>pdtEdita(o,R(b),fim));
-  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=async()=>{const r=R(b);try{pdtDescarrega(pdtNome(r)+'.docx',new Blob([await pdtBuf(r)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))}catch(e){aviso(erroTxt(e),true)}});
-  el.querySelectorAll('[data-pf]').forEach(b=>b.onclick=async()=>{const r=R(b);b.disabled=true;try{pdtDescarrega(pdtNome(r)+'.pdf',await pdtPdfBlob(await pdtBuf(r)))}catch(e){aviso(erroTxt(e),true)}b.disabled=false});
+  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r))});
   el.querySelectorAll('[data-px]').forEach(b=>b.onclick=async()=>{const r=R(b);if(!await confirmar('Apagar o '+pdtNome(r)+'?','Apagar'))return;try{await ok(sb.from('pdts').delete().eq('id',r.id));aviso('PDT apagado.');fim&&fim()}catch(e){aviso(erroTxt(e),true)}})}
 async function criaPDT(o,os,fim,ed){
   const w=janela((ed?'Editar PDT · ':'PDT · ')+'OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A preparar…</p>';
@@ -1863,11 +1868,12 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   ov.innerHTML='<style>#pdtEd .pdS{border:1px solid var(--rule);border-radius:8px;background:var(--sheet);margin:0 0 10px}#pdtEd summary{cursor:pointer;padding:9px 12px;font-weight:600;font-size:13.5px}#pdtEd .pdB{padding:4px 12px 12px}#pdtEd label{font-size:12px;color:var(--muted);display:block;margin:8px 0 3px}'
    +'#pdtEd .pdr{display:flex;gap:5px;margin-bottom:5px;align-items:center}#pdtEd .pdr input{padding:6px 8px;font-size:13px;min-width:0}#pdtEd .pdh{display:flex;gap:5px;font-size:11px;color:var(--muted);margin-bottom:2px;padding-right:30px}#pdtEd .pdx{overflow-x:auto}'
    +'#pdtEd textarea{font-size:13px}#pdtEd .tb{display:flex;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--rule);background:var(--sheet);flex-wrap:wrap}#pdtEd .tb b{font-size:14px}#pdtEd .sp{flex:1}'
-   +'#pdtEd .cs{display:grid;grid-template-columns:minmax(400px,46%) 1fr;flex:1;min-height:0}#pdtEd .cf{overflow:auto;padding:12px 14px}#pdtEd .cp{overflow:auto;background:#6b6f76;position:relative}'
-   +'@media(max-width:900px){#pdtEd .cs{grid-template-columns:1fr}#pdtEd .cs[data-m="f"] .cp,#pdtEd .cs[data-m="p"] .cf{display:none}}</style>'
+   +'#pdtEd .cs{display:grid;grid-template-columns:minmax(400px,46%) 1fr;flex:1;min-height:0}#pdtEd .cf{overflow:auto;padding:12px 14px}#pdtEd .cw{display:flex;flex-direction:column;min-height:0;min-width:0}#pdtEd .cp{overflow:auto;background:#6b6f76;position:relative;flex:1;min-height:0}'
+   +'@media(max-width:900px){#pdtEd .cs{grid-template-columns:1fr}#pdtEd .cs[data-m="f"] .cw,#pdtEd .cs[data-m="p"] .cf{display:none}}</style>'
    +'<div class="tb"><b>'+(ed?'Editar PDT':'Novo PDT')+' · OS '+esc(os.numero)+'</b><span id="pdSt" class="hint"></span><span class="sp"></span>'
+   +'<span id="pdTabs" style="display:inline-flex;gap:4px"><button class="sm pri" data-tab="pdt">PDT</button><button class="sm" data-tab="os">OS</button><button class="sm" data-tab="sin">Sinalização</button><button class="sm" data-tab="ele">Elétrico</button></span>'
    +'<button id="pdMob" class="sm" style="display:none">Pré-visualizar</button><button class="sm" id="pdZm">−</button><button class="sm" id="pdZf">Ajustar</button><button class="sm" id="pdZp">+</button><button class="sm" id="pdAmp" title="Esconde o formulário e mostra só o PDT">Só PDT</button><button class="sm" id="pdJan" title="Abre o PDT noutra janela, que se atualiza sozinha">Nova janela</button><button class="sm" id="pdP1">Pág. 1</button><button class="sm" id="pdP2">Pág. 2</button>'
-   +'<button id="pdW">Word</button><button id="pdF">PDF</button><button class="pri" id="pdOk">'+(ed?'Guardar':'Criar PDT')+'</button><button id="pdX">Fechar</button></div>'
+   +'<button id="pdExp">Exportar</button><button class="pri" id="pdOk">'+(ed?'Guardar':'Criar PDT')+'</button><button id="pdX">Fechar</button></div>'
    +'<div class="cs" data-m="f"><div class="cf" id="edF">'
    +(ed?sec('Dia','<label>Dia</label><input value="'+esc(ed.dados.dia.k)+'" disabled><label>Períodos do dia (separados por «;»)</label><input data-t="per" value="'+esc(T.per)+'">',true)
         :sec('Dias a gerar','<div>'+(dias.length?dias.map((d,i)=>'<label class="chk" style="display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13px"><input type="checkbox" data-dia="'+i+'" checked> '+d.k+' · '+d.p.join(' e ')+(PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d))?' <span class="hint">(já existe, será substituído)</span>':'')+'</label>').join(''):'<span class="hint">Esta OS não tem períodos.</span>')+'<p class="hint">A pré-visualização mostra o primeiro dia marcado; os dados são iguais para todos.</p></div>',true))
@@ -1881,7 +1887,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
    +sec('Material circulante','<div class="pdG" data-g="ma"></div>',true)
    +sec('Sinais complementares (SCPVI)','<div class="pdG" data-g="sc"></div>',true)
    +sec('Coordenação, contactos e observações',area('co','Coordenação das atividades',2)+area('ct','Contactos e observações',6),false)
-   +'<datalist id="dl_pe"></datalist><datalist id="dl_te"></datalist><datalist id="dl_ma"></datalist></div><div class="cp" id="edP"><div style="padding:30px;color:#ddd">A preparar a pré-visualização…</div></div></div>';
+   +'<datalist id="dl_pe"></datalist><datalist id="dl_te"></datalist><datalist id="dl_ma"></datalist></div><div class="cw"><div class="cp" id="edP"><div style="padding:30px;color:#ddd">A preparar a pré-visualização…</div></div><div class="cp" id="edV" style="display:none;flex-direction:column"></div></div></div>';
   ['pe','te','ma'].forEach(k=>$('#dl_'+k,ov).innerHTML=sug[k].map(x=>'<option value="'+esc(x)+'">').join(''));
   /* tabelas por linha */
   let t0=0;const agenda=()=>{clearTimeout(t0);$('#pdSt',ov).textContent='a atualizar…';t0=setTimeout(prev,550)};
@@ -1915,6 +1921,21 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
       const y=P.scrollTop;P.innerHTML='';while(c.firstChild)P.appendChild(c.firstChild);c.remove();aplicaZoom();P.scrollTop=y;$('#pdSt',ov).textContent='';atualizaJan();
       P.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'})
     }catch(e){if(meu===gen){P.innerHTML='<div style="padding:30px;color:#fdd">'+esc(erroTxt(e))+'</div>';$('#pdSt',ov).textContent=''}}}
+  /* documentos de consulta: OS, esquemas de sinalização e elétricos da obra */
+  const DOCV={os:null,sin:[],ele:[]},V=$('#edV',ov);let tabAt='pdt';
+  (async()=>{try{
+      const f=(DOCCACHE.t||[]).find(x=>x.cat==='os'&&x.os===String(os.numero)&&/\.pdf$/i.test(x.nome));if(f)DOCV.os=[{nome:f.nome,path:f.path}];
+      const r=await ok(sb.from('obra_esquemas').select('esquemas(id,tipo,nome,estacao,via,troco,ficheiro)').eq('obra_id',o.id));
+      r.map(x=>x.esquemas).filter(Boolean).forEach(e=>{const it={nome:(e.tipo==='sinalizacao'?(e.estacao||e.nome):e.nome)+(e.via||e.troco?' · '+[e.via,e.troco].filter(Boolean).join(' '):''),path:e.ficheiro};if(e.tipo==='sinalizacao')DOCV.sin.push(it);else DOCV.ele.push(it)})}catch(e){}})();
+  async function abreDoc(k){
+    const lista=(k==='os'?DOCV.os:DOCV[k])||[],vazio={os:'Não encontrei o PDF desta OS nos documentos.',sin:'Não há esquemas de sinalização associados a esta obra (OS e PDT → Esquemas de sinalização → Associar da biblioteca).',ele:'Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).'}[k];
+    if(!lista.length){V.innerHTML='<div style="padding:30px;color:#eee">'+esc(vazio)+'</div>';return}
+    V.innerHTML='<div style="display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'+(lista.length>1?'<select id="edVs" style="max-width:420px">'+lista.map((x,i)=>'<option value="'+i+'">'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(lista[0].nome)+'</b>')+'<span class="sp"></span><button class="sm" id="edVn">Abrir noutra janela</button></div><iframe id="edVi" style="flex:1;border:0;background:#fff;width:100%"></iframe>';
+    const carrega=async i=>{const u=await sb.storage.from('documentos').createSignedUrl(lista[i].path,3600);if(u.error){aviso(erroTxt(u.error),true);return}$('#edVi',V).src=u.data.signedUrl;$('#edVn',V).onclick=()=>window.open(u.data.signedUrl,'_blank')};
+    const sl=$('#edVs',V);if(sl)sl.onchange=()=>carrega(+sl.value);carrega(0)}
+  ov.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{tabAt=b.dataset.tab;ov.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('pri',x===b));
+    const pdt=tabAt==='pdt';P.style.display=pdt?'':'none';V.style.display=pdt?'none':'flex';['pdZm','pdZf','pdZp','pdP1','pdP2','pdJan'].forEach(id=>$('#'+id,ov).style.display=pdt?'':'none');
+    if(pdt)setTimeout(aplicaZoom,30);else await abreDoc(tabAt)});
   let jan=null;
   const ajJan=()=>{try{const w=jan.document.querySelector('.docx-wrapper'),s0=jan.document.querySelector('section.docx');if(w&&s0)w.style.zoom=Math.max(.5,(jan.innerWidth-40)/s0.offsetWidth)}catch(e){}};
   const atualizaJan=()=>{try{if(!jan||jan.closed)return;const d=jan.document.getElementById('c');d.innerHTML=P.innerHTML;d.querySelectorAll('.docx-wrapper').forEach(w=>{w.style.background='transparent';w.style.padding='12px 0'});ajJan()}catch(e){}};
@@ -1939,8 +1960,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   $('#pdX',ov).onclick=pedeFechar;
   const doc1=async()=>pdtDocx(mod,pdtDeForm(os.numero,os.semana||(ed&&ed.dados.sem)||'',F2(),diaAtual()));
   const nome=()=>pdtNome({numero_os:os.numero,dados:{F:F2(),dia:diaAtual()}});
-  $('#pdW',ov).onclick=async()=>{try{pdtDescarrega(nome()+'.docx',new Blob([await doc1()],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}))}catch(e){aviso(erroTxt(e),true)}};
-  $('#pdF',ov).onclick=async e=>{e.target.disabled=true;try{pdtDescarrega(nome()+'.pdf',await pdtPdfBlob(await doc1()))}catch(x){aviso(erroTxt(x),true)}e.target.disabled=false};
+  $('#pdExp',ov).onclick=()=>pdtExportaDlg(nome,doc1);
   $('#pdOk',ov).onclick=async()=>{
     const escolhidos=ed?[ed.dados.dia]:[...sel].sort((a,b)=>a-b).map(i=>dias[i]);if(!escolhidos.length){aviso('Escolhe pelo menos um dia.',true);return}
     const f2=F2(),ja=ed?[]:escolhidos.filter(d=>PDTS.some(x=>String(x.numero_os)===String(os.numero)&&x.dia===isoDia(d.d)));
