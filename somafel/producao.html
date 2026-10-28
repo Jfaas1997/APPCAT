@@ -1449,6 +1449,7 @@ function resDados(){
 }
 function rvTile(l,v,s,extra){ return '<div class="rvt"><span class="l">'+esc(l)+'</span><span class="v">'+v+'</span>'+(extra||'')+(s?'<span class="s">'+s+'</span>':'')+'</div>' }
 function rvGraficoAuto(D){
+  if(!D.M.some(function(m){ return (m.real||0)>0||m.p>0||m.ap>0 }))return '<div class="empty" style="padding:56px 12px">Ainda sem produção nem previsão.<br>O gráfico aparece quando fechares a primeira parte diária com rubricas do contrato, ou quando definires a previsão no Plano.</div>';
   var M=D.M, n=M.length, W=760,H=262,L=50,R=12,T=16,B=28, acum=rv.modo==='ac';
   var mx=1; M.forEach(function(m){ if(acum){ mx=Math.max(mx,m.ap,m.ar||0) } else mx=Math.max(mx,m.p,m.real||0) });
   mx=niceMax(mx*1.04);
