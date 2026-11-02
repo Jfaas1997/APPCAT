@@ -75,9 +75,28 @@ h2{font-size:20px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 14px;font-si
 <link rel="stylesheet" href="movimento.css">
 <script src="movimento.js"></script>
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
+<script src="design.js"></script>
+<style id="design-tel">
+/* design novo no telemóvel: topo e barras de vidro, cartões e botões de menu de vidro (claro e escuro) */
+#topo{background:rgba(18,22,28,.84);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid rgba(255,255,255,.07);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#topo button{border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+#btema{width:34px;padding:0!important;display:grid;place-items:center;flex:none}#btema svg{width:17px;height:17px}
+#estado{background:rgba(234,234,230,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.mo{background:rgba(255,255,255,.66);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);border:1px solid rgba(255,255,255,.85);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 22px rgba(20,24,32,.07);position:relative;overflow:hidden;padding:14px 14px 14px 18px;transition:transform .15s,box-shadow .2s}
+.mo::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:#F9D115;box-shadow:0 0 10px rgba(249,209,21,.6)}
+.mo.brev::before{display:none}
+.barra{background:rgba(241,241,239,.72);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4)}
+button,input,select,textarea{border-radius:12px}
+.card{border-radius:16px}
+:root[data-tema="escuro"] .mo{background:rgba(26,31,38,.72);border-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 26px rgba(0,0,0,.35)}
+:root[data-tema="escuro"] .barra{background:rgba(15,18,22,.72)}
+:root[data-tema="escuro"] #estado{background:rgba(31,36,44,.7)}
+@media screen and (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .mo{background:rgba(26,31,38,.72);border-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 26px rgba(0,0,0,.35)}:root:not([data-tema="claro"]) .barra{background:rgba(15,18,22,.72)}:root:not([data-tema="claro"]) #estado{background:rgba(31,36,44,.7)}}
+#m.entra{animation:none}
+</style>
 </head>
 <body>
-<div id="topo"><img id="tlogo" src="logo-somafel.png" alt="SOMAFEL" style="height:30px;border-radius:3px;flex:none"><h1 id="tt">Central de obras</h1><button id="bsai" hidden>Sair</button></div>
+<div id="topo"><img id="tlogo" src="logo-somafel.png" alt="SOMAFEL" style="height:30px;border-radius:3px;flex:none"><h1 id="tt">Central de obras</h1><button id="btema" aria-label="Mudar tema" title="Tema claro / escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button><button id="bsai" hidden>Sair</button></div>
 <div id="estado" hidden><span class="pt"></span><span id="et"></span><span class="sp"></span><button class="min" id="benv" hidden>Enviar agora</button></div>
 <main id="m"></main>
 <div id="avisos" aria-live="polite"></div>
@@ -170,6 +189,7 @@ async function arranca(){
   vai('home');
   atualiza();sincroniza();
 }
+$('#btema').onclick=()=>{const r=document.documentElement;const e=(r.getAttribute('data-tema')==='escuro')||(!r.getAttribute('data-tema')&&matchMedia('(prefers-color-scheme:dark)').matches);const n=e?'claro':'escuro';r.setAttribute('data-tema',n);try{localStorage.setItem('tema',n)}catch(x){}};
 $('#bsai').onclick=async()=>{
   if(S.fila.length&&!confirm('Há '+S.fila.length+' parte(s) por enviar neste telemóvel. Se saíres agora, ficam guardadas mas só seguem quando voltares a entrar. Sair?'))return;
   await sb.auth.signOut();S.eu=null;await cachePut('eu',null);ecraEntrada()};
@@ -258,6 +278,7 @@ function vai(v,obraId){
   ({home:vHome,obra:vObra,nova:vNova,ints:vInts,os:vOs,plano:vPlano,esq:vEsq,proj:vProj,norm:vNorm,des:vDes,pec:vPec}[v])();
   document.querySelectorAll('.barra').forEach(b=>{if(v!=='nova')b.remove()});
   pinta();
+  try{if(window.mvVarre)setTimeout(()=>mvVarre(m),0)}catch(e){}
 }
 function vHome(){
   $('#tt').textContent='Obras';
