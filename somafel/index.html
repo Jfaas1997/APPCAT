@@ -1796,8 +1796,9 @@ async function pdtPdfBlob(buf,png){
     fatias.forEach(([a,b],n)=>{const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;c.getContext('2d').drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
       let w=210,h=w*c.height/c.width;const topo=n?12:0,mb=12;if(h>297-topo-mb){h=297-topo-mb;w=h*c.width/c.height}
       if(n)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,topo,w,h)});
-    if(png&&png.geo){try{await carregaPdfLib();const doc=await PDFLib.PDFDocument.load(pdf.output('arraybuffer'));if(await pdtAnexoVetor(doc,png))return new Blob([await doc.save()],{type:'application/pdf'})}catch(e){console.error('anexo vetorial',e)}}
-    if(png){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=10,mb=22;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-m-mb){h=PH-m-mb;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,m+(PH-m-mb-h)/2,w,h)}
+    const pngs=(Array.isArray(png)?png:[png]).filter(Boolean);
+    if(pngs.length&&pngs.every(x=>x.geo)){try{await carregaPdfLib();const doc=await PDFLib.PDFDocument.load(pdf.output('arraybuffer'));let tudo=true;for(const x of pngs){if(!await pdtAnexoVetor(doc,x)){tudo=false;break}}if(tudo)return new Blob([await doc.save()],{type:'application/pdf'})}catch(e){console.error('anexo vetorial',e)}}
+    for(const png of pngs){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=10,mb=22;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-m-mb){h=PH-m-mb;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,m+(PH-m-mb-h)/2,w,h)}
     return pdf.output('blob')
   }finally{box.remove()}}
 async function pdtBuf(r){const mod=await pdtModelo();if(!mod)throw new Error('Falta o modelo do PDT.');return pdtDocx(mod,pdtDeForm(r.numero_os,r.dados.sem,r.dados.F,r.dados.dia))}
@@ -1904,18 +1905,23 @@ async function pdtAnexoVetor(doc,png){
   it.forEach(([kk,t])=>{const cr=rgb(COR[kk]);if(kk==='terra')pg.drawCircle({x:px+5,y:py+3,size:5,color:cr});else pg.drawRectangle({x:px,y:py,width:20,height:6,color:cr});
     pg.drawText(txt(t),{x:px+25,y:py,size:f2,font:fB,color:rgb('#111111')});px+=25+fB.widthOfTextAtSize(txt(t),f2)+18});
   return true}
-async function pdtAnexaDocx(bufDocx,png){
+async function pdtAnexaDocx(bufDocx,pngs){
+  pngs=(Array.isArray(pngs)?pngs:[pngs]).filter(Boolean);if(!pngs.length)return bufDocx;
   await carregaZip();const z=await JSZip.loadAsync(bufDocx);let xml=await z.file('word/document.xml').async('string'),rels=await z.file('word/_rels/document.xml.rels').async('string');
-  z.file('word/media/anexo_esq.png',png.url.split(',')[1],{base64:true});
-  rels=rels.replace('</Relationships>','<Relationship Id="rIdAnexoEsq" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/anexo_esq.png"/></Relationships>');z.file('word/_rels/document.xml.rels',rels);
+  pngs.forEach((png,n)=>{z.file('word/media/anexo_esq'+n+'.png',png.url.split(',')[1],{base64:true});
+    rels=rels.replace('</Relationships>','<Relationship Id="rIdAnexoEsq'+n+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/anexo_esq'+n+'.png"/></Relationships>')});
+  z.file('word/_rels/document.xml.rels',rels);
   const i=xml.lastIndexOf('<w:sectPr'),j=xml.indexOf('</w:sectPr>',i)+'</w:sectPr>'.length;let sect=xml.slice(i,j);
   const fim=sect.replace(/<w:type [^>]*\/>/,'').replace('<w:pgSz','<w:type w:val="nextPage"/><w:pgSz').replace(/<w:pgSz [^>]*\/>/,'<w:pgSz w:w="16840" w:h="11910" w:orient="landscape"/>');
   const quebra='<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr>'+sect+'</w:pPr></w:p>';
-  const mw=25.0*360000,mh=14.4*360000,r=Math.min(mw/png.w,mh/png.h),cx=Math.round(png.w*r),cy=Math.round(png.h*r);
-  const img='<w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="9001" name="Anexo esquema eletrico"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9001" name="anexo_esq.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdAnexoEsq"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
-  xml=xml.slice(0,i)+quebra+img+fim+xml.slice(j);z.file('word/document.xml',xml);
+  const imgs=pngs.map((png,n)=>{const mw=25.0*360000,mh=14.4*360000,r=Math.min(mw/png.w,mh/png.h),cx=Math.round(png.w*r),cy=Math.round(png.h*r);
+  return (n?'<w:p><w:r><w:br w:type="page"/></w:r></w:p>':'')+'<w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="'+(9001+n)+'" name="Anexo esquema eletrico '+(n+1)+'"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="'+(9001+n)+'" name="anexo_esq'+n+'.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdAnexoEsq'+n+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>'}).join('');
+  xml=xml.slice(0,i)+quebra+imgs+fim+xml.slice(j);z.file('word/document.xml',xml);
   return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
-const pdtAnexoTitulo=(os,dia)=>'ANEXO · Esquema elétrico · OS '+os+' · '+dia;
+const pdtAnexoTitulo=(os,dia,i,n)=>'ANEXO'+(n>1?' '+(i+1)+'/'+n:'')+' · Esquema elétrico · OS '+os+' · '+dia;
+/* o PDT pode ter vários esquemas em anexo: dados.annex é uma lista (aceita o formato antigo, um só objeto) */
+const pdtAxs=a=>(Array.isArray(a)?a:(a?[a]:[])).filter(x=>x&&x.path);
+async function pdtAnexosPng(axs,os,dia,W){const L=pdtAxs(axs).filter(x=>x.on!==false);const out=[];for(let i=0;i<L.length;i++)out.push(await pdtAnexoPng(L[i],pdtAnexoTitulo(os,dia,i,L.length),W));return out.length?out:null}
 
 function pdtExportaDlg(nomeFn,bufFn,anexoFn){
   const w=janela('Exportar PDT');w.corpo.innerHTML='<p class="hint">Escolhe o formato.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 16px"><button class="pri" data-f="docx">Word (.docx)</button><button class="pri" data-f="pdf">PDF</button></div><div class="bt"><button class="n">Cancelar</button></div>';
@@ -1941,7 +1947,7 @@ function pdtLiga(el,o,fim){
   const R=b=>PDTS.find(x=>x.id===b.dataset[Object.keys(b.dataset)[0]]);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>pdtVer(o,R(b),fim));
   el.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>pdtEdita(o,R(b),fim));
-  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r),()=>r.dados.annex&&r.dados.annex.on?pdtAnexoPng(r.dados.annex,pdtAnexoTitulo(r.numero_os,r.dados.dia.k),6000):null)});
+  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r),()=>pdtAnexosPng(r.dados.annex,r.numero_os,r.dados.dia.k,6000))});
   el.querySelectorAll('[data-px]').forEach(b=>b.onclick=async()=>{const r=R(b);if(!await confirmar('Apagar o '+pdtNome(r)+'?','Apagar'))return;try{await ok(sb.from('pdts').delete().eq('id',r.id));aviso('PDT apagado.');fim&&fim()}catch(e){aviso(erroTxt(e),true)}})}
 async function criaPDT(o,os,fim,ed){
   const w=janela((ed?'Editar PDT · ':'PDT · ')+'OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A preparar…</p>';
@@ -2110,20 +2116,26 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     Q.oninput=()=>{mostraP()};mostraP();if(dePdt.length===1){sel=dePdt[0].id;mostraP();mostraC()}}
 
   /* marcador do esquema elétrico (anexo do PDT) */
-  const AX=(()=>{const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&r.dados.annex)||PDTS.find(r=>r.dados.annex)||{dados:{}}).dados.annex);return src?JSON.parse(JSON.stringify(src)):{path:'',nome:'',page:1,marks:[],on:true}})();AX.cfg=pdtCfg(AX.cfg);
-  const axSave=()=>AX.path&&AX.on?{path:AX.path,nome:AX.nome,page:AX.page||1,marks:AX.marks,cfg:AX.cfg,on:true}:null;
-  const axPng=()=>AX.path&&AX.on?pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k),6000):Promise.resolve(null);
+  const axNovo=()=>({path:'',nome:'',page:1,marks:[],on:true,cfg:pdtCfg({})});
+  const AXS=(()=>{const tem=r=>pdtAxs(r.dados.annex).length;const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&tem(r))||PDTS.find(tem)||{dados:{}}).dados.annex);
+    const L=JSON.parse(JSON.stringify(pdtAxs(src)));L.forEach(a=>{a.cfg=pdtCfg(a.cfg);if(a.on===undefined)a.on=true});return L.length?L:[axNovo()]})();
+  let axi=0,AX=AXS[0];
+  const axSave=()=>{const L=AXS.filter(a=>a.path&&a.on).map(a=>({path:a.path,nome:a.nome,page:a.page||1,marks:a.marks,cfg:a.cfg,on:true}));return L.length?L:null};
+  const axPng=()=>pdtAnexosPng(AXS,os.numero,diaAtual().k,6000);
   async function abreMarcador(){
     const lista=DOCV.ele||[];
     if(!lista.length&&!AX.path){V.innerHTML='<div style="padding:30px;color:#eee">Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).</div>';return}
     const opcoes=lista.slice();if(AX.path&&!opcoes.some(x=>x.path===AX.path))opcoes.unshift({nome:AX.nome||'Esquema do PDT',path:AX.path});
-    if(!AX.path){AX.path=opcoes[0].path;AX.nome=opcoes[0].nome}
+    if(!AX.path){const livre=opcoes.find(x=>!AXS.some(a=>a.path===x.path))||opcoes[0];AX.path=livre.path;AX.nome=livre.nome}
     const FER=[['mover','Mover'],['linha','Corte de tensão'],['ret','Zona dos trabalhos'],['terra','Varas de terra'],['apaga','Apagar']];
-    V.innerHTML='<div class="mkb" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'
+    V.innerHTML='<div class="mkt" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px 0;background:var(--sheet)">'
+      +AXS.map((a,i)=>'<button class="sm'+(i===axi?' pri':'')+'" data-axi="'+i+'" title="'+esc(a.nome||'')+'">Esquema '+(i+1)+(a.nome?' · '+esc(String(a.nome).slice(0,28)):'')+(a.on?'':' (não anexado)')+'</button>').join('')
+      +'<button class="sm" id="mkMais" title="O corte de tensão passa por mais de um esquema elétrico">+ Outro esquema</button>'+(AXS.length>1?'<button class="sm perigo" id="mkMenos">Tirar este esquema</button>':'')+'</div>'
+      +'<div class="mkb" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'
       +(opcoes.length>1?'<select id="mkS" style="max-width:300px">'+opcoes.map((x,i)=>'<option value="'+i+'"'+(x.path===AX.path?' selected':'')+'>'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(opcoes[0].nome)+'</b>')
       +'<span style="width:8px"></span>'+FER.map(f=>'<button class="sm" data-fe="'+f[0]+'">'+f[1]+'</button>').join('')
       +'<span class="sp"></span><button class="sm" id="mkU">Desfazer</button><button class="sm perigo" id="mkL">Limpar</button><button class="sm" id="mkE">Estilo</button><button class="sm" id="mkF">Ajustar</button><button class="sm pri" id="mkPv">Pré-visualizar anexo</button>'
-      +'<label style="display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px"><input type="checkbox" id="mkOn"'+(AX.on?' checked':'')+'> Anexar ao PDT</label></div>'
+      +'<label style="display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px"><input type="checkbox" id="mkOn"'+(AX.on?' checked':'')+'> Anexar este esquema</label></div>'
       +'<div id="mkEs" style="display:none;gap:14px;align-items:center;flex-wrap:wrap;padding:6px 12px;background:var(--sheet);border-bottom:1px solid var(--rule);font-size:12.5px"><style>#mkEs input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--rule)}#mkEs input[type=range]{width:110px;padding:0}#mkEs label{display:flex;gap:5px;align-items:center;margin:0;color:var(--ink);font-size:12.5px}</style>'
       +[['corte','Corte de tensão'],['trab','Trabalhos'],['terra','Varas de terra']].map(c=>'<label>'+c[1]+' <input type="color" data-cor="'+c[0]+'" value="'+AX.cfg.cor[c[0]]+'"></label>').join('')
       +'<label>Transparência <input type="range" min="0" max="85" data-n="alfa" value="'+(100-AX.cfg.alfa)+'"><span class="hint" data-v="alfa"></span></label><label>Espessura <input type="range" min="20" max="200" data-n="esp" value="'+AX.cfg.esp+'"><span class="hint" data-v="esp"></span></label><label>Números e legenda <input type="range" min="30" max="200" data-n="txt" value="'+AX.cfg.txt+'"><span class="hint" data-v="txt"></span></label><label>Círculos <input type="range" min="5" max="100" data-n="circulo" value="'+AX.cfg.circulo+'"><span class="hint" data-v="circulo"></span></label><label>Número no círculo <input type="range" min="50" max="250" data-n="num" value="'+AX.cfg.num+'"><span class="hint" data-v="num"></span></label><label>Margem do excerto <input type="range" min="0" max="200" data-n="marg" value="'+AX.cfg.marg+'"><span class="hint" data-v="marg"></span></label><label><input type="checkbox" id="mkCorta"'+(AX.cfg.corta?' checked':'')+'> Só o excerto da zona marcada</label><button class="sm" id="mkR">Repor</button></div>'
@@ -2157,7 +2169,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
       const p=pos(e);
       if(tool==='linha'){if(e.detail>1){termina();return}let q=p;if(e.shiftKey&&pts.length)q=[p[0],pts[pts.length-1][1]];pts.push(q);redesenha({t:'linha',p:pts});return}
       if(tool==='ret'||tool==='seta'){drag={k:tool,p0:p};co.setPointerCapture(e.pointerId);return}
-      if(tool==='terra'){AX.marks.push({t:'terra',x:p[0],y:p[1],n:AX.marks.filter(m=>m.t==='terra').length+1});muda();return}
+      if(tool==='terra'){AX.marks.push({t:'terra',x:p[0],y:p[1],n:AXS.reduce((t,a)=>t+a.marks.filter(m=>m.t==='terra').length,0)+1});muda();return}
       if(tool==='txt'){const v=await formulario('Texto no esquema',[{id:'t',rotulo:'Texto',obrig:true,ph:'ex.: Poste 199-27'}],'Adicionar');if(v&&v.t){AX.marks.push({t:'txt',x:p[0],y:p[1],txt:v.t});muda()}return}
       if(tool==='apaga'){let bi=-1,bd=co.width*.02;AX.marks.forEach((m,i)=>{const d=perto(m,p);if(d<bd){bd=d;bi=i}});if(bi>=0){AX.marks.splice(bi,1);muda()}}};
     co.onpointermove=e=>{
@@ -2174,7 +2186,11 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
         if(v&&v.t){AX.marks.push({t:'seta',x1:d.p0[0],y1:d.p0[1],x2:p[0],y2:p[1],txt:v.t});muda()}else redesenha()}};
     co.ondblclick=()=>{if(tool==='linha')termina()};
     vp.onwheel=e=>{e.preventDefault();const r=vp.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,f=e.deltaY<0?1.15:1/1.15,ns=Math.min(8,Math.max(.05,tr.s*f));tr.x=mx-(mx-tr.x)*ns/tr.s;tr.y=my-(my-tr.y)*ns/tr.s;tr.s=ns;aplica()};
-    const tk=e=>{if(!document.body.contains(V)||V.style.display==='none')return;if(e.key==='Enter'&&tool==='linha'&&pts.length)termina();if(e.key==='Escape'&&pts.length){pts=[];redesenha()}};document.addEventListener('keydown',tk);
+    if(window.__mkTk)document.removeEventListener('keydown',window.__mkTk);
+    const tk=e=>{if(!document.body.contains(V)||V.style.display==='none')return;if(e.key==='Enter'&&tool==='linha'&&pts.length)termina();if(e.key==='Escape'&&pts.length){pts=[];redesenha()}};document.addEventListener('keydown',tk);window.__mkTk=tk;
+    V.querySelectorAll('[data-axi]').forEach(b=>b.onclick=()=>{const i=+b.dataset.axi;if(i===axi)return;axi=i;AX=AXS[i];abreMarcador()});
+    $('#mkMais',V).onclick=()=>{AXS.push(axNovo());axi=AXS.length-1;AX=AXS[axi];sujo=true;abreMarcador()};
+    if($('#mkMenos',V))$('#mkMenos',V).onclick=async()=>{if(AX.marks.length&&!await confirmar('Tirar o esquema '+(axi+1)+' e as marcas dele deste PDT?','Tirar'))return;AXS.splice(axi,1);axi=Math.max(0,axi-1);AX=AXS[axi];sujo=true;abreMarcador()};
     V.querySelectorAll('[data-fe]').forEach(b=>b.onclick=()=>marca(b.dataset.fe));
     $('#mkU',V).onclick=()=>{AX.marks.pop();muda()};
     $('#mkL',V).onclick=async()=>{if(AX.marks.length&&await confirmar('Apagar todas as marcas deste esquema?','Limpar')){AX.marks=[];muda()}};
@@ -2182,7 +2198,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     $('#mkE',V).onclick=()=>{const e=$('#mkEs',V);e.style.display=e.style.display==='none'?'flex':'none';setTimeout(ajusta,30)};
     V.querySelectorAll('[data-cor]').forEach(i=>i.oninput=()=>{AX.cfg.cor[i.dataset.cor]=i.value;muda()});
     V.querySelectorAll('[data-n]').forEach(i=>i.oninput=()=>{AX.cfg[i.dataset.n]=i.dataset.n==='alfa'?100-(+i.value):+i.value;vals();muda()});
-    $('#mkPv',V).onclick=async e=>{const b=e.target;b.disabled=true;const t=b.textContent;b.textContent='A gerar…';try{const png=await pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k),6000),w=janela('Anexo · pré-visualização',true);w.el.style.cssText+=';width:min(1300px,97vw);max-width:97vw';let urlV=null;try{await carregaPdfLib();const dv=await PDFLib.PDFDocument.create();if(await pdtAnexoVetor(dv,png))urlV=URL.createObjectURL(new Blob([await dv.save()],{type:'application/pdf'}))}catch(x){console.error(x)}
+    $('#mkPv',V).onclick=async e=>{const b=e.target;b.disabled=true;const t=b.textContent;b.textContent='A gerar…';try{const pngs=await pdtAnexosPng(AXS,os.numero,diaAtual().k,6000)||[await pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k),6000)],png=pngs[0],w=janela('Anexo · pré-visualização',true);w.el.style.cssText+=';width:min(1300px,97vw);max-width:97vw';let urlV=null;try{await carregaPdfLib();const dv=await PDFLib.PDFDocument.create();let okv=true;for(const x of pngs){if(!await pdtAnexoVetor(dv,x)){okv=false;break}}if(okv)urlV=URL.createObjectURL(new Blob([await dv.save()],{type:'application/pdf'}))}catch(x){console.error(x)}
       w.corpo.innerHTML=(urlV?'<iframe src="'+urlV+'#view=Fit" style="width:100%;height:68vh;border:0;border-radius:6px;background:#777"></iframe><p class="hint" style="margin:6px 0 0">É assim que fica no PDF: o esquema é o próprio PDF, por isso podes ampliar sem perder qualidade. Se não aparecer, <a href="'+urlV+'" target="_blank" rel="noopener">abre num separador novo</a>.</p>':'<div style="max-height:80vh;overflow:auto;background:#777;padding:10px;border-radius:6px;text-align:center"><img style="max-width:100%;background:#fff;cursor:zoom-in" src="'+png.jpg+'" onclick="this.style.maxWidth=this.style.maxWidth===\'none\'?\'100%\':\'none\'"></div>')+'<div class="bt"><button class="n">Fechar</button></div>';w.corpo.querySelector('.n').onclick=()=>{if(urlV)URL.revokeObjectURL(urlV);w.fecha()}}catch(x){aviso(erroTxt(x),true)}b.textContent=t;b.disabled=false};
     $('#mkCorta',V).onchange=e=>{AX.cfg.corta=e.target.checked?1:0;muda()};$('#mkR',V).onclick=()=>{$('#mkCorta',V).checked=true;AX.cfg=pdtCfg({});V.querySelectorAll('[data-cor]').forEach(i=>i.value=AX.cfg.cor[i.dataset.cor]);V.querySelectorAll('[data-n]').forEach(i=>i.value=i.dataset.n==='alfa'?100-AX.cfg.alfa:AX.cfg[i.dataset.n]);vals();muda()};
     $('#mkF',V).onclick=ajusta;$('#mkOn',V).onchange=e=>{AX.on=e.target.checked;sujo=true};
