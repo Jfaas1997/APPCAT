@@ -387,7 +387,7 @@ async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqList
 function ico(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
 function casca(){
   const ger=gestor();
-  $('#raiz').innerHTML='<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></symbol><symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/></symbol><symbol id="i-fact" viewBox="0 0 24 24"><path d="M3 21V10l6 4v-4l6 4V6h6v15z"/></symbol><symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol><symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol><symbol id="i-norma" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol></defs></svg>'
+  $('#raiz').innerHTML='<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></symbol><symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/></symbol><symbol id="i-fact" viewBox="0 0 24 24"><path d="M3 21V10l6 4v-4l6 4V6h6v15z"/></symbol><symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol><symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></symbol><symbol id="i-linha" viewBox="0 0 24 24"><path d="M2 15h20M2 19h20"/><path d="M6 15V6M14 15V6M6 7h11l-3 2.5L17 12H6"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol><symbol id="i-norma" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol></defs></svg>'
    +'<div id="app"><nav id="side" aria-label="Navegação"><div class="sbrand"><img src="logo-somafel.png" alt="SOMAFEL"><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu">'+ico('chev')+'</button></div>'
    +'<button class="tab" id="sVolta" hidden title="Voltar à lista de obras">'+ico('chev')+'<span>Todas as obras</span></button>'
    +'<button class="tab" data-v="obras">'+ico('home')+'<span>Obras</span></button><div id="sObras"></div>'
@@ -395,7 +395,7 @@ function casca(){
    +'<button class="tab" data-v="visao">'+ico('dash')+'<span>Visão geral</span></button>'
    +'<button class="tab" data-v="mat">'+ico('box')+'<span>Materiais</span></button>'
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
-   +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e PDT</span></button><button class="tab" data-v="proj">'+ico('book')+'<span>Projeto</span></button>':'')+'</div>'
+   +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e PDT</span></button><button class="tab" data-v="proj">'+ico('book')+'<span>Projeto</span></button><button class="tab" data-v="linha">'+ico('linha')+'<span>Linha</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medições CAT</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button><button class="tab" data-v="esq">'+ico('norma')+'<span>Esquemas</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="forn">'+IC.pessoas+'<span>Fornecedores</span></button><button class="tab" data-v="equip">'+IC.def+'<span>Equipamentos</span></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
@@ -711,12 +711,12 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.da
     if(!m.length){aviso('O desenho '+e.data.cod+' não está no Catálogo (o administrador ainda não o carregou).',true);return}
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
 const LIVRE=['med','cons','rct'];
-const OBRAV=['visao','docs','proj','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
+const OBRAV=['visao','docs','proj','linha','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
 async function vai(v,obraId){
   if(v==='obra')v='visao';
   if(obraId&&(!S.obra||S.obra.id!==obraId)){try{S.obra=await ok(sb.from('obras').select('*').eq('id',obraId).single());largaApps(obraId)}catch(e){aviso(erroTxt(e),true);return}}
   if(OBRAV.includes(v)&&!S.obra&&!LIVRE.includes(v))v='obras';
-  if((v==='docs'||v==='proj')&&!gestor())v='visao';
+  if((v==='docs'||v==='proj'||v==='linha')&&!gestor())v='visao';
   if(v==='obras'&&S.obra){largaApps(null);S.obra=null}
   S.vista=v;S.fk=null;
   const R=document.documentElement,app=!!APPV[v];
@@ -725,7 +725,7 @@ async function vai(v,obraId){
   const pg=$('#pg');pg.classList.remove('semPad','bib');pg.scrollTop=0;pg.classList.remove('entra');if(!app)setTimeout(()=>mvVarre(pg),0);
   $('#hSave').hidden=true;$('#hSub').textContent='';$('#bNova').hidden=!(v==='obras'&&pode('obras'));
   rSide();
-  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,proj:vProj,pessoal:vPessoal,forn:vForn,equip:vEquip,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas'),esq:vEsquemas}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
+  ({obras:vObras,visao:()=>vObra(S.obra.id),docs:vDocs,proj:vProj,linha:vLinha,pessoal:vPessoal,forn:vForn,equip:vEquip,pessoas:vPessoas,def:vDef,desenhos:()=>vCat(),normas:()=>vBib('normas'),esq:vEsquemas}[v]||(()=>vApp(S.obra||{id:'livre'},v)))();
   posiciona();
   if(S.obra&&gestor()&&!app&&S.obra.id!=='livre'){const oid=S.obra.id;clearTimeout(window.__pw);window.__pw=setTimeout(()=>{if(S.obra&&S.obra.id===oid&&!APPV[S.vista]){frameApp(S.obra,'med');setTimeout(()=>{if(S.obra&&S.obra.id===oid)frameApp(S.obra,'rct')},2500)}},700)}
 }
@@ -980,6 +980,117 @@ async function vObra(id){
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
 const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
+/* ===== Linha da obra por PK: constrói-se sozinha com os PK que vão entrando (PDT, esquemas, partes diárias) ===== */
+const LN={dia:null,zoom:'tudo',cam:{int:1,corte:1,sin:1,terra:1,fr:1,exe:1},ate:null,play:null};
+function lnPk(t){t=String(t==null?'':t);let m=t.match(/(\d{2,3})\s*\+\s*(\d{1,3})/);if(m)return +m[1]+(+m[2])/1000;
+  m=t.match(/(?:^|[^\d-])(\d{2,3})\s*[,.]\s*(\d{1,3})(?!\d)/);if(m)return +(m[1]+'.'+m[2]);return null}
+function lnPks(t){const out=[];String(t||'').replace(/(\d{2,3})\s*\+\s*(\d{1,3})/g,(a,k,mm)=>{out.push(+k+(+mm)/1000);return a});if(!out.length){const p=lnPk(t);if(p!=null)out.push(p)}return out}
+const lnPkT=v=>{const k=Math.floor(v+1e-9),m=Math.round((v-k)*1000);return k+'+'+String(m).padStart(3,'0')};
+const lnVia=t=>{const v=String(t||'').trim().toUpperCase().replace(/^VIA\s*/,'');return v==='VA'?'A':v==='VD'?'D':v};
+async function lnDados(o){
+  const R={dias:[],sinais:[],exe:[],vias:new Set()};
+  const [pq,sq,dq]=await Promise.all([
+    sb.from('pdts').select('numero_os,dia,dados').eq('obra_id',o.id),
+    sb.from('obra_esquemas').select('esquemas(tipo,estacao,esquema_sinais(sinal,linha,via,pk,confirmado))').eq('obra_id',o.id),
+    sb.from('dados_apps').select('pd:dados->st->pd').eq('obra_id',o.id).eq('app','producao').maybeSingle()]);
+  (pq.data||[]).forEach(r=>{const F=(r.dados&&r.dados.F)||{},D={dia:r.dia,os:r.numero_os,lim:[],corte:[],terras:[],frentes:[]};
+    (F.lim||[]).forEach(l=>{const pk=lnPk(l[4]);const via=lnVia(l[2]);if(via)R.vias.add(via);if(pk!=null)D.lim.push({pk,est:l[0]||'',sinal:l[3]||'',via})});
+    String(F.po||'').split('\n').forEach((x,i)=>{const s2=x.split('/');const pk=lnPk(s2.slice(1).join('/'))||lnPk(x);if(pk!=null)D.corte.push({pk,t:x.trim(),ap:String(F.ap||'').split('\n')[i]||''})});
+    pdtCampos(F.te).forEach((row,i)=>{lnPks(row[0]).forEach(pk=>D.terras.push({pk,n:D.terras.length+1,t:row.join(' · ')}))});
+    pdtCampos(F.fr).forEach((row,i)=>{const p=lnPks(row[0]);if(!p.length)return;const vm=String(row[0]).toUpperCase().match(/\bV\s?([AD]|I{1,3})\b/);const via=vm?lnVia(vm[1]):'';if(via)R.vias.add(via);
+      D.frentes.push({a:Math.min(...p),b:Math.max(...p),via,t:'FT '+(i+1)+(row[1]?' · '+row[1]:'')})});
+    if(D.lim.length||D.corte.length||D.terras.length||D.frentes.length)R.dias.push(D)});
+  R.dias.sort((a,b)=>a.dia<b.dia?-1:1);
+  (sq.data||[]).forEach(x=>{const e=x.esquemas;if(!e||e.tipo!=='sinalizacao')return;(e.esquema_sinais||[]).forEach(g=>{const pk=lnPk(g.pk);if(pk==null)return;const via=lnVia(g.via);if(via)R.vias.add(via);
+    R.sinais.push({pk,via,t:g.sinal,est:e.estacao||'',ok:!!g.confirmado})})});
+  ((dq.data&&dq.data.pd)||[]).forEach(p=>{(p.lin||[]).forEach(l=>{const a=lnPk(l.pki),b=lnPk(l.pkf);if(a==null&&b==null)return;const x=a!=null?a:b,y=b!=null?b:a;
+    R.exe.push({a:Math.min(x,y),b:Math.max(x,y)+(x===y?0.02:0),data:p.data||'',t:(p.num||'')+' · '+(l.cod||'')+' '+(l.des||'')})})});
+  R.exe.sort((a,b)=>a.data<b.data?-1:1);
+  return R}
+async function vLinha(){const o=S.obra;titulo('Linha',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');
+  pg.innerHTML='<div class="vz vz2"><div id="lnBox">'+Mov.skel(3)+'</div></div>';
+  let R;try{R=await lnDados(o)}catch(e){$('#lnBox').innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
+  if(S.vista!=='linha'||!S.obra||S.obra.id!==o.id)return;S.LN=R;
+  if(LN.play){clearInterval(LN.play);LN.play=null}
+  const hoje=isoDia(new Date());if(!LN.dia||!R.dias.some(d=>d.dia===LN.dia)){const f=R.dias.find(d=>d.dia>=hoje);LN.dia=f?f.dia:(R.dias.length?R.dias[R.dias.length-1].dia:null)}
+  LN.ate=null;lnPinta()}
+function lnPinta(){const R=S.LN,box=$('#lnBox');if(!R||!box)return;
+  const D=R.dias.find(d=>d.dia===LN.dia)||null,todos=[];
+  R.dias.forEach(d=>{d.lim.forEach(x=>todos.push(x.pk));d.corte.forEach(x=>todos.push(x.pk));d.terras.forEach(x=>todos.push(x.pk));d.frentes.forEach(x=>{todos.push(x.a,x.b)})});
+  R.sinais.forEach(x=>todos.push(x.pk));R.exe.forEach(x=>{todos.push(x.a,x.b)});
+  const cab='<div class="sec" style="margin-top:0">A obra ao longo da linha<span class="sp"></span></div>';
+  if(!todos.length){box.innerHTML=cab+'<div class="card lnVazio"><h3 style="margin:0 0 6px">A linha vai-se construindo sozinha</h3><p class="hint" style="margin:0 0 10px">Ainda não há nenhum PK guardado nesta obra. O diagrama ganha forma à medida que entram:</p><ul class="hint" style="margin:0;padding-left:18px;line-height:1.7"><li><b>PDT</b>: limites da interdição (km), postes limite do corte, varas de terra e frentes de trabalho</li><li><b>Esquemas de sinalização</b> associados à obra, com sinais e PK confirmados</li><li><b>Partes diárias</b> da Produção com PK de início e fim (pinta o troço como executado)</li></ul></div>';return}
+  let A=Math.min(...todos),B=Math.max(...todos);
+  if(LN.zoom==='dia'&&D){const z=[];D.lim.forEach(x=>z.push(x.pk));D.corte.forEach(x=>z.push(x.pk));D.terras.forEach(x=>z.push(x.pk));D.frentes.forEach(x=>z.push(x.a,x.b));if(z.length){A=Math.min(...z);B=Math.max(...z)}}
+  const pad=Math.max(.15,(B-A)*.06);A-=pad;B+=pad;if(B-A<.4){const c=(A+B)/2;A=c-.2;B=c+.2}
+  const X=v=>((v-A)/(B-A)*100).toFixed(3)+'%',W=(a,b)=>(Math.max(.15,(b-a)/(B-A)*100)).toFixed(3)+'%';
+  let vias=[...R.vias].filter(Boolean).sort();if(!vias.length)vias=['—'];if(vias.length===1&&vias[0]==='A')vias=['A','D'];
+  const yV={},H0=56,DV=92;vias.forEach((v,i)=>yV[v]=H0+i*DV);const yExe=H0+vias.length*DV,Ht=yExe+70;
+  const viaY=v=>yV[v]!=null?yV[v]:yV[vias[0]];
+  const dV=D?[...new Set(D.lim.map(x=>x.via).filter(v=>yV[v]!=null))]:[];const viasDia=dV.length?dV:[vias[0]];
+  let h='',k=0;const ent=()=>'animation-delay:'+(0.25+(k++)*0.02).toFixed(2)+'s';
+  /* eixo */
+  const larg=Math.max(200,(box.clientWidth||900)-110),nMax=Math.max(2,Math.floor(larg/78)),passo=[.05,.1,.25,.5,1,2,5,10].find(p=>(B-A)/p<=nMax)||10;for(let q=Math.ceil(A/passo)*passo;q<=B+1e-9;q+=passo)h+='<div class="lnT" style="left:'+X(q)+';top:'+(Ht-24)+'px"><i></i><span>'+lnPkT(q)+'</span></div>';
+  /* vias */
+  vias.forEach(v=>{h+='<div class="lnVia" style="top:'+viaY(v)+'px"></div>'});
+  /* interdição do dia */
+  if(D&&LN.cam.int&&D.lim.length>=1){const a=Math.min(...D.lim.map(x=>x.pk)),b=Math.max(...D.lim.map(x=>x.pk));
+    viasDia.forEach(v=>{h+='<div class="lnE lnInt" title="Interdição · OS '+esc(D.os)+' · '+lnPkT(a)+' → '+lnPkT(b)+'" style="left:'+X(a)+';width:'+W(a,b)+';top:'+(viaY(v)-26)+'px;'+ent()+'"></div>'});
+    h+='<div class="lnE lnTxt" style="left:'+X(a)+';top:'+(viaY(viasDia[0])-46)+'px;color:#7A5E00;'+ent()+'"><span class="lnVivo"></span>Interdição · OS '+esc(D.os)+' · '+esc(D.dia.split('-').reverse().join('/'))+'</div>'}
+  /* corte de tensão */
+  if(D&&LN.cam.corte&&D.corte.length){const a=Math.min(...D.corte.map(x=>x.pk)),b=Math.max(...D.corte.map(x=>x.pk));
+    viasDia.forEach(v=>{h+='<div class="lnE lnCorte" title="Corte de tensão · '+lnPkT(a)+' → '+lnPkT(b)+'" style="left:'+X(a)+';width:'+W(a,b)+';top:'+(viaY(v)-12)+'px;'+ent()+'"></div>'})}
+  /* sinais: esquemas + limites do PDT do dia */
+  if(LN.cam.sin){const L=R.sinais.map(x=>Object.assign({fonte:'esquema'},x));if(D)D.lim.forEach(x=>{if(x.sinal&&!L.some(y=>Math.abs(y.pk-x.pk)<.002&&y.via===x.via))L.push({pk:x.pk,via:x.via,t:x.sinal,est:x.est,ok:true,fonte:'PDT'})});
+    L.forEach(x=>{if(x.pk<A||x.pk>B)return;h+='<div class="lnE lnSin'+(x.ok?'':' nc')+'" title="'+esc(x.t+' · '+x.est+' · '+lnPkT(x.pk)+(x.ok?'':' · por confirmar')+' ('+x.fonte+')')+'" style="left:'+X(x.pk)+';top:'+(viaY(x.via)-58)+'px;'+ent()+'"><span>'+esc(x.t)+'</span><b></b><i></i></div>'})}
+  /* varas de terra */
+  if(D&&LN.cam.terra)D.terras.forEach(x=>{h+='<div class="lnE lnTer" title="'+esc('Vara de terra '+x.n+' · '+x.t)+'" style="left:'+X(x.pk)+';top:'+(viaY(viasDia[0])+12)+'px;'+ent()+'">'+x.n+'</div>'});
+  /* frentes */
+  if(D&&LN.cam.fr)D.frentes.forEach(x=>{const v=x.via&&yV[x.via]!=null?x.via:viasDia[0];h+='<div class="lnE lnFr" title="'+esc(x.t)+'" style="left:'+X(x.a)+';width:'+W(x.a,x.b)+';top:'+(viaY(v)+40)+'px;'+ent()+'"><i></i><span>'+esc(x.t)+'</span></div>'});
+  /* executado (partes diárias), acumulado até ao dia escolhido */
+  const lim=LN.ate||'9999';const ex=R.exe.filter(x=>!x.data||x.data<=lim);
+  h+='<div class="lnVia exe" style="top:'+yExe+'px"></div>';
+  if(!LN.vistos)LN.vistos=new Set();
+  if(LN.cam.exe)ex.forEach(x=>{const id=x.a+'|'+x.b+'|'+x.data,velho=LN.play&&LN.vistos.has(id);LN.vistos.add(id);h+='<div class="lnE lnExe'+(velho?' velho':'')+'" title="'+esc(x.t+' · '+lnPkT(x.a)+' → '+lnPkT(x.b)+(x.data?' · '+x.data.split('-').reverse().join('/'):''))+'" style="left:'+X(x.a)+';width:'+W(x.a,x.b)+';top:'+(yExe-5)+'px;'+ent()+'"></div>'});
+  const lbls=vias.map(v=>'<div class="lnLbl" style="top:'+(viaY(v)-8)+'px">Via '+esc(v)+'</div>').join('')+'<div class="lnLbl" style="top:'+(yExe-8)+'px;color:#9A7A00">Executado</div>';
+  const nPk=R.dias.length,nS=R.sinais.length,nE=R.exe.length;
+  const dias=R.dias.map(d=>'<button class="lnCh'+(d.dia===LN.dia?' on':'')+'" data-ld="'+d.dia+'">'+esc(d.dia.slice(8,10)+'/'+d.dia.slice(5,7))+'<small>OS '+esc(d.os)+'</small></button>').join('');
+  const cams=[['int','Interdição'],['corte','Corte'],['sin','Sinais'],['terra','Varas de terra'],['fr','Frentes'],['exe','Executado']].map(c=>'<label class="lnCk"><input type="checkbox" data-lc="'+c[0]+'"'+(LN.cam[c[0]]?' checked':'')+'><i class="lnSw '+c[0]+'"></i>'+c[1]+'</label>').join('');
+  box.innerHTML=cab+'<div class="card lnCard">'
+    +'<div class="lnBar">'+(dias?'<div class="lnDias">'+dias+'</div>':'<span class="hint">Sem PDT com PK.</span>')+'<span class="sp"></span>'
+    +'<div class="seg2"><button data-lz="tudo" class="'+(LN.zoom==='tudo'?'on':'')+'">Toda a obra</button><button data-lz="dia" class="'+(LN.zoom==='dia'?'on':'')+'"'+(D?'':' disabled')+'>Zona do dia</button></div>'
+    +(nE?'<button id="lnPlay" class="pri" title="Mostra o executado a crescer, parte a parte">'+(LN.play?'■ Parar':'▶ Ver a obra a crescer')+'</button>':'')+'</div>'
+    +'<div class="lnCams">'+cams+'</div>'
+    +'<div class="lnWrap" style="height:'+Ht+'px">'+lbls+'<div class="lnArea'+(LN.play?' quieto':'')+'">'+h+'</div></div>'
+    +'<p class="hint" style="margin:10px 0 0">Construída a partir de <b>'+nPk+'</b> PDT com PK, <b>'+nS+'</b> '+(nS===1?'sinal':'sinais')+' dos esquemas e <b>'+nE+'</b> '+(nE===1?'linha':'linhas')+' de partes diárias com PK'+(LN.ate?' · executado até <b>'+LN.ate.split('-').reverse().join('/')+'</b>':'')+'. Passa o rato por cima de cada elemento para ver o detalhe.</p></div>';
+  box.querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>{LN.dia=b.dataset.ld;lnPinta()});
+  box.querySelectorAll('[data-lz]').forEach(b=>b.onclick=()=>{LN.zoom=b.dataset.lz;lnPinta()});
+  box.querySelectorAll('[data-lc]').forEach(b=>b.onchange=()=>{LN.cam[b.dataset.lc]=b.checked?1:0;lnPinta()});
+  const pl=$('#lnPlay');if(pl)pl.onclick=()=>{if(LN.play){clearInterval(LN.play);LN.play=null;LN.ate=null;lnPinta();return}
+    const datas=[...new Set(R.exe.map(x=>x.data).filter(Boolean))].sort();if(!datas.length)return;let i=0;LN.ate=datas[0];LN.cam.exe=1;LN.vistos=new Set();
+    LN.play=setInterval(()=>{if(S.vista!=='linha'){clearInterval(LN.play);LN.play=null;return}i++;if(i>=datas.length){clearInterval(LN.play);LN.play=null;LN.ate=null}else LN.ate=datas[i];lnPinta()},900);lnPinta()}}
+const LN_CSS='.lnCard{padding:14px 16px}.lnBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.lnBar .sp{flex:1}'
+  +'.lnDias{display:flex;gap:6px;flex-wrap:wrap}.lnCh{display:flex;flex-direction:column;align-items:center;line-height:1.1;padding:5px 10px;border-radius:10px;font-family:var(--mono);font-size:12.5px}.lnCh small{font-size:10px;color:var(--muted);font-family:inherit}.lnCh.on{background:var(--brand);border-color:var(--brand);color:#2B3038}.lnCh.on small{color:#5c4a00}'
+  +'.seg2{display:inline-flex;padding:3px;border-radius:10px;background:rgba(43,48,56,.07)}.seg2 button{border:0;background:transparent;padding:5px 10px;border-radius:8px;font-size:12.5px}.seg2 button.on{background:var(--sheet);box-shadow:0 2px 8px rgba(20,24,32,.12);font-weight:600}'
+  +'.lnCams{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0 8px}.lnCk{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--ink)!important;margin:0!important;cursor:pointer}.lnCk input{width:auto;margin:0}'
+  +'.lnSw{display:inline-block;width:14px;height:8px;border-radius:3px}.lnSw.int{background:repeating-linear-gradient(135deg,#F2C14E 0 3px,#FBE6B0 3px 6px);border:1px dashed #C88A00}.lnSw.corte{height:4px;background:#16a34a}.lnSw.sin{width:9px;height:9px;border-radius:50%;background:#C62828}.lnSw.terra{width:9px;height:9px;border-radius:50%;background:#F08A00}.lnSw.fr{border:2px solid #3B6FD8;border-top:0;border-radius:0 0 3px 3px}.lnSw.exe{background:#E7B800;height:6px}'
+  +'.lnWrap{position:relative;margin-top:6px}.lnLbl{position:absolute;left:0;width:70px;font-size:12px;font-weight:600}'
+  +'.lnArea{position:absolute;left:78px;right:0;top:0;bottom:0;overflow:hidden;border-radius:12px;background-color:rgba(255,255,255,.45);background-image:linear-gradient(rgba(43,48,56,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(43,48,56,.05) 1px,transparent 1px),linear-gradient(rgba(43,48,56,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(43,48,56,.025) 1px,transparent 1px);background-size:60px 60px,60px 60px,12px 12px,12px 12px}'
+  +':root[data-tema="escuro"] .lnArea{background-color:rgba(255,255,255,.03)}@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .lnArea{background-color:rgba(255,255,255,.03)}}'
+  +'.lnVia{position:absolute;left:0;right:0;height:4px;margin-top:-2px;background:var(--ink);border-radius:2px;transform-origin:left;animation:lnDes 1s cubic-bezier(.2,.7,.2,1) both}.lnVia.exe{height:2px;background:rgba(127,127,127,.35)}'
+  +'.lnE{position:absolute;animation:lnNasce .45s cubic-bezier(.3,1.3,.5,1) both}'
+  +'.lnInt{height:52px;border-radius:9px;background:repeating-linear-gradient(135deg,rgba(242,193,78,.32) 0 7px,rgba(242,193,78,.1) 7px 14px);border:1.5px dashed #C88A00;background-size:200% 100%;animation:lnNasce .45s both,lnCorre 1.8s linear infinite}'
+  +'.lnTxt{font-size:11.5px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px}.lnVivo{width:8px;height:8px;border-radius:50%;background:#F9D115;animation:lnPulso 2s infinite}'
+  +'.lnCorte{height:4px;border-radius:2px;background:#16a34a;box-shadow:0 0 10px rgba(22,163,74,.5)}'
+  +'.lnSin{width:80px;margin-left:-40px;text-align:center}.lnSin b{display:block;width:14px;height:14px;margin:0 auto;border-radius:50%;background:#C62828;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}.lnSin.nc b{background:#fff;border-color:#C62828}.lnSin i{display:block;width:2px;height:28px;margin:0 auto;background:var(--ink)}.lnSin span{display:block;font-family:var(--mono);font-size:10.5px;font-weight:600;white-space:nowrap}'
+  +'.lnTer{width:22px;height:22px;margin-left:-11px;border-radius:50%;background:#F08A00;border:2px solid #fff;box-shadow:0 2px 8px rgba(240,138,0,.5);display:grid;place-items:center;color:#fff;font:700 11px var(--mono)}'
+  +'.lnFr i{display:block;height:8px;border:2px solid #3B6FD8;border-top:0;border-radius:0 0 6px 6px}.lnFr span{display:block;font-size:11px;color:#3B6FD8;font-weight:600;white-space:nowrap;margin-top:3px}'
+  +'.lnExe{height:10px;border-radius:3px;background:linear-gradient(180deg,#FFE04A,#E7B800);transform-origin:left;animation:lnCresce .6s cubic-bezier(.2,.8,.2,1) both}'
+  +'.lnT{position:absolute;width:64px;margin-left:-32px;text-align:center}.lnT i{display:block;width:1px;height:7px;margin:0 auto;background:var(--muted)}.lnT span{font:10.5px var(--mono);color:var(--muted)}'
+  +'.lnVazio ul{margin:0}.quieto .lnE:not(.lnExe),.quieto .lnVia,.lnExe.velho{animation:none!important}.quieto .lnInt{animation:lnCorre 1.8s linear infinite!important}'
+  +'@keyframes lnDes{from{transform:scaleX(0)}}@keyframes lnNasce{from{opacity:0;transform:translateY(6px) scale(.9)}}@keyframes lnCresce{from{transform:scaleX(0)}}@keyframes lnCorre{to{background-position:28px 0}}@keyframes lnPulso{0%,100%{box-shadow:0 0 0 0 rgba(249,209,21,.6)}60%{box-shadow:0 0 0 7px rgba(249,209,21,0)}}'
+  +'@media (prefers-reduced-motion:reduce){.lnE,.lnVia,.lnExe,.lnInt,.lnVivo{animation:none!important}}';
+try{const st=document.createElement('style');st.id='ln-css';st.textContent=LN_CSS;document.head.appendChild(st)}catch(e){}
 async function vProj(){const o=S.obra;DOCCACHE.velho=true;if(!PROJCATS.includes(DOCCAT))DOCCAT='pecas_projeto';titulo('Projeto',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod"><div id="docs"></div></div></div>';docsObra(o)}
 async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('OS e PDT',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
 async function editaContrato(obraId,c){
