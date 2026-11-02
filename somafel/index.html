@@ -766,11 +766,22 @@ const MV_VIDRO='#side .tab>.ic,#side .tema>.ic,nav.lado .ni:not(#cVoltar)>svg{wi
   +'#side .tab:hover>.ic,#side .tema:hover>.ic,nav.lado .ni:not(#cVoltar):hover>svg{background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.1) 47%,rgba(255,255,255,.05) 53%,rgba(255,255,255,.09) 100%)}'
   +'#side .tab.on>.ic,nav.lado .ni[aria-current="page"]>svg{color:#F9D115;background:linear-gradient(180deg,rgba(249,209,21,.52) 0%,rgba(249,209,21,.25) 47%,rgba(249,209,21,.13) 53%,rgba(249,209,21,.2) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 16px rgba(249,209,21,.35),0 3px 10px rgba(0,0,0,.3)}'
   +'#side .tab,#side .tema{padding-top:3px;padding-bottom:3px}nav.lado .ni{padding-top:3px;padding-bottom:3px}';
+/* cartões de vidro (Central e apps): fundo com brilho suave e cartões translúcidos */
+const ESC=':root[data-tema="escuro"] ';
+const MV_CART=(()=>{const sel='.card,.box,.pcard,.rvc',c=x=>sel.split(',').map(y=>x+y).join(',');
+  const claro='background:rgba(255,255,255,.68)!important;backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);border:1px solid rgba(255,255,255,.85)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 26px rgba(20,24,32,.07),0 1px 2px rgba(20,24,32,.05)!important;border-radius:16px';
+  const escuro='background:rgba(26,31,38,.72)!important;border:1px solid rgba(255,255,255,.07)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px rgba(0,0,0,.35)!important';
+  const fundo='background-image:radial-gradient(1100px 460px at 88% -10%,rgba(249,209,21,.16),rgba(249,209,21,0) 70%),radial-gradient(900px 420px at -8% 108%,rgba(120,170,255,.10),rgba(120,170,255,0) 70%)!important;background-attachment:fixed!important';
+  return 'body{'+fundo+'}'+c('')+'{'+claro+'}'
+    +'@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) '+sel.split(',').join(',:root:not([data-tema="claro"]) ')+'{'+escuro+'}}'
+    +c(ESC)+'{'+escuro+'}'
+    +'.box>.bh{background:rgba(43,48,56,.04)!important;border-radius:16px 16px 0 0}'
+    +'@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .box>.bh{background:rgba(255,255,255,.03)!important}}'+ESC+'.box>.bh{background:rgba(255,255,255,.03)!important}'})();
 /* nas apps (iframes): ao carregar num separador da barra lateral, a zona de trabalho é revelada da mesma maneira */
-function mvNaApp(d){try{if(d.getElementById('mv-tec'))return;const st=d.createElement('style');st.id='mv-tec';st.textContent=MV_CSS.split('/*central*/')[0]+MV_VIDRO+'.view.vin{animation:none!important}';d.head.appendChild(st);
+function mvNaApp(d){try{if(d.getElementById('mv-tec'))return;const st=d.createElement('style');st.id='mv-tec';st.textContent=MV_CSS.split('/*central*/')[0]+MV_VIDRO+MV_CART+'.view.vin{animation:none!important}main{background:transparent!important}';d.head.appendChild(st);
   d.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('#side .tab,nav.lado .ni,#side [data-v],.bnav button,.tabbar button');if(!t||t.id==='cVoltar')return;
     setTimeout(()=>mvVarre(d.querySelector('main')||d.querySelector('.corpo')||d.body),0)},true)}catch(e){}}
-try{const st=document.createElement('style');st.id='mv-tec';st.textContent=MV_CSS+MV_VIDRO+'.sbrand .nm{display:none!important}.sbrand img{height:38px}:root[data-side="c"] .sbrand{flex-direction:column;gap:8px}:root[data-side="c"] .sbrand img{display:block;height:auto;width:42px}';document.head.appendChild(st)}catch(e){}
+try{const st=document.createElement('style');st.id='mv-tec';st.textContent=MV_CSS+MV_VIDRO+MV_CART+'#pg,main{background:transparent!important}'+'.sbrand .nm{display:none!important}.sbrand img{height:38px}:root[data-side="c"] .sbrand{flex-direction:column;gap:8px}:root[data-side="c"] .sbrand img{display:block;height:auto;width:42px}';document.head.appendChild(st)}catch(e){}
 const ESTILO_APP={base:'#side .sbrand img.logo{display:none!important}header>img.logo,header>img#logo{display:none!important}header>.sep:first-of-type{display:none!important}header>.stats{min-width:0;overflow:hidden;flex-shrink:1}header>#obraNome{max-width:180px;min-width:90px}',cons:'header.top>.ttl,header.top>.ttl+.sep{display:none!important}'};
 const SVG_VOLTA='<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
 function estiloApp(f,id){try{const d=f.contentDocument;if(d)mvNaApp(d);if(!d||d.getElementById('central-estilo'))return;const st=d.createElement('style');st.id='central-estilo';st.textContent=ESTILO_APP.base+(ESTILO_APP[id]||'')+'.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}';d.head.appendChild(st);
