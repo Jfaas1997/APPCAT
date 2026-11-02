@@ -1723,6 +1723,18 @@ function pdtXml(xml,d){
   const L=(a,i)=>(a&&a[i])||'';
   /* km dos limites no formato do PDT: 198,247 ou 198.247 -> 198+247 */
   const pkF=t=>{t=String(t||'').trim();const m=t.match(/^(\d{1,3})\s*[,.]\s*(\d{1,3})$/);return m?m[1]+'+'+m[2].padEnd(3,'0'):t};
+  /* limpeza do modelo: apaga tudo o que não é rótulo (o modelo veio de um PDT preenchido e trazia nomes, PK, terras…) */
+  const limpaC=(r,c,manter)=>{const R=rows()[r];if(!R)return;const tcs=filhos(R,'tc');(c==null?tcs:[tcs[c]]).forEach(tc=>{if(!tc)return;
+    filhos(tc,'p').forEach(p=>{const tx=[...p.getElementsByTagNameNS(W_NS,'t')].map(t=>t.textContent).join('');if(manter&&manter.test(tx.trim()))return;[...p.getElementsByTagNameNS(W_NS,'t')].forEach(t=>{t.textContent=''})})})};
+  [2,7,12,13,17,27,46].forEach(r=>limpaC(r));
+  [[3,1],[3,4],[4,1],[4,4],[5,2],[6,2],[15,1],[16,1],[21,1],[48,0],[50,0]].forEach(([r,c])=>limpaC(r,c));
+  [9,10].forEach(r=>{limpaC(r,1);limpaC(r,2)});
+  for(let c=1;c<=8;c++){limpaC(19,c);limpaC(20,c)}
+  [23,24,25,26,31,32,37,38,39,40].forEach(r=>limpaC(r,null,/^…$/));
+  [43,44,45].forEach(r=>{limpaC(r,1,/^SCPVI\s*N\.?º?$/i);limpaC(r,2);limpaC(r,3)});
+  limpaC(53,null,/Nome\s*\/\s*assinatura/i);
+  /* «OS n.º» sem número antigo (o número é acrescentado no fim) */
+  {const t0=cel(1,1),p0=t0&&filhos(t0,'p')[0];if(p0){const ts=[...p0.getElementsByTagNameNS(W_NS,'t')],tx=ts.map(t=>t.textContent).join(''),m=tx.match(/^\s*OS\s*n\.?\s*º?/i);if(m&&ts.length){ts[0].textContent=m[0];ts.slice(1).forEach(t=>{t.textContent=''})}}}
   /* de baixo para cima: as linhas clonadas não alteram os índices de cima */
   set(53,0,'',0); /* assinaturas ficam em branco */
   set(50,0,d.contactos||'');
