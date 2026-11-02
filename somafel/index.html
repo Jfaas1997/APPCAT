@@ -1793,6 +1793,7 @@ async function pdtPdfBlob(buf,png){
     fatias.forEach(([a,b],n)=>{const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;c.getContext('2d').drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
       let w=210,h=w*c.height/c.width;const topo=n?12:0,mb=12;if(h>297-topo-mb){h=297-topo-mb;w=h*c.width/c.height}
       if(n)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,topo,w,h)});
+    if(png&&png.geo){try{await carregaPdfLib();const doc=await PDFLib.PDFDocument.load(pdf.output('arraybuffer'));if(await pdtAnexoVetor(doc,png))return new Blob([await doc.save()],{type:'application/pdf'})}catch(e){console.error('anexo vetorial',e)}}
     if(png){const ls=png.w>png.h;pdf.addPage('a4',ls?'l':'p');const PW=ls?297:210,PH=ls?210:297,m=10,mb=22;let w=PW-2*m,h=w*png.h/png.w;if(h>PH-m-mb){h=PH-m-mb;w=h*png.w/png.h}pdf.addImage(png.jpg,'JPEG',(PW-w)/2,m+(PH-m-mb-h)/2,w,h)}
     return pdf.output('blob')
   }finally{box.remove()}}
@@ -1810,16 +1811,16 @@ async function dwgAbre(path){const nome=decodeURIComponent(String(path).split('/
 async function pdtBaseEsq(path,pag){
   const k=path+'|'+(pag||1);if(PDTBASEC.has(k))return PDTBASEC.get(k);
   const u=await sb.storage.from('documentos').createSignedUrl(path,600);if(u.error)throw u.error;
-  const buf=await (await fetch(u.data.signedUrl)).arrayBuffer();await carregaPdfJs();
-  const pdf=await pdfjsLib.getDocument({data:buf}).promise,pg=await pdf.getPage(Math.min(pag||1,pdf.numPages)),v0=pg.getViewport({scale:1}),sc=Math.min(4,3400/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc});
+  const buf=await (await fetch(u.data.signedUrl)).arrayBuffer(),bufC=buf.slice(0);await carregaPdfJs();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise,pn=Math.min(pag||1,pdf.numPages),pg=await pdf.getPage(pn),v0=pg.getViewport({scale:1}),sc=Math.min(4,3400/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc});
   const c=document.createElement('canvas');c.width=Math.round(v.width);c.height=Math.round(v.height);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
   await pg.render({canvasContext:x,viewport:v}).promise;
   /* corta as margens em branco do desenho */
   const d=x.getImageData(0,0,c.width,c.height).data,W=c.width,H=c.height;let x0=W,y0=H,x1=0,y1=0;
   for(let yy=0;yy<H;yy+=2){for(let xx=0;xx<W;xx+=2){const i=(yy*W+xx)*4;if(d[i]<235||d[i+1]<235||d[i+2]<235){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy}}}
   if(x1>x0&&y1>y0){const pd=Math.round(Math.max(W,H)*.012);x0=Math.max(0,x0-pd);y0=Math.max(0,y0-pd);x1=Math.min(W,x1+pd);y1=Math.min(H,y1+pd);
-    const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(c,x0,y0,c2.width,c2.height,0,0,c2.width,c2.height);PDTPG.set(k,{pg,sc,ox:x0,oy:y0});PDTBASEC.set(k,c2);return c2}
-  PDTPG.set(k,{pg,sc,ox:0,oy:0});PDTBASEC.set(k,c);return c}
+    const c2=document.createElement('canvas');c2.width=x1-x0;c2.height=y1-y0;c2.getContext('2d').drawImage(c,x0,y0,c2.width,c2.height,0,0,c2.width,c2.height);PDTPG.set(k,{pg,sc,ox:x0,oy:y0,buf:bufC,pn});PDTBASEC.set(k,c2);return c2}
+  PDTPG.set(k,{pg,sc,ox:0,oy:0,buf:bufC,pn});PDTBASEC.set(k,c);return c}
 const PDTCOR={corte:'#16a34a',trab:'#e11d1d',terra:'#f08a00',seta:'#2563eb'};
 const pdtCfg=c=>Object.assign({alfa:85,esp:70,txt:80,circulo:25,num:100,marg:25,corta:1},c||{},{cor:Object.assign({},PDTCOR,(c||{}).cor||{})});
 function pdtMarcas(ctx,W,H,marks,extra,cfg0){
@@ -1835,13 +1836,13 @@ function pdtMarcas(ctx,W,H,marks,extra,cfg0){
       if(m.txt)caixa(m.txt,x1,y1,COR.seta)}
     else if(m.t==='txt'&&m.txt)caixa(m.txt,m.x*W,m.y*H,'#111')});
   ctx.restore()}
-async function pdtAnexoPng(ax,titulo){
+async function pdtAnexoPng(ax,titulo,Wc0){
   const full=await pdtBaseEsq(ax.path,ax.page),cf=pdtCfg(ax.cfg),mk=ax.marks||[];let sx=0,sy=0,cw=full.width,ch=full.height,base=full;
   if(cf.corta&&mk.length){let a=1,b=1,c2=0,d=0;const P=(x,y)=>{a=Math.min(a,x);b=Math.min(b,y);c2=Math.max(c2,x);d=Math.max(d,y)};
     mk.forEach(m=>{if(m.t==='linha')(m.p||[]).forEach(q=>P(q[0],q[1]));else if(m.t==='ret'){P(m.x,m.y);P(m.x+m.w,m.y+m.h)}else if(m.t==='terra')P(m.x,m.y);else if(m.t==='seta'){P(m.x1,m.y1);P(m.x2,m.y2)}else if(m.t==='txt')P(m.x,m.y)});
     if(c2>=a&&d>=b){const FW=full.width,FH=full.height,mg=cf.marg/100;let w=Math.max((c2-a)*FW,FW*.12),h=Math.max((d-b)*FH,FH*.12);const cx=(a+c2)/2*FW,cy=(b+d)/2*FH;w*=1+mg;h*=1+mg;
       const asp=26/15.6;if(w/h<asp)w=h*asp;else h=w/asp;w=Math.min(w,FW);h=Math.min(h,FH);sx=Math.max(0,Math.min(FW-w,cx-w/2));sy=Math.max(0,Math.min(FH-h,cy-h/2));
-      cw=w;ch=h;const Wc=3000,k=document.createElement('canvas');k.width=Wc;k.height=Math.round(Wc*h/w);const kx=k.getContext('2d');kx.imageSmoothingQuality='high';kx.fillStyle='#fff';kx.fillRect(0,0,k.width,k.height);
+      cw=w;ch=h;const Wc=Wc0||3000,k=document.createElement('canvas');k.width=Wc;k.height=Math.round(Wc*h/w);const kx=k.getContext('2d');kx.imageSmoothingQuality='high';kx.fillStyle='#fff';kx.fillRect(0,0,k.width,k.height);
       const G=PDTPG.get(ax.path+'|'+(ax.page||1));let ok=false;
       if(G){try{const s2=Wc/w*G.sc,tx=-(G.ox+sx)*Wc/w,ty=-(G.oy+sy)*Wc/w;await G.pg.render({canvasContext:kx,viewport:G.pg.getViewport({scale:s2}),transform:[1,0,0,1,tx,ty]}).promise;ok=true}catch(e){ok=false}}
       if(!ok){kx.drawImage(full,sx,sy,w,h,0,0,k.width,k.height)}base=k}}
@@ -1853,7 +1854,53 @@ async function pdtAnexoPng(ax,titulo){
   const used=t=>(ax.marks||[]).some(m=>m.t===t),it=[];if(used('linha'))it.push(['corte','Zona de corte de tensão']);if(used('ret'))it.push(['trab','Zona dos trabalhos']);if(used('terra'))it.push(['terra','Varas de terra']);
   let px=W*.012;const py=bar+H+leg/2,f2=W*.0125;x.font='600 '+f2+'px Arial,sans-serif';
   it.forEach(([k,t])=>{x.fillStyle=COR[k];if(k==='terra'){x.beginPath();x.arc(px+f2*.6,py,f2*.6,0,7);x.fill()}else x.fillRect(px,py-f2*.4,f2*2.2,f2*.8);x.fillStyle='#111';x.fillText(t,px+f2*2.6,py);px+=f2*3.4+x.measureText(t).width+W*.02});
-  return {url:c.toDataURL('image/png'),jpg:c.toDataURL('image/jpeg',.9),w:c.width,h:c.height}}
+  return {url:c.toDataURL('image/png'),jpg:c.toDataURL('image/jpeg',.9),w:c.width,h:c.height,geo:{ax,titulo,sx,sy,cw,ch,FW:FWn,FH:FHn}}}
+/* anexo do esquema elétrico em vetor: o recorte do PDF original entra tal e qual (mesma qualidade), com as marcas desenhadas por cima */
+const carregaPdfLib=()=>carregaJs('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js',()=>window.PDFLib);
+async function pdtAnexoVetor(doc,png){
+  const g=png&&png.geo;if(!g)return false;const ax=g.ax,G=PDTPG.get(ax.path+'|'+(ax.page||1));
+  if(!G||!G.buf)return false;
+  await carregaPdfLib();const L=PDFLib,src=await L.PDFDocument.load(G.buf.slice(0),{ignoreEncryption:true}),sp=src.getPage(G.pn-1);
+  /* recorte em coordenadas do ecrã à escala 1 (já com a rotação da página) e o mesmo recorte no espaço do PDF */
+  const vp1=G.pg.getViewport({scale:1}),dl=(g.sx+G.ox)/G.sc,dt=(g.sy+G.oy)/G.sc,dw=g.cw/G.sc,dh=g.ch/G.sc;
+  const cs=[[dl,dt],[dl+dw,dt],[dl,dt+dh],[dl+dw,dt+dh]].map(q=>vp1.convertToPdfPoint(q[0],q[1]));
+  const bb={left:Math.min(...cs.map(q=>q[0])),right:Math.max(...cs.map(q=>q[0])),bottom:Math.min(...cs.map(q=>q[1])),top:Math.max(...cs.map(q=>q[1]))};
+  const emb=await doc.embedPage(sp,bb);
+  const PW=841.89,PH=595.28,m=28.35,mb=62.36,tit=22,legH=20,aw=PW-2*m,ah=PH-m-tit-mb-legH;
+  const s=Math.min(aw/dw,ah/dh),iw=dw*s,ih=dh*s,ix=m+(aw-iw)/2,iy=mb+legH+(ah-ih)/2;
+  const pg=doc.addPage([PW,PH]),fB=await doc.embedFont(L.StandardFonts.HelveticaBold);
+  const rgb=h=>{h=String(h).replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');return L.rgb(parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255)};
+  const txt=t=>String(t==null?'':t).replace(/[^\x20-\x7E -ÿ]/g,'-');
+  pg.drawText(txt(g.titulo||'ANEXO - Esquema elétrico'),{x:m,y:PH-m-14,size:11,font:fB,color:rgb('#111111')});
+  /* ecrã -> página: X = ix+(dx-dl)*s, Y = iy+ih-(dy-dt)*s; dx,dy vêm do PDF pela matriz do viewport (trata páginas rodadas) */
+  const T=vp1.transform,M=[s*T[0],-s*T[1],s*T[2],-s*T[3],ix+s*(T[4]-dl),iy+ih-s*(T[5]-dt)];
+  const nome='AnexoEsq'+Math.random().toString(36).slice(2,8);pg.node.setXObject(L.PDFName.of(nome),emb.ref);
+  pg.pushOperators(L.pushGraphicsState(),L.rectangle(ix,iy,iw,ih),L.clip(),L.endPath(),
+    L.concatTransformationMatrix(M[0],M[1],M[2],M[3],M[4]+M[0]*bb.left+M[2]*bb.bottom,M[5]+M[1]*bb.left+M[3]*bb.bottom),L.drawObject(nome),L.popGraphicsState());
+  pg.drawRectangle({x:ix,y:iy,width:iw,height:ih,borderColor:rgb('#bbbbbb'),borderWidth:.5});
+  /* marcas: coordenadas normalizadas do desenho inteiro -> pontos desta página */
+  const P=(nx,ny)=>[ix+((nx*g.FW+G.ox)/G.sc-dl)*s,iy+ih-((ny*g.FH+G.oy)/G.sc-dt)*s];
+  const cfg=pdtCfg(ax.cfg),COR=cfg.cor,k=s/G.sc,RW=g.FW*k,lw=RW*0.0030*cfg.esp/100,fs=RW*0.0115*cfg.txt/100,al=cfg.alfa/100;
+  pg.pushOperators(L.pushGraphicsState(),L.rectangle(ix,iy,iw,ih),L.clip(),L.endPath());
+  const caixa=(t,x,y,cor)=>{t=txt(t);const w=fB.widthOfTextAtSize(t,fs)+fs*.8;pg.drawRectangle({x,y:y-fs*.75,width:w,height:fs*1.5,color:rgb('#ffffff'),opacity:.92,borderColor:rgb(cor),borderWidth:lw*.35});pg.drawText(t,{x:x+fs*.4,y:y-fs*.36,size:fs,font:fB,color:rgb(cor)})};
+  const caminho=pts=>pts.map((q,i)=>(i?'L ':'M ')+q[0].toFixed(2)+' '+(-q[1]).toFixed(2)).join(' ');
+  (ax.marks||[]).forEach(mk=>{
+    if(mk.t==='linha'&&mk.p&&mk.p.length){let pts=mk.p.map(q=>P(q[0],q[1]));if(pts.length===1)pts=[pts[0],[pts[0][0]+.1,pts[0][1]]];
+      pg.drawSvgPath(caminho(pts),{x:0,y:0,borderColor:rgb(COR.corte),borderWidth:lw*1.7,borderOpacity:al,borderLineCap:L.LineCapStyle.Round})}
+    else if(mk.t==='ret'){const a=P(mk.x,mk.y),b=P(mk.x+mk.w,mk.y+mk.h);pg.drawRectangle({x:Math.min(a[0],b[0]),y:Math.min(a[1],b[1]),width:Math.abs(b[0]-a[0]),height:Math.abs(b[1]-a[1]),borderColor:rgb(COR.trab),borderWidth:lw*1.2,borderOpacity:al})}
+    else if(mk.t==='terra'){const c=P(mk.x,mk.y),r=Math.max(1.5,RW*.0115*.95*cfg.circulo/100);pg.drawCircle({x:c[0],y:c[1],size:r,color:rgb(COR.terra),borderColor:rgb('#ffffff'),borderWidth:Math.max(.4,r*.25)});
+      if(mk.n){const f=r*1.25*cfg.num/100,t=txt(mk.n);pg.drawText(t,{x:c[0]-fB.widthOfTextAtSize(t,f)/2,y:c[1]-f*.35,size:f,font:fB,color:rgb('#ffffff')})}}
+    else if(mk.t==='seta'){const a=P(mk.x1,mk.y1),b=P(mk.x2,mk.y2),cr=rgb(COR.seta);pg.drawLine({start:{x:a[0],y:a[1]},end:{x:b[0],y:b[1]},thickness:lw*.7,color:cr});
+      const an=Math.atan2(b[1]-a[1],b[0]-a[0]),h=fs*1.1,p1=[b[0]-h*Math.cos(an-.4),b[1]-h*Math.sin(an-.4)],p2=[b[0]-h*Math.cos(an+.4),b[1]-h*Math.sin(an+.4)];
+      pg.drawSvgPath(caminho([b,p1,p2])+' Z',{x:0,y:0,color:cr});if(mk.txt)caixa(mk.txt,a[0],a[1],COR.seta)}
+    else if(mk.t==='txt'&&mk.txt){const a=P(mk.x,mk.y);caixa(mk.txt,a[0],a[1],'#111111')}});
+  pg.pushOperators(L.popGraphicsState());
+  /* legenda */
+  const used=t=>(ax.marks||[]).some(x=>x.t===t),it=[];if(used('linha'))it.push(['corte','Zona de corte de tensão']);if(used('ret'))it.push(['trab','Zona dos trabalhos']);if(used('terra'))it.push(['terra','Varas de terra']);
+  let px=m;const py=mb+legH/2-3,f2=9;
+  it.forEach(([kk,t])=>{const cr=rgb(COR[kk]);if(kk==='terra')pg.drawCircle({x:px+5,y:py+3,size:5,color:cr});else pg.drawRectangle({x:px,y:py,width:20,height:6,color:cr});
+    pg.drawText(txt(t),{x:px+25,y:py,size:f2,font:fB,color:rgb('#111111')});px+=25+fB.widthOfTextAtSize(txt(t),f2)+18});
+  return true}
 async function pdtAnexaDocx(bufDocx,png){
   await carregaZip();const z=await JSZip.loadAsync(bufDocx);let xml=await z.file('word/document.xml').async('string'),rels=await z.file('word/_rels/document.xml.rels').async('string');
   z.file('word/media/anexo_esq.png',png.url.split(',')[1],{base64:true});
@@ -1891,7 +1938,7 @@ function pdtLiga(el,o,fim){
   const R=b=>PDTS.find(x=>x.id===b.dataset[Object.keys(b.dataset)[0]]);
   el.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>pdtVer(o,R(b),fim));
   el.querySelectorAll('[data-pe]').forEach(b=>b.onclick=()=>pdtEdita(o,R(b),fim));
-  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r),()=>r.dados.annex&&r.dados.annex.on?pdtAnexoPng(r.dados.annex,pdtAnexoTitulo(r.numero_os,r.dados.dia.k)):null)});
+  el.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const r=R(b);pdtExportaDlg(()=>pdtNome(r),()=>pdtBuf(r),()=>r.dados.annex&&r.dados.annex.on?pdtAnexoPng(r.dados.annex,pdtAnexoTitulo(r.numero_os,r.dados.dia.k),6000):null)});
   el.querySelectorAll('[data-px]').forEach(b=>b.onclick=async()=>{const r=R(b);if(!await confirmar('Apagar o '+pdtNome(r)+'?','Apagar'))return;try{await ok(sb.from('pdts').delete().eq('id',r.id));aviso('PDT apagado.');fim&&fim()}catch(e){aviso(erroTxt(e),true)}})}
 async function criaPDT(o,os,fim,ed){
   const w=janela((ed?'Editar PDT · ':'PDT · ')+'OS '+os.numero,true);w.corpo.innerHTML='<p class="hint">A preparar…</p>';
@@ -2062,7 +2109,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   /* marcador do esquema elétrico (anexo do PDT) */
   const AX=(()=>{const src=ed?ed.dados.annex:((PDTS.find(r=>String(r.numero_os)===String(os.numero)&&r.dados.annex)||PDTS.find(r=>r.dados.annex)||{dados:{}}).dados.annex);return src?JSON.parse(JSON.stringify(src)):{path:'',nome:'',page:1,marks:[],on:true}})();AX.cfg=pdtCfg(AX.cfg);
   const axSave=()=>AX.path&&AX.on?{path:AX.path,nome:AX.nome,page:AX.page||1,marks:AX.marks,cfg:AX.cfg,on:true}:null;
-  const axPng=()=>AX.path&&AX.on?pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k)):Promise.resolve(null);
+  const axPng=()=>AX.path&&AX.on?pdtAnexoPng(AX,pdtAnexoTitulo(os.numero,diaAtual().k),6000):Promise.resolve(null);
   async function abreMarcador(){
     const lista=DOCV.ele||[];
     if(!lista.length&&!AX.path){V.innerHTML='<div style="padding:30px;color:#eee">Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).</div>';return}
