@@ -1712,7 +1712,9 @@ function pdtXml(xml,d){
     const r=doc.createElementNS(W_NS,'w:r');if(rpr)r.appendChild(rpr.cloneNode(true));
     txt.split('\n').forEach((s,i)=>{if(i)r.appendChild(doc.createElementNS(W_NS,'w:br'));novoT(r,s)});
     p.appendChild(r)};
-  const set=(r,c,txt,n,juntar)=>{const t=cel(r,c);if(!t)return;const ps=filhos(t,'p');const p=ps[n==null?0:(n<0?ps.length+n:n)];if(p)setP(p,txt,juntar)};
+  const set=(r,c,txt,n,juntar)=>{const t=cel(r,c);if(!t)return;const ps=filhos(t,'p');const p=ps[n==null?0:(n<0?ps.length+n:n)];if(p)setP(p,txt,juntar);
+    /* célula de dados: apaga o texto que o modelo trazia nos outros parágrafos (ex.: «pk 198+711» de um PDT antigo) */
+    if(n==null&&!juntar)ps.slice(1).forEach(q=>[...q.getElementsByTagNameNS(W_NS,'t')].forEach(x=>{x.textContent=''}))};
   const limpa=tr=>{[...tr.getElementsByTagNameNS(W_NS,'t')].forEach(t=>t.textContent='')};
   const grupo=(ini,fim,lista,preenche)=>{ /* linhas ini..fim; clona a última se faltarem */
     const n=fim-ini+1;for(let k=n;k<lista.length;k++){const base=rows()[fim],cl=base.cloneNode(true);limpa(cl);base.parentNode.insertBefore(cl,base.nextSibling);fim++}
