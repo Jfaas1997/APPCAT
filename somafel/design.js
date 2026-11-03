@@ -1,7 +1,7 @@
 /* Design comum da Central de Obras e das apps (movimento técnico, vidro, cartões, tema).
    Carregado pela Central e por cada app; as apps aplicam-no sozinhas quando abertas fora da Central. */
 /* ===== movimento «técnico» (escolhido a 2 nov 2026): o ecrã novo é revelado da esquerda para a direita por uma linha amarela ===== */
-var MV_T=1050;
+var MV_T=300;
 var MV_CSS='@keyframes mvWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}@keyframes mvScan{0%{transform:translateX(0);opacity:1}88%{opacity:1}100%{transform:translateX(var(--mvw));opacity:0}}'
   +'.mvWipe{animation:mvWipe '+MV_T+'ms cubic-bezier(.65,0,.35,1) both}'
   +'.mvScanL{position:fixed;width:2px;background:#F9D115;box-shadow:0 0 18px 4px rgba(249,209,21,.55);z-index:2147483000;pointer-events:none;animation:mvScan '+MV_T+'ms cubic-bezier(.65,0,.35,1) both}'
@@ -24,9 +24,10 @@ function mvConta(el,ms){try{if(!el||el.__mvc||matchMedia('(prefers-reduced-motio
   const ip=m[1].replace(/[^\d]/g,''),dec=m[3]?m[3].length:0,alvo=parseFloat(ip+(dec?'.'+m[3]:''));if(!isFinite(alvo)||alvo===0)return;el.__mvc=1;
   const pre=t.slice(0,m.index),suf=t.slice(m.index+m[0].length),fmt=v=>v.toLocaleString('pt-PT',{minimumFractionDigits:dec,maximumFractionDigits:dec}),t0=performance.now();ms=ms||1000;
   const f=now=>{const k=Math.min(1,(now-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=pre+fmt(alvo*e)+suf;if(k<1)requestAnimationFrame(f);else el.textContent=t};requestAnimationFrame(f)}catch(e){}}
-function mvVarre(el){try{if(!el||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const d=el.ownerDocument,r=el.getBoundingClientRect();if(r.width<40||r.height<40)return;
-  el.classList.remove('mvWipe');void el.offsetWidth;el.classList.add('mvWipe');clearTimeout(el.__mvT);el.__mvT=setTimeout(()=>el.classList.remove('mvWipe'),MV_T+60);
-  const l=d.createElement('div');l.className='mvScanL';l.style.cssText='left:'+r.left+'px;top:'+r.top+'px;height:'+r.height+'px;--mvw:'+Math.max(0,r.width-2)+'px';d.body.appendChild(l);setTimeout(()=>l.remove(),MV_T+80)}catch(e){}}
+/* transição suave (3 nov 2026): o ecrã novo aparece com um esbatimento curto e sobe 6 px; substitui o varrimento */
+function mvVarre(el){try{if(!el||!el.animate||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const r=el.getBoundingClientRect();if(r.width<40||r.height<40)return;
+  if(el.__mvA)try{el.__mvA.cancel()}catch(e){}
+  el.__mvA=el.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:MV_T,easing:'cubic-bezier(.2,.7,.2,1)'})}catch(e){}}
 /* ícones de vidro na barra lateral (Central e apps) */
 var MV_VIDRO='#side .tab>.ic,#side .gtab>.ic,#side .tema>.ic,nav.lado .ni:not(#cVoltar)>svg{width:36px;height:36px;padding:8.5px;box-sizing:border-box;border-radius:11px;background:linear-gradient(180deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.07) 47%,rgba(255,255,255,.025) 53%,rgba(255,255,255,.06) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.25);transition:background .25s,box-shadow .25s,color .25s}'
   +'#side .tab:hover>.ic,#side .gtab:hover>.ic,#side .tema:hover>.ic,nav.lado .ni:not(#cVoltar):hover>svg{background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.1) 47%,rgba(255,255,255,.05) 53%,rgba(255,255,255,.09) 100%)}'
