@@ -278,7 +278,6 @@ function vai(v,obraId){
   ({home:vHome,obra:vObra,nova:vNova,ints:vInts,os:vOs,plano:vPlano,esq:vEsq,proj:vProj,norm:vNorm,des:vDes,pec:vPec}[v])();
   document.querySelectorAll('.barra').forEach(b=>{if(v!=='nova')b.remove()});
   pinta();
-  try{if(window.mvVarre)setTimeout(()=>mvVarre(m),0)}catch(e){}
 }
 function vHome(){
   $('#tt').textContent='Obras';
