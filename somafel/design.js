@@ -29,10 +29,7 @@ function mvVarre(el){try{if(!el||!el.animate||matchMedia('(prefers-reduced-motio
   if(el.__mvA)try{el.__mvA.cancel()}catch(e){}
   el.__mvA=el.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:MV_T,easing:'cubic-bezier(.2,.7,.2,1)'})}catch(e){}}
 /* ícones de vidro na barra lateral (Central e apps) */
-var MV_VIDRO='#side .tab>.ic,#side .gtab>.ic,#side .tema>.ic,nav.lado .ni:not(#cVoltar)>svg{width:36px;height:36px;padding:8.5px;box-sizing:border-box;border-radius:11px;background:linear-gradient(180deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.07) 47%,rgba(255,255,255,.025) 53%,rgba(255,255,255,.06) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.25);transition:background .25s,box-shadow .25s,color .25s}'
-  +'#side .tab:hover>.ic,#side .gtab:hover>.ic,#side .tema:hover>.ic,nav.lado .ni:not(#cVoltar):hover>svg{background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.1) 47%,rgba(255,255,255,.05) 53%,rgba(255,255,255,.09) 100%)}'
-  +'#side .tab.on>.ic,#side .gtab.on>.ic,nav.lado .ni[aria-current="page"]>svg{color:#F9D115;background:linear-gradient(180deg,rgba(249,209,21,.52) 0%,rgba(249,209,21,.25) 47%,rgba(249,209,21,.13) 53%,rgba(249,209,21,.2) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 16px rgba(249,209,21,.35),0 3px 10px rgba(0,0,0,.3)}'
-  +'#side .tab,#side .gtab,#side .tema{padding-top:3px;padding-bottom:3px}nav.lado .ni{padding-top:3px;padding-bottom:3px}';
+var MV_VIDRO='';
 /* cartões de vidro (Central e apps): fundo com brilho suave e cartões translúcidos */
 var MV_ESC=':root[data-tema="escuro"] ';
 var MV_CART=(()=>{const sel='.card,.box,.pcard,.rvc',c=x=>sel.split(',').map(y=>x+y).join(',');
