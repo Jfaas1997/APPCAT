@@ -898,7 +898,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 .nmLogin .ob{text-align:left;padding:10px 12px}.nmLogin .er{color:#C62828;min-height:1em}
 
 </style>
-<script src="design.js"></script>
+<script src="design.js?v=20261104b"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1397,7 +1397,8 @@ function render1(){
 $('#obraNome').addEventListener('input',function(){ if(!NM.ob){ ST.nome=this.value; mudou() } });
 
 /* ================= resumo ================= */
-function rRes(c){
+function rRes(c){ try{ rRes0(c) }catch(e){ console.error(e); var bb=$('#resBox'); if(bb)bb.innerHTML='<div class="vazio">Não foi possível mostrar o resumo. Carrega em Ctrl+F5 para atualizar a app.</div>' } }
+function rRes0(c){
   var b=$('#resBox');
   if(vazio()){ b.innerHTML='<div class="vazio"><b>Ainda não há caixas nesta obra</b>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois adicione-lhe as montagens.<br><br><button class="pri" id="r1">Criar a primeira caixa</button>'+
       '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Central.')+'</p></div>';

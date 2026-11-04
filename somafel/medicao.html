@@ -846,7 +846,7 @@ header select{background:var(--sheet);color:var(--ink);border:1px solid var(--ru
 .dirty{color:var(--amber)}
 #fichNome{color:var(--muted)!important}
 </style>
-<script src="design.js"></script>
+<script src="design.js?v=20261104b"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol><symbol id="i-struct" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7h12M8 11h8M9 21h6"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol><symbol id="i-span" viewBox="0 0 24 24"><path d="M3 4v16M21 4v16"/><path d="M3 7c6 9 12 9 18 0"/><path d="M8 10v3M12 11v3M16 10v3"/></symbol><symbol id="i-pend" viewBox="0 0 24 24"><path d="M3 4h18"/><path d="M7 4v5M12 4v9M17 4v5"/><circle cx="7" cy="12" r="2.5"/><circle cx="12" cy="16" r="2.5"/><circle cx="17" cy="12" r="2.5"/></symbol><symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol><symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14a8 8 0 1 1-10-10 7 7 0 0 0 10 10z"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol></defs></svg>
@@ -4057,7 +4057,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   exAberta=(vista==='exec'); $('#exWin').hidden=!exAberta;
   if(vista==='res')rResumo(); else if(vista==='grelha')rGrelha(); else if(vista==='lanco')mostraSub(); else if(vista==='base')rBase(); else if(vista==='pend'){pdMontado=false;rPend()} else if(vista==='exec'){syncComp();rExWin()} else qEl.focus();
 });
-{const dim=document.documentElement.getAttribute('data-modo')==='dim';if(dim)document.querySelector('.tab[data-v="lista"]').classList.add('on');else{document.querySelector('.tab[data-v="res"]').click();$('#vTit').textContent='Resumo'}}
+try{const dim=document.documentElement.getAttribute('data-modo')==='dim';if(dim)document.querySelector('.tab[data-v="lista"]').classList.add('on');else{document.querySelector('.tab[data-v="res"]').click();$('#vTit').textContent='Resumo'}}catch(e){console.error(e)}
 function abreCelula(td){
   if(!td||td.querySelector('input'))return;
   const v0=td.textContent.trim();
@@ -4761,8 +4761,8 @@ function resCalc(){
     return {nome:loteAtivo().nome,p:P,e:E,f:F,n:st.postes.length,vaz:st.postes.filter(p=>!elsPoste(p).size).length,pp:ps(P),pe:ex,gr,eT,eA,mes,dias,cs,fc,
       nl:lan.length,mL:lan.reduce((s,l)=>s+(+l.L||0),0),csm:lan.reduce((s,l)=>s+(+l.csM||0),0),fcm:lan.reduce((s,l)=>s+(+l.fcM||0),0),nc:cab.length,mc:cab.reduce((s,c)=>s+(+c.m||0),0)}})}
 const MESCURTO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-function rResumo(){
-  const b=$('#resBox');if(!b)return;
+function rResumo(){const b=$('#resBox');if(!b)return;try{rResumo0(b)}catch(e){console.error(e);b.innerHTML='<div class="empty">Não foi possível mostrar o resumo. Carrega em Ctrl+F5 para atualizar a app.</div>'}}
+function rResumo0(b){
   let L;try{L=resCalc()}catch(e){b.innerHTML='<div class="empty">Não foi possível calcular o resumo.</div>';return}
   const P=somaMat(L.map(x=>x.p)),E=somaMat(L.map(x=>x.e)),F=somaMat(L.map(x=>x.f)),S=f=>L.reduce((s,x)=>s+f(x),0),nE=S(x=>x.n),G=MVG,f=G.f;
   if(!nE){b.innerHTML='<div class="empty"><b>Ainda não há estruturas nesta obra</b>Junta estruturas no separador «Estrutura» (por exemplo 296-38 a 296-45) e depois as montagens de cada uma. O resumo aparece aqui.</div>';return}
