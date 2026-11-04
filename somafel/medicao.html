@@ -796,11 +796,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 html:not([data-modo=dim]) #nxSect,html:not([data-modo=dim]) #nVerifTodas{display:none!important}
 html[data-modo=dim] #nCadMont{display:none}
 main.vres{grid-template-columns:var(--sw) minmax(0,1fr)!important}main.vres>#painelEstruturas,main.vres>section.pane:nth-of-type(3){display:none}main.vres #ttPoste,main.vres #pAct{display:none!important}
-#resBox{max-width:1100px}.rsH{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
-.rsT{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:13px 15px;display:flex;flex-direction:column;gap:3px;min-width:0}.rsT .v{font-size:25px;font-weight:600;line-height:1.15}.rsT .l{font-size:12px;color:var(--muted)}.rsT .s{font-size:12px;color:var(--muted)}.rsT.hero .v{font-size:44px;order:2}.rsT.hero .l{order:1}.rsT.hero .s{order:3}.rsT.hero .rsB{order:4}
-.rsB{display:flex;height:8px;margin-top:8px;background:var(--soft);border-radius:5px;overflow:hidden}.rsB i{display:block;height:100%;background:var(--brand)}.rsB.s{display:inline-flex;width:70px;margin:0 6px 0 0;vertical-align:middle}
-.rsAv{margin-top:14px;padding:10px 12px;border:1px solid var(--amberbd,#E8D5A8);background:var(--amberbg);border-radius:8px;font-size:13px}
-html[data-modo=dim] #side [data-v=res]{display:none}
+#vResumo{background:var(--paper)}#resBox{padding:18px 22px 40px}html[data-modo=dim] #side [data-v=res]{display:none}
 html[data-modo=dim] #side [data-v=grelha],html[data-modo=dim] #side [data-v=lanco],html[data-modo=dim] #side [data-v=pend],html[data-modo=dim] #side [data-v=base],html[data-modo=dim] #side [data-v=exec],html[data-modo=dim] #side .sgrp{display:none}
 html[data-modo=dim] main{grid-template-columns:var(--sw) 236px minmax(0,1fr)}
 html[data-modo=dim] main>section.pane:nth-of-type(3){display:none}
@@ -846,7 +842,7 @@ header select{background:var(--sheet);color:var(--ink);border:1px solid var(--ru
 .dirty{color:var(--amber)}
 #fichNome{color:var(--muted)!important}
 </style>
-<script src="design.js?v=20261104b"></script>
+<script src="design.js?v=20261104c"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol><symbol id="i-struct" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7h12M8 11h8M9 21h6"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol><symbol id="i-span" viewBox="0 0 24 24"><path d="M3 4v16M21 4v16"/><path d="M3 7c6 9 12 9 18 0"/><path d="M8 10v3M12 11v3M16 10v3"/></symbol><symbol id="i-pend" viewBox="0 0 24 24"><path d="M3 4h18"/><path d="M7 4v5M12 4v9M17 4v5"/><circle cx="7" cy="12" r="2.5"/><circle cx="12" cy="16" r="2.5"/><circle cx="17" cy="12" r="2.5"/></symbol><symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol><symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14a8 8 0 1 1-10-10 7 7 0 0 0 10 10z"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol></defs></svg>
@@ -4745,57 +4741,72 @@ function rExRes(){
   const R=$('#exRes'); if(!R)return;
   R.innerHTML=exTab==='listas'?resListas():exTab==='massa'?resMassa():exTab==='registos'?resRegistos():'';
 }
-/* ---------- Resumo da obra (como o Resumo da Medição RCT, com gráficos) ---------- */
+/* ---------- Resumo da obra (painel com gráficos; ocupa a largura toda e ajusta-se à janela) ---------- */
 function resCalc(){
+  garanteLotes();const ativo=st.loteAtivo;
   return porLote(()=>{
     const ps=o=>[...o.ps.values()].reduce((s,x)=>s+x,0),P=matDe(linhasProj()),E=matDe(linhasExec('','')),F=matDe(linhasFalta('')),Em=execMap('');
-    let ex=0;for(const [k,q] of P.ps)ex+=Math.min(q,E.ps.get(k)||0);
-    const gr=new Map();let eT=0,eA=0;
+    const es=[];let eT=0,eA=0;
     for(const p of st.postes){const els=elsPoste(p),e=Em.get(p.nome)||new Map();let t=0,a=0;
       for(const [k,q] of els){if(partes(k)[0]==='A')continue;t+=q;a+=Math.min(q,e.get(k)||0)}
-      const g=troco(p.nome),o=gr.get(g)||{a:0,t:0,n:0};o.a+=a;o.t+=t;o.n++;gr.set(g,o);eT+=t;eA+=a}
+      es.push({id:p.id,nome:p.nome,g:troco(p.nome),a,t});eT+=t;eA+=a}
     const mes=new Map(),dias=new Map();
-    for(const r of (st.exec||[])){if(partes(r.k)[0]==='A'||!r.d)continue;mes.set(r.d.slice(0,7),(mes.get(r.d.slice(0,7))||0)+(+r.q||0));dias.set(r.d,(dias.get(r.d)||0)+(+r.q||0))}
-    const lan=st.lancos||[],cab=st.cabosL||[],cs=new Map(),fc=new Map();
-    for(const l of lan){if(+l.csM>0&&l.csCod)cs.set(l.csCod,(cs.get(l.csCod)||0)+ +l.csM);if(+l.fcM>0&&l.fcCod)fc.set(l.fcCod,(fc.get(l.fcCod)||0)+ +l.fcM)}
-    return {nome:loteAtivo().nome,p:P,e:E,f:F,n:st.postes.length,vaz:st.postes.filter(p=>!elsPoste(p).size).length,pp:ps(P),pe:ex,gr,eT,eA,mes,dias,cs,fc,
+    for(const r of (st.exec||[])){if(partes(r.k)[0]==='A'||!r.d)continue;const q=+r.q||0;mes.set(r.d.slice(0,7),(mes.get(r.d.slice(0,7))||0)+q);dias.set(r.d,(dias.get(r.d)||0)+q)}
+    const lan=st.lancos||[],cab=st.cabosL||[],cs=new Map();
+    for(const l of lan){if(+l.csM>0&&l.csCod)cs.set(l.csCod,(cs.get(l.csCod)||0)+ +l.csM);if(+l.fcM>0&&l.fcCod)cs.set(l.fcCod,(cs.get(l.fcCod)||0)+ +l.fcM)}
+    return {id:loteAtivo().id,ativo:loteAtivo().id===ativo,nome:loteAtivo().nome,p:P,e:E,f:F,es,eT,eA,mes,dias,cs,
       nl:lan.length,mL:lan.reduce((s,l)=>s+(+l.L||0),0),csm:lan.reduce((s,l)=>s+(+l.csM||0),0),fcm:lan.reduce((s,l)=>s+(+l.fcM||0),0),nc:cab.length,mc:cab.reduce((s,c)=>s+(+c.m||0),0)}})}
 const MESCURTO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 function rResumo(){const b=$('#resBox');if(!b)return;try{rResumo0(b)}catch(e){console.error(e);b.innerHTML='<div class="empty">Não foi possível mostrar o resumo. Carrega em Ctrl+F5 para atualizar a app.</div>'}}
 function rResumo0(b){
-  let L;try{L=resCalc()}catch(e){b.innerHTML='<div class="empty">Não foi possível calcular o resumo.</div>';return}
-  const P=somaMat(L.map(x=>x.p)),E=somaMat(L.map(x=>x.e)),F=somaMat(L.map(x=>x.f)),S=f=>L.reduce((s,x)=>s+f(x),0),nE=S(x=>x.n),G=MVG,f=G.f;
-  if(!nE){b.innerHTML='<div class="empty"><b>Ainda não há estruturas nesta obra</b>Junta estruturas no separador «Estrutura» (por exemplo 296-38 a 296-45) e depois as montagens de cada uma. O resumo aparece aqui.</div>';return}
-  const eT=S(x=>x.eT),eA=S(x=>x.eA),pc=eT?eA/eT:0;
-  /* ritmo: elementos executados por dia de trabalho nos últimos 30 dias */
+  const L=resCalc(),G=MVG,f=G.f,S=fn=>L.reduce((s,x)=>s+fn(x),0);
+  const P=somaMat(L.map(x=>x.p)),E=somaMat(L.map(x=>x.e)),F=somaMat(L.map(x=>x.f)),ES=L.flatMap(x=>x.es.map(e=>Object.assign({ativo:x.ativo,lote:x.nome},e)));
+  if(!ES.length){b.innerHTML='<div class="mvg rsW"><div class="rsVaz"><b>Ainda não há estruturas nesta obra</b><p>Junta estruturas no separador «Estrutura» (por exemplo 296-38 a 296-45) e as montagens de cada uma. O resumo da obra aparece aqui.</p><button class="pri" id="rsIr">Ir para Estrutura</button></div></div>';
+    $('#rsIr').onclick=()=>document.querySelector('#side .tab[data-v="lista"]').click();return}
+  const eT=S(x=>x.eT),eA=S(x=>x.eA),pc=eT?eA/eT:0,falta=Math.max(0,eT-eA);
+  const est=e=>!e.t?'v':e.a>=e.t-1e-9?'c':e.a>0?'p':'n',nEst={c:0,p:0,n:0,v:0};ES.forEach(e=>nEst[est(e)]++);
   const dias=new Map();L.forEach(x=>x.dias.forEach((v,d)=>dias.set(d,(dias.get(d)||0)+v)));
-  const lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10),rec=[...dias].filter(([d])=>d>=lim),un=rec.reduce((s,[,v])=>s+v,0),nd=rec.length,rit=nd?un/nd:0,falta=eT-eA;
-  const prev=rit>0&&falta>0?Math.ceil(falta/rit):0;
-  const gn=(v,l)=>`<div class="mgn"><b>${v}</b><span>${l}</span></div>`;
-  let h='<div class="mvg"><div class="mgc mgw2"><h4>Progresso da obra</h4><div class="mgs">Elementos de projeto (postes, vigas e montagens) já executados</div><div class="mgh">'+G.donut(pc,'executado')
-    +gn(f(eA)+' / '+f(eT),'elementos executados')+gn(nE,'estruturas'+(S(x=>x.vaz)?' ('+S(x=>x.vaz)+' ainda sem elementos)':''))
-    +(nd?gn(f(rit,1)+' por dia','ritmo médio nos últimos 30 dias ('+nd+(nd===1?' dia':' dias')+' com trabalho)')+(falta<=0?gn('Concluído','tudo o que está no projeto foi executado'):gn('≈ '+prev+' dias de trabalho','para o que falta, a este ritmo')):gn('—','ainda sem execução registada nos últimos 30 dias'))
-    +'</div></div>';
-  const meses=[...new Set(L.flatMap(x=>[...x.mes.keys()]))].sort();let cum=0;
-  if(meses.length)h+='<div class="mgc"><h4>Executado por mês</h4><div class="mgs">Elementos executados em cada mês (acumulado ao passar o rato)</div>'+G.cols(meses.map(m=>{const v=L.reduce((s,x)=>s+(x.mes.get(m)||0),0);cum+=v;return {l:MESCURTO[+m.slice(5,7)-1]+' '+m.slice(2,4),v,cum}}),' un.')+'</div>';
-  const gm=new Map();L.forEach(x=>x.gr.forEach((o,g)=>{const q=gm.get(g)||{a:0,t:0,n:0};q.a+=o.a;q.t+=o.t;q.n+=o.n;gm.set(g,q)}));
-  const gl=[...gm].filter(([,o])=>o.t>0).sort((a,b)=>a[0].localeCompare(b[0],'pt',{numeric:true}));
-  if(gl.length)h+='<div class="mgc"><h4>Progresso por troço</h4><div class="mgs">Comprimento da barra = quantidade de elementos do troço; a parte azul está executada</div>'+G.stack(gl.slice(0,14).map(([g,o])=>({l:g,a:o.a,t:o.t,tip:g+': '+o.n+' estruturas, '+f(o.a)+' de '+f(o.t)+' elementos executados'})))+(gl.length>14?'<div class="mgs" style="margin:6px 0 0">e mais '+(gl.length-14)+' troços — ver a tabela em «Execução»</div>':'')+G.leg([['g1','executado'],['g3','por executar']])+'</div>';
-  if(L.length>1)h+='<div class="mgc"><h4>Por lote</h4><div class="mgs">Executado de cada lote</div>'+G.stack(L.map(x=>({l:x.nome,a:x.eA,t:x.eT})))+'</div>';
-  const rows=tabelaPostes([P.ps,E.ps,F.ps]);
-  if(rows.length)h+='<div class="mgc"><h4>Postes e vigas por tipo</h4><div class="mgs">Executados e por executar</div>'+G.stack(rows.map(r=>({l:r.cod+(r.dg?' · '+r.dg:''),a:Math.min(r.v[0],r.v[1]),t:r.v[0]})))+G.leg([['g1','executado'],['g3','por executar']])
-    +'<details><summary>Ver tabela</summary>'+tabX([['Elemento'],['Designação'],['Obra',1],['Executado',1],['Por executar',1]],rows.map(r=>[`<span class="mono">${esc(r.cod)}</span>`,esc(r.dg),fmt(r.v[0]),nz(r.v[1]),nz(r.v[2])]))+'</details></div>';
-  const cabos=new Map(),add=(m,k)=>L.forEach(x=>x[k].forEach((v,c)=>m.set(c,(m.get(c)||0)+v)));add(cabos,'cs');add(cabos,'fc');
-  if(cabos.size){const cl=[...cabos].sort((a,b)=>b[1]-a[1]).slice(0,10),mx=cl[0][1];
-    h+='<div class="mgc"><h4>Cabos dos lanços</h4><div class="mgs">Metros por tipo de cabo: fio de contacto '+f(Math.round(S(x=>x.fcm)))+' m · cabo de suporte '+f(Math.round(S(x=>x.csm)))+' m</div>'
-      +G.stack(cl.map(([c,m])=>{const pi=typeof pecaPorCod!=='undefined'?pecaPorCod.get(c):null,nm=pi!=null&&PEC[pi]?PEC[pi][3]:'';return {l:c+(nm?' · '+nm:''),a:m,t:m,tip:c+(nm?' ('+nm+')':'')+': '+f(m)+' m'}}),' m').replace(/ · 100%/g,'').replace(/(\d[\d.,]*) \/ \1/g,'$1')+'</div>'}
-  h+='</div>';
-  const mat=tabelaMat([P.m,E.m,F.m]).sort((a,b)=>b.v[2]-a.v[2]).slice(0,15);
-  if(mat.length)h+=`<h4 class="xh">Material por executar (as 15 maiores quantidades)</h4>`+tabX([['Código'],['Designação'],['Un.'],['Obra',1],['Executado',1],['Por executar',1]],mat.map(r=>[`<span class="mono">${esc(r.cod)}</span>`,esc(r.dg),esc(r.u),fmt(r.v[0]),nz(r.v[1]),nz(r.v[2])]))
-    +'<p class="xnota">A lista completa de material, por lote, auto e estrutura, está em «Execução».</p>';
+  const lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10),rec=[...dias].filter(([d])=>d>=lim),nd=rec.length,rit=nd?rec.reduce((s,[,v])=>s+v,0)/nd:0,prev=rit>0&&falta>0?Math.ceil(falta/rit):0;
+  const K=(l,v,s,cl)=>`<div class="rsK1${cl?' '+cl:''}"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
   const C=(()=>{try{return conflitos().length}catch(e){return 0}})();
-  if(C)h+=`<div class="rsAv">▲ <b>${C}</b> elemento${C>1?'s':''} com mais executado do que o projeto. Vê em Execução › Conflitos.</div>`;
-  b.innerHTML=h}
+  let h='<div class="mvg rsW">';
+  if(C)h+=`<div class="rsAv" role="status"><b>▲ ${C} elemento${C>1?'s':''} com mais executado do que o projeto.</b> Normalmente vem de uma revisão que retirou o que já estava montado. Vê em Execução › Conflitos.</div>`;
+  h+='<div class="rsK"><div class="rsK1 hero">'+G.donut(pc,'executado',118)+`<div><div class="l">Obra executada</div><div class="v">${f(eA)} <small>de ${f(eT)}</small></div><div class="s">elementos de projeto: postes, vigas e montagens</div>`
+    +`<div class="rsSeg" aria-hidden="true">${['c','p','n','v'].map(k=>nEst[k]?`<i class="${k}" style="flex:${nEst[k]}"></i>`:'').join('')}</div></div></div>`
+    +K('Estruturas',f(ES.length),`${nEst.c} completas · ${nEst.p} em curso · ${nEst.n} por começar${nEst.v?' · '+nEst.v+' vazias':''}`)
+    +K('Ritmo',nd?f(rit,1)+' <small>/ dia</small>':'—',nd?`média de ${nd} ${nd===1?'dia':'dias'} com trabalho nos últimos 30`:'sem execução nos últimos 30 dias')
+    +K('Para acabar',falta<=0?'Concluído':prev?'≈ '+prev+' <small>'+(prev===1?'dia':'dias')+'</small>':'—',falta<=0?'tudo o que está no projeto foi executado':prev?'dias de trabalho ao ritmo atual · faltam '+f(falta)+' elementos':'faltam '+f(falta)+' elementos')
+    +K('Lanços',f(Math.round(S(x=>x.mL)))+' <small>m</small>',`${S(x=>x.nl)} lanços · FC ${f(Math.round(S(x=>x.fcm)))} m · CS ${f(Math.round(S(x=>x.csm)))} m`)
+    +'</div><div class="rsG">';
+  /* mapa das estruturas */
+  const grp=new Map();ES.forEach(e=>{if(!grp.has(e.g))grp.set(e.g,[]);grp.get(e.g).push(e)});
+  const gs=[...grp].sort((a,b)=>a[0].localeCompare(b[0],'pt',{numeric:true}));
+  const NOME={c:'completa',p:'em curso',n:'por começar',v:'sem elementos'};
+  h+='<div class="mgc s12"><div class="rsCh"><div><h4>Mapa das estruturas</h4><div class="mgs">Cada quadrado é uma estrutura, pela ordem da lista. Clica para a abrir.</div></div>'+G.leg([['g1','completa'],['g2','em curso'],['g3','por começar'],['o','sem elementos']])+'</div><div class="rsMapa">'
+    +gs.map(([g,l])=>{const a=l.reduce((s,e)=>s+e.a,0),t=l.reduce((s,e)=>s+e.t,0);return `<div class="rsMl"><div class="rsMg"><b>${esc(g)}</b><span>${l.length} ${l.length===1?'estrutura':'estruturas'} · ${t?Math.round(a/t*100):0}%</span></div><div class="rsMq">`
+      +l.map(e=>{const s=est(e);return `<button class="q ${s}" ${e.ativo?`data-rsp="${e.id}"`:'disabled'} data-tip="${esc(e.nome+' · '+NOME[s]+(e.t?' · '+f(e.a)+' de '+f(e.t):'')+(L.length>1?' · '+e.lote:''))}" aria-label="${esc(e.nome+', '+NOME[s])}"></button>`}).join('')+'</div></div>'}).join('')+'</div></div>';
+  /* curva e meses */
+  const ds=[...dias].sort((a,b)=>a[0]<b[0]?-1:1);let cum=0;
+  const pts=ds.map(([d,v])=>{cum+=v;const t=Date.parse(d+'T12:00:00');return {t,v:eT?Math.min(1,cum/eT):0,l:new Date(t).toLocaleDateString('pt-PT')+': '+(eT?Math.round(cum/eT*100):0)+'% ('+f(cum)+' de '+f(eT)+')'}});
+  h+='<div class="mgc s7"><h4>Curva de execução</h4><div class="mgs">Percentagem da obra executada ao longo do tempo</div>'+(pts.length>1?G.curva(pts,200):'<div class="rsNada">A curva aparece quando houver execução registada em dois dias ou mais.</div>')+'</div>';
+  const meses=[...new Set(L.flatMap(x=>[...x.mes.keys()]))].sort();let cm=0;
+  h+='<div class="mgc s5"><h4>Executado por mês</h4><div class="mgs">Elementos executados em cada mês</div>'+(meses.length?G.cols(meses.map(m=>{const v=L.reduce((s,x)=>s+(x.mes.get(m)||0),0);cm+=v;return {l:MESCURTO[+m.slice(5,7)-1]+' '+m.slice(2,4),v,cum:cm}}),' elementos',200):'<div class="rsNada">Ainda sem execução registada.</div>')+'</div>';
+  /* troços e tipos */
+  const gl=gs.map(([g,l])=>({l:g,a:l.reduce((s,e)=>s+e.a,0),t:l.reduce((s,e)=>s+e.t,0),n:l.length})).filter(x=>x.t>0);
+  h+='<div class="mgc s6"><h4>Progresso por troço</h4><div class="mgs">O comprimento da barra é o tamanho do troço; a azul, o executado</div>'+(gl.length?'<div class="rsLst">'+G.stack(gl.map(x=>({l:x.l,a:x.a,t:x.t,tip:x.l+': '+x.n+' estruturas, '+f(x.a)+' de '+f(x.t)+' elementos executados'})))+'</div>':'<div class="rsNada">Sem elementos nas estruturas.</div>')+'</div>';
+  const rows=tabelaPostes([P.ps,E.ps,F.ps]);
+  h+='<div class="mgc s6"><h4>Postes e vigas por tipo</h4><div class="mgs">Montados e por montar</div>'+(rows.length?'<div class="rsLst">'+G.stack(rows.map(r=>({l:r.cod+(r.dg?' · '+r.dg:''),a:Math.min(r.v[0],r.v[1]),t:r.v[0]})))+'</div>'
+    +'<details><summary>Ver em tabela</summary>'+tabX([['Elemento'],['Designação'],['Obra',1],['Executado',1],['Por executar',1]],rows.map(r=>[`<span class="mono">${esc(r.cod)}</span>`,esc(r.dg),fmt(r.v[0]),nz(r.v[1]),nz(r.v[2])]))+'</details>':'<div class="rsNada">Sem postes nem vigas nas estruturas.</div>')+'</div>';
+  /* cabos e material */
+  const cab=new Map();L.forEach(x=>x.cs.forEach((v,c)=>cab.set(c,(cab.get(c)||0)+v)));
+  const nomeP=c=>{try{const pi=pecaPorCod.get(c);return pi!=null&&PEC[pi]?PEC[pi][3]:''}catch(e){return ''}};
+  h+='<div class="mgc s6"><h4>Cabos dos lanços</h4><div class="mgs">Metros por tipo de cabo'+(S(x=>x.nc)?' · e '+f(Math.round(S(x=>x.mc)))+' m em '+S(x=>x.nc)+' cabos longitudinais':'')+'</div>'
+    +(cab.size?'<div class="rsLst">'+G.stack([...cab].sort((a,b)=>b[1]-a[1]).map(([c,m])=>{const n=nomeP(c);return {l:c+(n?' · '+n:''),a:m,t:m,v:f(Math.round(m))+' m',tip:c+(n?' ('+n+')':'')+': '+f(m)+' m'}}))+'</div>':'<div class="rsNada">Ainda sem lanços com cabo.</div>')+'</div>';
+  const mat=tabelaMat([P.m,E.m,F.m]).filter(r=>r.v[2]>0).sort((a,b)=>b.v[2]-a.v[2]);
+  h+='<div class="mgc s6"><h4>Material por executar</h4><div class="mgs">As maiores quantidades em falta · lista completa em «Execução»</div>'+(mat.length?'<div class="rsLst">'+G.stack(mat.slice(0,10).map(r=>({l:r.cod+(r.dg?' · '+r.dg:''),a:r.v[1],t:r.v[0],v:'faltam '+fmt(r.v[2])+' '+esc(r.u),tip:r.cod+' '+(r.dg||'')+': obra '+fmt(r.v[0])+' '+r.u+', executado '+fmt(r.v[1])+', por executar '+fmt(r.v[2])})))+'</div>':'<div class="rsNada">Não falta material por executar.</div>')+'</div>';
+  h+='</div></div>';
+  b.innerHTML=h;G.monta(b);
+  b.onclick=e=>{const q=e.target.closest('[data-rsp]');if(!q)return;st.sel=+q.getAttribute('data-rsp');despiece=null;document.querySelector('#side .tab[data-v="lista"]').click();rAll()}}
 function tabX(cab,linhas){
   return `<div class="xtw"><table class="xt"><thead><tr>${cab.map(([h,n])=>`<th class="${n?'num':''}">${h}</th>`).join('')}</tr></thead><tbody>`
     +linhas.map(l=>`<tr${l.cls?` class="${l.cls}"`:''}>${l.map((c,i)=>`<td class="${cab[i]&&cab[i][1]?'num':''}">${c}</td>`).join('')}</tr>`).join('')

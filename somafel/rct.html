@@ -898,7 +898,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 .nmLogin .ob{text-align:left;padding:10px 12px}.nmLogin .er{color:#C62828;min-height:1em}
 
 </style>
-<script src="design.js?v=20261104b"></script>
+<script src="design.js?v=20261104c"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1400,39 +1400,48 @@ $('#obraNome').addEventListener('input',function(){ if(!NM.ob){ ST.nome=this.val
 function rRes(c){ try{ rRes0(c) }catch(e){ console.error(e); var bb=$('#resBox'); if(bb)bb.innerHTML='<div class="vazio">Não foi possível mostrar o resumo. Carrega em Ctrl+F5 para atualizar a app.</div>' } }
 function rRes0(c){
   var b=$('#resBox');
-  if(vazio()){ b.innerHTML='<div class="vazio"><b>Ainda não há caixas nesta obra</b>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois adicione-lhe as montagens.<br><br><button class="pri" id="r1">Criar a primeira caixa</button>'+
-      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Central.')+'</p></div>';
+  if(vazio()){ b.innerHTML='<div class="mvg rsW"><div class="rsVaz"><b>Ainda não há caixas nesta obra</b><p>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois junte-lhe as montagens. O resumo da obra aparece aqui.</p><button class="pri" id="r1">Criar a primeira caixa</button>'+
+      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Central.')+'</p></div></div>';
     $('#r1').onclick=function(){ vai('cx'); setTimeout(function(){ $('#cAdd').focus() },50) }; return }
-  var pe=c.nPrev?c.nExec/c.nPrev:0, G=MVG, f1=G.f, MC=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  var mes={}, dias={}, gr={}, gordem=[], lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
-  ST.caixas.forEach(function(cx){ var g=cx.grupo||'(sem grupo)'; if(!gr[g]){ gr[g]={a:0,t:0,n:0}; gordem.push(g) } gr[g].n++;
-    (cx.ms||[]).forEach(function(m){ var q=qm(m), qc=uniMont(codM(m.code))==='m'?1:q; gr[g].t+=qc;
-      if(m.ex){ gr[g].a+=qc; var d=(m.ex.data||'').slice(0,10); if(d){ var k=d.slice(0,7); mes[k]=(mes[k]||0)+qc; dias[d]=(dias[d]||0)+qc } } }) });
-  var rec=Object.keys(dias).filter(function(d){ return d>=lim }), un=rec.reduce(function(s,d){ return s+dias[d] },0), nd=rec.length, rit=nd?un/nd:0, falta=c.nPrev-c.nExec, prev=rit>0&&falta>0?Math.ceil(falta/rit):0;
-  var gn=function(v,l){ return '<div class="mgn"><b>'+v+'</b><span>'+l+'</span></div>' };
-  var h='<div class="mvg"><div class="mgc mgw2"><h4>Progresso da obra</h4><div class="mgs">Montagens já executadas, em todas as caixas</div><div class="mgh">'+G.donut(pe,'executado')
-    +gn(c.nExec+' / '+c.nPrev,'montagens executadas')+gn(c.nCx,'caixas')+gn(c.nTrocEx+' / '+c.nTroc,'troços de cabo executados')
-    +(nd?gn(f1(rit,1)+' por dia','ritmo médio nos últimos 30 dias ('+nd+(nd===1?' dia':' dias')+' com trabalho)')+(falta<=0?gn('Concluído','todas as montagens estão executadas'):gn('≈ '+prev+' dias de trabalho','para o que falta, a este ritmo')):gn('—','ainda sem execução registada nos últimos 30 dias'))
-    +'</div></div>';
-  var ms=Object.keys(mes).sort(), cum=0;
-  if(ms.length)h+='<div class="mgc"><h4>Executado por mês</h4><div class="mgs">Montagens executadas em cada mês (acumulado ao passar o rato)</div>'+G.cols(ms.map(function(m){ cum+=mes[m]; return {l:MC[+m.slice(5,7)-1]+' '+m.slice(2,4),v:mes[m],cum:cum} }),' montagens')+'</div>';
-  var gl=gordem.filter(function(g){ return gr[g].t>0 }).sort(function(a,b){ return a.localeCompare(b,'pt',{numeric:true}) });
-  if(gl.length>1||(gl.length===1&&gl[0]!=='(sem grupo)'))h+='<div class="mgc"><h4>Progresso por grupo</h4><div class="mgs">Comprimento da barra = montagens do grupo; a parte azul está executada</div>'+G.stack(gl.slice(0,14).map(function(g){ return {l:g,a:gr[g].a,t:gr[g].t,tip:g+': '+gr[g].n+' caixas, '+f1(gr[g].a)+' de '+f1(gr[g].t)+' montagens executadas'} }))+G.leg([['g1','executadas'],['g3','por executar']])+'</div>';
+  var G=MVG, f1=G.f, MC=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'], pe=c.nPrev?c.nExec/c.nPrev:0;
+  var dias={}, mes={}, gr={}, gordem=[], cxs=[], lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  ST.caixas.forEach(function(cx){ var g=cx.grupo||'(sem grupo)', a=0, t=0; if(!gr[g]){ gr[g]=[]; gordem.push(g) }
+    (cx.ms||[]).forEach(function(m){ var qc=uniMont(codM(m.code))==='m'?1:qm(m); t+=qc;
+      if(m.ex){ a+=qc; var d=(m.ex.data||'').slice(0,10); if(d){ dias[d]=(dias[d]||0)+qc; mes[d.slice(0,7)]=(mes[d.slice(0,7)]||0)+qc } } });
+    var o={id:cx.id,nome:cx.cx,pk:cx.pk,g:g,a:a,t:t}; gr[g].push(o); cxs.push(o) });
+  var est=function(e){ return !e.t?'v':e.a>=e.t-1e-9?'c':e.a>0?'p':'n' }, nE={c:0,p:0,n:0,v:0}; cxs.forEach(function(e){ nE[est(e)]++ });
+  var rec=Object.keys(dias).filter(function(d){ return d>=lim }), nd=rec.length, rit=nd?rec.reduce(function(s,d){ return s+dias[d] },0)/nd:0, falta=Math.max(0,c.nPrev-c.nExec), prev=rit>0&&falta>0?Math.ceil(falta/rit):0;
+  var K=function(l,v,s){ return '<div class="rsK1"><div class="l">'+l+'</div><div class="v">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>' };
+  var h='<div class="mvg rsW">';
+  if(c.semBase.length||!MB)h+='<div class="rsAv" role="status"><b>▲ '+(!MB?'Ainda não há base de montagens carregada.':c.semBase.length+' montagens com um código que não existe na base.')+'</b> Os materiais e o cabo previsto dessas montagens não entram nas contas.</div>';
+  h+='<div class="rsK"><div class="rsK1 hero">'+G.donut(pe,'executado',118)+'<div><div class="l">Montagens executadas</div><div class="v">'+f1(c.nExec)+' <small>de '+f1(c.nPrev)+'</small></div><div class="s">em todas as caixas</div>'
+    +'<div class="rsSeg" aria-hidden="true">'+['c','p','n','v'].map(function(k){ return nE[k]?'<i class="'+k+'" style="flex:'+nE[k]+'"></i>':'' }).join('')+'</div></div></div>'
+    +K('Caixas',f1(c.nCx),nE.c+' completas · '+nE.p+' em curso · '+nE.n+' por começar'+(nE.v?' · '+nE.v+' vazias':''))
+    +K('Ritmo',nd?f1(rit,1)+' <small>/ dia</small>':'—',nd?'média de '+nd+(nd===1?' dia':' dias')+' com trabalho nos últimos 30':'sem execução nos últimos 30 dias')
+    +K('Para acabar',falta<=0?'Concluído':prev?'≈ '+prev+' <small>'+(prev===1?'dia':'dias')+'</small>':'—',falta<=0?'todas as montagens estão executadas':prev?'dias de trabalho ao ritmo atual · faltam '+f1(falta)+' montagens':'faltam '+f1(falta)+' montagens')
+    +K('Cabo a reclamar',f1(c.totExc,1)+' <small>m</small>',c.nTrocEx+' de '+c.nTroc+' troços de cabo executados')
+    +'</div><div class="rsG">';
+  var NOME={c:'completa',p:'em curso',n:'por começar',v:'sem montagens'}, gs=gordem.slice().sort(function(a,b){ return a.localeCompare(b,'pt',{numeric:true}) });
+  h+='<div class="mgc s12"><div class="rsCh"><div><h4>Mapa das caixas</h4><div class="mgs">Cada quadrado é uma caixa, pela ordem da lista. Clique para a abrir.</div></div>'+G.leg([['g1','completa'],['g2','em curso'],['g3','por começar'],['o','sem montagens']])+'</div><div class="rsMapa">'
+    +gs.map(function(g){ var l=gr[g], a=l.reduce(function(s,e){ return s+e.a },0), t=l.reduce(function(s,e){ return s+e.t },0);
+      return '<div class="rsMl"><div class="rsMg"><b>'+esc(g)+'</b><span>'+l.length+(l.length===1?' caixa':' caixas')+' · '+(t?Math.round(a/t*100):0)+'%</span></div><div class="rsMq">'
+        +l.map(function(e){ var s=est(e); return '<button class="q '+s+'" data-rsc="'+esc(e.id)+'" data-tip="'+esc('Caixa '+e.nome+(e.pk?' · PK '+e.pk:'')+' · '+NOME[s]+(e.t?' · '+f1(e.a)+' de '+f1(e.t):''))+'" aria-label="'+esc('Caixa '+e.nome+', '+NOME[s])+'"></button>' }).join('')+'</div></div>' }).join('')+'</div></div>';
+  var ds=Object.keys(dias).sort(), cum=0, pts=ds.map(function(d){ cum+=dias[d]; var t=Date.parse(d+'T12:00:00'); return {t:t,v:c.nPrev?Math.min(1,cum/c.nPrev):0,l:new Date(t).toLocaleDateString('pt-PT')+': '+(c.nPrev?Math.round(cum/c.nPrev*100):0)+'% ('+f1(cum)+' de '+f1(c.nPrev)+')'} });
+  h+='<div class="mgc s7"><h4>Curva de execução</h4><div class="mgs">Percentagem das montagens executadas ao longo do tempo</div>'+(pts.length>1?G.curva(pts,200):'<div class="rsNada">A curva aparece quando houver execução registada em dois dias ou mais.</div>')+'</div>';
+  var ms=Object.keys(mes).sort(), cm=0;
+  h+='<div class="mgc s5"><h4>Executado por mês</h4><div class="mgs">Montagens executadas em cada mês</div>'+(ms.length?G.cols(ms.map(function(m){ cm+=mes[m]; return {l:MC[+m.slice(5,7)-1]+' '+m.slice(2,4),v:mes[m],cum:cm} }),' montagens',200):'<div class="rsNada">Ainda sem execução registada.</div>')+'</div>';
+  var gl=gs.map(function(g){ var l=gr[g]; return {l:g,n:l.length,a:l.reduce(function(s,e){ return s+e.a },0),t:l.reduce(function(s,e){ return s+e.t },0)} }).filter(function(x){ return x.t>0 });
+  h+='<div class="mgc s6"><h4>Progresso por grupo</h4><div class="mgs">O comprimento da barra é o tamanho do grupo; a azul, o executado</div>'+(gl.length?'<div class="rsLst">'+G.stack(gl.map(function(x){ return {l:x.l,a:x.a,t:x.t,tip:x.l+': '+x.n+' caixas, '+f1(x.a)+' de '+f1(x.t)+' montagens executadas'} }))+'</div>':'<div class="rsNada">Ainda sem montagens nas caixas.</div>')+'</div>';
   var tipos=Object.keys(c.porTipo).filter(function(t){ var x=c.porTipo[t]; return x.prev+x.prevT>0||x.gasto+x.exT>0 }).sort();
-  if(tipos.length)h+='<div class="mgc"><h4>Cabo por tipo</h4><div class="mgs">Previsto (cinzento) e já gasto (azul). A laranja, com ▲, o cabo a mais a reclamar ('+f1(c.totExc,1)+' m no total)</div>'+G.cmp(tipos.map(function(t){ var x=c.porTipo[t]; return {l:t,prev:x.prev+x.prevT,real:x.gasto+x.exT,exc:x.exc} }),' m')
-    +G.leg([['g2','previsto'],['g1','gasto'],['gw','a mais']])+'</div>';
+  h+='<div class="mgc s6"><h4>Cabo por tipo</h4><div class="mgs">Previsto e já gasto; a laranja, com ▲, o cabo a mais a reclamar</div>'+(tipos.length?'<div class="rsLst">'+G.cmp(tipos.map(function(t){ var x=c.porTipo[t]; return {l:t,prev:x.prev+x.prevT,real:x.gasto+x.exT,exc:x.exc} }),' m')+'</div>'+G.leg([['g2','previsto'],['g1','gasto'],['gw','a mais']]):'<div class="rsNada">Ainda sem cabo previsto nem gasto.</div>')+'</div>';
   h+='</div>';
-  var tp=Object.keys(c.porTipo).filter(function(t){ return c.porTipo[t].exc>0 });
-  if(tp.length){ h+='<h3 class="sec">Cabo a mais por tipo</h3><div class="tablewrap"><table><thead><tr><th>Tipo de cabo</th><th class="num">A reclamar (m)</th></tr></thead><tbody>'+tp.map(function(t){ return '<tr><td>'+esc(t)+'</td><td class="num"><b>'+fmt(c.porTipo[t].exc,1)+'</b></td></tr>' }).join('')+'</tbody></table></div>' }
   var ks=Object.keys(c.porMont).filter(function(k){ return k }).sort(function(a,b){ return a.localeCompare(b,'pt',{numeric:true}) });
-  if(ks.length){ h+='<h3 class="sec">Montagens</h3><div class="tablewrap"><table><thead><tr><th>Montagem</th><th class="num">Previstas</th><th class="num">Executadas</th><th></th></tr></thead><tbody>'+ks.map(function(k){ var u=c.porMont[k], m=ME.mont[k], p=u.prev?u.exec/u.prev:0;
-    return '<tr><td><span class="mono">'+esc(k)+'</span> '+esc(m?m.nome:'(não existe na base)')+'</td><td class="num">'+u.prev+uu(uniMont(k))+'</td><td class="num">'+u.exec+uu(uniMont(k))+'</td><td><span class="pbar"><i style="width:'+Math.min(100,p*100)+'%"></i></span>'+pct(p)+'</td></tr>' }).join('')+'</tbody></table></div>' }
-  var av='', semM=ST.caixas.filter(function(x){ return !(x.ms||[]).length });
-  if(semM.length)av+='<div class="aviso"><b>'+semM.length+'</b> caixas ainda sem montagens: '+semM.slice(0,10).map(function(x){ return '<span class="mono">'+esc(x.cx)+'</span>' }).join(', ')+(semM.length>10?'…':'')+'</div>';
-  if(c.semBase.length)av+='<div class="aviso"><b>'+c.semBase.length+'</b> montagens com um código que não existe na base (os materiais não entram na conta).</div>';
-  if(!MB)av+='<div class="aviso">Ainda não há base de montagens carregada. Veja o separador «Montagens».</div>';
-  h+=(av?'<h3 class="sec">Atenção</h3>'+av:'');
-  b.innerHTML=h }
+  if(ks.length){ h+='<div class="mgc"><h4>Montagens</h4><div class="mgs">Previstas e executadas, por código</div><div class="rsLst" style="max-height:420px">'+G.stack(ks.map(function(k){ var u=c.porMont[k], m=ME.mont[k]; return {l:k+' · '+(m?m.nome:'(não existe na base)'),a:Math.min(u.exec,u.prev),t:u.prev,v:f1(u.exec)+' / '+f1(u.prev)+' '+uniMont(k)+' · '+(u.prev?Math.round(Math.min(1,u.exec/u.prev)*100):0)+'%'} }))+'</div></div>' }
+  var semM=ST.caixas.filter(function(x){ return !(x.ms||[]).length });
+  if(semM.length)h+='<div class="rsAv"><b>'+semM.length+'</b> caixas ainda sem montagens: '+semM.slice(0,12).map(function(x){ return '<span class="mono">'+esc(x.cx)+'</span>' }).join(', ')+(semM.length>12?'…':'')+'</div>';
+  h+='</div>';
+  b.innerHTML=h; G.monta(b);
+  b.onclick=function(e){ var q=e.target.closest('[data-rsc]'); if(!q)return; UI.cSel=q.getAttribute('data-rsc'); vai('cx') } }
 
 /* ================= caixas (como a estrutura da catenária: lista · pesquisa de montagem · lista de material) ================= */
 function sa(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase() }
