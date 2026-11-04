@@ -898,7 +898,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 .nmLogin .ob{text-align:left;padding:10px 12px}.nmLogin .er{color:#C62828;min-height:1em}
 
 </style>
-<script src="design.js?v=20261104c"></script>
+<script src="design.js?v=20261104d"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1418,7 +1418,7 @@ function rRes0(c){
     +'<div class="rsSeg" aria-hidden="true">'+['c','p','n','v'].map(function(k){ return nE[k]?'<i class="'+k+'" style="flex:'+nE[k]+'"></i>':'' }).join('')+'</div></div></div>'
     +K('Caixas',f1(c.nCx),nE.c+' completas · '+nE.p+' em curso · '+nE.n+' por começar'+(nE.v?' · '+nE.v+' vazias':''))
     +K('Ritmo',nd?f1(rit,1)+' <small>/ dia</small>':'—',nd?'média de '+nd+(nd===1?' dia':' dias')+' com trabalho nos últimos 30':'sem execução nos últimos 30 dias')
-    +K('Para acabar',falta<=0?'Concluído':prev?'≈ '+prev+' <small>'+(prev===1?'dia':'dias')+'</small>':'—',falta<=0?'todas as montagens estão executadas':prev?'dias de trabalho ao ritmo atual · faltam '+f1(falta)+' montagens':'faltam '+f1(falta)+' montagens')
+    +(!c.nPrev?K('Para acabar','—','ainda não há montagens nas caixas'):K('Para acabar',falta<=0?'Concluído':prev?'≈ '+prev+' <small>'+(prev===1?'dia':'dias')+'</small>':'—',falta<=0?'todas as montagens estão executadas':prev?'dias de trabalho ao ritmo atual · faltam '+f1(falta)+' montagens':'faltam '+f1(falta)+' montagens'))
     +K('Cabo a reclamar',f1(c.totExc,1)+' <small>m</small>',c.nTrocEx+' de '+c.nTroc+' troços de cabo executados')
     +'</div><div class="rsG">';
   var NOME={c:'completa',p:'em curso',n:'por começar',v:'sem montagens'}, gs=gordem.slice().sort(function(a,b){ return a.localeCompare(b,'pt',{numeric:true}) });
