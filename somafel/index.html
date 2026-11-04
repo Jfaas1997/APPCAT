@@ -153,6 +153,10 @@ html[data-obra] #side .tab[data-v="obras"],html[data-obra] #sObras,html[data-obr
 .ctabs{display:flex;gap:4px;background:var(--soft);border:1px solid var(--rule);border-radius:8px;padding:3px}
 .ctabs button{border:0;background:transparent;padding:6px 14px;border-radius:6px;font-weight:500;color:var(--muted)}
 .ctabs button span{font-family:var(--mono);font-size:11px;margin-left:6px;opacity:.75}
+.somF{display:grid;grid-template-columns:1fr 120px;gap:10px;margin:14px 0}.somF label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}.somF label.w{grid-column:1/-1}.somF input,.somF textarea,.somP input,.somP select,.somP textarea{font:inherit;font-size:13.5px;color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-radius:7px;padding:6px 8px;width:100%;box-sizing:border-box}
+.somFil{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.somH{display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px}.somH h3{margin:0;font-size:15px}
+.somP{border:1px solid var(--rule);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--soft);display:flex;flex-direction:column;gap:8px}.somPh{display:flex;gap:8px;align-items:center}.somPh select{width:auto;flex:0 0 150px}
+.somT{width:100%;border-collapse:collapse;font-size:13px}.somT th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);padding:2px 6px}.somT td{padding:3px 4px;vertical-align:middle}.somT td:nth-child(3){width:90px}.somT td:nth-child(4){width:70px}.somT td:nth-child(5){width:40px}
 .ctabs button.on{background:var(--sheet);color:var(--ink);box-shadow:var(--sh)}
 .cpasta{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}.cpasta b{color:var(--ink)}
 .cdot{width:8px;height:8px;border-radius:50%;background:var(--rule);display:inline-block}.cdot.ok{background:#4FD1B5}.cdot.av{background:var(--amber)}
@@ -741,12 +745,77 @@ async function vCat(forca){
   S.vista='desenhos';titulo('Catálogo e desenhos');$('#hSub').textContent='Independente da obra';const pg=$('#pg');pg.classList.remove('semPad');pg.classList.add('bib');
   if(!CAT.base||forca){pg.innerHTML='<div class="vazio"><p>A abrir o catálogo…</p></div>';try{await catCarrega(true)}catch(e){pg.classList.remove('bib');pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}}
   if(S.vista!=='desenhos')return;catRender()}
+/* ---------- Desenhos Somafel: desenhos próprios com preparações (dados_org: central / desenhos_somafel) ---------- */
+const SOM={d:null,ver:null,sel:null,q:'',pix:null};
+const somId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const SOM_EST={prep:'Em preparação',pronta:'Pronta',aplic:'Aplicada'};
+async function somCarrega(){
+  const q=await sb.from('dados_org').select('dados,versao').eq('organizacao_id',S.eu.organizacao_id).eq('app','central').eq('chave','desenhos_somafel').maybeSingle();
+  if(q.error)throw q.error;SOM.d=(q.data&&q.data.dados&&q.data.dados.d)||[];SOM.ver=q.data?q.data.versao:null}
+async function somGrava(){
+  const dados={d:SOM.d},o=S.eu.organizacao_id;
+  try{
+    if(SOM.ver==null){const q=await sb.from('dados_org').insert({organizacao_id:o,app:'central',chave:'desenhos_somafel',dados,atualizado_por:S.eu.id}).select('versao');if(q.error)throw q.error;SOM.ver=q.data[0].versao;return true}
+    const q=await sb.from('dados_org').update({dados,atualizado_por:S.eu.id}).eq('organizacao_id',o).eq('app','central').eq('chave','desenhos_somafel').eq('versao',SOM.ver).select('versao');
+    if(q.error)throw q.error;
+    if(!q.data.length){await somCarrega();aviso('Alguém alterou entretanto. Recarreguei os desenhos; repete a alteração.',true);somRender();return false}
+    SOM.ver=q.data[0].versao;return true
+  }catch(e){aviso(erroTxt(e),true);return false}}
+const somAtual=()=>(SOM.d||[]).find(x=>x.id===SOM.sel);
+function somPeca(c){if(!SOM.pix||SOM.pix.b!==CAT.base){SOM.pix={b:CAT.base,m:new Map(CAT.base.p.map(p=>[String(p[0]),p]))}}return SOM.pix.m.get(String(c||'').trim())}
+function somLista(){
+  const q=cNorm(SOM.q.trim()),L=SOM.d.filter(d=>!q||cNorm(d.cod+' '+d.nome+' '+(d.nota||'')).indexOf(q)>=0).sort((a,b)=>String(a.cod).localeCompare(String(b.cod),'pt',{numeric:true}));
+  return '<div class="ccount">'+L.length+' de '+SOM.d.length+' desenhos</div><div class="crows" id="cRows">'+L.map(d=>'<button class="crow som'+(SOM.sel===d.id?' on':'')+'" data-sd="'+esc(d.id)+'"><span class="cc mono">'+esc(d.cod||'—')+'</span><span class="cv">'+esc(d.ver||'')+'</span><span class="cn">'+esc(d.nome||'Sem designação')+'<small>'+(d.prep||[]).length+((d.prep||[]).length===1?' preparação':' preparações')+(d.ficheiro?' · com ficheiro':'')+'</small></span></button>').join('')
+    +(L.length?'':'<div class="ccount">'+(SOM.d.length?'Nenhum desenho corresponde.':'Ainda não há desenhos Somafel.')+'</div>')+'</div>'}
+function somDet(){
+  const d=somAtual(),ed=gestor(),dis=ed?'':' disabled';
+  if(!d)return '<div class="cvaz"><b>Escolha um desenho à esquerda</b><p>Os desenhos Somafel são os teus, com as preparações que vais desenvolvendo (peças e quantidades do catálogo).</p>'+(ed?'<p><button class="pri" data-snovo>Novo desenho</button></p>':'')+'</div>';
+  let h='<div class="dh"><div><div class="dk">Desenho Somafel</div><h2 class="mono">'+esc(d.cod||'Sem código')+'</h2><div class="dn">'+esc(d.nome||'')+'</div></div></div>'
+   +'<div class="somF"><label>Código<input data-sf="cod" value="'+esc(d.cod||'')+'"'+dis+'></label><label>Versão<input data-sf="ver" value="'+esc(d.ver||'')+'"'+dis+'></label><label class="w">Designação<input data-sf="nome" value="'+esc(d.nome||'')+'"'+dis+'></label><label class="w">Nota<textarea data-sf="nota" rows="2"'+dis+'>'+esc(d.nota||'')+'</textarea></label></div>'
+   +'<div class="somFil">'+(d.ficheiro?'<button class="sm" data-sabre>Abrir ficheiro</button><span class="hint">'+esc(d.ficheiro.nome)+'</span>':'<span class="hint">Sem ficheiro do desenho.</span>')+(ed?'<button class="sm" data-ssobe>'+(d.ficheiro?'Substituir ficheiro…':'Carregar ficheiro…')+'</button>':'')+(ed?'<button class="sm" data-sapaga>Apagar desenho</button>':'')+'</div>'
+   +'<div class="somH"><h3>Preparações</h3>'+(ed?'<button class="sm pri" data-pnova>Nova preparação</button>':'')+'</div>';
+  const P=d.prep||[];
+  h+=P.length?P.map(p=>'<div class="somP" data-pid="'+esc(p.id)+'"><div class="somPh"><input data-pf="nome" value="'+esc(p.nome||'')+'" placeholder="Nome da preparação"'+dis+'><select data-pf="estado"'+dis+'>'+Object.keys(SOM_EST).map(k=>'<option value="'+k+'"'+((p.estado||'prep')===k?' selected':'')+'>'+SOM_EST[k]+'</option>').join('')+'</select>'+(ed?'<button class="sm" data-pdel title="Apagar preparação">Apagar</button>':'')+'</div>'
+      +'<textarea data-pf="nota" rows="2" placeholder="Notas da preparação (como se monta, cuidados, o que falta)"'+dis+'>'+esc(p.nota||'')+'</textarea>'
+      +'<table class="somT"><thead><tr><th>Peça</th><th>Designação</th><th>Qtd</th><th>Un</th><th></th></tr></thead><tbody>'+(p.itens||[]).map((it,i)=>{const pc=somPeca(it.cod);return '<tr data-ii="'+i+'"><td><input class="mono" list="somPecas" data-if="cod" value="'+esc(it.cod||'')+'"'+dis+'></td><td>'+(pc?esc(pc[3]||''):(it.cod?'<span class="hint">não está no catálogo</span>':''))+'</td><td><input data-if="qt" type="number" min="0" step="any" value="'+esc(it.qt)+'"'+dis+'></td><td><input data-if="un" value="'+esc(it.un||'un')+'"'+dis+'></td><td>'+(ed?'<button class="sm" data-idel title="Tirar">×</button>':'')+'</td></tr>'}).join('')+'</tbody></table>'
+      +(ed?'<button class="sm" data-padd>Juntar peça</button>':'')+'</div>').join(''):'<p class="hint">Ainda sem preparações neste desenho.</p>';
+  return h}
+function somGrid(){
+  const ed=gestor();
+  return '<div class="cgrid"><section class="clist"><div class="cfilt"><input id="sQ" type="search" placeholder="Procurar código ou designação…" value="'+esc(SOM.q)+'" autocomplete="off">'+(ed?'<button class="sm pri" data-snovo>Novo desenho</button>':'')+'</div>'+somLista()+'</section><section class="cdet" id="cDet">'+somDet()+'</section></div>'
+   +'<datalist id="somPecas">'+CAT.base.p.slice(0,6000).map(p=>'<option value="'+esc(p[0])+'">'+esc(p[3]||'')+'</option>').join('')+'</datalist>'}
+function somRender(){const pg=$('#pg');if(!pg||S.vista!=='desenhos'||CAT.tab!=='som')return;const dc=$('#cDet'),sc=dc?dc.scrollTop:0;catRender();const n=$('#cDet');if(n)n.scrollTop=sc}
+async function somAbre(){if(SOM.d)return;try{await somCarrega()}catch(e){aviso(erroTxt(e),true);SOM.d=[]}somRender()}
+function somLiga(){
+  const pg=$('#pg'),qi=$('#sQ');
+  if(qi){let tm=null;qi.oninput=e=>{SOM.q=e.target.value;clearTimeout(tm);tm=setTimeout(()=>{const p=e.target.selectionStart;somRender();const n=$('#sQ');if(n){n.focus();try{n.setSelectionRange(p,p)}catch(x){}}},250)}}
+  pg.onchange=async e=>{const t=e.target,d=somAtual();if(!d||!gestor())return;
+    let m=t.getAttribute('data-sf');if(m){d[m]=m==='nota'?t.value:t.value.trim();if(await somGrava()&&m!=='nota'){const r=$('#cRows'),sc=r?r.scrollTop:0;if(r){r.outerHTML=somLista().replace(/^<div class="ccount">.*?<\/div>/,'')}const r2=$('#cRows');if(r2)r2.scrollTop=sc;const c=$('.ccount');const h2=$('#cDet .dh h2'),dn=$('#cDet .dh .dn');if(h2)h2.textContent=d.cod||'Sem código';if(dn)dn.textContent=d.nome||''}return}
+    const pe=t.closest('[data-pid]');const p=pe&&(d.prep||[]).find(x=>x.id===pe.getAttribute('data-pid'));if(!p)return;
+    m=t.getAttribute('data-pf');if(m){p[m]=m==='nota'?t.value:t.value.trim();await somGrava();return}
+    m=t.getAttribute('data-if');const tr=t.closest('[data-ii]');if(m&&tr){const it=p.itens[+tr.getAttribute('data-ii')];if(!it)return;it[m]=m==='qt'?(Number(String(t.value).replace(',','.'))||0):t.value.trim();if(await somGrava()&&m==='cod'){const pc=somPeca(it.cod),td=tr.children[1];td.innerHTML=pc?esc(pc[3]||''):(it.cod?'<span class="hint">não está no catálogo</span>':'')}}}}
+function somClick(t){
+  const ed=gestor();let x;
+  if((x=t.closest('[data-sd]'))){SOM.sel=x.getAttribute('data-sd');somRender();return true}
+  if(t.closest('[data-snovo]')){if(!ed)return true;const d={id:somId(),cod:'',nome:'',ver:'',nota:'',ficheiro:null,prep:[]};SOM.d.push(d);SOM.sel=d.id;somGrava().then(()=>{somRender();const i=$('[data-sf="cod"]');if(i)i.focus()});return true}
+  const d=somAtual();if(!d)return false;
+  if(t.closest('[data-sabre]')){if(d.ficheiro)abreBib(d.ficheiro.path,d.ficheiro.nome);return true}
+  if(t.closest('[data-ssobe]')){const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.dwg,.dxf,.png,.jpg,.jpeg';
+    inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{aviso('A carregar…');const path='_org/'+S.eu.organizacao_id+'/desenhos_somafel/'+d.id+'_'+nomeSeguro(f.name);const r=await sb.storage.from('documentos').upload(path,f,{upsert:true});if(r.error)throw r.error;d.ficheiro={path,nome:f.name};if(await somGrava()){aviso('Ficheiro carregado.');somRender()}}catch(e){aviso(erroTxt(e),true)}};inp.click();return true}
+  if(t.closest('[data-sapaga]')){confirmar('Apagar o desenho «'+(d.cod||'sem código')+'» e as suas preparações? O ficheiro carregado não é apagado do servidor.','Apagar').then(async s=>{if(!s)return;SOM.d=SOM.d.filter(y=>y.id!==d.id);SOM.sel=null;if(await somGrava())somRender()});return true}
+  if(t.closest('[data-pnova]')){d.prep=d.prep||[];d.prep.push({id:somId(),nome:'',estado:'prep',nota:'',itens:[]});somGrava().then(()=>somRender());return true}
+  const pe=t.closest('[data-pid]'),p=pe&&(d.prep||[]).find(y=>y.id===pe.getAttribute('data-pid'));if(!p)return false;
+  if(t.closest('[data-pdel]')){confirmar('Apagar a preparação «'+(p.nome||'sem nome')+'»?','Apagar').then(async s=>{if(!s)return;d.prep=d.prep.filter(y=>y.id!==p.id);if(await somGrava())somRender()});return true}
+  if(t.closest('[data-padd]')){p.itens=p.itens||[];p.itens.push({cod:'',qt:1,un:'un'});somGrava().then(()=>somRender());return true}
+  if((x=t.closest('[data-idel]'))){const tr=x.closest('[data-ii]');p.itens.splice(+tr.getAttribute('data-ii'),1);somGrava().then(()=>somRender());return true}
+  return false}
 function catRender(){
   const pg=$('#pg');if(!pg)return;const B=CAT.base,q=cNorm(CAT.q.trim());
   const adm=admin()?'<button class="sm" id="cDes">Carregar desenhos…</button><button class="sm" id="cDesP">Carregar pasta…</button><button class="sm" id="cBase">'+(B?'Substituir base IP…':'Carregar base IP…')+'</button>':'';
   if(!B){pg.innerHTML='<div class="cat"><div class="hint" style="padding:14px 16px;margin:0 0 12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--soft)"><b>Sem base de dados.</b> A base IP (Base_de_dados_catenaria.xlsx) é carregada uma vez pelo administrador, e a Medição usa a mesma.<br><br>'+(admin()?'<button class="pri sm" id="cBase">Carregar base IP…</button> ':'')+'</div><div class="cbar"><div class="cpasta">'+adm.replace(/<button class="sm" id="cBase">.*?<\/button>/,'')+'</div></div></div>';ligaCat();return}
-  let h='<div class="cat"><div class="cbar"><div class="ctabs" role="tablist"><button data-ct="des" class="'+(CAT.tab==='des'?'on':'')+'">Índice de desenhos <span>'+B.d.length+'</span></button><button data-ct="pec" class="'+(CAT.tab==='pec'?'on':'')+'">Catálogo de peças <span>'+B.p.length+'</span></button><button data-ct="rct" class="'+(CAT.tab==='rct'?'on':'')+'">Montagens RCT'+(CAT.rct&&CAT.rct.m?' <span>'+CAT.rct.m.length+'</span>':'')+'</button></div>'
+  let h='<div class="cat"><div class="cbar"><div class="ctabs" role="tablist"><button data-ct="des" class="'+(CAT.tab==='des'?'on':'')+'">Índice de desenhos <span>'+B.d.length+'</span></button><button data-ct="pec" class="'+(CAT.tab==='pec'?'on':'')+'">Catálogo de peças <span>'+B.p.length+'</span></button><button data-ct="rct" class="'+(CAT.tab==='rct'?'on':'')+'">Montagens RCT'+(CAT.rct&&CAT.rct.m?' <span>'+CAT.rct.m.length+'</span>':'')+'</button><button data-ct="som" class="'+(CAT.tab==='som'?'on':'')+'">Desenhos Somafel'+(SOM.d?' <span>'+SOM.d.length+'</span>':'')+'</button></div>'
    +'<button id="cCsv" class="sm">'+(CAT.tab==='des'?'Exportar o índice':CAT.tab==='rct'?'Exportar montagens RCT':'Exportar o catálogo')+'</button><div class="cpasta"><span class="cdot ok"></span>'+CAT.n+' ficheiros no servidor '+adm+'</div></div>';
+  if(CAT.tab==='som'){h=h.replace(/<button id="cCsv"[^>]*>[^<]*<\/button>/,'').replace(/<div class="cpasta">[\s\S]*?<\/div>/,'');h+=SOM.d?somGrid():'<div class="ccount">A abrir os desenhos Somafel…</div>';const sc0=$('#cDet')?$('#cDet').scrollTop:0;pg.innerHTML=h;ligaCat();somLiga();if($('#cDet'))$('#cDet').scrollTop=sc0;if(!SOM.d)somAbre();return}
   h+='<div class="cgrid"><section class="clist"><div class="cfilt"><input id="cQ" type="search" placeholder="'+(CAT.tab==='des'?'Procurar código, designação ou nº de documento…':CAT.tab==='rct'?'Procurar montagem, material ou desenho…':'Procurar código, SAP, designação ou desenho…')+'" value="'+esc(CAT.q)+'" autocomplete="off">';
   if(CAT.tab==='des')h+='<label class="chk"><input type="checkbox" id="cSoVer"'+(CAT.soVer?' checked':'')+'> só os que têm ficheiro</label>';
   else if(CAT.tab==='pec')h+='<select id="cFam"><option value="">Todas as famílias</option>'+Object.keys(CAT_FAM).map(k=>'<option value="'+k+'"'+(CAT.fam===k?' selected':'')+'>'+k+' · '+CAT_FAM[k]+'</option>').join('')+'</select>';
@@ -775,6 +844,7 @@ function catSel(x){const rows=$('#cRows');if(rows)rows.querySelectorAll('.crow.o
 function ligaCat(){
   const pg=$('#pg');
   pg.onclick=e=>{if(S.vista!=='desenhos')return;const t=e.target;let x;
+    if(CAT.tab==='som'&&!t.closest('[data-ct]')&&somClick(t))return;
     if((x=t.closest('[data-ct]'))){CAT.tab=x.getAttribute('data-ct');CAT.q='';catRender();if(CAT.tab==='rct'&&!CAT.rct)catRctCarrega();return}
     if((x=t.closest('[data-cr]'))){CAT.selR=x.getAttribute('data-cr');catSel(x);return}
     if((x=t.closest('[data-cd]'))){CAT.sel=+x.getAttribute('data-cd');CAT.vMont=null;catSel(x);return}
