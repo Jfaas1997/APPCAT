@@ -4745,37 +4745,56 @@ function rExRes(){
   const R=$('#exRes'); if(!R)return;
   R.innerHTML=exTab==='listas'?resListas():exTab==='massa'?resMassa():exTab==='registos'?resRegistos():'';
 }
-/* ---------- Resumo da obra (como o Resumo da Medição RCT) ---------- */
+/* ---------- Resumo da obra (como o Resumo da Medição RCT, com gráficos) ---------- */
 function resCalc(){
-  const L=porLote(()=>{const ps=o=>[...o.ps.values()].reduce((s,x)=>s+x,0);const P=matDe(linhasProj()),E=matDe(linhasExec('','')),F=matDe(linhasFalta(''));
+  return porLote(()=>{
+    const ps=o=>[...o.ps.values()].reduce((s,x)=>s+x,0),P=matDe(linhasProj()),E=matDe(linhasExec('','')),F=matDe(linhasFalta('')),Em=execMap('');
     let ex=0;for(const [k,q] of P.ps)ex+=Math.min(q,E.ps.get(k)||0);
-    return {nome:loteAtivo().nome,p:P,e:E,f:F,n:st.postes.length,vaz:st.postes.filter(p=>!elsPoste(p).size).length,
-      pp:ps(P),pe:ex,nl:(st.lancos||[]).length,mL:(st.lancos||[]).reduce((s,l)=>s+(+l.L||0),0),cs:(st.lancos||[]).reduce((s,l)=>s+(+l.csM||0),0),fc:(st.lancos||[]).reduce((s,l)=>s+(+l.fcM||0),0),
-      nc:(st.cabosL||[]).length,mc:(st.cabosL||[]).reduce((s,c)=>s+(+c.m||0),0)}});
-  return L}
+    const gr=new Map();let eT=0,eA=0;
+    for(const p of st.postes){const els=elsPoste(p),e=Em.get(p.nome)||new Map();let t=0,a=0;
+      for(const [k,q] of els){if(partes(k)[0]==='A')continue;t+=q;a+=Math.min(q,e.get(k)||0)}
+      const g=troco(p.nome),o=gr.get(g)||{a:0,t:0,n:0};o.a+=a;o.t+=t;o.n++;gr.set(g,o);eT+=t;eA+=a}
+    const mes=new Map(),dias=new Map();
+    for(const r of (st.exec||[])){if(partes(r.k)[0]==='A'||!r.d)continue;mes.set(r.d.slice(0,7),(mes.get(r.d.slice(0,7))||0)+(+r.q||0));dias.set(r.d,(dias.get(r.d)||0)+(+r.q||0))}
+    const lan=st.lancos||[],cab=st.cabosL||[],cs=new Map(),fc=new Map();
+    for(const l of lan){if(+l.csM>0&&l.csCod)cs.set(l.csCod,(cs.get(l.csCod)||0)+ +l.csM);if(+l.fcM>0&&l.fcCod)fc.set(l.fcCod,(fc.get(l.fcCod)||0)+ +l.fcM)}
+    return {nome:loteAtivo().nome,p:P,e:E,f:F,n:st.postes.length,vaz:st.postes.filter(p=>!elsPoste(p).size).length,pp:ps(P),pe:ex,gr,eT,eA,mes,dias,cs,fc,
+      nl:lan.length,mL:lan.reduce((s,l)=>s+(+l.L||0),0),csm:lan.reduce((s,l)=>s+(+l.csM||0),0),fcm:lan.reduce((s,l)=>s+(+l.fcM||0),0),nc:cab.length,mc:cab.reduce((s,c)=>s+(+c.m||0),0)}})}
+const MESCURTO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 function rResumo(){
   const b=$('#resBox');if(!b)return;
   let L;try{L=resCalc()}catch(e){b.innerHTML='<div class="empty">Não foi possível calcular o resumo.</div>';return}
-  const P=somaMat(L.map(x=>x.p)),E=somaMat(L.map(x=>x.e)),F=somaMat(L.map(x=>x.f));
-  const S=f=>L.reduce((s,x)=>s+f(x),0),nE=S(x=>x.n);
+  const P=somaMat(L.map(x=>x.p)),E=somaMat(L.map(x=>x.e)),F=somaMat(L.map(x=>x.f)),S=f=>L.reduce((s,x)=>s+f(x),0),nE=S(x=>x.n),G=MVG,f=G.f;
   if(!nE){b.innerHTML='<div class="empty"><b>Ainda não há estruturas nesta obra</b>Junta estruturas no separador «Estrutura» (por exemplo 296-38 a 296-45) e depois as montagens de cada uma. O resumo aparece aqui.</div>';return}
-  const pp=S(x=>x.pp),pe=S(x=>x.pe),pc=pp?pe/pp:0;
-  const card=(v,l,s)=>`<div class="rsT"><div class="v">${v}</div><div class="l">${l}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
-  let h='<div class="rsH">'
-    +`<div class="rsT hero"><div class="l">Executado (postes e vigas)</div><div class="v">${Math.round(pc*100)}%</div><div class="s">${fmt(pe)} de ${fmt(pp)} unidades</div><div class="rsB"><i style="width:${Math.min(100,pc*100)}%"></i></div></div>`
-    +card(nE,'estruturas',S(x=>x.vaz)?S(x=>x.vaz)+' ainda sem postes nem montagens':'')
-    +card(S(x=>x.nl),'lanços',fmt(Math.round(S(x=>x.mL)))+' m de lanço')
-    +card(fmt(Math.round(S(x=>x.fc)))+' m','fio de contacto',fmt(Math.round(S(x=>x.cs)))+' m de cabo de suporte')
-    +card(S(x=>x.nc),'cabos longitudinais',fmt(Math.round(S(x=>x.mc)))+' m')+'</div>';
-  if(L.length>1){
-    h+='<h4 class="xh">Por lote</h4>'+tabX([['Lote'],['Estruturas',1],['Previsto',1],['Executado',1],['']],L.map(x=>{const p=x.pp?x.pe/x.pp:0;return [esc(x.nome),x.n,fmt(x.pp),fmt(x.pe),`<span class="rsB s"><i style="width:${Math.min(100,p*100)}%"></i></span> ${Math.round(p*100)}%`]}))}
+  const eT=S(x=>x.eT),eA=S(x=>x.eA),pc=eT?eA/eT:0;
+  /* ritmo: elementos executados por dia de trabalho nos últimos 30 dias */
+  const dias=new Map();L.forEach(x=>x.dias.forEach((v,d)=>dias.set(d,(dias.get(d)||0)+v)));
+  const lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10),rec=[...dias].filter(([d])=>d>=lim),un=rec.reduce((s,[,v])=>s+v,0),nd=rec.length,rit=nd?un/nd:0,falta=eT-eA;
+  const prev=rit>0&&falta>0?Math.ceil(falta/rit):0;
+  const gn=(v,l)=>`<div class="mgn"><b>${v}</b><span>${l}</span></div>`;
+  let h='<div class="mvg"><div class="mgc mgw2"><h4>Progresso da obra</h4><div class="mgs">Elementos de projeto (postes, vigas e montagens) já executados</div><div class="mgh">'+G.donut(pc,'executado')
+    +gn(f(eA)+' / '+f(eT),'elementos executados')+gn(nE,'estruturas'+(S(x=>x.vaz)?' ('+S(x=>x.vaz)+' ainda sem elementos)':''))
+    +(nd?gn(f(rit,1)+' por dia','ritmo médio nos últimos 30 dias ('+nd+(nd===1?' dia':' dias')+' com trabalho)')+(falta<=0?gn('Concluído','tudo o que está no projeto foi executado'):gn('≈ '+prev+' dias de trabalho','para o que falta, a este ritmo')):gn('—','ainda sem execução registada nos últimos 30 dias'))
+    +'</div></div>';
+  const meses=[...new Set(L.flatMap(x=>[...x.mes.keys()]))].sort();let cum=0;
+  if(meses.length)h+='<div class="mgc"><h4>Executado por mês</h4><div class="mgs">Elementos executados em cada mês (acumulado ao passar o rato)</div>'+G.cols(meses.map(m=>{const v=L.reduce((s,x)=>s+(x.mes.get(m)||0),0);cum+=v;return {l:MESCURTO[+m.slice(5,7)-1]+' '+m.slice(2,4),v,cum}}),' un.')+'</div>';
+  const gm=new Map();L.forEach(x=>x.gr.forEach((o,g)=>{const q=gm.get(g)||{a:0,t:0,n:0};q.a+=o.a;q.t+=o.t;q.n+=o.n;gm.set(g,q)}));
+  const gl=[...gm].filter(([,o])=>o.t>0).sort((a,b)=>a[0].localeCompare(b[0],'pt',{numeric:true}));
+  if(gl.length)h+='<div class="mgc"><h4>Progresso por troço</h4><div class="mgs">Comprimento da barra = quantidade de elementos do troço; a parte azul está executada</div>'+G.stack(gl.slice(0,14).map(([g,o])=>({l:g,a:o.a,t:o.t,tip:g+': '+o.n+' estruturas, '+f(o.a)+' de '+f(o.t)+' elementos executados'})))+(gl.length>14?'<div class="mgs" style="margin:6px 0 0">e mais '+(gl.length-14)+' troços — ver a tabela em «Execução»</div>':'')+G.leg([['g1','executado'],['g3','por executar']])+'</div>';
+  if(L.length>1)h+='<div class="mgc"><h4>Por lote</h4><div class="mgs">Executado de cada lote</div>'+G.stack(L.map(x=>({l:x.nome,a:x.eA,t:x.eT})))+'</div>';
   const rows=tabelaPostes([P.ps,E.ps,F.ps]);
-  h+=`<h4 class="xh">Postes e vigas <span>${rows.length}</span></h4>`+(rows.length?tabX([['Elemento'],['Designação'],['Obra',1],['Executado',1],['Por executar',1],['']],rows.map(r=>{const p=r.v[0]?Math.min(1,r.v[1]/r.v[0]):0;return [`<span class="mono">${esc(r.cod)}</span>`,esc(r.dg),fmt(r.v[0]),nz(r.v[1]),nz(r.v[2]),`<span class="rsB s"><i style="width:${p*100}%"></i></span> ${Math.round(p*100)}%`]})):'<div class="empty" style="padding:8px 2px">Sem postes nem vigas nas estruturas.</div>');
+  if(rows.length)h+='<div class="mgc"><h4>Postes e vigas por tipo</h4><div class="mgs">Executados e por executar</div>'+G.stack(rows.map(r=>({l:r.cod+(r.dg?' · '+r.dg:''),a:Math.min(r.v[0],r.v[1]),t:r.v[0]})))+G.leg([['g1','executado'],['g3','por executar']])
+    +'<details><summary>Ver tabela</summary>'+tabX([['Elemento'],['Designação'],['Obra',1],['Executado',1],['Por executar',1]],rows.map(r=>[`<span class="mono">${esc(r.cod)}</span>`,esc(r.dg),fmt(r.v[0]),nz(r.v[1]),nz(r.v[2])]))+'</details></div>';
+  const cabos=new Map(),add=(m,k)=>L.forEach(x=>x[k].forEach((v,c)=>m.set(c,(m.get(c)||0)+v)));add(cabos,'cs');add(cabos,'fc');
+  if(cabos.size){const cl=[...cabos].sort((a,b)=>b[1]-a[1]).slice(0,10),mx=cl[0][1];
+    h+='<div class="mgc"><h4>Cabos dos lanços</h4><div class="mgs">Metros por tipo de cabo: fio de contacto '+f(Math.round(S(x=>x.fcm)))+' m · cabo de suporte '+f(Math.round(S(x=>x.csm)))+' m</div>'
+      +G.stack(cl.map(([c,m])=>{const pi=typeof pecaPorCod!=='undefined'?pecaPorCod.get(c):null,nm=pi!=null&&PEC[pi]?PEC[pi][3]:'';return {l:c+(nm?' · '+nm:''),a:m,t:m,tip:c+(nm?' ('+nm+')':'')+': '+f(m)+' m'}}),' m').replace(/ · 100%/g,'').replace(/(\d[\d.,]*) \/ \1/g,'$1')+'</div>'}
+  h+='</div>';
   const mat=tabelaMat([P.m,E.m,F.m]).sort((a,b)=>b.v[2]-a.v[2]).slice(0,15);
   if(mat.length)h+=`<h4 class="xh">Material por executar (as 15 maiores quantidades)</h4>`+tabX([['Código'],['Designação'],['Un.'],['Obra',1],['Executado',1],['Por executar',1]],mat.map(r=>[`<span class="mono">${esc(r.cod)}</span>`,esc(r.dg),esc(r.u),fmt(r.v[0]),nz(r.v[1]),nz(r.v[2])]))
     +'<p class="xnota">A lista completa de material, por lote, auto e estrutura, está em «Execução».</p>';
   const C=(()=>{try{return conflitos().length}catch(e){return 0}})();
-  if(C)h+=`<div class="rsAv"><b>${C}</b> elemento${C>1?'s':''} com mais executado do que o projeto. Vê em Execução › Conflitos.</div>`;
+  if(C)h+=`<div class="rsAv">▲ <b>${C}</b> elemento${C>1?'s':''} com mais executado do que o projeto. Vê em Execução › Conflitos.</div>`;
   b.innerHTML=h}
 function tabX(cab,linhas){
   return `<div class="xtw"><table class="xt"><thead><tr>${cab.map(([h,n])=>`<th class="${n?'num':''}">${h}</th>`).join('')}</tr></thead><tbody>`

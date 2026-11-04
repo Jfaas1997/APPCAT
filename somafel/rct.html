@@ -1402,11 +1402,25 @@ function rRes(c){
   if(vazio()){ b.innerHTML='<div class="vazio"><b>Ainda não há caixas nesta obra</b>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois adicione-lhe as montagens.<br><br><button class="pri" id="r1">Criar a primeira caixa</button>'+
       '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Central.')+'</p></div>';
     $('#r1').onclick=function(){ vai('cx'); setTimeout(function(){ $('#cAdd').focus() },50) }; return }
-  var pe=c.nPrev?c.nExec/c.nPrev:0, h='<div class="cards">'+
-    '<div class="card"><b>'+c.nCx+'</b><span>caixas</span></div>'+
-    '<div class="card"><b>'+c.nExec+' / '+c.nPrev+'</b><span>montagens executadas</span><small>'+pct(pe)+'</small></div>'+
-    '<div class="card"><b>'+c.nTrocEx+' / '+c.nTroc+'</b><span>troços de cabo executados</span></div>'+
-    '<div class="card"><b>'+fmt(c.totExc,1)+' m</b><span>cabo a mais a reclamar</span><small>'+(Object.keys(c.porTipo).filter(function(t){ return c.porTipo[t].exc>0 }).length)+' tipos de cabo</small></div></div>';
+  var pe=c.nPrev?c.nExec/c.nPrev:0, G=MVG, f1=G.f, MC=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var mes={}, dias={}, gr={}, gordem=[], lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  ST.caixas.forEach(function(cx){ var g=cx.grupo||'(sem grupo)'; if(!gr[g]){ gr[g]={a:0,t:0,n:0}; gordem.push(g) } gr[g].n++;
+    (cx.ms||[]).forEach(function(m){ var q=qm(m), qc=uniMont(codM(m.code))==='m'?1:q; gr[g].t+=qc;
+      if(m.ex){ gr[g].a+=qc; var d=(m.ex.data||'').slice(0,10); if(d){ var k=d.slice(0,7); mes[k]=(mes[k]||0)+qc; dias[d]=(dias[d]||0)+qc } } }) });
+  var rec=Object.keys(dias).filter(function(d){ return d>=lim }), un=rec.reduce(function(s,d){ return s+dias[d] },0), nd=rec.length, rit=nd?un/nd:0, falta=c.nPrev-c.nExec, prev=rit>0&&falta>0?Math.ceil(falta/rit):0;
+  var gn=function(v,l){ return '<div class="mgn"><b>'+v+'</b><span>'+l+'</span></div>' };
+  var h='<div class="mvg"><div class="mgc mgw2"><h4>Progresso da obra</h4><div class="mgs">Montagens já executadas, em todas as caixas</div><div class="mgh">'+G.donut(pe,'executado')
+    +gn(c.nExec+' / '+c.nPrev,'montagens executadas')+gn(c.nCx,'caixas')+gn(c.nTrocEx+' / '+c.nTroc,'troços de cabo executados')
+    +(nd?gn(f1(rit,1)+' por dia','ritmo médio nos últimos 30 dias ('+nd+(nd===1?' dia':' dias')+' com trabalho)')+(falta<=0?gn('Concluído','todas as montagens estão executadas'):gn('≈ '+prev+' dias de trabalho','para o que falta, a este ritmo')):gn('—','ainda sem execução registada nos últimos 30 dias'))
+    +'</div></div>';
+  var ms=Object.keys(mes).sort(), cum=0;
+  if(ms.length)h+='<div class="mgc"><h4>Executado por mês</h4><div class="mgs">Montagens executadas em cada mês (acumulado ao passar o rato)</div>'+G.cols(ms.map(function(m){ cum+=mes[m]; return {l:MC[+m.slice(5,7)-1]+' '+m.slice(2,4),v:mes[m],cum:cum} }),' montagens')+'</div>';
+  var gl=gordem.filter(function(g){ return gr[g].t>0 }).sort(function(a,b){ return a.localeCompare(b,'pt',{numeric:true}) });
+  if(gl.length>1||(gl.length===1&&gl[0]!=='(sem grupo)'))h+='<div class="mgc"><h4>Progresso por grupo</h4><div class="mgs">Comprimento da barra = montagens do grupo; a parte azul está executada</div>'+G.stack(gl.slice(0,14).map(function(g){ return {l:g,a:gr[g].a,t:gr[g].t,tip:g+': '+gr[g].n+' caixas, '+f1(gr[g].a)+' de '+f1(gr[g].t)+' montagens executadas'} }))+G.leg([['g1','executadas'],['g3','por executar']])+'</div>';
+  var tipos=Object.keys(c.porTipo).filter(function(t){ var x=c.porTipo[t]; return x.prev+x.prevT>0||x.gasto+x.exT>0 }).sort();
+  if(tipos.length)h+='<div class="mgc"><h4>Cabo por tipo</h4><div class="mgs">Previsto (cinzento) e já gasto (azul). A laranja, com ▲, o cabo a mais a reclamar ('+f1(c.totExc,1)+' m no total)</div>'+G.cmp(tipos.map(function(t){ var x=c.porTipo[t]; return {l:t,prev:x.prev+x.prevT,real:x.gasto+x.exT,exc:x.exc} }),' m')
+    +G.leg([['g2','previsto'],['g1','gasto'],['gw','a mais']])+'</div>';
+  h+='</div>';
   var tp=Object.keys(c.porTipo).filter(function(t){ return c.porTipo[t].exc>0 });
   if(tp.length){ h+='<h3 class="sec">Cabo a mais por tipo</h3><div class="tablewrap"><table><thead><tr><th>Tipo de cabo</th><th class="num">A reclamar (m)</th></tr></thead><tbody>'+tp.map(function(t){ return '<tr><td>'+esc(t)+'</td><td class="num"><b>'+fmt(c.porTipo[t].exc,1)+'</b></td></tr>' }).join('')+'</tbody></table></div>' }
   var ks=Object.keys(c.porMont).filter(function(k){ return k }).sort(function(a,b){ return a.localeCompare(b,'pt',{numeric:true}) });
