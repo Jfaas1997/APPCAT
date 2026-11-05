@@ -768,7 +768,7 @@ body.obraAtiva .tab[data-n="g"],body.obraAtiva .sgrp[data-n="g"]{display:none!im
 .nmLogin[hidden]{display:none}
 .nmLogin form,.nmLogin .box{width:min(380px,100%);display:flex;flex-direction:column;gap:8px}
 .nmLogin .ob{text-align:left;padding:10px 12px}.nmLogin .er{color:#C62828;min-height:1em}
-/* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
+/* Camada de movimento · norma comum v1 · partilhada pela Somafel Catenária online, App de Obra e Produção.
    Só transições curtas (≤ 250 ms) e nada que bloqueie. Respeita «reduzir movimento». */
 :root{--mv-ease:cubic-bezier(.2,.7,.2,1);--mv-t:.22s}
 /* entrada de ecrã: os blocos aparecem em cascata */
@@ -892,7 +892,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
       <button data-n="copias">Restaurar uma cópia…</button>
       <button data-n="excel">Descarregar Excel</button>
       <button data-n="trocar">Trocar de obra</button>
-      <button data-n="central">Central de Obras</button>
+      <button data-n="central">Somafel Catenária</button>
     </div></span><button id="bAjuda" aria-label="Ajuda">?</button>
     <button id="bSave" title="Guardar o projeto (Ctrl+S)">Guardar projeto</button>
     <input type="file" id="fOpen" accept=".xlsx,.xlsm,.xls" style="display:none">
@@ -943,7 +943,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
       <span class="seg" id="intVis"><button data-iv="t" class="on">Tabela</button><button data-iv="l">Linha do tempo</button></span>
       <button id="bIntNova" class="sp">+ Interdição</button>
       <button id="bIntSem">+ Semana</button>
-      <button id="bIntOS" class="pri" hidden title="Cria as interdições a partir das OS lidas na Central">Importar das OS</button>
+      <button id="bIntOS" class="pri" hidden title="Cria as interdições a partir das OS lidas na Somafel Catenária">Importar das OS</button>
     </div>
     <div class="scroll"><div id="intBox"></div></div>
     <div class="foot" id="ftInt"></div>
@@ -5557,7 +5557,7 @@ $('#bIntSem').addEventListener('click',function(){
   render(); toast('Criada a semana de '+ptbr(d)+'.');
 });
 
-/* ---------- importar interdições das OS (lidas na Central) ---------- */
+/* ---------- importar interdições das OS (lidas na Somafel Catenária) ---------- */
 function lxHora(d){ var p=new Intl.DateTimeFormat('pt-PT',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d), o={};
   p.forEach(function(x){ o[x.type]=x.value }); return {data:o.year+'-'+o.month+'-'+o.day, hm:o.hour+':'+o.minute} }
 $('#bIntOS').addEventListener('click',async function(){
@@ -5576,7 +5576,7 @@ $('#bIntOS').addEventListener('click',async function(){
         var lim=((pd[String(o.numero)+'|'+a.data]||{}).lim||[]).filter(function(r){ return r&&(r[0]||r[2]) });
         novas.push({os:String(o.numero),data:a.data,ptI:a.hm,ptF:b.hm,de:lim[0]?lim[0][0]||'':'',ate:lim[1]?lim[1][0]||'':'',via:lim[0]?lim[0][2]||'':''}) }) });
     novas.sort(function(x,y){ return x.data.localeCompare(y.data) });
-    if(!novas.length){ toast(ja?'As interdições das OS já estão todas na lista ('+ja+').':(semP?'As OS ainda não têm períodos lidos.':'Ainda não há OS nesta obra (Central › OS e PDT).')); return }
+    if(!novas.length){ toast(ja?'As interdições das OS já estão todas na lista ('+ja+').':(semP?'As OS ainda não têm períodos lidos.':'Ainda não há OS nesta obra (Somafel Catenária › OS e PDT).')); return }
     var txt='Criar <b>'+novas.length+'</b> '+(novas.length===1?'interdição':'interdições')+' a partir das OS?<br><br>'+novas.slice(0,12).map(function(n){ return esc(ptbr(n.data))+' · OS '+esc(n.os)+' · '+esc(n.ptI)+' às '+esc(n.ptF)+(n.de||n.ate?' · '+esc(n.de)+(n.ate?' – '+esc(n.ate):''):'') }).join('<br>')+(novas.length>12?'<br>… e mais '+(novas.length-12):'')+(ja?'<br><br>('+ja+' já existiam e não mudam.)':'')+'<br><br>O concedido começa igual ao previsto. As horas trabalhadas preenchem-se na parte diária.';
     if(!(await nmSim(txt,'Criar')))return;
     novas.forEach(function(n){ ST.int.unshift(mvNovo({id:uid(),tipo:flt.tipo,data:n.data,de:n.de,ate:n.ate,via:n.via,os:n.os,ptI:n.ptI,ptF:n.ptF,cI:n.ptI,cF:n.ptF,tI:'',tF:'',motivo:''})) });
@@ -6720,7 +6720,7 @@ function nmInd(){ var g=$('#gst'); if(!g)return; var t='',c='';
   g.textContent=t; g.className=c; g.title=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):'Sem obra' }
 function nmUi(){ var ob=NM.ob; document.body.classList.toggle('obraAtiva',!!ob);
   var c=$('#ccChip'); c.hidden=!ob; if(ob){ c.textContent=ob.cc; c.title='Centro de custo' }
-  var n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Central':'';
+  var n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Somafel Catenária':'';
   var b=$('#bSave'); if(b)b.disabled=!!NM.soLeitura; nmInd() }
 
 /* ---- rascunho local (IndexedDB) e gravação automática ---- */
@@ -6841,7 +6841,7 @@ guarda=function(){ NM.gravaXls=true; try{ return _guarda.apply(this,arguments) }
 function nmEcra(html){ var w=document.getElementById('nmLogin'); if(!w){ w=document.createElement('div'); w.id='nmLogin'; w.className='nmLogin'; document.body.appendChild(w) } w.innerHTML=html; w.hidden=false; return w }
 function nmEcraFim(){ var w=document.getElementById('nmLogin'); if(w)w.hidden=true }
 function nmLogin(msg){ return new Promise(function(ok){
-  var w=nmEcra('<form><h2>Entrar</h2><p class="n">Use a mesma conta da Central de Obras.</p><label>Email</label><input type="email" id="lgE" autocomplete="username"><label>Palavra-passe</label><input type="password" id="lgP" autocomplete="current-password"><p id="lgM" class="er">'+(msg||'')+'</p><button class="p">Entrar</button></form>');
+  var w=nmEcra('<form><h2>Entrar</h2><p class="n">Use a mesma conta da Somafel Catenária.</p><label>Email</label><input type="email" id="lgE" autocomplete="username"><label>Palavra-passe</label><input type="password" id="lgP" autocomplete="current-password"><p id="lgM" class="er">'+(msg||'')+'</p><button class="p">Entrar</button></form>');
   w.querySelector('form').onsubmit=async function(e){ e.preventDefault(); var r=await sb.auth.signInWithPassword({email:w.querySelector('#lgE').value.trim(),password:w.querySelector('#lgP').value}); if(r.error){ w.querySelector('#lgM').textContent='Email ou palavra-passe errados.'; return } nmEcraFim(); ok() } }) }
 async function nmListaObras(){
   var q=await sb.from('obras').select('id,centro_custo,nome,estado').order('centro_custo');
@@ -6878,7 +6878,7 @@ document.addEventListener('click',function(e){ var m=$('#nmenu'); if(!m.hidden&&
 $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b)return; nmMenu(false); var a=b.getAttribute('data-n');
   if(a==='trocar')location.href=location.pathname; else if(a==='copias')nmRestauraCopia(); else if(a==='contratos')nmVerContratos(); else if(a==='excel')nmDescarrega(); else if(a==='central')location.href='index.html' };
 async function nmDescarrega(){ try{ var r=await nmWb(); XLSX.writeFile(r.wb,'producao_'+(NM.ob?NM.ob.cc:'obra')+'_'+nmCarimbo()+'.xlsx') }catch(e){ nmDiz('Não consegui gerar o Excel: '+esc(e.message)) } }
-function nmVerContratos(){ var cs=nmContratos(); nmModal({titulo:'Contratos da obra',corpo:cs.length?'<table><tbody>'+cs.map(function(c,i){ return '<tr><td><b>'+esc(c.nome)+'</b>'+(i===0?' <span class="n">(origem «Contrato»)</span>':' <span class="n">(origem própria)</span>')+'</td><td>'+esc(c.cliente||'')+'</td><td class="n">'+(c.valor!=null?eur(c.valor)+' €':'')+'</td></tr>' }).join('')+'</tbody></table><p style="color:var(--muted);font-size:12px">Os contratos vêm da Central de Obras.</p>':'<p>Sem contratos.</p>',botoes:[{t:'Fechar',v:true,p:true}]}) }
+function nmVerContratos(){ var cs=nmContratos(); nmModal({titulo:'Contratos da obra',corpo:cs.length?'<table><tbody>'+cs.map(function(c,i){ return '<tr><td><b>'+esc(c.nome)+'</b>'+(i===0?' <span class="n">(origem «Contrato»)</span>':' <span class="n">(origem própria)</span>')+'</td><td>'+esc(c.cliente||'')+'</td><td class="n">'+(c.valor!=null?eur(c.valor)+' €':'')+'</td></tr>' }).join('')+'</tbody></table><p style="color:var(--muted);font-size:12px">Os contratos vêm da Somafel Catenária.</p>':'<p>Sem contratos.</p>',botoes:[{t:'Fechar',v:true,p:true}]}) }
 function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de produção',corpo:
   '<p><b>Dados online.</b> Cada obra guarda a produção no servidor. Grava sozinha 5 segundos depois da última alteração. Sem rede, as alterações ficam neste aparelho e seguem quando a rede voltar.</p>'
   +'<p><b>Cópias.</b> O servidor guarda uma cópia de 2 em 2 horas (quando há alterações). «Obra ▾ › Restaurar uma cópia». Pode também descarregar o Excel a qualquer momento.</p>'

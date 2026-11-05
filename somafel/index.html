@@ -4,7 +4,7 @@
 <link rel="prefetch" href="xlsx.full.min.js" as="script">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SOMAFEL · Central de Obras</title>
+<title>Somafel Catenária</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>try{var __t=localStorage.getItem('tema');if(__t==='claro'||__t==='escuro')document.documentElement.setAttribute('data-tema',__t)}catch(e){}</script>
@@ -112,7 +112,7 @@ body.mvAbre #side{animation:mvEsq .55s cubic-bezier(.2,.8,.2,1) both}body.mvAbre
 @media (max-width:820px){header .quem,#hSub{display:none!important}#hT{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-/* ---- visual da Central antiga ---- */
+/* ---- visual da Somafel Catenária antiga ---- */
 :root[data-side="c"]{--sw:64px}
 .sbrand img{height:34px;width:auto;border-radius:3px}
 #bSide{margin-left:auto;background:transparent;border:0;color:var(--sink);padding:4px}
@@ -350,7 +350,7 @@ function fotosFundo(el,ms){/* desliza entre as fotos com esbatimento; devolve fu
 function ecraEntrada(modo){
   modo=modo||'entrar';
   const titulos={entrar:'Entrar',criar:'Primeiro acesso',recuperar:'Recuperar palavra-passe'};
-  $('#raiz').innerHTML='<div id="entrada"><div class="enLema">'+LEMA+'</div><form class="cx" id="fl"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Central de obras</h1><p class="sub">Somafel</p></div></div>'
+  $('#raiz').innerHTML='<div id="entrada"><div class="enLema">'+LEMA+'</div><form class="cx" id="fl"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Somafel Catenária</h1><p class="sub">Engenharia e obras ferroviárias</p></div></div>'
    +'<p class="sub" style="margin-bottom:6px"><b>'+titulos[modo]+'</b></p>'
    +(modo==='criar'?'<label>Nome</label><input name="nome" required autocomplete="name">':'')
    +'<label>Email</label><input name="email" type="email" required autocomplete="username">'
@@ -389,7 +389,7 @@ async function arranca(){
   let rv=null;try{rv=JSON.parse(sessionStorage.getItem('mvVolta')||'null');sessionStorage.removeItem('mvVolta')}catch(e){}
   if(rv&&rv.v&&rv.v!=='obras'&&Date.now()-(rv.t||0)<60000){try{vai(rv.v,rv.o||undefined)}catch(e){vai('obras')}}else vai('obras');
 }
-/* botão Atualizar (design.js): grava as apps abertas e volta a carregar a Central no mesmo sítio */
+/* botão Atualizar (design.js): grava as apps abertas e volta a carregar a Somafel Catenária no mesmo sítio */
 window.mvAtualiza=async function(){
   const ps=[];Object.keys(FR).forEach(k=>{try{if(window.mvGravaJanela)ps.push(...window.mvGravaJanela(FR[k].contentWindow))}catch(e){}});
   await Promise.race([Promise.all(ps),new Promise(r=>setTimeout(r,2500))]);
@@ -397,12 +397,12 @@ window.mvAtualiza=async function(){
   location.replace(location.pathname+'?r='+Date.now());
 };
 /* aquece a cache: descarrega em segundo plano o HTML e os scripts das apps, para abrirem mais depressa */
-/* ===== ecrã de arranque: prepara tudo (apps, base do catálogo, apps «sem obra») e só depois mostra a Central ===== */
+/* ===== ecrã de arranque: prepara tudo (apps, base do catálogo, apps «sem obra») e só depois mostra a Somafel Catenária ===== */
 let ULT=0;
 function preparar(){
   if(window.__prep||!gestor())return;window.__prep=1;
   const el=document.createElement('div');el.id='splash';
-  el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="spLema">'+LEMA+'</div><div class="sb"><i></i></div><p id="spT">A preparar a Central…</p><button type="button" id="spX">Entrar já</button>';
+  el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="spLema">'+LEMA+'</div><div class="sb"><i></i></div><p id="spT">A preparar…</p><button type="button" id="spX">Entrar já</button>';
   const paraFotos=fotosFundo(el,2600);const T0SP=Date.now();
   document.body.appendChild(el);
   let pct=0,fechado=false,fim;
@@ -464,18 +464,18 @@ function ajuda(){vai('livro')}
 /* ===== Livro de instruções interativo (versão online) ===== */
 const LV={sec:'inicio',q:'',aberta:null};
 const LV_APPS=[
-  {k:'central',t:'Central de Obras',s:'Obras, contratos, pessoas, OS e PDT, projeto, linha, painel económico',v:'obras',txt:'É o ponto de entrada. Escolhes a obra, vês a Visão geral (contratos, pessoas, painel económico, partes diárias), carregas OS e fazes os PDT, guardas o projeto e vês a Linha. Também tem o que é de toda a empresa: Pessoal, Equipamentos, Fornecedores, Normas, Catálogo e desenhos, Esquemas e Utilizadores.'},
+  {k:'central',t:'Somafel Catenária',s:'Obras, contratos, pessoas, OS e PDT, projeto, linha, painel económico',v:'obras',txt:'É o ponto de entrada. Escolhes a obra, vês a Visão geral (contratos, pessoas, painel económico, partes diárias), carregas OS e fazes os PDT, guardas o projeto e vês a Linha. Também tem o que é de toda a empresa: Pessoal, Equipamentos, Fornecedores, Normas, Catálogo e desenhos, Esquemas e Utilizadores.'},
   {k:'med',t:'Medições CAT',s:'estruturas, montagens, lanços, pendulagem, execução',v:'med',app:1,txt:'Mede a obra estrutura a estrutura (postes, pórticos) com as montagens e peças da base IP. Lanços de catenária e pendulagem calculam o cabo e os pendurais. Na Execução marcas o que já foi montado. Alimenta os Materiais e o painel.'},
   {k:'cons',t:'Dimensionamento CAT',s:'consolas, postes, pórticos, caderno de montagem',v:'cons',app:1,txt:'Calcula consolas, postes e pórticos (incluindo pórticos rígidos) e verifica-os. Cada apoio enviado passa a ser uma folha do caderno de montagem, com desenho cotado, peças e verificações.'},
   {k:'mat',t:'Materiais',s:'medição, compras, notas de encomenda, guias, stock',v:'mat',app:1,txt:'Controla o material da obra: o que a medição pede, os comparativos de fornecedores, as notas de encomenda (NE), as guias de remessa, o stock e o consumo por auto. O Cruzamento mostra o que falta encomendar ou receber.'},
   {k:'prod',t:'Produção',s:'partes diárias, interdições, mapa de produção, autos',v:'prod',app:1,txt:'Regista as partes diárias (trabalhos por rubrica do contrato, pessoal, equipamento, materiais), as interdições (previsto, concedido, trabalhado) e faz os autos de medição para faturar.'},
   {k:'rct',t:'Medição RCT',s:'caixas, montagens, cabos longitudinais',v:'rct',app:1,txt:'Medição da rede de cabos de terra (RCT): caixas, montagens por caixa, cabos longitudinais, cabo a reclamar e materiais.'},
   {k:'tel',t:'App de Obra (telemóvel)',s:'partes diárias, interdições, OS, plano, esquemas',txt:'Para a equipa no terreno: fazer a parte diária do dia (com fotos), ver as interdições, as OS, o plano diário, os esquemas e o projeto. Funciona sem rede: guarda no telemóvel e envia quando houver rede.'},
-  {k:'srv',t:'Servidor (dados)',s:'tudo fica guardado online',txt:'Todos os dados ficam no servidor, guardados por obra e por organização. Nada fica só no computador: abres a Central noutro PC ou no telemóvel e está tudo lá. Cada app grava sozinha; há cópias automáticas.'}];
+  {k:'srv',t:'Servidor (dados)',s:'tudo fica guardado online',txt:'Todos os dados ficam no servidor, guardados por obra e por organização. Nada fica só no computador: abres a Somafel Catenária noutro PC ou no telemóvel e está tudo lá. Cada app grava sozinha; há cópias automáticas.'}];
 const LV_CICLO=[
   {t:'Criar a obra',v:'obras',txt:'Em Obras, «+ Nova obra»: centro de custo e nome. Depois, na Visão geral, junta os contratos aprovados e as pessoas com acesso.',tour:'obra'},
   {t:'Preparar',v:'esq',txt:'Associa à obra os esquemas elétricos e de sinalização (biblioteca em Esquemas) e carrega as peças de projeto em Projeto.',tour:'esquemas'},
-  {t:'OS e PDT',v:'docs',txt:'Em OS e PDT carregas o PDF da OS: a Central lê o número, a semana e os períodos. Com «Criar PDT» fazes o programa diário de cada noite, com o esquema elétrico em anexo.',tour:'pdt'},
+  {t:'OS e PDT',v:'docs',txt:'Em OS e PDT carregas o PDF da OS: a Somafel Catenária lê o número, a semana e os períodos. Com «Criar PDT» fazes o programa diário de cada noite, com o esquema elétrico em anexo.',tour:'pdt'},
   {t:'Medir',v:'med',txt:'Na Medição CAT juntas as estruturas e as montagens. O Dimensionamento CAT verifica consolas, postes e pórticos.',tour:'medir'},
   {t:'Materiais',v:'mat',txt:'Nos Materiais fazes os comparativos, as notas de encomenda e registas as guias. O stock acompanha o que entra e sai.',tour:null},
   {t:'Executar',v:'prod',txt:'Cada noite: parte diária na Produção (ou no telemóvel), com as rubricas executadas, o pessoal, o equipamento e as horas da interdição.',tour:'parte'},
@@ -485,7 +485,7 @@ const LV_TAREFAS=[
   {c:'Obra',t:'Criar uma obra nova',p:['Abre «Obras» na barra lateral.','Carrega em «+ Nova obra» no cabeçalho.','Escreve o centro de custo e o nome e confirma.'],tour:'obra'},
   {c:'Obra',t:'Juntar um contrato à obra',p:['Abre a obra (Visão geral).','Em «Contratos», carrega em «+ Novo contrato».','Nome (obrigatório), cliente e valor. O primeiro é o contrato inicial.'],tour:'contrato'},
   {c:'Obra',t:'Dar acesso a uma pessoa',p:['Em «Utilizadores», «Convidar por email»: nome, email, papel e obras. A pessoa recebe um email para definir a palavra-passe.','As equipas só veem as obras onde estão: na Visão geral da obra usa «+ Atribuir pessoa».'],tour:'pessoas'},
-  {c:'OS e PDT',t:'Carregar uma OS',p:['Abre «OS e PDT» na obra.','Em «Ordens de serviço», «Adicionar ficheiros…» (ou arrasta o PDF).','A Central lê o número, a semana e os períodos e cria a OS na tabela. Se não conseguir ler, usa «+ Nova OS».'],tour:'os'},
+  {c:'OS e PDT',t:'Carregar uma OS',p:['Abre «OS e PDT» na obra.','Em «Ordens de serviço», «Adicionar ficheiros…» (ou arrasta o PDF).','A Somafel Catenária lê o número, a semana e os períodos e cria a OS na tabela. Se não conseguir ler, usa «+ Nova OS».'],tour:'os'},
   {c:'OS e PDT',t:'Fazer os PDT de uma OS',p:['Na tabela da OS, «Criar PDT».','Escolhe as noites; à esquerda preenches o formulário e à direita vês o PDT a ser construído.','Os separadores «OS», «Sinalização» e «Elétrico» mostram os documentos ao lado.','«Guardar»/«Criar PDT» grava; «Exportar» dá Word ou PDF.'],tour:'pdt'},
   {c:'OS e PDT',t:'Marcar o esquema elétrico no PDT',p:['No PDT, separador «Elétrico».','Ferramentas: «Corte de tensão» (clica os pontos da via, duplo clique termina), «Zona dos trabalhos» (arrasta), «Varas de terra» (clica).','Se o corte passa por dois esquemas, «+ Outro esquema».','«Pré-visualizar anexo» mostra como fica no PDF (vetorial, mesma qualidade do esquema).'],tour:null},
   {c:'OS e PDT',t:'Associar esquemas à obra',p:['Os esquemas ficam na biblioteca comum («Esquemas»): carrega lá os PDF.','Na obra, «OS e PDT» › «Esquemas elétricos» ou «Esquemas de sinalização» › associar da biblioteca.','Nos esquemas de sinalização confirmas os sinais e PK: só os confirmados entram nos PDT.'],tour:'esquemas'},
@@ -520,7 +520,7 @@ function lvSecoes(){return [['inicio','Começar'],['mapa','Como tudo se liga'],[
 function lvHtml(){const q=LV.q.trim().toLowerCase(),tem=t=>!q||String(t).toLowerCase().includes(q);
   const hl=t=>{t=esc(t);if(!q)return t;const i=t.toLowerCase().indexOf(esc(q).toLowerCase());return i<0?t:t.slice(0,i)+'<mark>'+t.slice(i,i+q.length)+'</mark>'+t.slice(i+q.length)};
   let h='';
-  h+='<section class="lvS" id="lv-inicio"><h2>Começar</h2><p>A Central de Obras junta as aplicações da catenária numa só página, com os dados guardados no servidor. Entras com o teu email e palavra-passe (o administrador envia um convite).</p>'
+  h+='<section class="lvS" id="lv-inicio"><h2>Começar</h2><p>A Somafel Catenária junta as aplicações da catenária numa só página, com os dados guardados no servidor. Entras com o teu email e palavra-passe (o administrador envia um convite).</p>'
     +'<div class="lvPap">'+[['Administrador','Tudo, incluindo utilizadores, definições e o que está bloqueado.'],['Diretor de obra','Vê e edita tudo nas obras, incluindo contratos e valores.'],['Encarregado','Vê todas as obras e trabalha em todas as apps; não edita o que o administrador bloqueou.'],['Equipa','Só a App de Obra, nas obras a que está atribuído.'],['Convidado','Só consulta: normas, desenhos, peças, esquemas e OS.']].map(x=>'<div class="lvCard"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>').join('')+'</div>'
     +'<p class="hint">Dica: em cada tarefa de «Como fazer» há o botão <b>Mostra-me</b>, que te leva ao ecrã certo e aponta onde carregar.</p></section>';
   h+='<section class="lvS" id="lv-mapa"><h2>Como tudo se liga</h2><p class="hint">Clica numa caixa.</p><div class="lvMapa">'+LV_APPS.map(a=>'<button class="lvNo'+(a.k==='central'?' c':'')+(a.k==='srv'?' s':'')+(LV.no===a.k?' on':'')+'" data-lvno="'+a.k+'"><b>'+esc(a.t)+'</b><span>'+esc(a.s)+'</span></button>').join('')+'</div>'
@@ -533,7 +533,7 @@ function lvHtml(){const q=LV.q.trim().toLowerCase(),tem=t=>!q||String(t).toLower
   [...new Set(T.map(x=>x.c))].forEach(c=>{h+='<h3>'+esc(c)+'</h3>';T.filter(x=>x.c===c).forEach(x=>{const i=LV_TAREFAS.indexOf(x),ab=LV.aberta===i||!!q;
     h+='<div class="lvT'+(ab?' ab':'')+'"><button class="lvTh" data-lvt="'+i+'"><span>'+hl(x.t)+'</span><i>'+(ab?'−':'+')+'</i></button>'+(ab?'<div class="lvTb"><ol>'+x.p.map(p=>'<li>'+hl(p)+'</li>').join('')+'</ol>'+(x.tour?'<button class="pri" data-lvtour="'+x.tour+'">Mostra-me</button>':'')+'</div>':'')+'</div>'})});
   h+='</section>';
-  h+='<section class="lvS" id="lv-apps"><h2>Cada app por dentro</h2><div class="lvPap">'+LV_APPS.filter(a=>a.app).map(a=>'<div class="lvCard"><b>'+esc(a.t)+'</b><span>'+esc(a.txt)+'</span><button data-lvir="'+a.v+'" data-lvobra="1">Abrir</button></div>').join('')+'</div><p class="hint">Dentro de cada app, «Voltar à obra» no topo da barra lateral traz-te de volta à Central. As apps abrem já na obra certa.</p></section>';
+  h+='<section class="lvS" id="lv-apps"><h2>Cada app por dentro</h2><div class="lvPap">'+LV_APPS.filter(a=>a.app).map(a=>'<div class="lvCard"><b>'+esc(a.t)+'</b><span>'+esc(a.txt)+'</span><button data-lvir="'+a.v+'" data-lvobra="1">Abrir</button></div>').join('')+'</div><p class="hint">Dentro de cada app, «Voltar à obra» no topo da barra lateral traz-te de volta à Somafel Catenária. As apps abrem já na obra certa.</p></section>';
   h+='<section class="lvS" id="lv-tel"><h2>App do telemóvel</h2><ol><li>Abre a App de Obra no telemóvel e entra com o teu email (podes «Adicionar ao ecrã principal» para ficar como uma app).</li><li>Escolhe a obra. «+ Nova parte de hoje» faz a parte diária com OS, estruturas, material avulso, trabalhos sem rubrica, fotos e observações.</li><li>«Interdições», «Ordens de serviço» e «Plano diário» mostram as noites de trabalho; «Esquemas e preparações» e «Projeto» abrem os documentos da obra.</li><li>Sem rede, tudo fica guardado no telemóvel; a barra de cima diz «Tudo enviado» ou quantas partes faltam enviar.</li></ol></section>';
   h+='<section class="lvS" id="lv-guardar"><h2>Guardar e cópias</h2><p>As apps <b>gravam sozinhas</b> alguns segundos depois de cada alteração. O cabeçalho diz «Por guardar», «A guardar…» ou «Guardado às hh:mm». Ctrl+S grava logo.</p><p>Cada gravação guarda uma cópia no servidor, por isso dá para voltar atrás (menu «Obra ▾»). Sem rede, fica um rascunho no computador que segue quando a rede voltar. Ctrl+Z desfaz e Ctrl+Y refaz dentro da app.</p></section>';
   const P=LV_PROB.filter(x=>tem(x[0])||tem(x[1]));
@@ -541,7 +541,7 @@ function lvHtml(){const q=LV.q.trim().toLowerCase(),tem=t=>!q||String(t).toLower
   const G=LV_GLOS.filter(x=>tem(x[0])||tem(x[1]));
   h+='<section class="lvS" id="lv-glos"><h2>Glossário</h2><dl class="lvGlos">'+G.map(x=>'<dt>'+hl(x[0])+'</dt><dd>'+hl(x[1])+'</dd>').join('')+'</dl>'+(G.length?'':'<p class="hint">Nada encontrado.</p>')+'</section>';
   return h}
-function vLivro(){titulo('Livro de instruções');$('#hSub').textContent='como usar a Central e as apps';const pg=$('#pg');
+function vLivro(){titulo('Livro de instruções');$('#hSub').textContent='como usar a Somafel Catenária e as apps';const pg=$('#pg');
   pg.innerHTML='<div class="vz vz2 lvW"><nav class="lvNav card"><input type="search" id="lvQ" placeholder="Procurar no livro…" value="'+esc(LV.q)+'">'+lvSecoes().map(s=>'<a href="#lv-'+s[0]+'" data-lvs="'+s[0]+'">'+s[1]+'</a>').join('')+'</nav><div class="lvC" id="lvC">'+lvHtml()+'</div></div>';
   const liga=()=>{const c=$('#lvC');
     c.querySelectorAll('[data-lvno]').forEach(b=>b.onclick=()=>{LV.no=b.dataset.lvno;c.innerHTML=lvHtml();liga()});
@@ -615,7 +615,7 @@ async function abreBib(path,nome){
   try{const u=await urlBib(path);w.querySelector('#cgB').innerHTML=/\.(png|jpe?g)$/i.test(nome)?'<img class="pimg" src="'+esc(u)+'" alt="">':'<iframe class="pfr g" src="'+esc(u)+'#view=FitH"></iframe>'}catch(e){w.querySelector('#cgB').innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>'}}
 let BSEL={desenhos:null,normas:null};
 
-/* ---------- Catálogo e desenhos (como na Central antiga): índice de desenhos + catálogo de peças ---------- */
+/* ---------- Catálogo e desenhos (como na Somafel Catenária antiga): índice de desenhos + catálogo de peças ---------- */
 const CAT_FAM={'01':'Cabos e condutores','02':'Ferragens e perfis','03':'Isoladores','04':'Parafusaria','05':'Ligadores e braçadeiras','06':'Consolas e estruturas','07':'Equipamento de linha','08':'Equipamento eléctrico'};
 const CAT={tab:'des',q:'',fam:'',sel:null,selP:null,vMont:null,soVer:false,base:null,ix:null,n:0,nome:''};
 const cNorm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -918,7 +918,7 @@ async function vBib(tipo){
   const sel=()=>todos.find(x=>x.path===BSEL[tipo]);
   const tam=n=>n>1048576?(n/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(n/1024))+' kB';
   const ext=n=>((n.match(/\.([a-z0-9]+)$/i)||['',''])[1]||'').toUpperCase();
-  const det=()=>{const d=sel();if(!d)return '<div class="cvaz"><b>Escolha '+(tipo==='normas'?'uma norma':'um desenho')+' à esquerda</b><p>Abre aqui dentro, sem sair da Central.</p></div>';
+  const det=()=>{const d=sel();if(!d)return '<div class="cvaz"><b>Escolha '+(tipo==='normas'?'uma norma':'um desenho')+' à esquerda</b><p>Abre aqui dentro, sem sair da Somafel Catenária.</p></div>';
     return '<div class="dh"><div style="min-width:0"><div class="dk">'+esc(d.grupo||B[2])+'</div><h2 style="font-size:19px">'+esc(tituloBib(d.nome))+'</h2><div class="dm"><span class="mono">'+esc(d.nome)+'</span><span>'+tam(d.tam)+'</span></div></div><div class="da"><button id="bGr" class="pri">Ver em grande</button><button id="bAb">Abrir noutra janela</button>'+(admin()?'<button id="bDel" class="perigo">Apagar</button>':'')+'</div></div><div class="dprev npv" id="bPrev"></div>'};
   let h='<div class="cat"><div class="cbar"><div style="font-weight:600;font-size:15px">'+(tipo==='normas'?'Normas e documentos de referência':'Catálogo e desenhos')+'</div><div class="cpasta">'+(admin()?'<button class="pri sm" id="bUp">Carregar PDF…</button><button class="sm" id="bUpD">Carregar pasta…</button>':'')+'</div></div>'
    +'<div class="cgrid"><section class="clist"><div class="cfilt"><input id="bQ" type="search" placeholder="Procurar ('+(tipo==='normas'?'código ou título':'código do desenho')+')…" value="'+esc(BQ)+'" autocomplete="off">'+(tipo==='desenhos'?'<label class="chk"><input type="checkbox" id="bAnt"'+(BANT?' checked':'')+'> revisões antigas</label>':'')+'</div>'
@@ -1016,7 +1016,7 @@ function vApp(o,v){
 }
 function titulo(t,chip){$('#hT').textContent=t;const c=$('#hCC');c.hidden=!chip;c.textContent=chip||''}
 
-/* ---------- painel (visual da Central antiga) ---------- */
+/* ---------- painel (visual da Somafel Catenária antiga) ---------- */
 
 const pTot=l=>(l||[]).reduce((t,c)=>t+(+c.valor||0),0);
 function pResumo(o){const r=S.RES[o.id]||{},P=r.prod,E=r.med;let F=0,C=0;
@@ -2520,7 +2520,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
     const a=el.querySelector('[data-add]');if(a)a.onclick=()=>{G[k].push(cols.map(()=>''));desenhaG(k);agenda();const ins=el.querySelectorAll('.pdr:last-of-type input');if(ins[0])ins[0].focus()};
     /* Enter na última célula acrescenta linha */
     el.querySelectorAll('input[data-r]').forEach(inp=>inp.onkeydown=e=>{if(e.key==='Enter'&&+inp.dataset.r===G[k].length-1&&+inp.dataset.c===cols.length-1&&!fixo&&G[k].length<(PDTMAX[k]||9)){e.preventDefault();G[k].push(cols.map(()=>''));desenhaG(k);agenda();const ins=el.querySelectorAll('.pdr:last-of-type input');if(ins[0])ins[0].focus()}})}
-  /* importar pessoas e certificados da Central (Pessoal) */
+  /* importar pessoas e certificados da Somafel Catenária (Pessoal) */
   const curto=n=>{const t=String(n||'').trim().split(/\s+/);return t.length>2?t[0]+' '+t[t.length-1]:t.join(' ')};
   async function importaPessoal(k){
     const w=janela(k==='pe'?'Importar CVI / PVI de Pessoal':'Importar trabalhadores com NE+VT CAT',true);w.corpo.innerHTML='<p class="hint">A ler Pessoal…</p>';

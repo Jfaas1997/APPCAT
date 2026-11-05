@@ -666,7 +666,7 @@ body.obraAtiva #ltNovo,body.obraAtiva #ltModal [data-ld]{display:none}
 <style>html[data-embed] #bDwPasta{display:none!important}</style>
 <script>if(parent!==window)document.documentElement.setAttribute("data-embed","1")</script>
 <style id="online-extra">
-/* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
+/* Camada de movimento · norma comum v1 · partilhada pela Somafel Catenária online, App de Obra e Produção.
    Só transições curtas (≤ 250 ms) e nada que bloqueie. Respeita «reduzir movimento». */
 :root{--mv-ease:cubic-bezier(.2,.7,.2,1);--mv-t:.22s}
 /* entrada de ecrã: os blocos aparecem em cascata */
@@ -814,7 +814,7 @@ html[data-modo=dim] .dimJ{display:flex;gap:12px;align-items:center;margin:8px 0;
 html:not([data-modo=dim]) #dimFolhas{display:none}
 </style>
 <style id="norma-v2">
-/* ===== norma visual v2 (28 out 2026): cabeçalho claro e cantos como a Central, Produção e RCT ===== */
+/* ===== norma visual v2 (28 out 2026): cabeçalho claro e cantos como a Somafel Catenária, Produção e RCT ===== */
 :root{--r:8px;--rc:12px;--sh:0 1px 2px rgba(20,24,32,.05),0 4px 14px rgba(20,24,32,.05)}
 @media screen and (prefers-color-scheme:dark){:root:not([data-tema="claro"]){--sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3)}}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 35%,transparent)}
@@ -874,7 +874,7 @@ header select{background:var(--sheet);color:var(--ink);border:1px solid var(--ru
     <span class="sep"></span><button id="bObra" aria-haspopup="true" aria-expanded="false" title="Obra, pasta e cópias">Obra ▾</button><button id="bAjuda" title="Ajuda" aria-label="Ajuda">?</button>
     <div class="nmenu" id="nmenu" hidden>
       <button data-n="trocar">Trocar de obra</button>
-      <button data-n="central">Central de Obras</button>
+      <button data-n="central">Somafel Catenária</button>
       <button data-n="passa" id="nPassa" hidden>Passar para uma obra…</button>
       <button data-n="contratos">Contratos da obra…</button>
       <button data-n="cadMont" id="nCadMont">Importar cadernos de montagem…</button>
@@ -6300,7 +6300,7 @@ function nmLiga(){ const ob=NM.ob; if(!ob||!ob.contratos.length)return; garanteL
 function nmReaplica(){ const ob=NM.ob; if(!ob)return; st.nome=ob.nome; $('#obraNome').value=ob.nome; nmLiga(); nmUi(); rLoteSel() }
 function nmUi(){ const ob=NM.ob; document.body.classList.toggle('obraAtiva',!!ob);
   const c=$('#ccChip'); c.hidden=!ob; if(ob){ c.textContent=ob.cc; c.title='Centro de custo' }
-  const n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Central':'';
+  const n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Somafel Catenária':'';
   $('#loteSel').setAttribute('aria-label',ob?'Contrato em que estás a trabalhar':'Lote em que estás a trabalhar');
   $('#nFechar').hidden=!ob; nmInd() }
 const _rLoteSel=rLoteSel;
@@ -6311,16 +6311,16 @@ rLoteSel=function(){ _rLoteSel();
 const _rLotesModal=rLotesModal;
 rLotesModal=function(){ _rLotesModal(); if($('#ltModal').hidden)return;
   const h=$('#ltModal h3'); if(h)h.textContent=NM.ob?'Contratos da obra':'Lotes da obra';
-  if(NM.ob){ $('#ltBody').querySelectorAll('[data-lf="nome"]').forEach(i=>{ i.readOnly=true; i.title='O nome vem do contrato (Central)' }) } };
+  if(NM.ob){ $('#ltBody').querySelectorAll('[data-lf="nome"]').forEach(i=>{ i.readOnly=true; i.title='O nome vem do contrato (Somafel Catenária)' }) } };
 async function nmCriaObraProv(h){
-  const r=await nmModal({titulo:'Esta pasta ainda não tem obra',corpo:'<p>Não encontrei o ficheiro <b>obra.json</b>. A obra deve ser criada na Central de Obras, que ainda não existe. Para já pode criá-la aqui, em modo provisório.</p><label>Centro de custo</label><input type="text" id="nmCC"><label>Nome da obra</label><input type="text" id="nmNM" value="'+esc(h.name)+'">',
+  const r=await nmModal({titulo:'Esta pasta ainda não tem obra',corpo:'<p>Não encontrei o ficheiro <b>obra.json</b>. A obra deve ser criada na Somafel Catenária, que ainda não existe. Para já pode criá-la aqui, em modo provisório.</p><label>Centro de custo</label><input type="text" id="nmCC"><label>Nome da obra</label><input type="text" id="nmNM" value="'+esc(h.name)+'">',
     botoes:[{t:'Cancelar',v:null},{t:'Criar obra.json',v:c=>({cc:c.querySelector('#nmCC').value.trim(),nome:c.querySelector('#nmNM').value.trim()}),p:true}],cancela:null});
   if(!r)return null; if(!r.cc){ await nmDiz('O centro de custo é obrigatório.'); return nmCriaObraProv(h) }
-  const info={centroCusto:r.cc,nome:r.nome||('Obra '+r.cc),contratos:[{id:'c1',nome:'Contrato inicial',cliente:'',valor:null}],criadoPor:'Medição (provisório até existir a Central)'};
+  const info={centroCusto:r.cc,nome:r.nome||('Obra '+r.cc),contratos:[{id:'c1',nome:'Contrato inicial',cliente:'',valor:null}],criadoPor:'Medição (provisório até existir a Somafel Catenária)'};
   const fh=await h.getFileHandle('obra.json',{create:true}), w=await fh.createWritable(); await w.write(JSON.stringify(info,null,2)); await w.close(); return info }
 function nmRestauraEstado(){ historico=[]; futuro=[]; estadoRef=null; despiece=null; exRev=null; garante(); garanteLotes(); for(const l of st.lotes)if(l.id!==st.loteAtivo)comLote(l,()=>garante()); syncComp(); $('#obraNome').value=st.nome; apply() }
 async function nmAbrePasta(h,quieto){
-  if(h&&parent!==window&&!baseOk()){ await nmEsperaBase(15000); if(!baseOk()){ NM.pend=h; nmDiz('A base de dados ainda não chegou (autorize a pasta das obras na Central). A obra abre sozinha assim que a base for lida; até lá nada é lido nem gravado, para não perder montagens.'); return } }
+  if(h&&parent!==window&&!baseOk()){ await nmEsperaBase(15000); if(!baseOk()){ NM.pend=h; nmDiz('A base de dados ainda não chegou (autorize a pasta das obras na Somafel Catenária). A obra abre sozinha assim que a base for lida; até lá nada é lido nem gravado, para não perder montagens.'); return } }
   const rapido0=!medicaoVazia()&&!NM.ob;
   if(!h){ if(!window.showDirectoryPicker){ nmDiz('Este navegador não deixa escolher pastas. Use o Chrome ou o Edge no computador.'); return }
     try{ h=await window.showDirectoryPicker({mode:'readwrite',id:'obra-medicao'}) }catch(e){ return } }
@@ -6970,7 +6970,7 @@ window.nmLigacao={
   meses(){ const g=exL.glob; exL.glob=true; try{ return mesesAlvo().map(m=>({mes:m,de:autoIni(m),ate:autoFim(m),registos:nRegs(autoIni(m),autoFim(m))})) }finally{ exL.glob=g } },
   mes(m){ const g=exL.glob; exL.glob=true; try{ const X=ME(autoIni(m),autoFim(m));
       return tabelaMat([X.m]).map(r=>this._lin(r.cod,r.u,r.v[0])).filter(x=>x.qt>0) }finally{ exL.glob=g } },
-  /* a Central pede: marcar estas estruturas como executadas (parte diária validada). Só acrescenta o que falta. */
+  /* a Somafel Catenária pede: marcar estas estruturas como executadas (parte diária validada). Só acrescenta o que falta. */
   executa(nomes,dia){ const r={marcadas:[],jaFeitas:[],naoExiste:[]}; const d=/^\d{4}-\d{2}-\d{2}$/.test(dia||'')?dia:hojeISO();
     for(const n0 of nomes||[]){ const n=String(n0).trim().toLowerCase(); const p=st.postes.find(x=>String(x.nome).trim().toLowerCase()===n);
       if(!p){ r.naoExiste.push(n0); continue }
@@ -6980,7 +6980,7 @@ window.nmLigacao={
     return r }
 };
 
-/* ===== base de dados do OneDrive: a Central lê o ficheiro e a Medição atualiza-se sozinha ===== */
+/* ===== base de dados do OneDrive: a Somafel Catenária lê o ficheiro e a Medição atualiza-se sozinha ===== */
 window.nmBaseOneDrive=async function(base,nome,t){
   try{
     if(parent===window||!base||!base.d||!base.d.length||!base.m||!base.m.length)return 'sem-base';
@@ -6993,7 +6993,7 @@ window.nmBaseOneDrive=async function(base,nome,t){
   }catch(e){ return 'erro:'+e.message }
 };
 
-/* ===== alterações próprias da base: ficheiro «Alteracoes_proprias.json» na pasta Base de dados (dentro da Central) =====
+/* ===== alterações próprias da base: ficheiro «Alteracoes_proprias.json» na pasta Base de dados (dentro da Somafel Catenária) =====
    A base IP nunca é escrita. Só se guarda a diferença (desenhos, peças e montagens novas ou alteradas, montagens retiradas). */
 function nmDeltaCalc(){
   const d=[],p=[],m=[],rem=[];
@@ -7066,13 +7066,13 @@ $('#mtPop').addEventListener('mousedown',e=>{ if(e.target===$('#mtPop'))mtFecha(
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('#mtPop').hidden&&$('#vis').hidden){ e.preventDefault(); e.stopImmediatePropagation(); mtFecha() } },true);
 
 
-/* ===== sem base embutida (v31): a base e o mapa de desenhos vêm da pasta «Base de dados» (a Central lê-os ao abrir) ===== */
+/* ===== sem base embutida (v31): a base e o mapa de desenhos vêm da pasta «Base de dados» (a Somafel Catenária lê-os ao abrir) ===== */
 window.nmMapaDesenhos=function(o){ try{ DWMAP=(o&&typeof o==='object')?o:{} }catch(e){} };
 function nmAvisoSemBase(){
   try{ let a=document.getElementById('nmSemBase'); const vazio=!(BASE&&BASE.d&&BASE.d.length);
     if(!vazio){ if(a)a.remove(); return }
     if(!a){ a=document.createElement('div'); a.id='nmSemBase'; a.style.cssText='position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:90;max-width:640px;background:var(--ink,#2B3038);color:var(--sheet,#fff);padding:10px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.3)'; document.body.appendChild(a) }
-    a.innerHTML='<b>Sem base de dados.</b> A base não vem dentro da app: lê-se de <span style="font-family:monospace">Base de dados\\Base_de_dados_catenaria.xlsx</span>. Abra a app pela Central (e autorize a pasta das obras) ou use Base de dados › Importar.' }catch(e){} }
+    a.innerHTML='<b>Sem base de dados.</b> A base não vem dentro da app: lê-se de <span style="font-family:monospace">Base de dados\\Base_de_dados_catenaria.xlsx</span>. Abra a app pela Somafel Catenária (e autorize a pasta das obras) ou use Base de dados › Importar.' }catch(e){} }
 setInterval(nmAvisoSemBase,1500);
 
 const baseOk=()=>!!(BASE&&BASE.d&&BASE.d.length);
@@ -7081,7 +7081,7 @@ function nmEsperaBase(ms){ if(baseOk())return Promise.resolve(true); return Prom
 function nmBaseChegou(){ if(!baseOk())return; NM_BASE_RES(); try{ if(NM.pend){ const h=NM.pend; NM.pend=null; setTimeout(()=>nmAbrePasta(h,true),80) } }catch(e){} }
 const _guardarSB=guardar; guardar=function(){ if(!baseOk()){ toast('Sem base de dados: não gravo para não perder montagens.',4500); return } return _guardarSB.apply(this,arguments) };
 
-/* ===================== MEDIÇÃO ONLINE (v3): dados na base, obra vinda da Central online ===================== */
+/* ===================== MEDIÇÃO ONLINE (v3): dados na base, obra vinda da Somafel Catenária online ===================== */
 NM.VERSAO='3 online'; NM.uid=null; NM.papel=null; NM.org=null; NM.versao=null; NM.soLeitura=false; NM.pronto=false;
 const sb=supabase.createClient('https://dnllrbgzkgrerkybtjjl.supabase.co','sb_publishable_Hro5FepbHNEFu2_w5TbBNw_FaHywmj_',{auth:{persistSession:true,autoRefreshToken:true}});
 const NM_PAUSA_ON=12000;
@@ -7099,7 +7099,7 @@ nmInd=function(){ const g=$('#gst'); if(!g)return; let t='',c='';
   g.textContent=t; g.className=c; g.title=NM.ob?('Obra '+NM.ob.cc+' · versão '+NM.versao):(NM.livre?'Sem obra: a medição fica só neste aparelho. Para guardar noutro sítio, exporte para Excel («…»).':'') };
 nmUi=function(){ const ob=NM.ob; document.body.classList.toggle('obraAtiva',!!ob);
   const c=$('#ccChip'); c.hidden=!ob; if(ob){ c.textContent=ob.cc; c.title='Centro de custo' }
-  const n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Central':'';
+  const n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Somafel Catenária':'';
   $('#loteSel').setAttribute('aria-label',ob?'Contrato em que estás a trabalhar':'Lote em que estás a trabalhar');
   const b=$('#bSave'); if(b)b.disabled=!!NM.soLeitura&&!NM.livre; nmInd() };
 nmMudou=function(){ if(NM.carregando)return; NM.alterado=true; clearTimeout(NM.draftT); NM.draftT=setTimeout(nmFlush,400); clearTimeout(NM.saveT); NM.saveT=setTimeout(nmAuto,NM_PAUSA_ON) };
@@ -7267,7 +7267,7 @@ nmRestauraCopia=async function(){
 function nmEcra(html){ let w=document.getElementById('nmLogin'); if(!w){ w=document.createElement('div'); w.id='nmLogin'; w.className='nmLogin'; document.body.appendChild(w) } w.innerHTML=html; w.hidden=false; return w }
 function nmEcraFim(){ const w=document.getElementById('nmLogin'); if(w)w.hidden=true }
 function nmLogin(){ return new Promise(ok=>{
-  const w=nmEcra('<form><h2>Entrar</h2><p class="n">Use a mesma conta da Central de Obras.</p><label>Email</label><input type="email" id="lgE" autocomplete="username"><label>Palavra-passe</label><input type="password" id="lgP" autocomplete="current-password"><p id="lgM" class="er"></p><button class="p">Entrar</button></form>');
+  const w=nmEcra('<form><h2>Entrar</h2><p class="n">Use a mesma conta da Somafel Catenária.</p><label>Email</label><input type="email" id="lgE" autocomplete="username"><label>Palavra-passe</label><input type="password" id="lgP" autocomplete="current-password"><p id="lgM" class="er"></p><button class="p">Entrar</button></form>');
   w.querySelector('form').onsubmit=async e=>{ e.preventDefault(); const r=await sb.auth.signInWithPassword({email:w.querySelector('#lgE').value.trim(),password:w.querySelector('#lgP').value}); if(r.error){ w.querySelector('#lgM').textContent='Email ou palavra-passe errados.'; return } ok() } }) }
 async function nmListaObras(){
   const q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
@@ -7318,7 +7318,7 @@ async function nmPassaObra(){
   if(!NM.livre||NM.soLeitura)return;
   if(!st.postes||!st.postes.length){ await nmDiz('Ainda não há nada para passar. Faça primeiro a medição sem obra.'); return }
   const q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
-  if(!l.length){ await nmDiz('Não há obras. Crie primeiro a obra na Central.'); return }
+  if(!l.length){ await nmDiz('Não há obras. Crie primeiro a obra na Somafel Catenária.'); return }
   const r=await nmModal({titulo:'Passar para uma obra',corpo:'<p>A medição feita sem obra passa para a obra que escolher. O rascunho sem obra fica vazio.</p><label>Obra</label><select id="pObra">'+l.map((o,i)=>'<option value="'+i+'">'+esc(o.centro_custo)+' · '+esc(o.nome)+'</option>').join('')+'</select>',
     botoes:[{t:'Cancelar',v:null},{t:'Passar',p:true,v:c=>+c.querySelector('#pObra').value}],cancela:null});
   if(r==null)return; const ob=l[r];

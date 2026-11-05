@@ -1,5 +1,5 @@
-/* Design comum da Central de Obras e das apps (movimento técnico, vidro, cartões, tema).
-   Carregado pela Central e por cada app; as apps aplicam-no sozinhas quando abertas fora da Central. */
+/* Design comum da Somafel Catenária e das apps (movimento técnico, vidro, cartões, tema).
+   Carregado pela Somafel Catenária e por cada app; as apps aplicam-no sozinhas quando abertas fora da Somafel Catenária. */
 /* ===== movimento «técnico» (escolhido a 2 nov 2026): o ecrã novo é revelado da esquerda para a direita por uma linha amarela ===== */
 var MV_T=300;
 var MV_CSS='@keyframes mvWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}@keyframes mvScan{0%{transform:translateX(0);opacity:1}88%{opacity:1}100%{transform:translateX(var(--mvw));opacity:0}}'
@@ -46,7 +46,7 @@ function mvNaApp(d){try{if(d.getElementById('mv-tec'))return;const st=d.createEl
   d.addEventListener('click',e=>{const t=e.target&&e.target.closest&&e.target.closest('#side .tab,#side .gtab,#subtabs button,nav.lado .ni,#side [data-v],.bnav button,.tabbar button');if(!t||t.id==='cVoltar')return;
     setTimeout(()=>mvVarre(d.querySelector('main')||d.querySelector('.corpo')||d.body),0)},true)}catch(e){}}
 
-/* tema partilhado: a escolha feita na Central (claro/escuro) vale em todas as apps, também abertas sozinhas, e muda logo nas que estão abertas */
+/* tema partilhado: a escolha feita na Somafel Catenária (claro/escuro) vale em todas as apps, também abertas sozinhas, e muda logo nas que estão abertas */
 function mvTema(d){try{d=d||document;var r=d.documentElement,t=null;try{t=localStorage.getItem('tema')}catch(e){}
   if(t==='claro'||t==='escuro'){r.setAttribute('data-tema',t);r.setAttribute('data-theme',t==='escuro'?'dark':'light')}
   else if(r.getAttribute('data-tema')){}}catch(e){}}

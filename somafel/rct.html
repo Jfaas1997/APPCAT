@@ -846,7 +846,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 <style id="online-extra">
-/* Camada de movimento · norma comum v1 · partilhada pela Central online, App de Obra e Produção.
+/* Camada de movimento · norma comum v1 · partilhada pela Somafel Catenária online, App de Obra e Produção.
    Só transições curtas (≤ 250 ms) e nada que bloqueie. Respeita «reduzir movimento». */
 :root{--mv-ease:cubic-bezier(.2,.7,.2,1);--mv-t:.22s}
 /* entrada de ecrã: os blocos aparecem em cascata */
@@ -949,7 +949,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
     <div class="nmenu" id="nmenu" hidden>
       <small id="nInfo">Sem pasta de obra</small>
       <button data-n="trocar">Trocar de obra</button>
-      <button data-n="central">Central de Obras</button>
+      <button data-n="central">Somafel Catenária</button>
       <button data-n="passa" id="nPassa" hidden>Passar para uma obra…</button>
       <button data-n="reabrir" id="nReabrir" hidden style="display:none">.</button>
       <button data-n="json">Abrir um ficheiro .json…</button>
@@ -1081,11 +1081,11 @@ function ind(){ var g=$('#gst'); if(!g)return; var t='',c='';
   g.textContent=t; g.className=c; g.title=NM.fh?('Ficheiro: Dados/'+NM.fh.name):'Sem pasta de obra. O rascunho fica guardado neste navegador.' }
 function ui(){ var ob=NM.ob; document.body.classList.toggle('obraAtiva',!!ob);
   var c=$('#ccChip'); c.hidden=!ob; if(ob){ c.textContent=ob.cc; c.title='Centro de custo' }
-  var n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Central':''; if(ob)n.value=ob.nome; else n.value=ST.nome||'';
+  var n=$('#obraNome'); n.readOnly=!!ob; n.title=ob?'O nome da obra vem da Somafel Catenária':''; if(ob)n.value=ob.nome; else n.value=ST.nome||'';
   $('#nFechar').hidden=!ob; semPastaUi(); ind() }
 function semPastaUi(){ var b=$('#semPasta'); if(!b)return; var lig=!!(NM.ob&&NM.fh), emC=false; try{ emC=(parent!==window) }catch(e){}
   b.hidden=lig||!!NM.ob; if(lig||NM.ob)return;
-  $('#spTxt').innerHTML=emC?(NM.ob?'<b>A obra '+esc(NM.ob.cc)+' ainda não tem a pasta ligada.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador).':'<b>Esta janela não está ligada a nenhuma obra.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador). Abra a obra na Central (Obras → a obra → Medição RCT).'):'<b>Sem pasta de obra ligada.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador).';
+  $('#spTxt').innerHTML=emC?(NM.ob?'<b>A obra '+esc(NM.ob.cc)+' ainda não tem a pasta ligada.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador).':'<b>Esta janela não está ligada a nenhuma obra.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador). Abra a obra na Somafel Catenária (Obras → a obra → Medição RCT).'):'<b>Sem pasta de obra ligada.</b> Nada é gravado em Dados/rct.json (só rascunho neste navegador).';
 }
 /* ---- desfazer / refazer ---- */
 var H={p:[],i:-1,t:0,rest:false};
@@ -1196,7 +1196,7 @@ async function abrePasta(h,quieto){
     try{ h=await window.showDirectoryPicker({mode:'readwrite',id:'obra-rct'}) }catch(e){ return } }
   if(DIRTY&&NM.fh&&!quieto&&!(await sim('Há alterações por guardar. Abrir outra obra mesmo assim? O rascunho fica guardado neste navegador.','Abrir')))return;
   var info=null; try{ var fo=await h.getFileHandle('obra.json'); info=JSON.parse(await (await fo.getFile()).text()) }catch(e){}
-  if(!info){ diz('Esta pasta não tem o ficheiro <b>obra.json</b>. A obra é criada na Central de Obras.'); return }
+  if(!info){ diz('Esta pasta não tem o ficheiro <b>obra.json</b>. A obra é criada na Somafel Catenária.'); return }
   var ob=norm(info); if(!ob){ diz('O obra.json não tem centro de custo (campo «centroCusto»).'); return }
   var fh,f;
   try{ var dd=await h.getDirectoryHandle('Dados',{create:true}); fh=await dd.getFileHandle('rct.json',{create:true}); f=await fh.getFile() }catch(e){ diz('Não consegui ler os dados da obra: '+esc(e.message)); return }
@@ -1230,7 +1230,7 @@ window.addEventListener('message',function(ev){ var m=ev.data; if(!m||typeof m!=
   if(m.cmd==='montagensRctEstado'){ BD.cmsg=m.msg||''; if(UI.vista==='mon'&&!MB)render(); return }
   if(m.cmd==='montagensRctEd'){ ED.central=true; ED.g=(m.ed&&typeof m.ed==='object')?m.ed:{}; edAplica(); recalcME(); rMonDl(); render(); return }
   if(m.cmd==='rctRef'){ recebeRef(m.md,m.dr); return }
-  if(m.cmd==='montagensRct'&&m.buf){ MONL={lista:m.lista||[],ativa:m.nome||''}; try{ carregaMontagens(m.buf,m.nome||'Montagens_RCT.xlsx',m.t||Date.now(),true); BD.cmsg='' }catch(e){ console.error(e); BD.cmsg='A Central enviou o ficheiro mas não consegui lê-lo: '+e.message; if(UI.vista==='mon')render() } } });
+  if(m.cmd==='montagensRct'&&m.buf){ MONL={lista:m.lista||[],ativa:m.nome||''}; try{ carregaMontagens(m.buf,m.nome||'Montagens_RCT.xlsx',m.t||Date.now(),true); BD.cmsg='' }catch(e){ console.error(e); BD.cmsg='A Somafel Catenária enviou o ficheiro mas não consegui lê-lo: '+e.message; if(UI.vista==='mon')render() } } });
 window.nmLigacao={pronto:function(){ return true },cc:function(){ return NM.ob&&NM.ob.cc }};
 window.nmFlush=function(){ return flush().then(function(){ if(DIRTY&&NM.fh)return auto() }) };
 
@@ -1245,7 +1245,7 @@ $('#nmenu').onclick=function(e){ var b=e.target.closest('button[data-n]'); if(!b
 $('#fJson').onchange=async function(){ var f=this.files[0]; this.value=''; if(!f)return; try{ var o=JSON.parse(await f.text()); if(!o.caixas&&!o.cabos)throw new Error('não é um ficheiro de medição de RCT (versão 2)'); aplica(o); mudou(); toast('Ficheiro carregado.') }catch(e){ diz('Não consegui abrir: '+esc(e.message)) } };
 $('#bSave').onclick=guardar; $('#bUndo').onclick=function(){ histVai(-1) }; $('#bRedo').onclick=function(){ histVai(1) };
 $('#bAjuda').onclick=function(){ modal({titulo:'Ajuda · Medição de RCT',corpo:
-  '<p><b>Uma obra por pasta.</b> Em «Obra ▾ › Abrir pasta da obra» escolhe a pasta da obra (dentro da Central abre sozinha). Os dados ficam em <span class="mono">Dados/rct.json</span>, ligados ao centro de custo.</p>'
+  '<p><b>Uma obra por pasta.</b> Em «Obra ▾ › Abrir pasta da obra» escolhe a pasta da obra (dentro da Somafel Catenária abre sozinha). Os dados ficam em <span class="mono">Dados/rct.json</span>, ligados ao centro de custo.</p>'
   +'<p><b>Gravação.</b> Grava sozinha 5 segundos depois da última alteração. Cópias datadas a cada 30 minutos (as últimas '+NM_MAXCOP+') em <span class="mono">Copias/</span>. Se o ficheiro mudar noutra janela, a app avisa antes de gravar por cima.</p>'
   +'<p><b>Montagens.</b> A lista de montagens e dos seus materiais não está dentro da app: lê-se do ficheiro <span class="mono">Base de dados/Montagens_RCT.xlsx</span> (folha «Tipos de montagens»). Editas o Excel e a app vê a alteração.</p>'
   +'<p><b>Caixas.</b> Cria a caixa (Nº da caixa obrigatório; PK e poste ajudam a encontrá-la) e junta-lhe as montagens. Quando uma montagem fica pronta, carrega em <i>Executar</i>: a app pede o tipo de cabo e os metros gastos e compara com o previsto.</p>'
@@ -1363,7 +1363,7 @@ var BD={h:null,msg:'',cmsg:''};
 async function lePastaBd(quieto){
   try{ if(!BD.h)return;
     if(BD.h.queryPermission&&(await BD.h.queryPermission({mode:'read'}))!=='granted'){
-      if(quieto){ BD.msg='A pasta Base de dados precisa de autorização: abra a obra a partir da Central.'; return }
+      if(quieto){ BD.msg='A pasta Base de dados precisa de autorização: abra a obra a partir da Somafel Catenária.'; return }
       if((await BD.h.requestPermission({mode:'read'}))!=='granted')return }
     var fh; try{ fh=await BD.h.getFileHandle('Montagens_RCT.xlsx') }catch(e){ BD.msg='Não encontrei Montagens_RCT.xlsx na pasta «'+BD.h.name+'».'; return }
     var f=await fh.getFile(); BD.msg=''; if(MB&&MB.t===f.lastModified&&MB.nome===f.name)return;
@@ -1401,7 +1401,7 @@ function rRes(c){ try{ rRes0(c) }catch(e){ console.error(e); var bb=$('#resBox')
 function rRes0(c){
   var b=$('#resBox');
   if(vazio()){ b.innerHTML='<div class="mvg rsW"><div class="rsVaz"><b>Ainda não há caixas nesta obra</b><p>Comece por criar uma caixa (Nº da caixa, PK ou poste) e depois junte-lhe as montagens. O resumo da obra aparece aqui.</p><button class="pri" id="r1">Criar a primeira caixa</button>'+
-      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Central.')+'</p></div></div>';
+      '<p class="hint" style="margin-top:14px">'+(NM.ob?'Obra '+esc(NM.ob.cc)+'. Grava sozinha no servidor.':'<b>Sem obra.</b> O que fizer fica só neste aparelho. Para guardar numa obra, abra a Medição RCT dentro da obra, na Somafel Catenária.')+'</p></div></div>';
     $('#r1').onclick=function(){ vai('cx'); setTimeout(function(){ $('#cAdd').focus() },50) }; return }
   var G=MVG, f1=G.f, MC=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'], pe=c.nPrev?c.nExec/c.nPrev:0;
   var dias={}, mes={}, gr={}, gordem=[], cxs=[], lim=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
@@ -1724,10 +1724,10 @@ function rMon(c){
   var usos={}; ST.caixas.forEach(function(x){ (x.ms||[]).forEach(function(m){ var k=codM(m.code); usos[k]=(usos[k]||0)+1 }) });
   lista.innerHTML=cods.map(function(k){ var m=ME.mont[k]; return '<button data-t="'+esc(k)+'" class="'+(UI.tSel===k?'on':'')+'"><b>'+esc(k)+'</b>'+(m.ed?'<span class="tg av">'+m.ed+(function(){ var d=m.ed==='editada'?diffMont(k):null; return d?' · '+d.tot+' alt.':'' })()+'</span>':'')+(usos[k]?'<span class="tg ok">'+usos[k]+' usos</span>':'')+'<small>'+esc(m.nome)+'</small></button>' }).join('');
   $('#tN').textContent=cods.length+' montagens · '+ME.mats.length+' materiais'+(MB&&MB.nome?' · '+MB.nome:''); rSelMont();
-  if(!MB&&!ME.ordem.length){ det.innerHTML='<div class="vazio"><b>A procurar a base de montagens…</b>A app lê sozinha o ficheiro <span class="mono">Base de dados\\Montagens_RCT.xlsx</span>. Dentro da Central pede-o à Central; fora dela, ligue uma vez a pasta <b>Base de dados</b> e fica sempre ligada.<div class="hint" id="tSt" style="margin-top:10px">'+esc(BD.cmsg||BD.msg||'À espera da resposta da Central…')+'</div><p class="hint" style="margin-top:10px">Dentro da Central o ficheiro vem da pasta <b>Base de dados</b> ao lado das obras. Se o aviso acima disser que falta acesso, resolva-o lá e esta página atualiza-se sozinha.</p></div>';
+  if(!MB&&!ME.ordem.length){ det.innerHTML='<div class="vazio"><b>A procurar a base de montagens…</b>A app lê sozinha o ficheiro <span class="mono">Base de dados\\Montagens_RCT.xlsx</span>. Dentro da Somafel Catenária pede-o à app; fora dela, ligue uma vez a pasta <b>Base de dados</b> e fica sempre ligada.<div class="hint" id="tSt" style="margin-top:10px">'+esc(BD.cmsg||BD.msg||'À espera da resposta da Somafel Catenária…')+'</div><p class="hint" style="margin-top:10px">Dentro da Somafel Catenária o ficheiro vem da pasta <b>Base de dados</b> ao lado das obras. Se o aviso acima disser que falta acesso, resolva-o lá e esta página atualiza-se sozinha.</p></div>';
     return }
   var avEmb='';
-  if(!UI.tSel||!ME.mont[UI.tSel]){ det.innerHTML=avEmb+'<p class="hint">'+(MB?'':'')+'Escolha uma montagem na lista para ver ou alterar os materiais, ou crie uma nova com «+ Montagem».</p><p class="hint">'+(ED.central?'As alterações e as montagens novas ficam gravadas em <span class="mono">Base de dados\\Montagens_RCT_alteracoes.json</span> e valem para todas as obras. ':'As alterações e as montagens novas ficam gravadas na obra (Dados/rct.json); dentro da Central passam para o ficheiro Montagens_RCT_alteracoes.json da pasta Base de dados. ')+'O ficheiro Excel da base não é alterado: use «Exportar montagens» para levar as alterações para lá.</p>';  return }
+  if(!UI.tSel||!ME.mont[UI.tSel]){ det.innerHTML=avEmb+'<p class="hint">'+(MB?'':'')+'Escolha uma montagem na lista para ver ou alterar os materiais, ou crie uma nova com «+ Montagem».</p><p class="hint">'+(ED.central?'As alterações e as montagens novas ficam gravadas em <span class="mono">Base de dados\\Montagens_RCT_alteracoes.json</span> e valem para todas as obras. ':'As alterações e as montagens novas ficam gravadas na obra (Dados/rct.json); dentro da Somafel Catenária passam para o ficheiro Montagens_RCT_alteracoes.json da pasta Base de dados. ')+'O ficheiro Excel da base não é alterado: use «Exportar montagens» para levar as alterações para lá.</p>';  return }
   var m=ME.mont[UI.tSel], k=UI.tSel;
   var h='<div class="cxa"><div style="flex:1"><label class="lb">Montagem <span class="mono">'+esc(m.code)+'</span>'+(m.ed?' <span class="tg av">'+m.ed+'</span>':'')+'</label><input data-en="1" value="'+esc(m.nome)+'" style="width:100%;font-weight:600"></div>'+
     (m.ed==='editada'?'<button data-rep="1">Repor original</button>':'')+((m.ed==='nova'&&!usos[k])?'<button class="x" data-apaga="1">Apagar montagem</button>':'')+'</div>';
@@ -1826,14 +1826,14 @@ function rDes(){ var L=desRct(), q=sa(UI.dQ||''), qi=$('#dQ'); if(document.activ
   if(!UI.dSel||!L.some(function(d){ return d.ref===UI.dSel }))UI.dSel=L.length?L[0].ref:'';
   $('#dLista').innerHTML=V.map(function(d){ return '<button data-d="'+esc(d.ref)+'" class="'+(UI.dSel===d.ref?'on':'')+'"><b>'+esc(d.ref)+'</b><small>'+esc(d.des)+'</small></button>' }).join('')||'<div class="vazio" style="padding:18px">Nenhum desenho encontrado.</div>';
   var d=L.filter(function(x){ return x.ref===UI.dSel })[0], det=$('#dDet');
-  det.innerHTML=!d?'<div class="vazio"><b>Escolha um desenho à esquerda</b></div>':'<label class="lb">Desenho <span class="mono">'+esc(d.ref)+'</span></label><h3 style="margin:2px 0 4px">'+esc(d.des)+'</h3><div class="hint" style="margin:0 0 6px">SAP '+esc(d.sap)+' · versão '+esc(d.ver)+' · '+esc(d.data)+' · Tabela 5 do Anexo A da GR.IT.GER.002 Parte 15</div><div class="dacs"><button class="pri" data-dgr="'+esc(d.ref)+'">Abrir em grande</button><button data-dcat="'+esc(d.ref)+'">Abrir no Catálogo</button></div><div class="dview" data-dgr="'+esc(d.ref)+'" title="Carregue para ampliar"><img src="'+d.img+'" alt="'+esc(d.ref)+'"></div><div class="hint">Pré-visualização reduzida. «Abrir no Catálogo» abre o desenho completo (PDF) na Central.</div>' }
+  det.innerHTML=!d?'<div class="vazio"><b>Escolha um desenho à esquerda</b></div>':'<label class="lb">Desenho <span class="mono">'+esc(d.ref)+'</span></label><h3 style="margin:2px 0 4px">'+esc(d.des)+'</h3><div class="hint" style="margin:0 0 6px">SAP '+esc(d.sap)+' · versão '+esc(d.ver)+' · '+esc(d.data)+' · Tabela 5 do Anexo A da GR.IT.GER.002 Parte 15</div><div class="dacs"><button class="pri" data-dgr="'+esc(d.ref)+'">Abrir em grande</button><button data-dcat="'+esc(d.ref)+'">Abrir no Catálogo</button></div><div class="dview" data-dgr="'+esc(d.ref)+'" title="Carregue para ampliar"><img src="'+d.img+'" alt="'+esc(d.ref)+'"></div><div class="hint">Pré-visualização reduzida. «Abrir no Catálogo» abre o desenho completo (PDF) na Somafel Catenária.</div>' }
 $('#dQ').addEventListener('input',function(){ UI.dQ=this.value; rDes() });
 document.addEventListener('click',function(e){ var t=e.target; if(!t.closest)return;
   var l=t.closest('#dLista button[data-d]'); if(l){ UI.dSel=l.dataset.d; rDes(); return }
-  var cat=t.closest('[data-dcat]'); if(cat){ if(!abreCat(cat.dataset.dcat))diz('O desenho completo abre-se a partir da Central de Obras (esta app está a funcionar sozinha).'); return }
+  var cat=t.closest('[data-dcat]'); if(cat){ if(!abreCat(cat.dataset.dcat))diz('O desenho completo abre-se a partir da Somafel Catenária (esta app está a funcionar sozinha).'); return }
   var g=t.closest('[data-dgr]'); if(!g)return; var d=desRct().filter(function(x){ return x.ref===g.dataset.dgr })[0]; if(!d)return;
   modal({titulo:d.ref+' · '+d.des,larga:'1200px',corpo:'<div class="dtMon" style="display:block;max-width:100%"><img src="'+d.img+'" style="max-height:74vh;margin:0 auto;max-width:100%"><small>SAP '+esc(d.sap)+' · versão '+esc(d.ver)+' · '+esc(d.data)+' · pré-visualização reduzida</small></div>',
-    botoes:[{t:'Fechar',v:false},{t:'Abrir no Catálogo',v:true,p:true}],cancela:false}).then(function(v){ if(v&&!abreCat(d.ref))diz('O desenho completo abre-se a partir da Central de Obras (esta app está a funcionar sozinha).') }) });
+    botoes:[{t:'Fechar',v:false},{t:'Abrir no Catálogo',v:true,p:true}],cancela:false}).then(function(v){ if(v&&!abreCat(d.ref))diz('O desenho completo abre-se a partir da Somafel Catenária (esta app está a funcionar sozinha).') }) });
 
 /* ---- execução dentro da caixa (como o bloco «Execução nesta estrutura» da Medição de catenária) ---- */
 function exCodes(x){ var o={}, ord=[]; (x.ms||[]).forEach(function(m){ var k=codM(m.code); if(!o[k]){ o[k]={k:k,tot:0,ex:0}; ord.push(k) } o[k].tot+=qm(m); if(m.ex)o[k].ex+=qm(m) }); return ord.map(function(k){ return o[k] }) }
@@ -2048,7 +2048,7 @@ async function onCarregaBaseAdmin(){
 function onEcra(html){ var w=document.getElementById('nmLogin'); if(!w){ w=document.createElement('div'); w.id='nmLogin'; w.className='nmLogin'; document.body.appendChild(w) } w.innerHTML=html; w.hidden=false; return w }
 function onEcraFim(){ var w=document.getElementById('nmLogin'); if(w)w.hidden=true }
 function onLogin(){ return new Promise(function(ok){
-  var w=onEcra('<form><h2>Entrar</h2><p class="n">Use a mesma conta da Central de Obras.</p><label>Email</label><input type="email" id="lgE" autocomplete="username"><label>Palavra-passe</label><input type="password" id="lgP" autocomplete="current-password"><p id="lgM" class="er"></p><button class="p">Entrar</button></form>');
+  var w=onEcra('<form><h2>Entrar</h2><p class="n">Use a mesma conta da Somafel Catenária.</p><label>Email</label><input type="email" id="lgE" autocomplete="username"><label>Palavra-passe</label><input type="password" id="lgP" autocomplete="current-password"><p id="lgM" class="er"></p><button class="p">Entrar</button></form>');
   w.querySelector('form').onsubmit=async function(e){ e.preventDefault(); var r=await sb.auth.signInWithPassword({email:w.querySelector('#lgE').value.trim(),password:w.querySelector('#lgP').value}); if(r.error){ w.querySelector('#lgM').textContent='Email ou palavra-passe errados.'; return } ok() } }) }
 async function onListaObras(){
   var q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
@@ -2097,7 +2097,7 @@ async function onPassaObra(){
   if(!NM.livre||ON.soLeitura)return;
   if(vazio()){ await diz('Ainda não há nada para passar. Faça primeiro a medição sem obra.'); return }
   var q=await sb.from('obras').select('id,centro_custo,nome').order('centro_custo'), l=q.data||[];
-  if(!l.length){ await diz('Não há obras. Crie primeiro a obra na Central.'); return }
+  if(!l.length){ await diz('Não há obras. Crie primeiro a obra na Somafel Catenária.'); return }
   var r=await modal({titulo:'Passar para uma obra',corpo:'<p>A medição feita sem obra passa para a obra que escolher. O rascunho sem obra fica vazio.</p><label>Obra</label><select id="pObra">'+l.map(function(o,i){ return '<option value="'+i+'">'+esc(o.centro_custo)+' · '+esc(o.nome)+'</option>' }).join('')+'</select>',
     botoes:[{t:'Cancelar',v:null},{t:'Passar',p:true,v:function(c){ return +c.querySelector('#pObra').value }}],cancela:null});
   if(r==null)return; var ob=l[r];

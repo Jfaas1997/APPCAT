@@ -96,7 +96,7 @@ button,input,select,textarea{border-radius:12px}
 </style>
 </head>
 <body>
-<div id="topo"><img id="tlogo" src="logo-somafel.png" alt="SOMAFEL" style="height:30px;border-radius:3px;flex:none"><h1 id="tt">Central de obras</h1><button id="btema" aria-label="Mudar tema" title="Tema claro / escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button><button id="bsai" hidden>Sair</button></div>
+<div id="topo"><img id="tlogo" src="logo-somafel.png" alt="SOMAFEL" style="height:30px;border-radius:3px;flex:none"><h1 id="tt">Somafel Catenária</h1><button id="btema" aria-label="Mudar tema" title="Tema claro / escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button><button id="bsai" hidden>Sair</button></div>
 <div id="estado" hidden><span class="pt"></span><span id="et"></span><span class="sp"></span><button class="min" id="benv" hidden>Enviar agora</button></div>
 <main id="m"></main>
 <div id="avisos" aria-live="polite"></div>
@@ -348,7 +348,7 @@ async function vOs(){
       +dd.map(x=>'<div class="lin" data-dc="'+docs.indexOf(x)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+CATDOC[x.cat]+'</small></div><span class="pill">Abrir</span></div>').join('')
       +(CONV()?'':'<button class="min" data-pt="'+o.id+'" style="margin-top:8px">Fazer parte desta OS</button>')+'</div>'}).join(''):'<div class="card"><p class="hint" style="margin:0">Ainda não há OS com interdição nesta obra.</p></div>';
   const tem=new Set(await docKeys()), so=docs.filter(x=>x.cat==='os').sort((a,b)=>b.nome.localeCompare(a.nome,'pt',{numeric:true}));
-  el.innerHTML+='<div class="sec">Ordens de serviço carregadas</div><div class="card" style="padding:4px 16px">'+(so.length?so.map(x=>'<div class="lin" data-dc="'+docs.indexOf(x)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+(osDoc(x.nome)?'OS '+osDoc(x.nome):'')+(x.tam?(osDoc(x.nome)?' · ':'')+tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join(''):'<p class="hint" style="margin:10px 0">Ainda não há ficheiros de OS carregados nesta obra (Central › OS e planos).</p>')+'</div>';
+  el.innerHTML+='<div class="sec">Ordens de serviço carregadas</div><div class="card" style="padding:4px 16px">'+(so.length?so.map(x=>'<div class="lin" data-dc="'+docs.indexOf(x)+'" style="cursor:pointer"><div class="t"><b>'+esc(x.nome)+'</b><small>'+(osDoc(x.nome)?'OS '+osDoc(x.nome):'')+(x.tam?(osDoc(x.nome)?' · ':'')+tamTxt(x.tam):'')+'</small></div><span class="pill '+(tem.has(x.path)?'ok':'')+'">'+(tem.has(x.path)?'No telemóvel':'Abrir')+'</span></div>').join(''):'<p class="hint" style="margin:10px 0">Ainda não há ficheiros de OS carregados nesta obra (Somafel Catenária › OS e planos).</p>')+'</div>';
   el.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{S.osPre=b.dataset.pt;vai('nova',S.obra)});
   el.querySelectorAll('[data-dc]').forEach(b=>b.onclick=async()=>{await abreDoc(docs[+b.dataset.dc]);vOs()})}
 async function vPlano(){
