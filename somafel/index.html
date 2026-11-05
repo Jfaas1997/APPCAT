@@ -193,7 +193,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 #splash .sb{position:relative}#splash .sb::after{content:'';position:absolute;top:0;left:0;height:100%;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:spB 1.4s linear infinite}@keyframes spB{from{transform:translateX(-100%)}to{transform:translateX(300%)}}
 #splash .sb i{display:block;height:100%;width:0;background:#F9D115;border-radius:4px;transition:width .35s ease}
 #splash p{margin:0;font-size:13px;color:rgba(255,255,255,.72);min-height:18px}
-#splash button{background:none;border:0;color:rgba(255,255,255,.5);font:inherit;font-size:12px;cursor:pointer;padding:6px 10px;border-radius:6px;opacity:0;animation:spX .3s 4s forwards}
+#splash button{background:none;border:0;color:rgba(255,255,255,.5);font:inherit;font-size:12px;cursor:pointer;padding:6px 10px;border-radius:6px;opacity:0;animation:spX .3s 1.5s forwards}
 #splash button:hover{color:#fff;background:rgba(255,255,255,.08)}
 @keyframes spX{to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#splash,#splash .sb i{transition:none}}
@@ -404,7 +404,7 @@ function preparar(){
   if(window.__prep||!gestor())return;window.__prep=1;
   const el=document.createElement('div');el.id='splash';
   el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="spLema">'+LEMA+'</div><div class="sb"><i></i></div><p id="spT">A preparar…</p><button type="button" id="spX">Entrar já</button>';
-  const paraFotos=fotosFundo(el,2600);const T0SP=Date.now();
+  const paraFotos=fotosFundo(el,2200);const T0SP=Date.now();
   document.body.appendChild(el);
   let pct=0,fechado=false,fim;
   const barra=(p,t)=>{if(fechado)return;pct=Math.max(pct,p);el.querySelector('.sb i').style.width=pct+'%';if(t)el.querySelector('#spT').textContent=t};
@@ -425,7 +425,7 @@ function preparar(){
       try{await catCarrega()}catch(e){}
       barra(98,'Pronto');await dorme(150)
     }catch(e){console.error(e)}
-    await dorme(Math.max(0,1800-(Date.now()-T0SP)));
+    await dorme(Math.max(0,4500-(Date.now()-T0SP)));
     fecha();
     /* depois de entrar: prepara as apps «sem obra» em segundo plano, uma de cada vez, sem prender o ecrã */
     const ocioso=()=>new Promise(r=>(window.requestIdleCallback||setTimeout)(()=>r(),{timeout:2500}));
