@@ -194,7 +194,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 #splash .sb i{display:block;height:100%;width:0;background:#F9D115;border-radius:4px;transition:width .35s ease}
 #splash p{margin:0;font-size:13px;color:rgba(255,255,255,.72);min-height:18px}
 #splash button{background:none;border:0;color:rgba(255,255,255,.5);font:inherit;font-size:12px;cursor:pointer;padding:6px 10px;border-radius:6px;opacity:0;animation:spX .3s 1.5s forwards}
-#splash button:hover{color:#fff;background:rgba(255,255,255,.08)}
+#splash button:hover{color:#fff;background:rgba(255,255,255,.08)}#splash button.ok{opacity:1;animation:spOk .5s ease both;background:#F9D115;color:#14181d;font-size:14px;font-weight:650;padding:10px 34px;border-radius:999px;box-shadow:0 6px 24px rgba(249,209,21,.28);letter-spacing:.02em}#splash button.ok:hover,#splash button.ok:focus-visible{background:#ffe04a;color:#14181d;outline:none;transform:translateY(-1px)}@keyframes spOk{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes spX{to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#splash,#splash .sb i{transition:none}}
 .crow.on{background:var(--verdbg)!important;border-left-color:var(--brand)}
@@ -244,7 +244,13 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .fo .foH{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.fo .foH h3{margin:2px 0 4px;font-size:17px}.fo .foRef{background:var(--soft);border-radius:10px;padding:10px 14px;text-align:right}.fo .foRef span{display:block;font-size:11px;color:var(--muted)}.fo .foRef b{font-size:22px;font-variant-numeric:tabular-nums}.fo .foRef small{display:block;font-size:11px;color:var(--muted)}
 .fo .foGr{margin:14px 0 4px}.fo .foGr svg text{font-size:10.5px;fill:var(--muted)}.fo .foGr .foAx line{stroke:var(--rule);stroke-dasharray:3 4}.fo .foLeg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:4px}.fo .foLeg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .fo .foS{margin:16px 0 6px;font-size:13px}.fo .foT{overflow:auto}.fo table td.n,.fo table th.n{text-align:right}
-@media (max-width:900px){.fo .foG{grid-template-columns:1fr}.fo .foL,.fo .foD{max-height:none}}
+@media (max-width:900px){.fo .foG{grid-template-columns:1fr}.fo .foL{max-height:55vh}.fo .foD{max-height:none;min-width:0}.fo .foT{max-width:100%}}
+/* Fornecedores ocupa o ecrã todo: cabeçalho compacto e as duas colunas até ao fundo, cada uma com o seu scroll */
+@media (min-width:901px){.pg:has(>.vz.fo){overflow:hidden;padding-bottom:16px}.vz.fo{max-width:none;height:100%;display:flex;flex-direction:column}
+.fo .topo{margin-bottom:10px}.fo .topo h2{margin:0}.fo .foK{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px}.fo .foK .card{padding:8px 12px;display:flex;align-items:baseline;gap:8px}.fo .foK b{font-size:18px;display:inline}
+.fo .psbar{margin-bottom:10px}.fo .psbar input[type=search]{min-width:260px}.fo .foPer button{white-space:nowrap}
+.fo .foG{flex:1;min-height:0;align-items:stretch;grid-template-columns:minmax(320px,1fr) minmax(0,1.6fr)}.fo .foL,.fo .foD{max-height:none;min-height:0;height:100%}.fo .foGr svg{max-height:min(240px,26vh)}}
+@media (min-width:1600px){.fo .psbar{flex-wrap:nowrap}.fo .psbar select{flex:0 1 200px;min-width:140px}}
 .psbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.psbar input[type=search]{flex:1;min-width:200px}
 .psdois{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pslista{list-style:none;margin:0;padding:0}.pslista li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
@@ -423,9 +429,9 @@ function preparar(){
         barra(4+(++n/ks.length)*26)}));
       barra(32,'A abrir o catálogo…');
       try{await catCarrega()}catch(e){}
-      barra(98,'Pronto');await dorme(150)
+      barra(98,'Pronto');await dorme(150);{const bx=el.querySelector('#spX');if(bx&&!fechado){bx.textContent='Entrar';bx.classList.add('ok');try{bx.focus({preventScroll:true})}catch(e){}}}
     }catch(e){console.error(e)}
-    await dorme(Math.max(0,4500-(Date.now()-T0SP)));
+    await dorme(Math.max(0,9500-(Date.now()-T0SP)));
     fecha();
     /* depois de entrar: prepara as apps «sem obra» em segundo plano, uma de cada vez, sem prender o ecrã */
     const ocioso=()=>new Promise(r=>(window.requestIdleCallback||setTimeout)(()=>r(),{timeout:2500}));
@@ -1473,8 +1479,8 @@ function foDetalhe(g){
       +(+p.preco_novo>0?'<div class="foRef"><span>Preço de referência</span><b>'+foEur(p.preco_novo)+'</b><small>'+esc([p.fornecedor,p.tipo,p.data_cotacao&&dPT(p.data_cotacao)].filter(Boolean).join(' · '))+(p.preco_ccs!=null&&+p.preco_ccs!==+p.preco_novo?'<br>antes '+foEur(p.preco_ccs):'')+'</small></div>':'')+'</div>';
     h+='<div class="foGr">'+foGrafico(R)+'</div>';
     if(!R.length){el.innerHTML=h+'<p class="hint" style="margin-top:14px">Esta peça tem preço de referência mas ainda não há cotações registadas.</p>';return}
-    h+='<h4 class="foS">Por fornecedor</h4><table><thead><tr><th>Fornecedor</th><th class="n">Último preço</th><th class="n">Mais baixo</th><th>Data</th><th class="n">Preços</th></tr></thead><tbody>'
-      +FS.map((o,i)=>'<tr><td><b>'+esc(o.f)+'</b>'+(i===0&&FS.length>1?' <span class="pill on">mais barato</span>':'')+'</td><td class="n"><b>'+foEur(o.ult.preco)+'</b></td><td class="n">'+foEur(o.min)+'</td><td>'+dPT(o.ult.data)+'</td><td class="n">'+o.n+'</td></tr>').join('')+'</tbody></table>';
+    h+='<h4 class="foS">Por fornecedor</h4><div class="foT"><table><thead><tr><th>Fornecedor</th><th class="n">Último preço</th><th class="n">Mais baixo</th><th>Data</th><th class="n">Preços</th></tr></thead><tbody>'
+      +FS.map((o,i)=>'<tr><td><b>'+esc(o.f)+'</b>'+(i===0&&FS.length>1?' <span class="pill on">mais barato</span>':'')+'</td><td class="n"><b>'+foEur(o.ult.preco)+'</b></td><td class="n">'+foEur(o.min)+'</td><td>'+dPT(o.ult.data)+'</td><td class="n">'+o.n+'</td></tr>').join('')+'</tbody></table></div>';
   }else{
     const ult=new Map();R.forEach(r=>{const k=r.codigo||r.designacao;if(!ult.has(k))ult.set(k,r)});
     h+='<div class="foH"><div><div class="hint">Fornecedor</div><h3>'+esc(g.k)+'</h3><div class="hint">'+R.length+' preços · '+ult.size+' peças · de '+dPT(R[R.length-1].data)+' a '+dPT(R[0].data)+'</div></div></div>';
