@@ -687,6 +687,7 @@ fieldset.lockfs .box,fieldset.lockfs .fields{opacity:.72}
   .pad{padding:10px}
 }
 @media (pointer:coarse){button,select,input{min-height:40px}}
+tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-size:12px;color:var(--ink);padding-top:7px;padding-bottom:5px}tr.capH.n1 td{font-size:13px;text-transform:uppercase;letter-spacing:.02em;background:color-mix(in srgb,var(--brand,#F5C400) 14%,transparent)}tr.capH.n3 td,tr.capH.n4 td{font-weight:550;color:var(--muted)}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -2148,8 +2149,10 @@ function rubListaHtml(p){
   var it=rubItens(p);
   if(!it.length)return '<div class="empty">'+(ST.art.length?'Nenhuma rubrica com este filtro.':'Ainda não há rubricas do contrato. Importa o mapa de quantidades em «Artigos».')+'</div>';
   var h='<table><thead><tr><th style="width:110px">N.º Art.º</th><th>Designação</th><th class="w1">Un.</th><th class="num">Contrato</th><th class="num">Executado</th><th class="num">Saldo</th></tr></thead><tbody>';
+  var CM=capMapa(), CV={};
   it.slice(0,300).forEach(function(r){
     var a=r.a;
+    h+=capCabecalhos(a.cod,CM,CV,6);
     h+='<tr data-rubsel="'+esc(a.cod)+'" style="cursor:pointer"><td class="mono"><b>'+esc(a.cod)+'</b></td><td>'+esc(a.des)+'</td><td class="mono">'+esc(a.un)+'</td>'+
        '<td class="num mono">'+qtf(a.qt)+'</td><td class="num mono">'+qtf(r.ex)+'</td><td class="num mono" style="'+(r.saldo<-1e-9?'color:var(--bad,#b00020)':'')+'">'+qtf(r.saldo)+'</td></tr>';
   });
@@ -3821,6 +3824,14 @@ function naturalCmp(a,b){
 }
 function capChain(cod){ var p=String(cod||'').split('.'),o=[]; for(var i=1;i<p.length;i++)o.push(p.slice(0,i).join('.')); return o }
 function capDes(c){ var f=(ST.capitulos||[]).filter(function(x){return x.cod===c})[0]; return f?f.des:'' }
+/* cabeçalhos dos capítulos (F-07, F-07.01, F-07.01.03…) antes de cada rubrica, para se perceber de onde vem */
+function capMapa(){ var m={}; (ST.capitulos||[]).forEach(function(x){ if(x&&x.cod)m[x.cod]=x.des||'' }); return m }
+function capCabecalhos(cod,M,vistos,cols){
+  var ps=String(cod||'').split('.'), h='';
+  for(var i=1;i<ps.length;i++){ var c=ps.slice(0,i).join('.'); if(!(c in M)||vistos[c])continue; vistos[c]=1;
+    h+='<tr class="capH n'+Math.min(i,4)+'"><td class="mono">'+esc(c)+'</td><td colspan="'+(cols-1)+'">'+esc(M[c])+'</td></tr>' }
+  return h;
+}
 function quadroOrigens(){
   var origens=[{id:'contrato',nome:origemNome('contrato')}].concat((ST.adicionais||[]).map(function(x){return {id:x.id,nome:x.nome}}));
   var mc=autoCorrente(), T={v:0,e:0,m:0};
@@ -5370,10 +5381,11 @@ function renderArt(){
     '<th class="num w1">Quantidade</th><th class="num w1">Preço unit.</th><th class="num w1">Total</th>'+
     '<th class="num w1" title="Produção já executada antes de começar a usar esta app">Acum. anterior</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
   if(!rows.length)h+='<tr><td colspan="10"><div class="empty">Sem artigos'+(flt.origem?' nesta origem':'')+'. Usa <b>Importar mapa…</b> (Excel com N.º Art.º, Designação, Un., Qtd. e P.U.; o botão <b>Modelo do mapa</b> dá um exemplo) ou acrescenta linhas com <b>+ Artigo</b>.</div></td></tr>';
-  var T=0, nArt=0;
+  var T=0, nArt=0, CM=capMapa(), CV={};
   rows.forEach(function(r){
     var a=r.a,t=num(a.qt)*num(a.pu); T+=t;
     if(++nArt>LIMV.art)return;
+    h+=capCabecalhos(a.cod,CM,CV,10);
     h+='<tr><td><input data-a="'+r.i+'" data-k="cod" value="'+esc(a.cod||'')+'" class="mono"></td>'+
        '<td><input data-a="'+r.i+'" data-k="des" value="'+esc(a.des||'')+'"></td>'+
        '<td><input data-a="'+r.i+'" data-k="un" value="'+esc(a.un||'')+'" class="mono"></td>'+

@@ -251,6 +251,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .psh{margin:16px 0 6px}.psv{display:inline-flex;gap:6px;align-items:center;margin:0 14px 6px 0}
 tr.lnk{cursor:pointer}tr.lnk:focus-visible{outline:2px solid var(--acc,#0b5cad)}
 #sPessN{background:#c0392b;color:#fff;border-radius:10px;padding:0 6px;font-size:11px;margin-left:auto}
+tr.rbCap td{font-weight:650;background:var(--soft)}tr.rbCap.n1 td{text-transform:uppercase;background:color-mix(in srgb,var(--brand) 14%,transparent)}tr.rbCap.n3 td,tr.rbCap.n4 td{font-weight:550;color:var(--muted)}
 </style>
 <link rel="stylesheet" href="movimento.css">
 <style>.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}.so{transition:background .15s,border-color .15s}.pg.entra{animation:entra .18s ease-out}</style>
@@ -1141,7 +1142,7 @@ async function vObra(id){
   try{
     o=await ok(sb.from('obras').select('*').eq('id',id).single());
     if(gestor()){
-      ctr=await ok(sb.from('contratos').select('*, rubricas(count)').eq('obra_id',id).order('criado_em'));
+      ctr=await ok(sb.from('contratos').select('*, rubricas(valor)').eq('obra_id',id).order('criado_em'));
       pes=await ok(sb.from('obra_pessoas').select('pessoa_id, pessoas(nome,papel)').eq('obra_id',id));
       todas=await ok(sb.from('pessoas').select('id,nome,papel,ativo').order('nome'));
     }
@@ -1152,7 +1153,7 @@ async function vObra(id){
   if(gestor()){
     h+='<div class="sec" id="secCtr">Contratos<span class="sp"></span>'+(pc?'<button id="nct">+ Novo contrato</button>':'<span class="hint">Só leitura (contas bloqueadas para encarregados)</span>')+'</div>';
     h+=ctr.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Contrato</th><th>Cliente</th><th class="n">Valor</th><th class="n">Rubricas</th><th></th></tr></thead><tbody>'
-      +ctr.map(c=>'<tr><td><b>'+esc(c.nome)+'</b></td><td>'+esc(c.cliente||'—')+'</td><td class="n">'+eur(c.valor)+'</td><td class="n">'+(c.rubricas&&c.rubricas[0]?c.rubricas[0].count:0)+'</td><td class="ac"><button data-r="'+c.id+'">Rubricas</button>'+(pc?'<button data-e="'+c.id+'">Editar</button>':'')+(admin()?'<button class="perigo" data-a="'+c.id+'">Apagar</button>':'')+'</td></tr>').join('')
+      +ctr.map(c=>'<tr><td><b>'+esc(c.nome)+'</b></td><td>'+esc(c.cliente||'—')+'</td><td class="n">'+eur(c.valor)+'</td><td class="n">'+(c.rubricas||[]).filter(r=>r.valor!=null).length+'</td><td class="ac"><button data-r="'+c.id+'">Rubricas</button>'+(pc?'<button data-e="'+c.id+'">Editar</button>':'')+(admin()?'<button class="perigo" data-a="'+c.id+'">Apagar</button>':'')+'</td></tr>').join('')
       +'</tbody></table></div>':'<div class="card"><p class="hint" style="margin:0">Esta obra ainda não tem contratos. O primeiro é o contrato inicial; depois entram adicionais e propostas aprovadas.</p></div>';
     h+='<div class="sec" id="secPes">Pessoas com acesso a esta obra<span class="sp"></span>'+(admin()?'<button id="npe">+ Atribuir pessoa</button>':'')+'</div>';
     h+='<div class="card"><p class="hint" style="margin-top:0">Administradores e encarregados veem todas as obras. As equipas veem só as obras em que estiverem aqui.</p><div class="lista">'
@@ -1313,7 +1314,7 @@ async function rubricas(c,fim){
   async function desenha(){
     let lista=[];try{lista=await ok(sb.from('rubricas').select('*').eq('contrato_id',c.id).order('codigo'))}catch(e){w.corpo.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
     w.corpo.innerHTML=(lista.length?'<table><thead><tr><th>Código</th><th>Descrição</th><th class="n">Valor</th><th></th></tr></thead><tbody>'
-      +lista.map(r=>'<tr><td class="mono">'+esc(r.codigo||'')+'</td><td>'+esc(r.descricao||'')+'</td><td class="n">'+eur(r.valor)+'</td><td class="ac">'+(pc?'<button class="x" data-d="'+r.id+'" title="Apagar">×</button>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="hint">Este contrato ainda não tem rubricas de faturação.</p>')
+      +lista.map(r=>r.valor==null&&lista.some(x=>x!==r&&String(x.codigo||'').startsWith(r.codigo+'.'))?'<tr class="rbCap n'+Math.min(String(r.codigo).split('.').length,4)+'"><td class="mono">'+esc(r.codigo||'')+'</td><td colspan="2">'+esc(r.descricao||'')+'</td><td class="ac">'+(pc?'<button class="x" data-d="'+r.id+'" title="Apagar">×</button>':'')+'</td></tr>':'<tr><td class="mono">'+esc(r.codigo||'')+'</td><td>'+esc(r.descricao||'')+'</td><td class="n">'+eur(r.valor)+'</td><td class="ac">'+(pc?'<button class="x" data-d="'+r.id+'" title="Apagar">×</button>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="hint">Este contrato ainda não tem rubricas de faturação.</p>')
       +(pc?'<form id="fr" style="display:grid;grid-template-columns:110px 1fr 120px auto;gap:8px;margin-top:14px;align-items:end"><div><label>Código</label><input name="cod" required></div><div><label>Descrição</label><input name="des"></div><div><label>Valor (€)</label><input name="val"></div><button class="pri">Adicionar</button></form>':'')
       +'<div class="bt"><button id="fx">Fechar</button></div>';
     $('#fx',w.corpo).onclick=()=>{w.fecha();fim()};
