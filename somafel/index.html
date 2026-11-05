@@ -28,6 +28,17 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 .ic{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 /* ecrã de entrada */
+#splash,.carr{isolation:isolate}
+#splash .spF,.carr .spF,#entrada .spF{position:absolute;inset:0;z-index:-2;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease;transform:scale(1.04)}
+#splash .spF.on,.carr .spF.on,#entrada .spF.on{opacity:1;animation:spZoom 9s linear both}
+#splash::before,.carr::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(12,14,18,.55),rgba(12,14,18,.82) 70%,rgba(12,14,18,.92))}
+@keyframes spZoom{from{transform:scale(1.08)}to{transform:scale(1)}}
+.spLema{font-size:12.5px;letter-spacing:.2em;font-weight:600;color:#F9D115;text-align:center;padding:0 16px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.carr{color:rgba(255,255,255,.8)!important}.carr span{color:rgba(255,255,255,.75)}.carr .sb{background:rgba(255,255,255,.18)!important}
+#entrada{position:relative;isolation:isolate;flex-direction:column;gap:18px;background:#14181d}
+#entrada::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(12,14,18,.35),rgba(12,14,18,.7))}
+#entrada .enLema{position:relative;color:#fff;font-size:13px;letter-spacing:.22em;font-weight:600;text-align:center;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+@media (prefers-reduced-motion:reduce){#splash .spF,.carr .spF,#entrada .spF{animation:none!important;transition:none}}
 #entrada{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .cx{width:100%;max-width:380px;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;box-shadow:var(--sh);padding:28px 26px;animation:entra .3s ease-out}
 .cx .logo{display:flex;align-items:center;gap:10px;margin-bottom:18px}
@@ -328,10 +339,18 @@ function confirmar(texto,okTxt){
 }
 
 /* ---------- entrada ---------- */
+/* fotos de apresentação (obras Somafel) para o arranque, o ecrã de entrada e o carregamento das apps */
+const FOTOS=['fotos/obra1.jpg','fotos/obra2.jpg','fotos/obra3.jpg','fotos/obra4.jpg','fotos/obra5.jpg','fotos/obra6.jpg'];
+const LEMA='SOMAFEL — ENGENHARIA E OBRAS FERROVIÁRIAS';
+function fotoAoAcaso(){return FOTOS[Math.floor(Math.random()*FOTOS.length)]}
+function fotosFundo(el,ms){/* desliza entre as fotos com esbatimento; devolve função para parar */
+  let i=Math.floor(Math.random()*FOTOS.length),t=null;const cam=[0,1].map(()=>{const d=document.createElement('div');d.className='spF';el.insertBefore(d,el.firstChild);return d});
+  let k=0;const mostra=()=>{const d=cam[k%2],o=cam[(k+1)%2];d.style.backgroundImage='url('+FOTOS[i%FOTOS.length]+')';d.classList.remove('on');void d.offsetWidth;d.classList.add('on');o.classList.remove('on');i++;k++};
+  mostra();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)t=setInterval(mostra,ms||3200);return ()=>clearInterval(t)}
 function ecraEntrada(modo){
   modo=modo||'entrar';
   const titulos={entrar:'Entrar',criar:'Primeiro acesso',recuperar:'Recuperar palavra-passe'};
-  $('#raiz').innerHTML='<div id="entrada"><form class="cx" id="fl"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Central de obras</h1><p class="sub">Somafel</p></div></div>'
+  $('#raiz').innerHTML='<div id="entrada"><div class="enLema">'+LEMA+'</div><form class="cx" id="fl"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Central de obras</h1><p class="sub">Somafel</p></div></div>'
    +'<p class="sub" style="margin-bottom:6px"><b>'+titulos[modo]+'</b></p>'
    +(modo==='criar'?'<label>Nome</label><input name="nome" required autocomplete="name">':'')
    +'<label>Email</label><input name="email" type="email" required autocomplete="username">'
@@ -341,6 +360,7 @@ function ecraEntrada(modo){
    +(modo==='entrar'?'<button type="button" class="lnk" data-m="recuperar">Esqueci-me da palavra-passe</button>'
                     :'<button type="button" class="lnk" data-m="entrar">Voltar a entrar</button>')
    +'</form></div>';
+  try{fotosFundo($('#entrada'),4500)}catch(e){}
   document.querySelectorAll('.lnk').forEach(b=>b.onclick=()=>ecraEntrada(b.dataset.m));
   const msg=(t,e)=>{$('#m').innerHTML='<div class="msg '+(e?'e':'o')+'">'+esc(t)+'</div>'};
   $('#fl').onsubmit=async ev=>{
@@ -382,11 +402,12 @@ let ULT=0;
 function preparar(){
   if(window.__prep||!gestor())return;window.__prep=1;
   const el=document.createElement('div');el.id='splash';
-  el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="sb"><i></i></div><p id="spT">A preparar a Central…</p><button type="button" id="spX">Entrar já</button>';
+  el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="spLema">'+LEMA+'</div><div class="sb"><i></i></div><p id="spT">A preparar a Central…</p><button type="button" id="spX">Entrar já</button>';
+  const paraFotos=fotosFundo(el,2600);const T0SP=Date.now();
   document.body.appendChild(el);
   let pct=0,fechado=false,fim;
   const barra=(p,t)=>{if(fechado)return;pct=Math.max(pct,p);el.querySelector('.sb i').style.width=pct+'%';if(t)el.querySelector('#spT').textContent=t};
-  const fecha=()=>{if(fechado)return;fechado=true;barra(100);el.classList.add('fim');document.body.classList.add('mvAbre');setTimeout(()=>{el.remove();document.body.classList.remove('mvAbre')},1100)};
+  const fecha=()=>{if(fechado)return;fechado=true;barra(100);el.classList.add('fim');setTimeout(()=>paraFotos(),1100);document.body.classList.add('mvAbre');setTimeout(()=>{el.remove();document.body.classList.remove('mvAbre')},1100)};
   el.querySelector('#spX').onclick=fecha;
   const dorme=ms=>new Promise(r=>setTimeout(r,ms));
   const pronto=async(f,ms)=>{for(let i=0;i<ms/200&&!fechado;i++){try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');if(f.dataset.ok&&((l&&l.hidden)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)))return true}catch(e){}await dorme(200)}return false};
@@ -403,6 +424,7 @@ function preparar(){
       try{await catCarrega()}catch(e){}
       barra(98,'Pronto');await dorme(150)
     }catch(e){console.error(e)}
+    await dorme(Math.max(0,1800-(Date.now()-T0SP)));
     fecha();
     /* depois de entrar: prepara as apps «sem obra» em segundo plano, uma de cada vez, sem prender o ecrã */
     const ocioso=()=>new Promise(r=>(window.requestIdleCallback||setTimeout)(()=>r(),{timeout:2500}));
@@ -989,7 +1011,7 @@ window.__vl=d=>{try{return /[?&]obra=livre/.test(d.defaultView.location.search)}
 window.__central={janelaApp,get S(){return{ativa:S.obra}}};
 function vApp(o,v){
   largaApps(o.id);S.fk=o.id+'|'+v;const f=frameApp(o,v);
-  const pg=$('#pg');pg.classList.add('semPad');pg.innerHTML='<div class="appfr">'+(f.dataset.rd?'':'<div class="carr" data-k="'+S.fk+'"><img src="logo-somafel.png" alt=""><div class="sb"><i></i></div><span>A abrir '+esc(APPNOME[v])+'…</span></div>')+'</div>';
+  const pg=$('#pg');pg.classList.add('semPad');pg.innerHTML='<div class="appfr">'+(f.dataset.rd?'':'<div class="carr" data-k="'+S.fk+'"><div class="spF on" style="background-image:url('+fotoAoAcaso()+')"></div><img src="logo-somafel.png" alt=""><div class="spLema">'+LEMA+'</div><div class="sb"><i></i></div><span>A abrir '+esc(APPNOME[v])+'…</span></div>')+'</div>';
   requestAnimationFrame(posiciona);
 }
 function titulo(t,chip){$('#hT').textContent=t;const c=$('#hCC');c.hidden=!chip;c.textContent=chip||''}
@@ -1715,13 +1737,16 @@ async function vPessoas(){
   let h='<div class="vz"><div class="topo"><div><h2>Pessoas</h2><p class="sub" style="margin:0">Quem tem acesso e com que papel.</p></div><span class="sp"></span>'+(admin()?'<button id="nc">Convidar por email</button> <button class="pri" id="np">+ Nova pessoa</button>':'')+'</div><div style="height:14px"></div>'
    +'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Nome</th><th>Papel</th><th>Estado</th><th></th></tr></thead><tbody>'
    +lista.map(p=>{const eu=p.id===S.eu.id;
-     return '<tr><td><b>'+esc(p.nome)+'</b>'+(eu?' <span class="hint">(tu)</span>':'')+'</td><td>'
+     return '<tr><td><b>'+esc(p.nome)+'</b>'+(eu?' <span class="hint">(tu)</span>':'')+(admin()?' <button class="x" data-ren="'+p.id+'" title="Mudar o nome">✎</button>':'')+'</td><td>'
       +(admin()&&!eu?'<select data-p="'+p.id+'" style="width:auto">'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===p.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select>':PAPEL[p.papel])
       +'</td><td>'+(admin()&&!eu?'<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-t="'+p.id+'"'+(p.ativo?' checked':'')+'> ativo</label>':'<span class="pill '+(p.ativo?'on':'')+'">'+(p.ativo?'ativo':'inativo')+'</span>')
       +'</td><td class="ac">'+(admin()&&!eu?'<button data-pw="'+p.id+'">Nova palavra-passe</button>':'')+'</td></tr>'}).join('')
    +'</tbody></table></div><p class="hint" style="margin-top:12px">«Convidar por email» envia uma ligação para a pessoa definir a própria palavra-passe. O email serve só para entrar. Para quem não tem email, podes usar um endereço inventado (por exemplo <span class="mono">nome@somafel.pt</span>).</p></div>';
   pg.innerHTML=h;
   pg.querySelectorAll('select[data-p]').forEach(s=>s.onchange=async()=>{try{await ok(sb.from('pessoas').update({papel:s.value}).eq('id',s.dataset.p));aviso('Papel atualizado.')}catch(e){aviso(erroTxt(e),true);vPessoas()}});
+  pg.querySelectorAll('[data-ren]').forEach(b=>b.onclick=async()=>{const p=lista.find(x=>x.id===b.dataset.ren);if(!p)return;
+    const v=await formulario('Mudar o nome',[{id:'nome',rotulo:'Nome',valor:p.nome||'',obrig:true}],'Guardar');if(!v||!v.nome.trim())return;
+    try{await ok(sb.from('pessoas').update({nome:v.nome.trim()}).eq('id',p.id));if(S.eu&&S.eu.id===p.id)S.eu.nome=v.nome.trim();aviso('Nome atualizado.');vPessoas()}catch(e){aviso(erroTxt(e),true)}});
   pg.querySelectorAll('input[data-t]').forEach(s=>s.onchange=async()=>{try{await ok(sb.from('pessoas').update({ativo:s.checked}).eq('id',s.dataset.t));aviso(s.checked?'Pessoa ativada.':'Pessoa desativada.')}catch(e){aviso(erroTxt(e),true);vPessoas()}});
   pg.querySelectorAll('[data-pw]').forEach(b=>b.onclick=async()=>{
     const v=await formulario('Nova palavra-passe',[{id:'pw',tipo:'password',rotulo:'Palavra-passe (mínimo 8 caracteres)',obrig:true}],'Definir');if(!v)return;
