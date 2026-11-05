@@ -3329,7 +3329,7 @@ function renderPtoMes(){
 
   /* --- Equipamento --- */
   var diretosEQ=ST.eqp.filter(function(q){return q.direto!==false});
-  h+='<h3 class="sec">Equipamento</h3><div class="hint" style="margin-bottom:6px">Clica numa célula livre para marcar a entrada; clica numa célula já presente para marcar a saída ali.</div>';
+  h+='<h3 class="sec">Equipamento</h3><div class="hint" style="margin-bottom:6px">Clica num dia vazio para pôr o equipamento na obra. Clica num dia com ✓ para o tirar a partir desse dia; no primeiro dia, tira-o por completo. ↶ desfaz.</div>';
   if(!diretosEQ.length)h+='<div class="empty">Sem equipamento direto no Mapa de Pessoal e Equipamento.</div>';
   else{
     h+='<div class="gridWrap"><table class="grelha'+(modoNum?' gnum':'')+'"><thead>'+cabecalho(false)+'</thead><tbody>';
@@ -3403,10 +3403,16 @@ function renderPtoMes(){
     var ec=e.target.closest('[data-ecel]');
     if(ec){
       var pe=ec.dataset.ecel.split('|'), eqId=pe[0], data2=pe[1], q=eqPorId(eqId); if(!q)return;
-      if(!q.entrada||data2<q.entrada){ q.entrada=data2; render(); return }
-      if(!q.saida||data2>q.saida){ if(confirm('Marcar saída de «'+(q.nome)+'» em '+ptbr(data2)+'?')){ q.saida=data2; render() } return }
-      if(confirm('Limpar a saída de «'+(q.nome)+'» (volta a estar sempre presente)?')){ q.saida=''; render() }
-      return;
+      /* dia com ✓: tira o equipamento a partir desse dia (no 1.º dia, tira-o por completo); dia vazio: põe-no na obra */
+      var ini=q.entrada||'', fim=q.saida||'', nm=q.nome||q.categoria||'Equipamento', fora=!!(ini&&fim&&fim<ini);
+      var pres=!fora&&(!ini||data2>=ini)&&(!fim||data2<=fim);
+      if(pres){
+        if(ini&&data2<=ini){ q.saida=addD(ini,-1); toast('«'+nm+'» retirado do ponto. ↶ desfaz.') }
+        else { q.saida=addD(data2,-1); toast('«'+nm+'» sai da obra a '+ptbr(q.saida)+'. ↶ desfaz.') }
+      } else if(fora||!ini){ q.entrada=data2; q.saida=''; toast('«'+nm+'» na obra desde '+ptbr(data2)+'.') }
+      else if(data2<ini){ q.entrada=data2; toast('«'+nm+'» na obra desde '+ptbr(data2)+'.') }
+      else { q.saida=data2>=hoje()?'':data2; toast(q.saida?'«'+nm+'» na obra até '+ptbr(q.saida)+'.':'«'+nm+'» volta a estar na obra, sem saída.') }
+      render(); return;
     }
   });
 
