@@ -8958,6 +8958,8 @@ async function nmArranque(){
     if(await nmSim('Há alterações deste aparelho que ainda não foram para o servidor. Recuperá-las?','Recuperar')){ aplicaSnap(rasc.json); if(Array.isArray(rasc.extra))ST.extra=rasc.extra; buildIX(); nmRegarante(); LASTHASH='forcar'; DIRTY=true; mostraSujo() } }
   else if(!NM.soLeitura&&rasc&&rasc.dirty&&rasc.base!==NM.versao){ await nmDiz('Havia um rascunho antigo neste aparelho, mas os dados no servidor já mudaram desde então. Ficou de lado.') }
   if(!d&&!NM.soLeitura)toast('Obra nova. Comece do zero ou importe um Excel («Abrir»).',5000);
+  /* dentro de uma obra abre sempre no resumo dessa obra (não no resumo geral de todas as obras) */
+  try{ view='res'; document.querySelectorAll('#side .tab').forEach(function(t){ t.classList.toggle('on',t.dataset.v==='res') }); render() }catch(e){ console.error(e) }
   nmUi(); nmFlush(); document.title='Materiais · '+NM.ob.cc;
   setTimeout(function(){ nmEcraFim(); NM.pronto=true },60) }
 
@@ -9351,6 +9353,8 @@ async function sincMedicao(){
   if(MLSTAT.ocupado||!ligaCentral()||!orcCarregado())return; MLSTAT.ocupado=true;
   try{
     var M=await medLigPuxa(); if(!M||!M.L){ MLSTAT.txt='Medição indisponível'; return }
+    /* proteção: uma Medição vazia (ou ainda a carregar) nunca apaga o reorçamento que veio dela */
+    if(!M.L.length&&ST.med.some(function(a){ return (a.lanc||[]).some(function(l){ return l.src==='medapp' }) })){ MLSTAT.txt='a Medição da obra está vazia · o reorçamento não foi mexido'; return }
     var sig=(M.ver?M.ver.nome:'')+'|'+M.L.length+'|'+M.L.reduce(function(s,x){ return s+num(x.qt) },0).toFixed(3);
     MLSTAT.ts=Date.now();
     if(ST.medSig===sig){ MLSTAT.txt='ligado à Medição · sem alterações'; return }
