@@ -1894,7 +1894,7 @@ function renderPDedit(){
     fld('Data','<input type="date" data-k="data" value="'+esc(p.data)+'">')+
     fld('Auto','<div class="mono" style="padding:8px 0" title="Período do auto a que esta parte diária pertence ('+esc(autoIntervalo(autoDe(p.data)))+')">'+esc(mesNome(autoDe(p.data)))+'</div>')+
     fld('Turno','<select data-k="turno"><option value="noite"'+(p.turno!=='dia'?' selected':'')+'>Noite</option><option value="dia"'+(p.turno==='dia'?' selected':'')+'>Dia</option></select>')+
-    fld('Local','<select data-k="localId"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(p.localId===l.id?' selected':'')+'>'+esc(l.nome||'(sem nome)')+(num(l.desl)?' · '+fmtH(l.desl)+' h':'')+'</option>'}).join('')+'</select>')+
+    fld('Local','<input data-k="local" value="'+esc(p.local||(p.localId?localNome(p.localId):''))+'" placeholder="ex.: Alfarelos, PK 198+300" style="width:190px">')+
     fld('Ficha n.º','<input data-k="ficha" value="'+esc(p.ficha||'')+'" style="width:110px">')+
     fld('D.A.E.','<input data-k="dae" value="'+esc(p.dae||'')+'" style="width:110px">')+
   '</div>';
@@ -2513,16 +2513,6 @@ function renderRec(){
   if(filtra&&!algumEQ)h+='<tr><td colspan="9"><div class="empty">Nada encontrado nos equipamentos.</div></td></tr>';
   h+='</tbody></table>';
 
-  h+='<h3 class="sec">Locais de trabalho</h3><div class="hint" style="margin-bottom:8px">Cada local tem as horas de deslocação habituais. Escolhes o local na parte diária, e quem ligares a ela fica com essas horas (podes corrigi-las no Ponto).</div>'+
-    '<table><thead><tr><th>Local</th><th class="num w1">Deslocação (h)</th><th class="w1"><button id="bLcAdd">+</button></th></tr></thead><tbody>';
-  if(!ST.locais.length)h+='<tr><td colspan="3"><div class="empty">Sem locais. Acrescenta, por exemplo, «Alfarelos» com 0,5 h de deslocação.</div></td></tr>';
-  ST.locais.forEach(function(l){
-    var usado=ST.pd.some(function(p){return p.localId===l.id})||(ST.ponto||[]).some(function(x){return x.localId===l.id})||(ST.escala||[]).some(function(x){return x.localId===l.id})||(ST.escMeios||[]).some(function(x){return x.localId===l.id})||(ST.equipas||[]).some(function(x){return x.localId===l.id});
-    h+='<tr><td><input data-lc="'+l.id+'" data-k="nome" value="'+esc(l.nome||'')+'"></td>'+
-       '<td class="num"><input class="num" data-lc="'+l.id+'" data-k="desl" value="'+esc(fmtH(l.desl))+'"></td>'+
-       '<td class="w1">'+(usado?'':'<button class="x" data-lcdel="'+l.id+'">×</button>')+'</td></tr>';
-  });
-  h+='</tbody></table>';
 
   $('#recBox').innerHTML=h;
   bind('#recBox','change',function(e){
@@ -2621,8 +2611,8 @@ function atualizaTotaisPto(){
   var eg=document.getElementById('ptg'); if(eg)eg.textContent=fmtT(g);
 }
 /* ---------- ESCALA SEMANAL, EQUIPAS E «ONDE ESTÁ» ---------- */
-var ptoFech={}, ptoVista='mes', escSemana='', escPincel={local:'',turno:'noite',init:false}, escDias={0:1,1:1,2:1,3:1,4:1}, ondeDia='', ondeQ='', eqpMod=null;
-var CORES_LOCAL=[210,28,145,285,48,350,175,100], NDIA=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+var ptoFech={}, ptoVista='mes', escSemana='', escPincel={local:'',turno:'noite',modo:'noite',init:false}, escDias={0:1,1:1,2:1,3:1,4:1}, ondeDia='', ondeQ='', eqpMod=null;
+var CORES_LOCAL=[210,28,145,285,48,350,175,100], TURNO_COR={noite:'hsla(215,70%,55%,.30)',dia:'hsla(45,95%,55%,.38)'}, NDIA=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 function localNome(id){ var l=localPorId(id); return l?(l.nome||'(sem nome)'):'' }
 function localAbrev(id){ var n=localNome(id); return n.length>10?n.slice(0,9)+'.':n }
 function localCor(id){ var i=(ST.locais||[]).map(function(l){return l.id}).indexOf(id); return i<0?'transparent':'hsla('+CORES_LOCAL[i%CORES_LOCAL.length]+',55%,55%,.34)' }
@@ -2731,7 +2721,7 @@ function renderPintModal(){
     var nomes=g.pessoas.map(moPorId).filter(Boolean).map(function(m){ return m.nome||m.cat });
     h+='<tr><td class="w1"><input type="checkbox" data-pg="'+i+'" data-k="inc"'+(g.inc?' checked':'')+'></td>'+
       '<td><input data-pg="'+i+'" data-k="nome" value="'+esc(g.nome)+'" style="width:130px"></td>'+
-      '<td>'+esc(g.localId?localNome(g.localId):'Sem local')+' · '+(g.turno==='noite'?'Noite':'Dia')+'</td>'+
+      '<td>'+(g.localId&&localNome(g.localId)?esc(localNome(g.localId))+' · ':'')+(g.turno==='noite'?'Noite':'Dia')+'</td>'+
       '<td><b>'+g.pessoas.length+'</b> <span class="hint">'+esc(nomes.slice(0,4).join(', '))+(nomes.length>4?'…':'')+'</span>'+(g.meios.length?'<br><b>'+g.meios.length+'</b> <span class="hint">'+esc(g.meios.map(eqPorId).filter(Boolean).map(meioNome).join(', '))+'</span>':'')+'</td>'+
       '<td><select data-pg="'+i+'" data-k="lider" style="min-width:170px">'+g.pessoas.map(function(id){ var m=moPorId(id); return '<option value="'+esc(id)+'"'+(g.lider===id?' selected':'')+'>★ '+esc(m?(m.nome||m.cat):'')+'</option>' }).join('')+'</select></td></tr>';
   });
@@ -2839,13 +2829,11 @@ function renderEsc(){
   if(!escSemana)escSemana=semIni(addD(hoje(),7));
   ST.equipas=ST.equipas||[]; ST.escala=ST.escala||[]; ST.escMeios=ST.escMeios||[]; ST.equipas.forEach(eqpGaranteLider);
   var dias=semDias(escSemana), pess=moOrd(), loc=ST.locais||[];
-  if(!escPincel.init&&loc.length){ escPincel.local=loc[0].id; escPincel.init=true }
   var locOpt=function(sel,vazio){ return '<option value="">'+vazio+'</option>'+loc.map(function(l){ return '<option value="'+esc(l.id)+'"'+(l.id===sel?' selected':'')+'>'+esc(l.nome||'(sem nome)')+'</option>' }).join('') };
   var h='<div class="escNav"><button id="escAnt">←</button><b class="mono" style="min-width:230px;text-align:center">'+esc(semRotulo(escSemana))+'</b><button id="escProx">→</button>'+
     '<button id="escSeg" title="Voltar à semana seguinte">Semana seguinte</button><span class="sp"></span>'+
     '<button id="escPonto" class="pri" title="Cria no Ponto o que ainda não existe. Não apaga nem altera nada.">Preencher Ponto desta semana</button></div>';
   h+='<div class="hint" style="margin-bottom:8px">O plano é só uma intenção: não bloqueia nada. Podes alterar o Ponto, as partes diárias e o próprio plano a qualquer momento. «Preencher Ponto» só cria o que ainda não existe.</div>';
-  if(!loc.length)h+='<div class="hint" style="margin-bottom:8px"><span class="chip warn">Sem locais</span> Cria primeiro os locais em MO e EQ → Locais de trabalho.</div>';
 
   /* responsável pelos trabalhos e coordenação */
   var cEx=coordExplicito(escSemana), cDe=coordDe(escSemana);
@@ -2860,7 +2848,7 @@ function renderEsc(){
     '</span><span class="sp"></span><button id="eqpAdd">+ Equipa</button></div><div class="bb">';
   if(!ST.equipas.length)h+='<div class="empty">Sem equipas. Cria uma, escolhe as pessoas e o local, e aplica-a à semana.</div>';
   else{
-    h+='<table><thead><tr><th>Equipa</th><th class="w1">Turno</th><th style="width:118px">Horário</th><th style="width:170px">Local</th><th style="width:170px">Líder</th><th>Pessoas</th><th>Meios</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
+    h+='<table><thead><tr><th>Equipa</th><th class="w1">Turno</th><th style="width:118px">Horário</th><th style="width:170px">Líder</th><th>Pessoas</th><th>Meios</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
     ST.equipas.forEach(function(t){
       var nomes=(t.pessoas||[]).map(moPorId).filter(Boolean).map(function(m){ return m.nome||m.cat });
       var meiosN=(t.meios||[]).map(eqPorId).filter(Boolean).map(meioNome);
@@ -2868,7 +2856,6 @@ function renderEsc(){
       h+='<tr><td><input data-eq="'+t.id+'" data-k="nome" value="'+esc(t.nome||'')+'"></td>'+
         '<td class="w1"><select data-eq="'+t.id+'" data-k="turno" style="width:92px"><option value="noite"'+(t.turno!=='dia'?' selected':'')+'>Noite</option><option value="dia"'+(t.turno==='dia'?' selected':'')+'>Dia</option></select></td>'+
         '<td><input data-eq="'+t.id+'" data-k="horario" value="'+esc(t.horario||'')+'" placeholder="'+esc(HOR_PAD[t.turno==='dia'?'dia':'noite'])+'" title="Aparece na impressão. Vazio = horário habitual do turno."></td>'+
-        '<td><select data-eq="'+t.id+'" data-k="localId">'+locOpt(t.localId||'','— local —')+'</select></td>'+
         '<td>'+(membros.length?'<select data-eq="'+t.id+'" data-k="lider" title="Todas as equipas têm um líder">'+membros.map(function(m){ return '<option value="'+esc(m.id)+'"'+(t.lider===m.id?' selected':'')+'>★ '+esc(m.nome||m.cat)+'</option>' }).join('')+'</select>':'<span class="hint">escolhe as pessoas</span>')+'</td>'+
         '<td><button data-eqppes="'+t.id+'">Pessoas… ('+nomes.length+')</button> <span class="hint">'+esc(nomes.slice(0,3).join(', '))+(nomes.length>3?'…':'')+'</span></td>'+
         '<td><button data-eqpmei="'+t.id+'">Meios… ('+meiosN.length+')</button> <span class="hint">'+esc(meiosN.slice(0,3).join(', '))+(meiosN.length>3?'…':'')+'</span></td>'+
@@ -2880,11 +2867,10 @@ function renderEsc(){
   h+='</div></div>';
 
   /* pincel + legenda */
-  h+='<div class="escPincel"><b>Pincel</b><select id="pLocal">'+locOpt(escPincel.local,'— limpar célula —')+'</select>'+
-    '<select id="pTurno"><option value="noite"'+(escPincel.turno!=='dia'?' selected':'')+'>Noite</option><option value="dia"'+(escPincel.turno==='dia'?' selected':'')+'>Dia</option></select>'+
+  h+='<div class="escPincel"><b>Pincel</b><select id="pModo"><option value="noite"'+(escPincel.modo==='noite'?' selected':'')+'>Noite</option><option value="dia"'+(escPincel.modo==='dia'?' selected':'')+'>Dia</option><option value="limpa"'+(escPincel.modo==='limpa'?' selected':'')+'>Limpar</option></select>'+
     '<span class="hint">Clica nas células, ou no nome (preenche os dias marcados). Clicar numa célula igual limpa-a.</span>'+
     (function(){ var n=pintGrupos(escSemana).reduce(function(a,g){ return a+g.pessoas.length },0); return '<button id="pintEqp"'+(n?'':' disabled')+' title="Cria uma equipa por local e turno com o que pintaste nesta semana e deixa-te escolher o líder">Criar equipas do que pintei'+(n?' ('+n+')':'')+'</button>' })()+
-    '<span style="margin-left:auto">'+loc.map(function(l){ return '<span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+localCor(l.id)+'"></span>'+esc(l.nome||'')+'</span>' }).join('')+'</span></div>';
+    '<span style="margin-left:auto"><span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+TURNO_COR.noite+'"></span>Noite</span><span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+TURNO_COR.dia+'"></span>Dia</span></span></div>';
 
   /* grelha */
   h+='<div class="gridWrap"><table class="grelha gesc"><thead><tr><th class="stick">&nbsp;</th><th colspan="7" class="semTh">Semana '+semana(escSemana)+'</th></tr><tr><th class="stick">&nbsp;</th>';
@@ -2896,8 +2882,8 @@ function renderEsc(){
     h+='<tr><td class="stick escNome" data-escrow="'+m.id+'" title="Clique: aplica o pincel aos dias marcados">'+esc(m.nome||m.cat)+'</td>';
     dias.forEach(function(d,i){
       var es=escDe(m.id,d), pt=pontoDe(m.id,d);
-      h+='<td class="diaCel escC'+(i>=5?' fds':'')+(pt?' jaPto':'')+'" data-ecl="'+m.id+'|'+d+'" style="background:'+(es?localCor(es.localId):'')+'" title="'+esc(NDIA[i]+' '+ptbr(d)+(es?' — '+localNome(es.localId)+' ('+(es.turno==='noite'?'noite':'dia')+')':'')+(pt?' · já tem ponto':''))+'">'+
-        (es?'<span class="eL">'+esc(localAbrev(es.localId))+'</span><span class="eT">'+(es.turno==='noite'?'N':'D')+'</span>':'')+'</td>';
+      h+='<td class="diaCel escC'+(i>=5?' fds':'')+(pt?' jaPto':'')+'" data-ecl="'+m.id+'|'+d+'" style="background:'+(es?TURNO_COR[es.turno==='dia'?'dia':'noite']:'')+'" title="'+esc(NDIA[i]+' '+ptbr(d)+(es?' — '+(es.turno==='noite'?'noite':'dia'):'')+(pt?' · já tem ponto':''))+'">'+
+        (es?'<span class="eT">'+(es.turno==='noite'?'N':'D')+'</span>':'')+'</td>';
     });
     h+='</tr>';
   });
@@ -2916,8 +2902,8 @@ function renderEsc(){
           h+='<tr><td class="stick escNome" data-escrowm="'+q.id+'" title="Clique: aplica o pincel aos dias marcados">'+esc(meioNome(q))+(tipoEq(q)==='V'?(respNome(q)?' <span class="hint">· '+esc(respNome(q))+'</span>':' <span class="chip warn">sem responsável</span>'):'')+'</td>';
           dias.forEach(function(d,i){
             var mm=meioDe(q.id,d);
-            h+='<td class="diaCel escC'+(i>=5?' fds':'')+'" data-ecm="'+q.id+'|'+d+'" style="background:'+(mm?localCor(mm.localId):'')+'" title="'+esc(NDIA[i]+' '+ptbr(d)+(mm?' — '+localNome(mm.localId)+' ('+(mm.turno==='noite'?'noite':'dia')+')':''))+'">'+
-              (mm?'<span class="eL">'+esc(localAbrev(mm.localId))+'</span><span class="eT">'+(mm.turno==='noite'?'N':'D')+'</span>':'')+'</td>';
+            h+='<td class="diaCel escC'+(i>=5?' fds':'')+'" data-ecm="'+q.id+'|'+d+'" style="background:'+(mm?TURNO_COR[mm.turno==='dia'?'dia':'noite']:'')+'" title="'+esc(NDIA[i]+' '+ptbr(d)+(mm?' — '+(mm.turno==='noite'?'noite':'dia'):''))+'">'+
+              (mm?'<span class="eT">'+(mm.turno==='noite'?'N':'D')+'</span>':'')+'</td>';
           });
           h+='</tr>';
         });
@@ -2952,7 +2938,6 @@ function renderEsc(){
         ST.equipas=ST.equipas.filter(function(x){return x!==tD}); renderEsc(); return }
       if(bt.dataset.eqpapl){
         var tA=eqpPorId(bt.dataset.eqpapl); if(!tA)return;
-        if(!tA.localId){ toast('Escolhe o local da equipa.'); return }
         if(!Object.keys(escDias).some(function(k){return escDias[k]})){ toast('Marca pelo menos um dia.'); return }
         eqpGaranteLider(tA);
         if((tA.pessoas||[]).length&&!tA.lider){ toast('Escolhe o líder da equipa.'); return }
@@ -2965,29 +2950,29 @@ function renderEsc(){
     var tm=e.target.closest('[data-ecm]');
     if(tm){
       var pq=tm.dataset.ecm.split('|'), mm=meioDe(pq[0],pq[1]);
-      if(!escPincel.local||(mm&&mm.localId===escPincel.local&&mm.turno===escPincel.turno))meioTira(pq[0],pq[1]);
-      else meioPoe(pq[0],pq[1],escPincel.turno,escPincel.local,'');
+      if(escPincel.modo==='limpa'||(mm&&mm.turno===escPincel.modo))meioTira(pq[0],pq[1]);
+      else meioPoe(pq[0],pq[1],escPincel.modo,mm?mm.localId||'':'','');
       renderEsc(); return }
     var nq=e.target.closest('[data-escrowm]');
     if(nq){
       dias.forEach(function(d,i){ if(!escDias[i])return;
-        if(escPincel.local)meioPoe(nq.dataset.escrowm,d,escPincel.turno,escPincel.local,''); else meioTira(nq.dataset.escrowm,d) });
+        if(escPincel.modo!=='limpa')meioPoe(nq.dataset.escrowm,d,escPincel.modo,'',''); else meioTira(nq.dataset.escrowm,d) });
       renderEsc(); return }
     var td=e.target.closest('[data-ecl]');
     if(td){
       var pp=td.dataset.ecl.split('|'), es=escDe(pp[0],pp[1]);
-      if(!escPincel.local||(es&&es.localId===escPincel.local&&es.turno===escPincel.turno))escTira(pp[0],pp[1]);
-      else escPoe(pp[0],pp[1],escPincel.turno,escPincel.local,'');
+      if(escPincel.modo==='limpa'||(es&&es.turno===escPincel.modo))escTira(pp[0],pp[1]);
+      else escPoe(pp[0],pp[1],escPincel.modo,es?es.localId||'':'','');
       renderEsc(); return }
     var nm=e.target.closest('[data-escrow]');
     if(nm){
       dias.forEach(function(d,i){ if(!escDias[i])return;
-        if(escPincel.local)escPoe(nm.dataset.escrow,d,escPincel.turno,escPincel.local,''); else escTira(nm.dataset.escrow,d) });
+        if(escPincel.modo!=='limpa')escPoe(nm.dataset.escrow,d,escPincel.modo,'',''); else escTira(nm.dataset.escrow,d) });
       renderEsc(); return }
   });
   bind('#ptoBox','change',function(e){
     var t=e.target;
-    if(t.id==='pLocal'){ escPincel.local=t.value; return }
+    if(t.id==='pModo'){ escPincel.modo=t.value; if(t.value!=='limpa')escPincel.turno=t.value; return }
     if(t.id==='pTurno'){ escPincel.turno=t.value; return }
     if(t.id==='coordSel'){ coordPoe(escSemana,t.value); renderEsc(); return }
     if(t.dataset.edia!=null&&t.dataset.edia!==''){ escDias[+t.dataset.edia]=t.checked?1:0; return }
