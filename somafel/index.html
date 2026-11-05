@@ -138,7 +138,10 @@ body.mvAbre #side{animation:mvEsq .55s cubic-bezier(.2,.8,.2,1) both}body.mvAbre
 html[data-obra] #side .tab[data-v="obras"],html[data-obra] #sObras,html[data-obra] #sMini{display:none}
 #side #sVolta{border-left-color:transparent;color:var(--brand);font-weight:500;border-bottom:1px solid rgba(255,255,255,.12);border-radius:0;margin-bottom:6px}
 @media(max-width:800px){:root{--sw:64px}#side .tab span,#side .tema span,.sbrand .nm,.sgrp{display:none}}
-.carr{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--sheet);padding:6px 14px;border-radius:20px;box-shadow:var(--sh);z-index:2}
+.carr{position:absolute;inset:0;z-index:3;background:radial-gradient(1200px 520px at 50% -10%,rgba(249,209,21,.10),transparent 60%),radial-gradient(900px 500px at 50% 115%,rgba(57,135,229,.08),transparent 60%),var(--paper);opacity:1;transition:opacity .28s ease}
+.carr.sai{opacity:0;pointer-events:none}.carr img{width:110px;opacity:1;animation:carrL .5s cubic-bezier(.2,.8,.2,1) both}.carr span{letter-spacing:.01em}
+@keyframes carrL{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.carr,.carr img{transition:none;animation:none}}
 .sbrand img{height:34px}
 .cx .logo img{height:40px;border-radius:3px}
 .so .n,.so .m{pointer-events:none}
@@ -948,7 +951,7 @@ function injetaVoltar(d,id){try{const nav=id==='cons'?d.querySelector('nav.lado'
   nav.insertBefore(b,id==='cons'?nav.firstChild:(nav.querySelector('.sgrp')||(nav.querySelector('.sbrand')||{}).nextSibling||null))}catch(e){}}
 function frameApp(o,v){const k=o.id+'|'+v;let f=FR[k];if(f)return f;
   f=document.createElement('iframe');f.className='appif';f.title=APPNOME[v];f.dataset.k=k;f.src=APPV[v]+'.html?obra='+o.id+'&emb=1&v='+(window.__bv||(window.__bv=Date.now()));
-  const revela=()=>{if(f.dataset.rd)return;f.dataset.rd='1';const c=document.querySelector('.carr[data-k="'+k+'"]');if(c)c.remove();if(S.fk===k)posiciona()};
+  const revela=()=>{if(f.dataset.rd)return;f.dataset.rd='1';if(S.fk===k)posiciona();const c=document.querySelector('.carr[data-k="'+k+'"]');if(c){c.style.position='fixed';const r=(c.parentNode||c).getBoundingClientRect();c.style.left=r.left+'px';c.style.top=r.top+'px';c.style.width=r.width+'px';c.style.height=r.height+'px';c.style.zIndex=5;document.body.appendChild(c);requestAnimationFrame(()=>c.classList.add('sai'));setTimeout(()=>c.remove(),320)}};
   f.onload=()=>{f.dataset.ok='1';try{estiloApp(f,v);injetaVoltar(f.contentDocument,v)}catch(e){}
     const t0=Date.now(),espera=()=>{if(f.dataset.rd||!f.isConnected)return;let p=false;try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');p=!!((w.__nm&&w.__nm.NM&&w.__nm.NM.pronto)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)||(l&&l.hidden))}catch(e){}
       if(p||Date.now()-t0>9000)setTimeout(revela,60);else setTimeout(espera,80)};espera()};
