@@ -244,7 +244,7 @@ if(window.outerWidth<w-40||window.outerHeight<h-40){window.moveTo(screen.availLe
 <body>
 <div id="raiz"></div>
 <div id="avisos" aria-live="polite"></div>
-<script>window.__mvCentral=1</script><script src="design.js?v=20261105a"></script>
+<script>window.__mvCentral=1</script><script src="design.js?v=20261105b"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const SB_URL='https://dnllrbgzkgrerkybtjjl.supabase.co';
@@ -384,20 +384,19 @@ function preparar(){
     try{
       barra(4,'A preparar as aplicações…');
       const vistos=new Set(),ks=Object.keys(APPV);let n=0;
-      await Promise.all(ks.map(async k=>{try{const t=await (await fetch(APPV[k]+'.html',{cache:'no-cache'})).text();
+      window.__appv=window.__appv||{};
+      await Promise.all(ks.map(async k=>{try{const rs=await fetch(APPV[k]+'.html',{cache:'no-cache'}),et=(rs.headers.get('etag')||rs.headers.get('last-modified')||'').replace(/[^\w]/g,'').slice(-16);if(et)window.__appv[k]=et;const t=await rs.text();
         for(const m of t.matchAll(/<script[^>]+src=["']([^"']+)["']/g)){const src=m[1];if(/^(https?:)?\/\//.test(src)||vistos.has(src))continue;vistos.add(src);fetch(src).catch(()=>{})}}catch(e){}
         barra(4+(++n/ks.length)*26)}));
       barra(32,'A abrir o catálogo…');
       try{await catCarrega()}catch(e){}
-      barra(48);
-      const NOMES={med:'Medição',rct:'Medição RCT',cons:'Dimensionamento CAT'};let i=0;
-      for(const v of ['med','rct','cons']){
-        if(fechado)break;barra(48+i*16,'A abrir '+NOMES[v]+'…');
-        try{const f=frameApp({id:'livre'},v);await pronto(f,25000)}catch(e){}
-        i++;barra(48+i*16)}
       barra(98,'Pronto');await dorme(150)
     }catch(e){console.error(e)}
-    fecha()
+    fecha();
+    /* depois de entrar: prepara as apps «sem obra» em segundo plano, uma de cada vez, sem prender o ecrã */
+    const ocioso=()=>new Promise(r=>(window.requestIdleCallback||setTimeout)(()=>r(),{timeout:2500}));
+    await dorme(2500);
+    for(const v of ['med','rct','cons']){try{await ocioso();const f=frameApp({id:'livre'},v);for(let j=0;j<125&&!f.dataset.ok;j++)await dorme(200)}catch(e){}}
   })()}
 async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};ecraEntrada()}
 
@@ -959,7 +958,7 @@ function injetaVoltar(d,id){try{const nav=id==='cons'?d.querySelector('nav.lado'
   b.onclick=()=>parent.postMessage({tipo:'voltar'},location.origin);
   nav.insertBefore(b,id==='cons'?nav.firstChild:(nav.querySelector('.sgrp')||(nav.querySelector('.sbrand')||{}).nextSibling||null))}catch(e){}}
 function frameApp(o,v){const k=o.id+'|'+v;let f=FR[k];if(f)return f;
-  f=document.createElement('iframe');f.className='appif';f.title=APPNOME[v];f.dataset.k=k;f.src=APPV[v]+'.html?obra='+o.id+'&emb=1&v='+(window.__bv||(window.__bv=Date.now()));
+  f=document.createElement('iframe');f.className='appif';f.title=APPNOME[v];f.dataset.k=k;f.src=APPV[v]+'.html?obra='+o.id+'&emb=1&v='+((window.__appv&&window.__appv[v])||window.__bv||(window.__bv=Date.now()));
   const revela=()=>{if(f.dataset.rd)return;f.dataset.rd='1';if(S.fk===k)posiciona();const c=document.querySelector('.carr[data-k="'+k+'"]');if(c){c.style.position='fixed';const r=(c.parentNode||c).getBoundingClientRect();c.style.left=r.left+'px';c.style.top=r.top+'px';c.style.width=r.width+'px';c.style.height=r.height+'px';c.style.zIndex=5;document.body.appendChild(c);requestAnimationFrame(()=>c.classList.add('sai'));setTimeout(()=>c.remove(),320)}};
   f.onload=()=>{f.dataset.ok='1';try{estiloApp(f,v);injetaVoltar(f.contentDocument,v)}catch(e){}
     const t0=Date.now(),espera=()=>{if(f.dataset.rd||!f.isConnected)return;let p=false;try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');p=!!((w.__nm&&w.__nm.NM&&w.__nm.NM.pronto)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)||(l&&l.hidden))}catch(e){}
@@ -993,7 +992,9 @@ function pResumo(o){const r=S.RES[o.id]||{},P=r.prod,E=r.med;let F=0,C=0;
   const pc=tot?F/tot:(E&&E.postes?E.executados/E.postes:0);
   return {fat:F,marg:F-C,pct:Math.max(0,Math.min(1,pc||0)),tem:!!(P||r.mat||E),tot}}
 S.RES={};
-async function carregaRes(id){
+/* o mesmo pedido de resumos feito duas vezes seguidas (visão geral + quadro das apps) passa a ser um só */
+const RESQ={};function carregaRes(id){const k=id||'*',c=RESQ[k];if(c&&Date.now()-c.t<2000)return c.p;const p=carregaRes0(id);RESQ[k]={t:Date.now(),p};return p}
+async function carregaRes0(id){
   try{let q=sb.from('dados_apps').select('obra_id,app,versao,atualizado_em,resumo:dados->resumo');if(id)q=q.eq('obra_id',id);const r=await q;
     if(!id)S.RES={};(r.data||[]).forEach(x=>{const R=S.RES[x.obra_id]=S.RES[x.obra_id]||{apps:{}};R.apps=R.apps||{};R.apps[x.app]={t:x.atualizado_em,v:x.versao};const k={producao:'prod',materiais:'mat',medicao:'med'}[x.app];if(k)R[k]=x.resumo??null})}catch(e){}}
 function atualizaSave(){const e=$('#hSave'),o=S.obra;if(!e||!o||S.vista==='obras'||!OBRAV.includes(S.vista)){if(e)e.hidden=true;return}

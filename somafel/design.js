@@ -143,5 +143,5 @@ function mvTema(d){try{d=d||document;var r=d.documentElement,t=null;try{t=localS
     b.addEventListener('click',function(){ b.disabled=true; b.firstChild.style.animation='mvRoda .8s linear infinite'; atualiza() });
     a.parentNode.insertBefore(b,a) }
   var st=document.createElement('style'); st.textContent='@keyframes mvRoda{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#bAtualiza svg{animation:none!important}}'; (document.head||document.documentElement).appendChild(st);
-  setInterval(poe,800); if(document.readyState!=='loading')poe(); else document.addEventListener('DOMContentLoaded',poe);
+  var nv=0,tp=setInterval(function(){ poe(); if(document.getElementById('bAtualiza')&&++nv>5){ clearInterval(tp); setInterval(poe,4000) } },700); if(document.readyState!=='loading')poe(); else document.addEventListener('DOMContentLoaded',poe);
 }catch(x){}})();
