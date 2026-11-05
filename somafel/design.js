@@ -145,3 +145,14 @@ function mvTema(d){try{d=d||document;var r=d.documentElement,t=null;try{t=localS
   var st=document.createElement('style'); st.textContent='@keyframes mvRoda{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#bAtualiza svg{animation:none!important}}'; (document.head||document.documentElement).appendChild(st);
   var nv=0,tp=setInterval(function(){ poe(); if(document.getElementById('bAtualiza')&&++nv>5){ clearInterval(tp); setInterval(poe,4000) } },700); if(document.readyState!=='loading')poe(); else document.addEventListener('DOMContentLoaded',poe);
 }catch(x){}})();
+
+/* ===== botão Guardar: as apps gravam sozinhas; o botão só aparece quando é preciso agir (conflito ou erro ao gravar) ===== */
+(function(){try{
+  var st=document.createElement('style'); st.textContent='#bSave.mvAuto{display:none!important}'; (document.head||document.documentElement).appendChild(st);
+  function estado(){ try{ var o=window.__on, n=window.__nm;
+      var x=(o&&o.ctx)||(o&&o.NM)||(n&&n.NM)||null; if(!x)return false;
+      var on=(o&&o.ON)||null;
+      return !!(x.conflito||x.erro||x.semPerm||(on&&(on.conflito||on.erro))) }catch(e){ return false } }
+  function aplica(){ var b=document.getElementById('bSave'); if(!b)return; var p=estado(); b.classList.toggle('mvAuto',!p); if(p&&!b.dataset.mvAviso){ b.dataset.mvAviso='1'; b.title='Há um problema a gravar: carrega aqui para gravar' } else if(!p)delete b.dataset.mvAviso }
+  setInterval(aplica,1000); if(document.readyState!=='loading')aplica(); else document.addEventListener('DOMContentLoaded',aplica);
+}catch(x){}})();
