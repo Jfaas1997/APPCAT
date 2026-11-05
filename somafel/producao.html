@@ -2461,22 +2461,23 @@ function renderRec(){
   /* ---- MO ---- */
   var h='<h3 class="sec">MO — Mão de obra <span class="hint" style="font-weight:400">· '+ST.mo.length+' pessoas'+(nDir!==ST.mo.length?' ('+nDir+' diretas)':'')+'</span></h3>'+
     '<div class="hint" style="margin-bottom:8px">Só quem for <b>direto</b> aparece para ligar a um Ponto e, por essa via, a uma parte diária. As categorias são as da lista; podes renomear, acrescentar ou apagar (se estiverem vazias).</div>'+
-    '<table><thead><tr><th class="w1">Direto</th><th>Nome</th><th style="width:230px">Categoria</th><th class="num w1">Custo mensal</th><th class="num w1">€/hora</th>'+
+    '<table><thead><tr><th class="w1">Direto</th><th style="width:90px">N.º colab.</th><th>Nome</th><th style="width:230px">Categoria</th><th class="num w1">Custo mensal</th><th class="num w1">€/hora</th>'+
     '<th class="num w1">Dias no Ponto</th><th class="w1"></th></tr></thead><tbody>';
   var catOpt=function(sel,lista){ var s='<option value="">— sem categoria —</option>'+lista.map(function(c){ return '<option value="'+esc(c)+'"'+(c===sel?' selected':'')+'>'+esc(c)+'</option>' }).join('');
     if(sel&&lista.indexOf(sel)<0)s+='<option value="'+esc(sel)+'" selected>'+esc(sel)+' (fora da lista)</option>'; return s };
   var algumMO=false;
   recGrupos(ST.mo,ST.catMO,function(m){return m.cat}).forEach(function(g){
-    var itens=g.itens.filter(function(m){ return bate((m.cat||'')+' '+(m.nome||'')) });
+    var itens=g.itens.filter(function(m){ return bate((m.cat||'')+' '+(m.nome||'')+' '+(m.num||'')) });
     if(filtra&&!itens.length&&lower(g.nome).indexOf(q)<0)return;
     if(!g.nome&&!g.itens.length)return;
     algumMO=true; var k='mo|'+g.nome; recChaves.push(k);
-    h+='<tr class="grp"><td colspan="7">'+chev(k)+' '+nomeGrp('mo',g)+' <span class="hint">· '+g.itens.length+(g.itens.length===1?' pessoa':' pessoas')+'</span>'+
+    h+='<tr class="grp"><td colspan="8">'+chev(k)+' '+nomeGrp('mo',g)+' <span class="hint">· '+g.itens.length+(g.itens.length===1?' pessoa':' pessoas')+'</span>'+
        '<span class="grpAdd"><button data-gadd="mo" data-gv="'+esc(g.nome)+'">+ Pessoa</button>'+(!g.itens.length&&g.lista?'<button class="x" data-gdel="mo" data-gv="'+esc(g.nome)+'" title="Apagar categoria vazia">×</button>':'')+'</span></td></tr>';
     if(!filtra&&recFech[k])return;
     itens.forEach(function(m){
       var u=diasPonto[m.id]||0;
       h+='<tr><td class="w1"><input type="checkbox" data-m="'+m.id+'" data-k="direto"'+(m.direto!==false?' checked':'')+'></td>'+
+         '<td><input class="mono" data-m="'+m.id+'" data-k="num" value="'+esc(m.num||'')+'" placeholder="—" style="width:80px" title="Número do colaborador"></td>'+
          '<td><input data-m="'+m.id+'" data-k="nome" value="'+esc(m.nome||'')+'"></td>'+
          '<td><select data-m="'+m.id+'" data-k="cat">'+catOpt(m.cat||'',ST.catMO)+'</select></td>'+
          '<td class="num"><input class="num" data-m="'+m.id+'" data-k="custo" value="'+esc(m.custo==null?'':m.custo)+'"></td>'+
@@ -2485,8 +2486,8 @@ function renderRec(){
          '<td class="w1"><button class="x" data-mdel="'+m.id+'">×</button></td></tr>';
     });
   });
-  if(!algumMO)h+='<tr><td colspan="7"><div class="empty">'+(filtra?'Nada encontrado.':'Sem pessoal. Acrescenta uma pessoa numa categoria ou importa-a do teu Excel.')+'</div></td></tr>';
-  h+='<tr><td colspan="7"><span class="grpAdd" style="float:none"><input id="nCatMO" placeholder="Nova categoria de MO"><button id="bCatMO">+ Categoria</button></span></td></tr>';
+  if(!algumMO)h+='<tr><td colspan="8"><div class="empty">'+(filtra?'Nada encontrado.':'Sem pessoal. Acrescenta uma pessoa numa categoria ou importa-a do teu Excel.')+'</div></td></tr>';
+  h+='<tr><td colspan="8"><span class="grpAdd" style="float:none"><input id="nCatMO" placeholder="Nova categoria de MO"><button id="bCatMO">+ Categoria</button></span></td></tr>';
   h+='</tbody></table>';
 
   /* ---- EQ ---- */
@@ -2546,7 +2547,7 @@ function renderRec(){
       if(k==='desl'){ ST.pd.forEach(function(p){ if(p.localId===lc.id)aplicaDeslNaPD(p) }); (ST.ponto||[]).forEach(function(x){ if(x.localId===lc.id)aplicaDeslPt(x) }) }
       setTimeout(render,0); return }
     if(t.dataset.m!=null){ var m=moPorId(t.dataset.m);
-      m[k]=k==='direto'?t.checked:(k==='custo'||k==='hora')?num(t.value):t.value; setTimeout(render,0) }
+      m[k]=k==='direto'?t.checked:(k==='custo'||k==='hora')?num(t.value):k==='num'?t.value.trim():t.value; setTimeout(render,0) }
     if(t.dataset.q!=null){ var q=eqPorId(t.dataset.q);
       q[k]=k==='direto'?t.checked:(k==='custo')?num(t.value):t.value; setTimeout(render,0) }
   });
@@ -2677,7 +2678,8 @@ function renderPto(){
 /* --- líder, coordenação e meios --- */
 var LIDER_CATS=['chefe de equipa','encarregado','arvorado'];
 var HOR_PAD={noite:'22:00 às 06:00',dia:'08:30 às 17:30'};
-function eqpResp(q){ return (q&&q.resp&&moPorId(q.resp))?q.resp:'' }
+function eqpResp(q){ if(q&&q.resp&&moPorId(q.resp))return q.resp; if(!q)return ''; var t=(ST.equipas||[]).filter(function(x){ return (x.meios||[]).indexOf(q.id)>=0&&x.lider&&moPorId(x.lider) })[0]; return t?t.lider:'' }
+function eqpRespAuto(q){ return !!(q&&!(q.resp&&moPorId(q.resp))&&eqpResp(q)) }
 function respNome(q){ var m=moPorId(eqpResp(q)); return m?(m.nome||m.cat):'' }
 function respOpts(sel){
   var h='<option value="">— atribuir a… —</option>';
@@ -2902,7 +2904,7 @@ function renderEsc(){
     });
     return r+'</tr>' };
   var linhaM=function(q){
-    var r='<tr class="escMeio"><td class="stick escNome" data-escrowm="'+q.id+'" title="Clique: aplica o pincel aos dias marcados"><span class="chip">'+(tipoEq(q)==='V'?'Viatura':'Pesado')+'</span> '+esc(meioNome(q))+(tipoEq(q)==='V'?(respNome(q)?' <span class="hint">· '+esc(respNome(q))+'</span>':' <span class="chip warn">sem responsável</span>'):'')+'</td>';
+    var r='<tr class="escMeio"><td class="stick escNome" data-escrowm="'+q.id+'" title="Clique: aplica o pincel aos dias marcados"><span class="chip">'+(tipoEq(q)==='V'?'Viatura':'Pesado')+'</span> '+esc(meioNome(q))+(tipoEq(q)==='V'?(respNome(q)?' <span class="hint">· '+esc(respNome(q))+(eqpRespAuto(q)?' (líder)':'')+'</span>':' <span class="chip warn">sem responsável</span>'):'')+'</td>';
     dias.forEach(function(d,i){
       var mm=meioDe(q.id,d);
       r+='<td class="diaCel escC'+(i>=5?' fds':'')+'" data-ecm="'+q.id+'|'+d+'" style="background:'+(mm?TURNO_COR[mm.turno==='dia'?'dia':'noite']:'')+'" title="'+esc(NDIA[i]+' '+ptbr(d)+(mm?' — '+(mm.turno==='noite'?'noite':'dia'):''))+'">'+
@@ -3039,7 +3041,7 @@ function renderAus(){
   pess.forEach(function(m){
     if(m.cat!==catAnt){ catAnt=m.cat; h+='<tr class="grp"><td colspan="'+(dias.length+2)+'" style="text-align:left">'+esc(m.cat||'Sem categoria')+'</td></tr>' }
     var cnt={F:0,C:0,D:0,T:0,P:0}, tcc={};
-    h+='<tr><td class="stick escNome">'+esc(m.nome||m.cat)+'</td>';
+    h+='<tr><td class="stick escNome">'+(m.num?'<span class="mono hint">'+esc(m.num)+'</span> ':'')+esc(m.nome||m.cat)+'</td>';
     dias.forEach(function(d){
       var a=ausDe(m.id,d), pt=pontoDe(m.id,d), fd=[0,6].indexOf(new Date(ano,mesN-1,+d.slice(8)).getDay())>=0, txt='', st='', tt=diaSem(d)+' '+ptbr(d), cls='diaCel ausC'+(fd?' fds':'');
       if(pt){ cnt.P++; porDia[d].p++ }
@@ -3076,7 +3078,7 @@ function renderAus(){
 function imprimeAus(){
   var nd=diasDoMes(ptoMesAtual), dias=[]; for(var i=1;i<=nd;i++)dias.push(ptoMesAtual+'-'+('0'+i).slice(-2));
   var pess=moOrd(), lin='';
-  pess.forEach(function(m){ lin+='<tr><td style="text-align:left;white-space:nowrap">'+esc(m.nome||m.cat)+'</td>'+dias.map(function(d){ var a=ausDe(m.id,d), pt=pontoDe(m.id,d); return '<td'+(a?' style="background:'+AUS_T[a.tipo].cor+'"':'')+'>'+(a?a.tipo+(a.cc?'<br><small>'+esc(a.cc)+'</small>':''):pt?'P':'')+'</td>' }).join('')+'</tr>' });
+  pess.forEach(function(m){ lin+='<tr><td style="text-align:left;white-space:nowrap">'+(m.num?esc(m.num)+' · ':'')+esc(m.nome||m.cat)+'</td>'+dias.map(function(d){ var a=ausDe(m.id,d), pt=pontoDe(m.id,d); return '<td'+(a?' style="background:'+AUS_T[a.tipo].cor+'"':'')+'>'+(a?a.tipo+(a.cc?'<br><small>'+esc(a.cc)+'</small>':''):pt?'P':'')+'</td>' }).join('')+'</tr>' });
   var w=window.open('','_blank'); if(!w){ toast('O navegador bloqueou a janela de impressão.'); return }
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Mapa de presenças</title><style>@page{size:A4 landscape;margin:10mm}body{font:11px system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:2px;text-align:center;font-size:10px}small{font-size:8px}</style></head><body><h3>Mapa de presenças · '+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+' · '+esc(mesNome(ptoMesAtual))+'</h3><table><thead><tr><th>Pessoa</th>'+dias.map(function(d){ return '<th>'+d.slice(8)+'</th>' }).join('')+'</tr></thead><tbody>'+lin+'</tbody></table><p>P trabalhou · '+Object.keys(AUS_T).map(function(k){ return k+' '+AUS_T[k].nome }).join(' · ')+'</p><script>window.onload=function(){window.print()}<\/script></body></html>');
   w.document.close();
@@ -3308,7 +3310,7 @@ function imprimePonto(){
   grupos.forEach(function(g){
     g.itens.sort(function(a,b){return naturalCmp(a.nome||'',b.nome||'')});
     g.itens.forEach(function(m,ix){
-      var r1='<tr><td class="p_nm" rowspan="'+nRw+'">'+esc(m.nome||m.cat)+'</td><td class="p_sb">D/N</td>', r2='<tr><td class="p_sb">Extra</td>', r3='<tr'+(temKm?'':' class="p_ult"')+'><td class="p_sb">Desl.</td>', r4='<tr class="p_ult"><td class="p_sb">Km</td>', d=0,x=0,t=0,kk=0;
+      var r1='<tr><td class="p_nm" rowspan="'+nRw+'">'+(m.num?'<small style="font-family:monospace;opacity:.7">'+esc(m.num)+'</small> ':'')+esc(m.nome||m.cat)+'</td><td class="p_sb">D/N</td>', r2='<tr><td class="p_sb">Extra</td>', r3='<tr'+(temKm?'':' class="p_ult"')+'><td class="p_sb">Desl.</td>', r4='<tr class="p_ult"><td class="p_sb">Km</td>', d=0,x=0,t=0,kk=0;
       dias.forEach(function(dd){
         var pt=pontoDe(m.id,ptoMesAtual+'-'+dd);
         if(!pt){ r1+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r2+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r3+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r4+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; return }
@@ -5959,11 +5961,11 @@ function importa0(wb){
       var h3=achaHdr(rows,['categoria']); if(h3<0)return;
       var m3=colMap(rows[h3]);
       var a1=pick(m3,['categoria']),a2=pick(m3,['nome']),a3=pick(m3,['custo mensal','custo']),a4=pick(m3,['€/hora','custo hora','hora']),
-          a5=pick(m3,['id']),a6=pick(m3,['direto']);
+          a5=pick(m3,['id']),a6=pick(m3,['direto']),a7=pick(m3,['n.º colaborador','nº colaborador','numero colaborador','número colaborador','n.º colab.']);
       var L=[];
       for(var k3=h3+1;k3<rows.length;k3++){ var r3=rows[k3]||[]; var c=String(cel(r3,a1)||'').trim(); if(!c)continue;
         var direto3=a6>=0?lower(String(cel(r3,a6)||''))!=='não'&&lower(String(cel(r3,a6)||''))!=='nao':true;
-        L.push({id:String(cel(r3,a5)||'').trim()||uid(),cat:c,nome:String(cel(r3,a2)||'').trim(),custo:num(cel(r3,a3)),hora:num(cel(r3,a4)),direto:direto3}) }
+        L.push({id:String(cel(r3,a5)||'').trim()||uid(),cat:c,nome:String(cel(r3,a2)||'').trim(),custo:num(cel(r3,a3)),hora:num(cel(r3,a4)),direto:direto3,num:a7>=0?String(cel(r3,a7)||'').trim():''}) }
       if(L.length){ ST.mo=L; achou.push(L.length+' categorias de pessoal') }
       return;
     }
@@ -6466,9 +6468,9 @@ function guarda(){
   (ST.residuos||[]).forEach(function(r){ RS.push([r.id,r.material,r.atividade,r.un,num(r.prev),num(r.fator),num(r.pObra),num(r.pRej)]) });
   add('Resíduos',RS,[10,34,48,7,12,14,13,13]);
 
-  var MO=[['ID','Categoria','Nome','Custo mensal','€/hora','Direto']];
-  ST.mo.forEach(function(m){MO.push([m.id,m.cat,m.nome,num(m.custo)||null,num(m.hora)||null,m.direto===false?'Não':'Sim'])});
-  add('Pessoal',MO,[14,26,28,14,10,8]);
+  var MO=[['ID','Categoria','Nome','Custo mensal','€/hora','Direto','N.º colaborador']];
+  ST.mo.forEach(function(m){MO.push([m.id,m.cat,m.nome,num(m.custo)||null,num(m.hora)||null,m.direto===false?'Não':'Sim',m.num||''])});
+  add('Pessoal',MO,[14,26,28,14,10,8,14]);
 
   var EQ=[['ID','Designação','Categoria','Tipo','Custo/dia','Direto','Entrada','Saída','Responsável ID','Responsável']];
   ST.eqp.forEach(function(q){EQ.push([q.id,q.nome,q.categoria,q.tipo==='L'?'Ligeiro':q.tipo==='V'?'Viatura':'Pesado',num(q.custo)||null,q.direto===false?'Não':'Sim',q.entrada,q.saida,q.tipo==='V'?(q.resp||''):'',q.tipo==='V'?respNome(q):''])});
