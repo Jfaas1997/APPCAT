@@ -223,6 +223,17 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .pstabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px;border-bottom:1px solid var(--rule)}
 .pstabs button{border:0;background:none;padding:10px 12px;cursor:pointer;border-bottom:3px solid transparent;font:inherit}
 .pstabs button[aria-selected=true]{border-bottom-color:var(--acc,#0b5cad);font-weight:600}
+.fo .psbar select{width:auto;flex:0 1 210px;min-width:150px}.fo .psbar input[type=search]{flex:1 1 280px}.fo .topo .ac{display:flex;gap:8px;flex-wrap:wrap}
+.fo .foK{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 12px}.fo .foK .card{padding:12px 14px;margin:0}.fo .foK b{display:block;font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}.fo .foK span{font-size:12px;color:var(--muted)}
+.fo .foPer{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}.fo .foPer button{border:0;border-radius:0;padding:6px 10px;font-size:12.5px;background:transparent}.fo .foPer button.on{background:var(--ink);color:var(--sheet)}
+.fo .foG{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.5fr);gap:14px;align-items:start}.fo .foL{padding:0;margin:0;max-height:calc(100vh - 290px);overflow:auto}.fo .foD{margin:0;padding:16px 18px;max-height:calc(100vh - 290px);overflow:auto}
+.fo .foI{display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-radius:0;background:transparent;padding:8px 12px;cursor:pointer}.fo .foI:hover{background:var(--soft)}.fo .foI.on{background:var(--verdbg,var(--soft));border-left-color:var(--brand)}
+.fo .foI .c{font-size:12px;font-weight:600}.fo .foI .d{font-size:13px;line-height:1.3;min-width:0;overflow:hidden}.fo .foI .d small{display:block;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fo .foI .p{font-size:12.5px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.fo .foI:not(:has(.c)){grid-template-columns:minmax(0,1fr)}.fo .foMais{width:100%;border:0;background:var(--soft);padding:10px}
+.fo .foH{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.fo .foH h3{margin:2px 0 4px;font-size:17px}.fo .foRef{background:var(--soft);border-radius:10px;padding:10px 14px;text-align:right}.fo .foRef span{display:block;font-size:11px;color:var(--muted)}.fo .foRef b{font-size:22px;font-variant-numeric:tabular-nums}.fo .foRef small{display:block;font-size:11px;color:var(--muted)}
+.fo .foGr{margin:14px 0 4px}.fo .foGr svg text{font-size:10.5px;fill:var(--muted)}.fo .foGr .foAx line{stroke:var(--rule);stroke-dasharray:3 4}.fo .foLeg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:4px}.fo .foLeg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.fo .foS{margin:16px 0 6px;font-size:13px}.fo .foT{overflow:auto}.fo table td.n,.fo table th.n{text-align:right}
+@media (max-width:900px){.fo .foG{grid-template-columns:1fr}.fo .foL,.fo .foD{max-height:none}}
 .psbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.psbar input[type=search]{flex:1;min-width:200px}
 .psdois{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .pslista{list-style:none;margin:0;padding:0}.pslista li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
@@ -1293,7 +1304,7 @@ async function rubricas(c,fim){
 
 
 /* ---------- fornecedores (fora da obra): peça × fornecedor × preço × data, vindos das propostas ---------- */
-const FO={modo:'peca',q:'',dados:null};
+const FO={modo:'peca',q:'',grupo:'',forn:'',tipo:'',per:'tudo',sel:null,lim:150,dados:null,pecas:null,pix:new Map()};
 /* ---------- equipamentos (Administração): varas de terra e outros ---------- */
 const EQ={q:'',cat:'',est:'ativo'};
 const EQ_SUG=['Varas de terra'];
@@ -1360,33 +1371,135 @@ function eqForm(x,cats,rec){
 async function foForm(r,rec){
   const v=await formulario(r?'Editar preço':'Adicionar preço de fornecedor',[
     {id:'forn',rotulo:'Fornecedor',valor:r&&r.fornecedor||'',obrig:true},{id:'cod',rotulo:'Código da peça (opcional)',valor:r&&r.codigo||''},{id:'des',rotulo:'Designação da peça',valor:r&&r.designacao||'',obrig:true},
-    {id:'un',rotulo:'Unidade',valor:r&&r.unidade||'un',obrig:true},{id:'preco',tipo:'number',rotulo:'Preço unitário (€)',valor:r?r.preco:'',obrig:true},{id:'data',tipo:'date',rotulo:'Data da proposta',valor:r&&r.data||new Date().toISOString().slice(0,10),obrig:true},{id:'ref',rotulo:'Referência da proposta (opcional)',valor:r&&r.proposta_ref||''}],'Guardar');
+    {id:'un',rotulo:'Unidade',valor:r&&r.unidade||'un',obrig:true},{id:'preco',tipo:'number',rotulo:'Preço unitário (€)',valor:r?r.preco:'',obrig:true},{id:'data',tipo:'date',rotulo:'Data da proposta',valor:r&&r.data||new Date().toISOString().slice(0,10),obrig:true},{id:'ref',rotulo:'Referência da proposta (opcional)',valor:r&&r.proposta_ref||''},{id:'tipo',rotulo:'Tipo (Cotação, Cotação (negociada), Adjudicação, Custo interno)',valor:r&&r.tipo||'Cotação'},{id:'obra',rotulo:'Obra (centro de custo, opcional)',valor:r&&r.obra_ref||''}],'Guardar');
   if(!v)return;const p=parseFloat(String(v.preco).replace(',','.'));if(!(p>=0)){aviso('Preço inválido.',true);return}
-  const row={fornecedor:v.forn,codigo:v.cod,designacao:v.des,unidade:v.un,preco:p,data:v.data,proposta_ref:v.ref};
+  const row={fornecedor:v.forn,codigo:v.cod,designacao:v.des,unidade:v.un,preco:p,data:v.data,proposta_ref:v.ref,tipo:v.tipo||'Cotação',obra_ref:v.obra||null};
   try{if(r)await ok(sb.from('precos_fornecedor').update(row).eq('id',r.id));else await ok(sb.from('precos_fornecedor').insert(Object.assign({organizacao_id:S.eu.organizacao_id,obra_id:null,origem:'manual',mc_id:'',pdf_path:''},row)));aviso('Preço guardado.');rec()}catch(er){aviso(erroTxt(er),true)}}
+/* ---------- Fornecedores: base de dados de preços (cotações, adjudicações, custos internos) ---------- */
+const FOT=['Cotação','Cotação (negociada)','Adjudicação','Custo interno','Faturado'];
+async function foCarrega(){
+  const tudo=async(t,sel,ord)=>{let out=[],i=0;for(;;){const r=await ok(sb.from(t).select(sel).order(ord,{ascending:false}).range(i,i+999));out=out.concat(r||[]);if(!r||r.length<1000||i>=200000)break;i+=1000}return out};
+  const [P,C]=await Promise.all([tudo('precos_fornecedor','*','data'),tudo('pecas_preco','*','codigo').catch(()=>[])]);
+  FO.dados=P;FO.pecas=C;FO.pix=new Map(C.map(p=>[p.codigo,p]));return P}
+function foFiltra(){
+  const q=psNorm(FO.q.trim()),hojeD=new Date(),lim12=new Date(hojeD.getFullYear()-1,hojeD.getMonth(),hojeD.getDate()).toISOString().slice(0,10);
+  return FO.dados.filter(r=>{
+    if(FO.forn&&r.fornecedor!==FO.forn)return false;
+    if(FO.tipo&&(r.tipo||'Cotação')!==FO.tipo)return false;
+    if(FO.grupo&&(r.grupo||(FO.pix.get(r.codigo)||{}).grupo||'Outros')!==FO.grupo)return false;
+    if(FO.per==='12m'&&!(r.data>=lim12))return false;
+    if(/^\d{4}$/.test(FO.per)&&String(r.data||'').slice(0,4)!==FO.per)return false;
+    if(q){const p=FO.pix.get(r.codigo)||{};if(!psNorm([r.codigo,r.cod_ip,p.cod_ip,p.cod_antigo,r.designacao,p.designacao,r.fornecedor,r.obra_ref,r.proposta_ref].join(' ')).includes(q))return false}
+    return true})}
+const foEur=v=>v==null||v===''?'—':Number(v).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:4})+' €';
+function foPeca(k){const p=FO.pix.get(k)||{};return p}
+function foGrafico(R){
+  const pts=R.filter(r=>r.data&&r.preco!=null).sort((a,b)=>a.data<b.data?-1:1);if(pts.length<2)return '';
+  const W=560,H=170,pl=56,pr=12,pt=12,pb=26,t0=Date.parse(pts[0].data),t1=Math.max(Date.parse(pts[pts.length-1].data),t0+864e5);
+  let mn=Infinity,mx=-Infinity;pts.forEach(r=>{mn=Math.min(mn,+r.preco);mx=Math.max(mx,+r.preco)});if(mx===mn){mx+=mx*.1||1;mn=Math.max(0,mn-mn*.1)}
+  const X=t=>pl+(W-pl-pr)*(Date.parse(t)-t0)/(t1-t0),Y=v=>pt+(H-pt-pb)*(1-(v-mn)/(mx-mn));
+  const forns=[...new Set(pts.map(r=>r.fornecedor))].slice(0,6),cores=['#2a78d6','#c4730a','#1baf7a','#8a5cd6','#d6455a','#6b7f96'];
+  let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Preço ao longo do tempo"><g class="foAx">';
+  [0,.5,1].forEach(k=>{const v=mn+(mx-mn)*k,y=Y(v);s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end">'+Number(v).toLocaleString('pt-PT',{maximumFractionDigits:2})+'</text>'});
+  s+='<text x="'+pl+'" y="'+(H-6)+'">'+dPT(pts[0].data)+'</text><text x="'+(W-pr)+'" y="'+(H-6)+'" text-anchor="end">'+dPT(pts[pts.length-1].data)+'</text></g>';
+  forns.forEach((f,i)=>{const L=pts.filter(r=>r.fornecedor===f);if(L.length>1)s+='<path fill="none" stroke="'+cores[i]+'" stroke-width="1.6" stroke-opacity=".55" d="'+L.map((r,j)=>(j?'L':'M')+X(r.data).toFixed(1)+' '+Y(+r.preco).toFixed(1)).join('')+'"/>';
+    L.forEach(r=>{s+='<circle cx="'+X(r.data).toFixed(1)+'" cy="'+Y(+r.preco).toFixed(1)+'" r="4" fill="'+cores[i]+'" stroke="var(--sheet)" stroke-width="1.5"><title>'+esc(f+' · '+dPT(r.data)+' · '+foEur(r.preco)+(r.tipo?' · '+r.tipo:''))+'</title></circle>'})});
+  return s+'</svg><div class="foLeg">'+forns.map((f,i)=>'<span><i style="background:'+cores[i]+'"></i>'+esc(f)+'</span>').join('')+'</div>'}
 async function vForn(){
   titulo('Fornecedores');const pg=$('#pg');pg.innerHTML='<div class="vz">'+Mov.skel(5,'b')+'</div>';
-  let L;try{L=await ok(sb.from('precos_fornecedor').select('*').order('data',{ascending:false}).limit(5000))}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
-  FO.dados=L;
-  pg.innerHTML='<div class="vz"><div class="topo"><div><h2>Fornecedores</h2><p class="sub" style="margin:0">O que cada fornecedor propôs, por peça, com o preço e a data. Vem das propostas carregadas nos mapas comparativos dos Materiais; também pode lançar à mão propostas que não levem a compra.</p></div><span class="sp"></span><button class="pri" id="foNovo">+ Adicionar preço</button></div>'
-   +'<div class="psbar"><input type="search" id="foQ" placeholder="Procurar peça, código ou fornecedor…" value="'+esc(FO.q)+'"><select id="foM" aria-label="Agrupar"><option value="peca">Por peça</option><option value="forn">Por fornecedor</option></select><span class="hint" id="foN"></span></div><div id="foC"></div></div>';
-  $('#foM').value=FO.modo;
-  const pinta=()=>{
-    const q=FO.q.trim().toLowerCase(),F=L.filter(r=>!q||(r.codigo+' '+r.designacao+' '+r.fornecedor).toLowerCase().includes(q));
-    $('#foN').textContent=F.length+' preços';
-    if(!F.length){$('#foC').innerHTML='<div class="vazio"><h2>'+(L.length?'Nada neste filtro':'Ainda não há propostas')+'</h2><p>'+(L.length?'Tenta outro termo.':'Nos Materiais, em Compras › Comparativos, carrega o PDF da proposta, usa «Ler» e «→ Forn.». Os preços aparecem aqui.')+'</p></div>';return}
-    const chave=FO.modo==='peca'?(r=>r.codigo||r.designacao):(r=>r.fornecedor),G={};F.forEach(r=>{(G[chave(r)]=G[chave(r)]||[]).push(r)});
-    const eur=v=>Number(v).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:4})+' €';
-    let h='';
-    Object.keys(G).sort((a,b)=>a.localeCompare(b,'pt')).forEach(k=>{const R=G[k],r0=R[0];
-      h+='<div class="card" style="padding:4px 8px;margin-bottom:10px"><div style="padding:8px 6px 2px"><b>'+esc(k)+'</b>'+(FO.modo==='peca'?' <span class="hint">'+esc(r0.designacao||'')+'</span>':'')+'</div><table><thead><tr><th>'+(FO.modo==='peca'?'Fornecedor':'Peça')+'</th><th class="n">Preço un.</th><th>Data</th><th>Proposta</th><th></th></tr></thead><tbody>'
-       +R.map((r,i)=>'<tr><td>'+esc(FO.modo==='peca'?r.fornecedor:(r.codigo+' · '+(r.designacao||'').slice(0,50)))+'</td><td class="n"><b>'+eur(r.preco)+'</b>'+(FO.modo==='peca'&&i===0?' <span class="pill on">mais recente</span>':'')+'</td><td class="n">'+dPT(r.data)+'</td><td>'+esc(r.proposta_ref||'')+'</td><td>'+(r.pdf_path?'<button type="button" data-pdf="'+esc(r.pdf_path)+'">PDF</button>':'')+(r.origem==='manual'?'<button type="button" data-fe="'+r.id+'">Editar</button>':'')+'</td></tr>').join('')
-       +'</tbody></table></div>'});
-    $('#foC').innerHTML=h;
-    $('#foC').querySelectorAll('[data-pdf]').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('documentos').createSignedUrl(b.dataset.pdf,300);if(r.error||!r.data){aviso('Não consegui abrir o PDF.',true);return}window.open(r.data.signedUrl,'_blank')})};
-  $('#foNovo').onclick=()=>foForm(null,()=>vForn());
-  $('#foC').addEventListener('click',e=>{const b=e.target.closest('[data-fe]');if(b)foForm(L.find(z=>z.id===b.dataset.fe),()=>vForn())});
-  $('#foQ').oninput=e=>{FO.q=e.target.value;pinta()};$('#foM').onchange=e=>{FO.modo=e.target.value;pinta()};pinta()}
+  try{await foCarrega()}catch(e){pg.innerHTML='<div class="vz"><div class="msg e">'+esc(erroTxt(e))+'</div></div>';return}
+  if(S.vista!=='forn')return;foDesenha()}
+function foDesenha(){
+  const pg=$('#pg'),L=FO.dados,forns=[...new Set(L.map(r=>r.fornecedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt')),grupos=[...new Set(L.map(r=>r.grupo||(FO.pix.get(r.codigo)||{}).grupo||'Outros'))].sort((a,b)=>a.localeCompare(b,'pt'));
+  const anos=[...new Set(L.map(r=>String(r.data||'').slice(0,4)).filter(Boolean))].sort().reverse().slice(0,4);
+  const ds=L.map(r=>r.data).filter(Boolean).sort(),nP=new Set(L.map(r=>r.codigo||r.designacao).concat((FO.pecas||[]).map(p=>p.codigo))).size;
+  const sel=(id,lab,opts,v)=>'<select id="'+id+'" aria-label="'+lab+'"><option value="">'+lab+'</option>'+opts.map(o=>'<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+  let h='<div class="vz fo"><div class="topo"><div><h2>Fornecedores</h2><p class="sub" style="margin:0">Base de dados de preços: cotações, propostas negociadas, adjudicações e custos internos, por peça e por fornecedor.</p></div><div class="ac">'
+    +(gestor()?'<button id="foImp">Importar histórico…</button>':'')+'<button id="foCsv">Exportar</button>'+(gestor()?'<button class="pri" id="foNovo">+ Preço</button>':'')+'</div></div>';
+  if(!L.length){h+='<div class="card vazio" style="padding:30px"><h2>Ainda sem preços</h2><p>Importa o ficheiro «Histórico de preços de peças de catenária» com o botão «Importar histórico…», ou lança preços à mão com «+ Preço». As propostas dos mapas comparativos dos Materiais também aparecem aqui.</p></div></div>';pg.innerHTML=h;foLiga();return}
+  h+='<div class="foK"><div class="card"><b>'+nP.toLocaleString('pt-PT')+'</b><span>peças com preço</span></div><div class="card"><b>'+L.length.toLocaleString('pt-PT')+'</b><span>preços registados</span></div><div class="card"><b>'+forns.length+'</b><span>fornecedores</span></div><div class="card"><b>'+(ds.length?dPT(ds[0]).slice(3)+' – '+dPT(ds[ds.length-1]).slice(3):'—')+'</b><span>período</span></div></div>';
+  h+='<div class="psbar"><input type="search" id="foQ" placeholder="Procurar peça, código IP, SAP, fornecedor ou obra…" value="'+esc(FO.q)+'">'+sel('foG','Todos os grupos',grupos,FO.grupo)+sel('foF','Todos os fornecedores',forns,FO.forn)+sel('foT','Todos os tipos',FOT,FO.tipo)
+    +'<span class="foPer">'+[['tudo','Tudo'],['12m','12 meses']].concat(anos.map(a=>[a,a])).map(p=>'<button data-per="'+p[0]+'" class="'+(FO.per===p[0]?'on':'')+'">'+p[1]+'</button>').join('')+'</span>'
+    +'<select id="foM" aria-label="Agrupar"><option value="peca"'+(FO.modo==='peca'?' selected':'')+'>Por peça</option><option value="forn"'+(FO.modo==='forn'?' selected':'')+'>Por fornecedor</option></select></div>';
+  h+='<div class="foG"><section class="card foL"><div class="hint" id="foN" style="padding:8px 12px"></div><div id="foLista"></div></section><section class="card foD" id="foDet"></section></div></div>';
+  pg.innerHTML=h;foLiga();foLista()}
+function foGrupos(F){
+  const G=new Map();F.forEach(r=>{const k=FO.modo==='peca'?(r.codigo||r.designacao):r.fornecedor;if(!G.has(k))G.set(k,[]);G.get(k).push(r)});
+  /* peças com preço de referência mas sem cotações: entram quando não há filtro de fornecedor, tipo ou período */
+  if(FO.modo==='peca'&&!FO.forn&&!FO.tipo&&FO.per==='tudo'){const q=psNorm(FO.q.trim());(FO.pecas||[]).forEach(p=>{if(G.has(p.codigo))return;if(FO.grupo&&(p.grupo||'Outros')!==FO.grupo)return;if(q&&!psNorm([p.codigo,p.cod_ip,p.cod_antigo,p.designacao,p.fornecedor].join(' ')).includes(q))return;G.set(p.codigo,[])})}
+  return [...G].map(([k,R])=>{R.sort((a,b)=>(b.data||'').localeCompare(a.data||''));return {k,R}})}
+function foLista(){
+  const F=foFiltra(),G=foGrupos(F),el=$('#foLista');if(!el)return;
+  G.sort((a,b)=>FO.modo==='peca'?String((foPeca(a.k).cod_ip||(a.R[0]||{}).cod_ip||a.k)).localeCompare(String(foPeca(b.k).cod_ip||(b.R[0]||{}).cod_ip||b.k),'pt',{numeric:true}):b.R.length-a.R.length);
+  $('#foN').textContent=G.length.toLocaleString('pt-PT')+(FO.modo==='peca'?' peças':' fornecedores')+' · '+F.length.toLocaleString('pt-PT')+' preços';
+  if(FO.sel&&!G.some(g=>g.k===FO.sel))FO.sel=null;if(!FO.sel&&G.length)FO.sel=G[0].k;
+  el.innerHTML=G.length?G.slice(0,FO.lim).map(g=>{const r0=g.R[0];
+    if(FO.modo==='peca'){const p=foPeca(g.k),ps=g.R.map(r=>+r.preco).filter(v=>v>0),mn=Math.min(...ps),mx=Math.max(...ps);
+      if(!r0)return '<button class="foI'+(FO.sel===g.k?' on':'')+'" data-fk="'+esc(g.k)+'"><span class="c mono">'+esc(p.cod_ip||g.k)+'</span><span class="d">'+esc(p.designacao||'')+'<small>só preço de referência</small></span><span class="p">'+foEur(+p.preco_novo>0?p.preco_novo:+p.preco_ccs>0?p.preco_ccs:null)+'</span></button>';
+      return '<button class="foI'+(FO.sel===g.k?' on':'')+'" data-fk="'+esc(g.k)+'"><span class="c mono">'+esc(p.cod_ip||r0.cod_ip||g.k)+'</span><span class="d">'+esc(p.designacao||r0.designacao||'')+'<small>'+esc(g.R.length+(g.R.length===1?' preço':' preços')+' · '+new Set(g.R.map(r=>r.fornecedor)).size+' forn.'+(ps.length>1&&mx>mn?' · '+Number(mn).toLocaleString('pt-PT',{maximumFractionDigits:2})+'–'+Number(mx).toLocaleString('pt-PT',{maximumFractionDigits:2})+' €':''))+'</small></span><span class="p">'+foEur(p.preco_novo!=null?p.preco_novo:r0.preco)+'</span></button>'}
+    return '<button class="foI'+(FO.sel===g.k?' on':'')+'" data-fk="'+esc(g.k)+'"><span class="d"><b>'+esc(g.k)+'</b><small>'+g.R.length+' preços · '+new Set(g.R.map(r=>r.codigo||r.designacao)).size+' peças · último '+dPT(r0.data)+'</small></span></button>'}).join('')
+    +(G.length>FO.lim?'<button class="foMais" id="foMais">Mostrar mais ('+(G.length-FO.lim)+')</button>':''):'<div class="vazio" style="padding:20px"><p>Nada neste filtro.</p></div>';
+  foDetalhe(G.find(g=>g.k===FO.sel))}
+function foDetalhe(g){
+  const el=$('#foDet');if(!el)return;if(!g){el.innerHTML='<div class="vazio" style="padding:30px"><p>Escolhe uma peça ou um fornecedor à esquerda.</p></div>';return}
+  const R=g.R;let h='';
+  if(FO.modo==='peca'){const p=foPeca(g.k),r0=R[0]||{};
+    const porF=new Map();R.forEach(r=>{const o=porF.get(r.fornecedor)||{f:r.fornecedor,ult:r,min:+r.preco,n:0};o.n++;o.min=Math.min(o.min,+r.preco);porF.set(r.fornecedor,o)});
+    const FS=[...porF.values()].sort((a,b)=>a.ult.preco-b.ult.preco);
+    h+='<div class="foH"><div><div class="hint">'+esc(p.grupo||r0.grupo||'')+'</div><h3>'+esc(p.designacao||r0.designacao||g.k)+'</h3><div class="hint mono">'+[p.cod_ip||r0.cod_ip?'IP '+(p.cod_ip||r0.cod_ip):'',g.k?'SAP '+g.k:'',p.cod_antigo?'antigo '+p.cod_antigo:'',p.unidade||r0.unidade?'un. '+(p.unidade||r0.unidade):''].filter(Boolean).map(esc).join(' · ')+'</div></div>'
+      +(+p.preco_novo>0?'<div class="foRef"><span>Preço de referência</span><b>'+foEur(p.preco_novo)+'</b><small>'+esc([p.fornecedor,p.tipo,p.data_cotacao&&dPT(p.data_cotacao)].filter(Boolean).join(' · '))+(p.preco_ccs!=null&&+p.preco_ccs!==+p.preco_novo?'<br>antes '+foEur(p.preco_ccs):'')+'</small></div>':'')+'</div>';
+    h+='<div class="foGr">'+foGrafico(R)+'</div>';
+    if(!R.length){el.innerHTML=h+'<p class="hint" style="margin-top:14px">Esta peça tem preço de referência mas ainda não há cotações registadas.</p>';return}
+    h+='<h4 class="foS">Por fornecedor</h4><table><thead><tr><th>Fornecedor</th><th class="n">Último preço</th><th class="n">Mais baixo</th><th>Data</th><th class="n">Preços</th></tr></thead><tbody>'
+      +FS.map((o,i)=>'<tr><td><b>'+esc(o.f)+'</b>'+(i===0&&FS.length>1?' <span class="pill on">mais barato</span>':'')+'</td><td class="n"><b>'+foEur(o.ult.preco)+'</b></td><td class="n">'+foEur(o.min)+'</td><td>'+dPT(o.ult.data)+'</td><td class="n">'+o.n+'</td></tr>').join('')+'</tbody></table>';
+  }else{
+    const ult=new Map();R.forEach(r=>{const k=r.codigo||r.designacao;if(!ult.has(k))ult.set(k,r)});
+    h+='<div class="foH"><div><div class="hint">Fornecedor</div><h3>'+esc(g.k)+'</h3><div class="hint">'+R.length+' preços · '+ult.size+' peças · de '+dPT(R[R.length-1].data)+' a '+dPT(R[0].data)+'</div></div></div>';
+  }
+  h+='<h4 class="foS">'+(FO.modo==='peca'?'Todos os preços':'Preços')+' <span class="hint">'+R.length+'</span></h4><div class="foT"><table><thead><tr><th>Data</th><th>'+(FO.modo==='peca'?'Fornecedor':'Peça')+'</th><th>Tipo</th><th>Obra</th><th class="n">Qtd.</th><th class="n">Preço</th><th>Referência</th>'+(gestor()?'<th></th>':'')+'</tr></thead><tbody>'
+    +R.slice(0,400).map(r=>'<tr><td>'+dPT(r.data)+'</td><td>'+(FO.modo==='peca'?esc(r.fornecedor||''):'<span class="mono">'+esc((foPeca(r.codigo).cod_ip||r.cod_ip||r.codigo||''))+'</span> '+esc(String(r.designacao||'').slice(0,60)))+'</td><td>'+esc(r.tipo||'Cotação')+'</td><td>'+esc(r.obra_ref||'')+'</td><td class="n">'+(r.quantidade!=null?Number(r.quantidade).toLocaleString('pt-PT'):'')+'</td><td class="n"><b>'+foEur(r.preco)+'</b></td><td class="hint">'+esc(r.proposta_ref||'')+(r.pdf_path?' <button class="sm" data-pdf="'+esc(r.pdf_path)+'">PDF</button>':'')+'</td>'+(gestor()?'<td><button class="sm" data-fe="'+r.id+'">Editar</button></td>':'')+'</tr>').join('')+'</tbody></table>'+(R.length>400?'<p class="hint">A mostrar 400 de '+R.length+'. Afina os filtros.</p>':'')+'</div>';
+  el.innerHTML=h}
+function foLiga(){
+  const pg=$('#pg');
+  const re=()=>{FO.lim=150;foLista()};
+  const q=$('#foQ');if(q){let tm;q.oninput=e=>{FO.q=e.target.value;clearTimeout(tm);tm=setTimeout(re,200)}}
+  [['foG','grupo'],['foF','forn'],['foT','tipo'],['foM','modo']].forEach(([id,k])=>{const s=$('#'+id);if(s)s.onchange=()=>{FO[k]=s.value;if(k==='modo')FO.sel=null;re()}});
+  pg.onclick=async e=>{const t=e.target;let x;
+    if((x=t.closest('[data-per]'))){FO.per=x.dataset.per;pg.querySelectorAll('[data-per]').forEach(b=>b.classList.toggle('on',b===x));re();return}
+    if((x=t.closest('[data-fk]'))){FO.sel=x.dataset.fk;pg.querySelectorAll('.foI.on').forEach(b=>b.classList.remove('on'));x.classList.add('on');foDetalhe(foGrupos(foFiltra()).find(g=>g.k===FO.sel));const d=$('#foDet');if(d)d.scrollTop=0;return}
+    if(t.closest('#foMais')){FO.lim+=300;foLista();return}
+    if(t.closest('#foNovo')){foForm(null,()=>vForn());return}
+    if(t.closest('#foImp')){foImporta();return}
+    if(t.closest('#foCsv')){foCsv();return}
+    if((x=t.closest('[data-fe]'))){foForm(FO.dados.find(z=>z.id===x.dataset.fe),()=>vForn());return}
+    if((x=t.closest('[data-pdf]'))){const r=await sb.storage.from('documentos').createSignedUrl(x.dataset.pdf,300);if(r.error||!r.data){aviso('Não consegui abrir o PDF.',true);return}window.open(r.data.signedUrl,'_blank');return}}}
+function foCsv(){
+  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"',F=foFiltra();
+  const lin=[['Data','Fornecedor','Tipo','Código SAP','Código IP','Designação','Grupo','Unidade','Quantidade','Preço','Obra','Referência'].map(q).join(';')]
+    .concat(F.map(r=>{const p=foPeca(r.codigo);return [r.data,r.fornecedor,r.tipo||'Cotação',r.codigo,p.cod_ip||r.cod_ip,r.designacao,p.grupo||r.grupo,r.unidade,r.quantidade,String(r.preco).replace('.',','),r.obra_ref,r.proposta_ref].map(q).join(';')}));
+  const b=new Blob(['﻿'+lin.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='precos_fornecedores.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function foLeHistorico(txt){
+  let js=txt;const i=txt.indexOf('window.__DATA=');if(i>=0)js=txt.slice(i+14);
+  js=js.replace(/([{,])\s*([A-Za-z_]\w*)\s*:(?=\s*[\[{])/g,'$1"$2":');
+  let d=0,fim=-1,str=false,esq=false;for(let k=0;k<js.length;k++){const c=js[k];if(str){if(esq)esq=false;else if(c==='\\')esq=true;else if(c==='"')str=false;continue}if(c==='"')str=true;else if(c==='{'||c==='[')d++;else if(c==='}'||c===']'){d--;if(d===0){fim=k+1;break}}}
+  if(fim<0)throw new Error('não encontrei os dados de preços no ficheiro');
+  const D=JSON.parse(js.slice(0,fim));if(!D||!Array.isArray(D.cotacoes))throw new Error('o ficheiro não tem cotações');return D}
+function foImporta(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.html,.htm,.json';
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;let D;
+    try{D=foLeHistorico(await f.text())}catch(e){aviso('Não consegui ler o ficheiro: '+e.message,true);return}
+    const P=D.pecas||[],C=D.cotacoes,pm=new Map(P.map(p=>[String(p.codigo),p])),org=S.eu.organizacao_id;
+    if(!await confirmar('Ficheiro lido: '+C.length+' preços e '+P.length+' peças com preço de referência. Importar para a base de fornecedores? Se já tinhas importado este histórico, os mesmos preços são atualizados (não ficam repetidos).','Importar'))return;
+    const num=v=>v===''||v==null||isNaN(+v)?null:+v,dt=v=>/^\d{4}-\d{2}-\d{2}/.test(String(v||''))?String(v).slice(0,10):null;
+    const rows=C.filter(c=>c.fornecedor&&num(c.preco_unidade_ccs)!=null).map(c=>{const p=pm.get(String(c.codigo))||{};return {organizacao_id:org,obra_id:null,origem:'historico',hist_id:+c.id,fornecedor:String(c.fornecedor).trim(),codigo:c.codigo?String(c.codigo):null,cod_ip:p.cod_ip||null,grupo:p.grupo||null,designacao:c.designacao_cotacao||p.designacao||null,unidade:c.unidade||p.unidade||null,preco:num(c.preco_unidade_ccs),quantidade:num(c.quant),data:dt(c.data),tipo:c.tipo||'Cotação',obra_ref:c.obra?String(c.obra):null,proposta_ref:c.ref||null,estado_ligacao:c.estado_ligacao||null,mc_id:'',pdf_path:''}});
+    const pr=P.filter(p=>p.codigo).map(p=>({organizacao_id:org,codigo:String(p.codigo),cod_ip:p.cod_ip||null,cod_antigo:p.cod_antigo||null,designacao:p.designacao||null,grupo:p.grupo||null,unidade:p.unidade||null,preco_ccs:num(p.preco_ccs),preco_novo:num(p.preco_novo),data_cotacao:dt(p.data_cotacao),fornecedor:p.fornecedor||null,tipo:p.tipo||null,atualizado_em:new Date().toISOString()}));
+    try{
+      const bi=$('#foImp'),prog=t=>{if(bi){bi.disabled=true;bi.textContent=t}};
+      for(let i=0;i<pr.length;i+=500){prog('A importar peças… '+Math.min(i+500,pr.length)+'/'+pr.length);await ok(sb.from('pecas_preco').upsert(pr.slice(i,i+500),{onConflict:'organizacao_id,codigo'}))}
+      for(let i=0;i<rows.length;i+=500){prog('A importar preços… '+Math.min(i+500,rows.length)+'/'+rows.length);await ok(sb.from('precos_fornecedor').upsert(rows.slice(i,i+500),{onConflict:'organizacao_id,hist_id'}))}
+      aviso('Importados '+rows.length+' preços e '+pr.length+' peças.');vForn()
+    }catch(e){aviso('A importação parou: '+erroTxt(e)+'. Podes repetir: o que já entrou não fica repetido.',true)}};
+  inp.click()}
 /* ---------- pessoal (fora da obra): pessoas, valências e certificados ---------- */
 const PS={sep:'pessoas',q:'',est:'ativos',val:'todas',dados:null};
 const VAL_SUG=['Eletricista de catenária','Montador de postes e consolas','Operador de PEMP / plataforma','Trabalhos em altura','Condutor de veículo de via','Segurança ferroviária (piloto, vigia)','Topografia','Soldadura','Eletricista BT/MT','Encarregado de obra'];

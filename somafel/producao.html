@@ -3102,12 +3102,14 @@ function ondeSemDados(ini,semFiltro){
           det='plano: '+(localNome(es.localId)||'sem local')+' '+(es.turno==='noite'?'N':'D')+' → ponto: '+(localNome(pt.localId)||'sem local')+' '+(pt.turno==='noite'?'N':'D') }
       } else if(es)flag='só plano'; else if(haPlano)flag='fora do plano';
       var eid=(es&&es.equipaId&&eqpPorId(es.equipaId))?es.equipaId:'';
+      if(!eid){ var tm=(ST.equipas||[]).filter(function(t){ return (t.pessoas||[]).indexOf(m.id)>=0 })[0]; if(tm)eid=tm.id }
       var lider=!!(eid&&eqpPorId(eid).lider===m.id);
       bloco(lid,eid).p.push({m:m,turno:turno,flag:flag,det:det,lider:lider}); n++;
     });
     (ST.escMeios||[]).forEach(function(x){
       if(x.data!==d)return; var qq=eqPorId(x.eqId); if(!qq)return;
       var eid=(x.equipaId&&eqpPorId(x.equipaId))?x.equipaId:'', lid=x.localId||'';
+      if(!eid){ var tq=(ST.equipas||[]).filter(function(t){ return (t.meios||[]).indexOf(qq.id)>=0 })[0]; if(tq)eid=tq.id }
       if(q&&lower((qq.categoria||'')+' '+(qq.nome||'')).indexOf(q)<0&&!(locs[lid]&&locs[lid][eid]))return;
       var pr=eqpResp(qq); bloco(lid,eid).m.push({q:qq,turno:x.turno,rOk:(tipoEq(qq)!=='V'||!pr||!!(escDe(pr,d)||pontoDe(pr,d)))}); nm++;
     });
@@ -3175,48 +3177,52 @@ function diasTxt(ix){
 }
 /* impressão A4 horizontal: um quadro por local, dias em colunas */
 function imprimeOnde(){
-  var ini=ondeSem, D=ondeSemDados(ini,true), fim=addD(ini,6), dias=semDias(ini), locs=[];
-  D.forEach(function(c){ c.ordem.forEach(function(l){ if(locs.indexOf(l)<0)locs.push(l) }) });
-  var ordL=(ST.locais||[]).map(function(l){return l.id}).filter(function(id){return locs.indexOf(id)>=0});
-  locs.forEach(function(l){ if(l&&ordL.indexOf(l)<0)ordL.push(l) }); if(locs.indexOf('')>=0)ordL.push('');
+  var ini=ondeSem, D=ondeSemDados(ini,true), fim=addD(ini,6), dias=semDias(ini);
+  /* junta, por dia, os blocos de todas as zonas por equipa */
+  var porEq=D.map(function(c){ var o={}; Object.keys(c.locs).forEach(function(l){ Object.keys(c.locs[l]).forEach(function(e){ var E=c.locs[l][e], t=o[e]||(o[e]={p:[],m:[]}); t.p=t.p.concat(E.p); t.m=t.m.concat(E.m) }) }); return o });
+  var coord={}, coordDias={};
+  porEq.forEach(function(o,i){ if(!o[''])return; o[''].p.forEach(function(x){ coord[x.m.id]=x.m; (coordDias[x.m.id]=coordDias[x.m.id]||[]).push(i) }); o[''].p=[] });
+  var ids=(ST.equipas||[]).map(function(t){return t.id}).filter(function(id){ return porEq.some(function(o){ return o[id]&&(o[id].p.length||o[id].m.length) }) });
+  var semMeios=porEq.some(function(o){ return o['']&&o[''].m.length }); if(semMeios)ids.push('');
   var ct=coordTxt(ini), dd=hoje().split('-').reverse().join('/');
+  var cg=Object.keys(coord).map(function(k){ var m=coord[k], ds=coordDias[k]; return esc((m.nome||m.cat)+(m.nome&&m.cat?' ('+m.cat+')':''))+(ds.length<7?' <span style="font-weight:400">· '+ds.map(function(x){return NDIA[x]}).join(', ')+'</span>':'') });
   var h='<div class="eqpl"><div class="eqHd"><div class="eqLogo"><img src="'+((document.querySelector('.sbrand img')||{}).src||LOGO_PD)+'" alt=""></div>'+
     '<div class="eqTit"><div class="t1">Planeamento do Pessoal e Meios</div><div class="t2">'+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+'</div><div class="t3">SEMANA '+semana(ini)+'</div></div>'+
-    '<div class="eqInf"><div><small>Período</small>'+esc(ptbr(ini))+' a '+esc(ptbr(fim))+'</div><div><small>Responsável pelos trabalhos e coordenação</small><b>'+(ct?esc(ct):'&nbsp;')+'</b></div><div style="font-size:6.2pt;color:#444">Emitido em '+dd+'</div></div></div>';
-  if(!ordL.length)h+='<p>Ninguém com plano ou ponto nesta semana.</p>';
+    '<div class="eqInf"><div><small>Período</small>'+esc(ptbr(ini))+' a '+esc(ptbr(fim))+'</div><div><small>Responsável pelos trabalhos e coordenação</small><b>'+(ct?esc(ct):'&nbsp;')+'</b></div>'+
+    (cg.length?'<div><small>Coordenação geral (acompanha as equipas)</small><b style="font-size:7pt">'+cg.join('<br>')+'</b></div>':'')+
+    '<div style="font-size:6.2pt;color:#444">Emitido em '+dd+'</div></div></div>';
+  if(!ids.length)h+='<p>Nenhuma equipa com plano ou ponto nesta semana.</p>';
   else{
     h+='<table><colgroup><col style="width:12.6%">'+dias.map(function(){ return '<col style="width:10.2%">' }).join('')+'<col style="width:7.5%"><col style="width:8.5%"></colgroup>'+
-      '<thead><tr><th>Local</th>'+dias.map(function(d,i){ return '<th class="'+(i>=5?'fds':'')+'">'+NDIA[i]+'<br><span style="font-weight:400">'+esc(ptbr(d))+'</span></th>' }).join('')+'<th>Líder</th><th>Viaturas</th></tr></thead><tbody>';
-    ordL.forEach(function(l){
-      var lids={}, vi={};
-      var cels=D.map(function(c,i){
-        var L=c.locs[l]; if(!L)return '<td class="'+(i>=5?'fds':'')+'"></td>';
-        var gr=[];
-        c.ordEq(L).forEach(function(eid){
-          var E=L[eid], tn={};
-          E.p.forEach(function(x){ tn[x.turno]=1 }); E.m.forEach(function(x){ tn[x.turno]=1 });
-          ['dia','noite'].forEach(function(t){
-            if(!tn[t])return;
-            var P=E.p.filter(function(x){return x.turno===t}), M=E.m.filter(function(x){return x.turno===t});
-            P.forEach(function(x){ if(x.lider)lids[x.m.id]=x.m.nome||x.m.cat });
-            M.filter(function(x){return tipoEq(x.q)==='V'}).forEach(function(x){ (vi[x.q.id]=vi[x.q.id]||{q:x.q,d:[]}).d.push(i) });
-            var MP=M.filter(function(x){return tipoEq(x.q)==='P'});
-            if(!P.length&&!MP.length)return;
-            gr.push('<div class="g"><div class="hz">'+(eid?esc(eqpNomeDe(eid))+' · ':'')+esc(horTxt(eid,t))+'</div>'+
-              P.map(function(x){ return '<div class="pn'+(x.lider?' ld':'')+'">'+esc(x.m.nome||x.m.cat)+(x.lider?' (L)':'')+'</div>' }).join('')+
-              MP.map(function(x){ return '<div class="mp">'+esc(meioNome(x.q))+'</div>' }).join('')+'</div>');
-          });
+      '<thead><tr><th>Equipa</th>'+dias.map(function(d,i){ return '<th class="'+(i>=5?'fds':'')+'">'+NDIA[i]+'<br><span style="font-weight:400">'+esc(ptbr(d))+'</span></th>' }).join('')+'<th>Líder</th><th>Viaturas</th></tr></thead><tbody>';
+    var totP=dias.map(function(){return 0}), totM=dias.map(function(){return 0});
+    ids.forEach(function(eid){
+      var lids={}, vi={}, t=eqpPorId(eid);
+      var cels=porEq.map(function(o,i){
+        var E=o[eid]; if(!E||(!E.p.length&&!E.m.length))return '<td class="'+(i>=5?'fds':'')+'"></td>';
+        totP[i]+=E.p.length; totM[i]+=E.m.length;
+        var gr=[], tn={}; E.p.forEach(function(x){ tn[x.turno]=1 }); E.m.forEach(function(x){ tn[x.turno]=1 });
+        ['dia','noite'].forEach(function(tt){
+          if(!tn[tt])return;
+          var P=E.p.filter(function(x){return x.turno===tt}).sort(function(a,b){ return (b.lider?1:0)-(a.lider?1:0) }), M=E.m.filter(function(x){return x.turno===tt});
+          P.forEach(function(x){ if(x.lider)lids[x.m.id]=x.m.nome||x.m.cat });
+          M.filter(function(x){return tipoEq(x.q)==='V'}).forEach(function(x){ (vi[x.q.id]=vi[x.q.id]||{q:x.q,d:[]}).d.push(i) });
+          var MP=M.filter(function(x){return tipoEq(x.q)==='P'});
+          if(!P.length&&!MP.length)return;
+          gr.push('<div class="g"><div class="hz">'+esc(horTxt(eid,tt))+'</div>'+
+            P.map(function(x){ return '<div class="pn'+(x.lider?' ld':'')+'">'+esc(x.m.nome||x.m.cat)+(x.lider?' (L)':'')+'</div>' }).join('')+
+            MP.map(function(x){ return '<div class="mp">'+esc(meioNome(x.q))+'</div>' }).join('')+'</div>');
         });
         return '<td class="'+(i>=5?'fds':'')+'">'+gr.join('')+'</td>';
       });
       var viL=Object.keys(vi).map(function(k){ return vi[k] }).sort(function(a,b){ return naturalCmp(meioNome(a.q),meioNome(b.q)) });
-      h+='<tr><td class="lc" style="background:'+(l?localCor(l):'#eee')+'">'+esc(l?localNome(l):'Sem local')+'</td>'+cels.join('')+
+      h+='<tr><td class="lc" style="background:#eee">'+esc(t?(t.nome||'Equipa'):'Meios sem equipa')+(t?'<div style="font-weight:400;font-size:6.5pt">'+(t.turno==='dia'?'Dia':'Noite')+'</div>':'')+'</td>'+cels.join('')+
         '<td class="rs">'+Object.keys(lids).map(function(k){ return esc(lids[k]) }).join('<br>')+'</td>'+
-        '<td class="vi">'+viL.map(function(v){ var u=v.d.filter(function(x,ix,a){return a.indexOf(x)===ix}).sort(function(a,b){return a-b}); var nvq=meioNome(v.q); return '<span class="vn'+(nvq.length>22?' lg':'')+'">'+esc(nvq)+'</span>'+(respNome(v.q)?'<span class="dd">Resp.: '+esc(respNome(v.q))+'</span>':'')+(u.length<7?'<span class="dd">'+diasTxt(u)+'</span>':'') }).join('<div style="height:1mm"></div>')+'</td></tr>';
+        '<td class="vi">'+viL.map(function(v){ var u=v.d.filter(function(x,ix,a){return a.indexOf(x)===ix}).sort(function(a,b){return a-b}); var nvq=meioNome(v.q); return '<span class="vn'+(nvq.length>22?' lg':'')+'">'+esc(nvq)+'</span>'+(respNome(v.q)?'<span class="dd">Resp.: '+esc(respNome(v.q))+'</span>':'')+(u.length<7?'<span class="dd">'+u.map(function(x){return NDIA[x]}).join(', ')+'</span>':'') }).join('')+'</td></tr>';
     });
-    h+='<tr class="tot"><td>Total</td>'+D.map(function(c){ return '<td>'+(c.n||'—')+(c.nm?' + '+c.nm+' meios':'')+'</td>' }).join('')+'<td></td><td></td></tr>';
+    h+='<tr class="tot"><td>Total nas equipas</td>'+totP.map(function(n,i){ return '<td>'+(n||'—')+(totM[i]?' + '+totM[i]+' meios':'')+'</td>' }).join('')+'<td></td><td></td></tr>';
     h+='</tbody></table>';
-    h+='<div class="eqLeg"><span>(L) líder da equipa</span><span class="mp">Equipamento pesado</span><span>Horários por defeito: noite '+HOR_PAD.noite+' · dia '+HOR_PAD.dia+'</span></div>';
+    h+='<div class="eqLeg"><span>(L) líder da equipa</span><span class="mp">Equipamento pesado</span><span>Horários por defeito: noite '+HOR_PAD.noite+' · dia '+HOR_PAD.dia+'</span>'+(cg.length?'<span>Quem não pertence a nenhuma equipa aparece em «Coordenação geral», no cabeçalho.</span>':'')+'</div>';
   }
   h+='</div>';
   imprimeHorizontal(h);
