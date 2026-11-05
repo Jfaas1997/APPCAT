@@ -349,6 +349,7 @@ table.grelha.gnum .diaCol,table.grelha.gnum .diaCel{width:42px;min-width:42px}
 .pti{width:100%;height:26px;border:0;border-radius:0;background:transparent;text-align:center;font:inherit;font-size:12px;color:var(--ink);padding:0;outline:none}
 .pti:focus{background:var(--verdbg);box-shadow:inset 0 0 0 2px var(--brand)}
 .diaCel.pres{background:var(--okbg)}
+.gdet td.nm{position:relative;padding-right:22px}.gdet .detTira{position:absolute;right:2px;top:4px;opacity:.35;padding:0 5px;line-height:1.3}.gdet tr:hover .detTira,.gdet .detTira:focus-visible{opacity:1}
 .diaCel.dia.eqp{background:#2E9A5C;color:#fff;font-size:12px;text-align:center}
 :root[data-tema="escuro"] .diaCel.dia.eqp{background:#33B06A;color:#0f1a14}
 @media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .diaCel.dia.eqp{background:#33B06A;color:#0f1a14}}
@@ -3140,7 +3141,7 @@ function detPainelHtml(pt2){
     fld('H. extra','<input class="num" id="detExtra" style="width:70px" value="'+esc(fmtH(pt2.extra))+'">')+
     fld('H. deslocação','<input class="num" id="detDesl" style="width:70px" value="'+esc(fmtH(pt2.deslocacao))+'">')+
     fld('Parte diária','<select id="detPd"><option value="">— sem PD —</option>'+pds.map(function(p){return '<option value="'+esc(p.id)+'"'+(p.id===pt2.pdId?' selected':'')+'>'+esc(tipoNome(p.tipo))+' '+esc(p.num)+'</option>'}).join('')+'</select>')+
-    fld('Local','<select id="detLocal"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===pt2.localId?' selected':'')+'>'+esc(l.nome||'')+'</option>'}).join('')+'</select>')+
+    ((ST.locais||[]).length?fld('Local','<select id="detLocal"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===pt2.localId?' selected':'')+'>'+esc(l.nome||'')+'</option>'}).join('')+'</select>'):'')+
     fld('Nota','<input id="detNota" style="width:220px" value="'+esc(pt2.nota||'')+'">')+
     '<button id="detOk" class="pri">Guardar</button><button id="detFechar">Fechar</button></div>';
 }
@@ -3162,7 +3163,7 @@ function detalheHtml(dias,diretosMO,ano,mesN,cabecalho){
   grupos.forEach(function(g){
     h+='<tr class="grp"><td class="grpS" colspan="'+nCol+'">'+esc(g.nome||'Sem categoria')+' <span class="hint" style="font-weight:400">· '+g.itens.length+'</span></td></tr>';
     g.itens.forEach(function(m){
-      var r1='<tr class="detP"><td class="stick nm" rowspan="3" title="'+esc((m.cat||'')+' — '+(m.nome||''))+'">'+esc(m.nome||m.cat)+'</td><td class="sub">D/N</td>', r2='<tr><td class="sub">Extra</td>', r3='<tr class="detL"><td class="sub">Desl.</td>';
+      var r1='<tr class="detP"><td class="stick nm" rowspan="3" title="'+esc((m.cat||'')+' — '+(m.nome||''))+'">'+esc(m.nome||m.cat)+'<button type="button" class="x detTira" data-dtira="'+esc(m.id)+'" title="Tirar esta pessoa do detalhe deste mês">×</button></td><td class="sub">D/N</td>', r2='<tr><td class="sub">Extra</td>', r3='<tr class="detL"><td class="sub">Desl.</td>';
       var d=0,x=0,t=0;
       dias.forEach(function(dd){
         var data=ptoMesAtual+'-'+dd, pt=pontoDe(m.id,data), k=m.id+'|'+data, f=(fdsL[dd]?' fds':'')+(novaL[dd]?' semNova':'');
@@ -3262,7 +3263,7 @@ function renderPtoMes(){
     p:'Clica numa célula para marcar dia, noite ou limpar.',
     e:'Escreve as horas extra em decimais (1,5). Enter ou ↓ passa à pessoa seguinte, Tab ao dia seguinte. Só quem esteve presente tem caixa.',
     t:'A deslocação vem do local da parte diária. O que escreveres aqui fica como valor teu e já não muda sozinho.',
-    d:'Cada pessoa tem 3 linhas: D/N (clica para dia → noite → limpar), Extra e Desl. Só aparecem as pessoas com ponto neste mês. O ⋯ (ou o botão direito) abre a parte diária, o local e a nota; o ● indica que já tem horas ou nota. Enter/↓ desce, Tab avança um dia.'
+    d:'Cada pessoa tem 3 linhas: D/N (clica para dia → noite → limpar), Extra e Desl. Só aparecem as pessoas com ponto neste mês. O ⋯ (ou o botão direito) abre a parte diária e a nota; o × ao lado do nome tira a pessoa do detalhe; o ● indica que já tem horas ou nota. Enter/↓ desce, Tab avança um dia.'
   };
   var h='';
   if(loteAberto)h+=loteBox();
@@ -3313,7 +3314,7 @@ function renderPtoMes(){
             fld('H. extra','<input class="num" id="detExtra" style="width:70px" value="'+esc(fmtH(pt2.extra))+'">')+
             fld('H. deslocação','<input class="num" id="detDesl" style="width:70px" value="'+esc(fmtH(pt2.deslocacao))+'">')+
             fld('Parte diária','<select id="detPd"><option value="">— sem PD —</option>'+pds.map(function(p){return '<option value="'+esc(p.id)+'"'+(p.id===pt2.pdId?' selected':'')+'>'+esc(tipoNome(p.tipo))+' '+esc(p.num)+'</option>'}).join('')+'</select>')+
-            fld('Local','<select id="detLocal"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===pt2.localId?' selected':'')+'>'+esc(l.nome||'')+'</option>'}).join('')+'</select>')+
+            ((ST.locais||[]).length?fld('Local','<select id="detLocal"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===pt2.localId?' selected':'')+'>'+esc(l.nome||'')+'</option>'}).join('')+'</select>'):'')+
             fld('Nota','<input id="detNota" style="width:220px" value="'+esc(pt2.nota||'')+'">')+
             '<button id="detOk" class="pri">Guardar</button><button id="detFechar">Fechar</button>'+
           '</div></td></tr>';
@@ -3379,6 +3380,13 @@ function renderPtoMes(){
       achados.forEach(function(p2){ if(!num(p2[campo])){ p2[campo]=valor; if(campo==='deslocacao')p2.deslManual=true } });
       render(); return;
     }
+    var dt=e.target.closest('[data-dtira]');
+    if(dt){ var mid=dt.dataset.dtira, mm=moPorId(mid), nmD=mm?(mm.nome||mm.cat):'esta pessoa';
+      var doMes=(ST.ponto||[]).filter(function(x){ return x.moId===mid&&mes(x.data)===ptoMesAtual }), bloq=doMes.filter(function(x){ return pdBloqId(x.pdId) }), nA=doMes.length-bloq.length;
+      if(nA&&!confirm('Tirar «'+nmD+'» do ponto de '+mesNome(ptoMesAtual).toLowerCase()+'? Apaga '+nA+(nA===1?' marcação':' marcações')+(bloq.length?' (as '+bloq.length+' de partes diárias fechadas ficam)':'')+'. ↶ desfaz.'))return;
+      ST.ponto=(ST.ponto||[]).filter(function(x){ return !(x.moId===mid&&mes(x.data)===ptoMesAtual&&!pdBloqId(x.pdId)) });
+      detMais=detMais.filter(function(x){ return x!==mid }); if(ptoDetalhe&&ptoDetalhe.moId===mid)ptoDetalhe=null;
+      render(); toast('«'+nmD+'» saiu do detalhe.'); return }
     var di=e.target.closest('[data-pdet]');
     if(di){ var pq=di.dataset.pdet.split('|'); if(pontoDe(pq[0],pq[1])){ ptoDetalhe=(ptoDetalhe&&ptoDetalhe.moId===pq[0]&&ptoDetalhe.data===pq[1])?null:{moId:pq[0],data:pq[1]}; render() } return }
     var cp=e.target.closest('[data-pcel]');
@@ -3467,7 +3475,7 @@ function renderPtoMes(){
     var pt=pontoDe(ptoDetalhe.moId,ptoDetalhe.data); if(!pt)return;
     var pdAntes=pt.pdId, pdNovo=$('#detPd').value;
     if((pdNovo||'')!==(pdAntes||'')&&(pdBloqId(pdAntes)||pdBloqId(pdNovo))){ avisoBloq(porId(ST.pd,pdBloqId(pdAntes)?pdAntes:pdNovo)); return }
-    pt.pdId=pdNovo; var locAntes=pt.localId||''; pt.localId=$('#detLocal').value;
+    pt.pdId=pdNovo; var locAntes=pt.localId||''; pt.localId=$('#detLocal')?$('#detLocal').value:(pt.localId||'');
     pt.extra=num($('#detExtra').value);
     var nd2=num($('#detDesl').value);
     if(nd2!==num(pt.deslocacao)){ pt.deslocacao=nd2; pt.deslManual=true }
