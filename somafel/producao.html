@@ -961,7 +961,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
       <button id="bPtoAnt">←</button>
       <b id="ptoMesLbl" class="mono" style="min-width:150px;text-align:center"></b>
       <button id="bPtoProx">→</button>
-      <span class="modos" id="ptoModos"><button data-pm="p">Presença</button><button data-pm="e">Horas extra</button><button data-pm="t">Deslocação</button><button data-pm="d">Detalhe</button></span>
+      <span class="modos" id="ptoModos"><button data-pm="p">Presença</button><button data-pm="e">Horas extra</button><button data-pm="t">Deslocação</button><button data-pm="k">Km</button><button data-pm="d">Detalhe</button></span>
       <span class="sp"></span>
       <label style="font-weight:400;font-size:12px">Ligar cliques à PD de <select id="ptoTipo"></select></label>
       <button id="bPtoLote">Preenchimento em lote…</button>
@@ -1655,12 +1655,12 @@ function resHtml(){
     (fi.n?[['Previsto',fi.pt,'var(--muted)'],['Concedido',fi.conc,'var(--s3)'],['Trabalhado',fi.trab,'var(--s1)']].map(function(x){ return rvHB(x[0],x[2],x[1]/mxh,hdec(x[1])+' h',x[0]+': '+hdec(x[1])+' h','') }).join('')+
       '<div class="rvn" style="margin:10px 0 0"><div><b>'+(fi.conc?pct(fi.trab/fi.conc):'—')+'</b>aproveitamento</div><div><b>'+hdec(fi.perdPlan)+' h</b>perdidas até à concessão</div><div><b>'+hdec(fi.perdConc)+' h</b>perdidas depois</div></div>':'<div class="empty">Sem interdições fechadas neste auto.</div>')+'</div>';
   /* pessoal no auto em foco */
-  var pes={}, dias=0, extra=0, desl=0, pds=ST.pd.filter(function(p){ return p.data&&autoDe(p.data)===F.a&&(!rv.tipo||(p.tipo||'cat')===rv.tipo) }).length;
-  var porM={}; (ST.ponto||[]).forEach(function(pt){ var m=moPorId(pt.moId); if(m&&m.direto===false)return; var a=autoDe(pt.data); porM[a]=(porM[a]||0)+1; if(a===F.a){ dias++; pes[pt.moId]=1; extra+=num(pt.extra); desl+=num(pt.deslocacao) } });
+  var pes={}, dias=0, extra=0, desl=0, kmP=0, pds=ST.pd.filter(function(p){ return p.data&&autoDe(p.data)===F.a&&(!rv.tipo||(p.tipo||'cat')===rv.tipo) }).length;
+  var porM={}; (ST.ponto||[]).forEach(function(pt){ var m=moPorId(pt.moId); if(m&&m.direto===false)return; var a=autoDe(pt.data); porM[a]=(porM[a]||0)+1; if(a===F.a){ dias++; pes[pt.moId]=1; extra+=num(pt.extra); desl+=num(pt.deslocacao); kmP+=num(pt.km) } });
   var pvPes=M.map(function(m){ return pesPrevMes(m.a) }), temPvPes=pvPes.some(function(x){return x>0}), pvF=pesPrevMes(F.a);
   var spark=rvSpark(M,M.map(function(m){return porM[m.a]||0}),'var(--s3)',function(m,i,v,tk){ return mesNome(m.a)+'\n'+v+' dias de pessoal'+(tk>0?'\nPrevisto: '+qtf(tk)+' dias\nDesvio: '+((v-tk>0?'+':'')+qtf(v-tk)):'') },temPvPes?pvPes:null,'Dias de pessoal por auto');
   h+='<div class="rvc"><h4>Pessoal · '+esc(mesNome(F.a))+'</h4><div class="sub">Do ponto, toda a obra (não depende do filtro de tipo).'+(temPvPes?' O traço escuro é o previsto.':' <span data-ir="pla" data-pvv="pe" style="cursor:pointer;text-decoration:underline">Define a previsão de pessoal no Plano</span>.')+'</div>'+
-    '<div class="rvn"><div><b>'+dias+'</b>dias de pessoal</div>'+(pvF>0?'<div><b>'+qtf(pvF)+'</b>previstos ('+(dias-pvF>0?'+':'')+qtf(dias-pvF)+')</div>':'')+'<div><b>'+Object.keys(pes).length+'</b>pessoas</div><div><b>'+pds+'</b>partes diárias</div><div><b>'+esc(fmtT(extra))+'</b>horas extra</div><div><b>'+esc(fmtT(desl))+'</b>horas deslocação</div></div>'+spark+'</div>';
+    '<div class="rvn"><div><b>'+dias+'</b>dias de pessoal</div>'+(pvF>0?'<div><b>'+qtf(pvF)+'</b>previstos ('+(dias-pvF>0?'+':'')+qtf(dias-pvF)+')</div>':'')+'<div><b>'+Object.keys(pes).length+'</b>pessoas</div><div><b>'+pds+'</b>partes diárias</div><div><b>'+esc(fmtT(extra))+'</b>horas extra</div><div><b>'+esc(fmtT(desl))+'</b>horas deslocação</div>'+(kmP?'<div><b>'+esc(fmtT(kmP))+'</b>km'+(valorKm()?' · '+eur(kmEur(kmP))+' €':'')+'</div>':'')+'</div>'+spark+'</div>';
   /* produtividade: valor do auto por dia de pessoal */
   var prodV=M.map(function(m){ return (m.real!=null&&porM[m.a])?m.real/porM[m.a]:0 });
   var prodF=(F.real!=null&&porM[F.a])?F.real/porM[F.a]:0;
@@ -1708,7 +1708,10 @@ function renderRes(){
   h+='<details class="defs"><summary>Definições da obra</summary>';
   h+='<div class="box" style="margin-top:22px"><div class="bh">Fecho do auto</div><div class="bb"><div class="fields" style="align-items:end">'+
      fld('Dia do mês em que o auto fecha','<input class="num" id="diaAuto" style="width:70px" value="'+esc(ST.diaAuto||20)+'">')+
-     '<span class="hint" style="margin-bottom:6px">O auto de '+esc(mesNome(autoDe(hoje())).toLowerCase())+' cobre '+esc(autoIntervalo(autoDe(hoje())))+'. Uma parte diária no dia a seguir ao fecho já entra no auto seguinte.</span></div></div></div>';
+     '<span class="hint" style="margin-bottom:6px">O auto de '+esc(mesNome(autoDe(hoje())).toLowerCase())+' cobre '+esc(autoIntervalo(autoDe(hoje())))+'. Uma parte diária no dia a seguir ao fecho já entra no auto seguinte.</span></div></div></div>'+
+     '<div class="box" style="margin-top:12px"><div class="bh">Quilómetros</div><div class="bb"><div class="fields" style="align-items:end">'+
+     fld('Valor por km (€)','<input class="num" id="valorKm" style="width:90px" inputmode="decimal" value="'+esc(ST.valorKm!=null&&ST.valorKm!==''?String(ST.valorKm).replace('.',','):'')+'" placeholder="0,36">')+
+     '<span class="hint" style="margin-bottom:6px">Os km escrevem-se no Ponto (modo «Km» ou no Detalhe). O custo dos km entra no custo de pessoal de cada auto.</span></div></div></div>';
 
   /* gestão de tipos de trabalho */
   h+='<div class="box" style="margin-top:12px"><div class="bh">Tipos de trabalho<span class="sp"></span><button id="bTipoAdd">+ Tipo</button></div><div class="bb">'+
@@ -1751,6 +1754,7 @@ function renderRes(){
     if(t.id==='rvTipo'){ rv.tipo=t.value; renderRes(); return }
     if(t.id==='rvOrig'){ rv.orig=t.value; renderRes(); return }
     if(t.id==='rvFoco'){ rv.foco=t.value; rv.fx=true; renderRes(); return }
+    if(t.id==='valorKm'){ var vk=num(t.value); ST.valorKm=vk>0?Math.round(vk*10000)/10000:0; render(); return }
     if(t.id==='diaAuto'){ var dv=Math.round(num(t.value)); ST.diaAuto=(dv>=1&&dv<=28)?dv:20; render(); return }
     if(t.dataset.justif){ var pt=porId(ST.ponto,t.dataset.justif); if(pt)pt.nota=t.value; setTimeout(render,0); return }
     if(t.dataset.ti==null)return;
@@ -2600,7 +2604,9 @@ function aplicaDeslPt(pt){
 function aplicaDeslNaPD(p){ (ST.ponto||[]).forEach(function(pt){ if(pt.pdId===p.id)aplicaDeslPt(pt) }) }
 function fmtH(n){ n=Math.round(num(n)*100)/100; return n?String(n).replace('.',','):'' }
 function fmtT(n){ n=Math.round(n*100)/100; return n?String(n).replace('.',','):'—' }
-function valPto(pt){ if(!pt)return 0; return ptoModo==='e'?num(pt.extra):ptoModo==='t'?num(pt.deslocacao):1 }
+function valPto(pt){ if(!pt)return 0; return ptoModo==='e'?num(pt.extra):ptoModo==='t'?num(pt.deslocacao):ptoModo==='k'?num(pt.km):1 }
+function valorKm(){ return num(ST.valorKm) }
+function kmEur(km){ return num(km)*valorKm() }
 function atualizaTotaisPto(){
   var nd=diasDoMes(ptoMesAtual), dias=[]; for(var i=1;i<=nd;i++)dias.push(('0'+i).slice(-2));
   var diretos=ST.mo.filter(function(m){return m.direto!==false}), g=0;
@@ -3139,7 +3145,7 @@ function detPainelHtml(pt2){
   return '<div class="fields" style="align-items:end;padding:8px 6px;background:var(--soft);margin-bottom:8px;border-radius:4px">'+
     '<b class="mono">'+esc(m?(m.nome||m.cat):'')+' · '+ptbr(pt2.data)+' ('+(pt2.turno==='noite'?'noite':'dia')+')</b>'+
     fld('H. extra','<input class="num" id="detExtra" style="width:70px" value="'+esc(fmtH(pt2.extra))+'">')+
-    fld('H. deslocação','<input class="num" id="detDesl" style="width:70px" value="'+esc(fmtH(pt2.deslocacao))+'">')+
+    fld('H. deslocação','<input class="num" id="detDesl" style="width:70px" value="'+esc(fmtH(pt2.deslocacao))+'">')+fld('Km','<input class="num" id="detKm" style="width:70px" value="'+esc(fmtH(pt2.km))+'">')+
     fld('Parte diária','<select id="detPd"><option value="">— sem PD —</option>'+pds.map(function(p){return '<option value="'+esc(p.id)+'"'+(p.id===pt2.pdId?' selected':'')+'>'+esc(tipoNome(p.tipo))+' '+esc(p.num)+'</option>'}).join('')+'</select>')+
     ((ST.locais||[]).length?fld('Local','<select id="detLocal"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===pt2.localId?' selected':'')+'>'+esc(l.nome||'')+'</option>'}).join('')+'</select>'):'')+
     fld('Nota','<input id="detNota" style="width:220px" value="'+esc(pt2.nota||'')+'">')+
@@ -3163,20 +3169,22 @@ function detalheHtml(dias,diretosMO,ano,mesN,cabecalho){
   grupos.forEach(function(g){
     h+='<tr class="grp"><td class="grpS" colspan="'+nCol+'">'+esc(g.nome||'Sem categoria')+' <span class="hint" style="font-weight:400">· '+g.itens.length+'</span></td></tr>';
     g.itens.forEach(function(m){
-      var r1='<tr class="detP"><td class="stick nm" rowspan="3" title="'+esc((m.cat||'')+' — '+(m.nome||''))+'">'+esc(m.nome||m.cat)+'<button type="button" class="x detTira" data-dtira="'+esc(m.id)+'" title="Tirar esta pessoa do detalhe deste mês">×</button></td><td class="sub">D/N</td>', r2='<tr><td class="sub">Extra</td>', r3='<tr class="detL"><td class="sub">Desl.</td>';
-      var d=0,x=0,t=0;
+      var r1='<tr class="detP"><td class="stick nm" rowspan="4" title="'+esc((m.cat||'')+' — '+(m.nome||''))+'">'+esc(m.nome||m.cat)+'<button type="button" class="x detTira" data-dtira="'+esc(m.id)+'" title="Tirar esta pessoa do detalhe deste mês">×</button></td><td class="sub">D/N</td>', r2='<tr><td class="sub">Extra</td>', r3='<tr><td class="sub">Desl.</td>', r4='<tr class="detL"><td class="sub">Km</td>';
+      var d=0,x=0,t=0,km=0;
       dias.forEach(function(dd){
         var data=ptoMesAtual+'-'+dd, pt=pontoDe(m.id,data), k=m.id+'|'+data, f=(fdsL[dd]?' fds':'')+(novaL[dd]?' semNova':'');
-        if(!pt){ r1+='<td class="diaCel detT'+f+'" data-pcel="'+k+'" title="Clica para marcar dia"></td>'; r2+='<td class="diaCel vazio'+f+'"></td>'; r3+='<td class="diaCel vazio'+f+'"></td>'; return }
-        var n=pt.turno==='noite'; d++; x+=num(pt.extra); t+=num(pt.deslocacao);
+        if(!pt){ r1+='<td class="diaCel detT'+f+'" data-pcel="'+k+'" title="Clica para marcar dia"></td>'; r2+='<td class="diaCel vazio'+f+'"></td>'; r3+='<td class="diaCel vazio'+f+'"></td>'; r4+='<td class="diaCel vazio'+f+'"></td>'; return }
+        var n=pt.turno==='noite'; d++; x+=num(pt.extra); t+=num(pt.deslocacao); km+=num(pt.km);
         r1+='<td class="diaCel detT '+(n?'noite':'dia')+f+'" data-pcel="'+k+'" title="'+esc(diaSem(data)+' '+dd+(n?' (noite)':' (dia)')+(pt.localId?' · '+localNome(pt.localId):''))+' — clica: dia → noite → limpar">'+(n?'N':'D')+
-          '<span class="detI" data-pdet="'+k+'" title="Parte diária, local e nota">'+((num(pt.extra)||num(pt.deslocacao)||pt.nota)?'●':'⋯')+'</span></td>';
+          '<span class="detI" data-pdet="'+k+'" title="Parte diária, local e nota">'+((num(pt.extra)||num(pt.deslocacao)||num(pt.km)||pt.nota)?'●':'⋯')+'</span></td>';
         r2+='<td class="diaCel ex '+(n?'presN':'pres')+f+'"><input class="pti" data-pi="'+k+'" data-pf="x" inputmode="decimal" value="'+esc(fmtH(pt.extra))+'" title="Horas extra"></td>';
         r3+='<td class="diaCel ds '+(n?'presN':'pres')+f+'"><input class="pti" data-pi="'+k+'" data-pf="t" inputmode="decimal" value="'+esc(fmtH(pt.deslocacao))+'" title="Horas de deslocação"></td>';
+        r4+='<td class="diaCel ds '+(n?'presN':'pres')+f+'"><input class="pti" data-pi="'+k+'" data-pf="k" inputmode="decimal" value="'+esc(fmtH(pt.km))+'" title="Km"></td>';
       });
       h+=r1+'<td class="totc"><span id="dtd_'+m.id+'">'+d+'</span> <span class="hint">dias</span></td></tr>'+
          r2+'<td class="totc"><span id="dtx_'+m.id+'">'+fmtT(x)+'</span></td></tr>'+
-         r3+'<td class="totc"><span id="dtt_'+m.id+'">'+fmtT(t)+'</span></td></tr>';
+         r3+'<td class="totc"><span id="dtt_'+m.id+'">'+fmtT(t)+'</span></td></tr>'+
+         r4+'<td class="totc"><span id="dtk_'+m.id+'">'+fmtT(km)+'</span></td></tr>';
     });
   });
   return h+'</tbody></table></div>';
@@ -3185,8 +3193,8 @@ function atualizaTotaisDet(){
   var nd=diasDoMes(ptoMesAtual);
   ST.mo.forEach(function(m){
     var el=document.getElementById('dtd_'+m.id); if(!el)return;
-    var d=0,x=0,t=0; for(var i=1;i<=nd;i++){ var p2=pontoDe(m.id,ptoMesAtual+'-'+('0'+i).slice(-2)); if(p2){ d++; x+=num(p2.extra); t+=num(p2.deslocacao) } }
-    el.textContent=d; document.getElementById('dtx_'+m.id).textContent=fmtT(x); document.getElementById('dtt_'+m.id).textContent=fmtT(t);
+    var d=0,x=0,t=0,km=0; for(var i=1;i<=nd;i++){ var p2=pontoDe(m.id,ptoMesAtual+'-'+('0'+i).slice(-2)); if(p2){ d++; x+=num(p2.extra); t+=num(p2.deslocacao); km+=num(p2.km) } }
+    el.textContent=d; document.getElementById('dtx_'+m.id).textContent=fmtT(x); document.getElementById('dtt_'+m.id).textContent=fmtT(t); var ek=document.getElementById('dtk_'+m.id); if(ek)ek.textContent=fmtT(km);
   });
 }
 
@@ -3202,28 +3210,31 @@ function imprimePonto(){
   var fds={}, grpS=[]; dias.forEach(function(dd){ var data=ptoMesAtual+'-'+dd; fds[dd]=[0,6].indexOf(new Date(ano,mesN-1,+dd).getDay())>=0;
     var sm=semana(data); if(grpS.length&&grpS[grpS.length-1].s===sm)grpS[grpS.length-1].n++; else grpS.push({s:sm,n:1}) });
   var grupos=recGrupos(lista,ST.catMO,function(m){return m.cat}).filter(function(g){return g.itens.length});
-  var dd0=hoje().split('-').reverse().join('/'), tD=0,tX=0,tT=0, porDia={};
-  dias.forEach(function(d){ porDia[d]={p:0,x:0,t:0} });
+  var dd0=hoje().split('-').reverse().join('/'), tD=0,tX=0,tT=0,tK=0, porDia={};
+  var temKm=(ST.ponto||[]).some(function(x){ return mes(x.data)===ptoMesAtual&&num(x.km) }), nRw=temKm?4:3;
+  dias.forEach(function(d){ porDia[d]={p:0,x:0,t:0,k:0} });
   var corpo='';
   grupos.forEach(function(g){
     g.itens.sort(function(a,b){return naturalCmp(a.nome||'',b.nome||'')});
     g.itens.forEach(function(m,ix){
-      var r1='<tr><td class="p_nm" rowspan="3">'+esc(m.nome||m.cat)+'</td><td class="p_sb">D/N</td>', r2='<tr><td class="p_sb">Extra</td>', r3='<tr class="p_ult"><td class="p_sb">Desl.</td>', d=0,x=0,t=0;
+      var r1='<tr><td class="p_nm" rowspan="'+nRw+'">'+esc(m.nome||m.cat)+'</td><td class="p_sb">D/N</td>', r2='<tr><td class="p_sb">Extra</td>', r3='<tr'+(temKm?'':' class="p_ult"')+'><td class="p_sb">Desl.</td>', r4='<tr class="p_ult"><td class="p_sb">Km</td>', d=0,x=0,t=0,kk=0;
       dias.forEach(function(dd){
         var pt=pontoDe(m.id,ptoMesAtual+'-'+dd);
-        if(!pt){ r1+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r2+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r3+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; return }
-        var n=pt.turno==='noite'; d++; x+=num(pt.extra); t+=num(pt.deslocacao);
-        porDia[dd].p++; porDia[dd].x+=num(pt.extra); porDia[dd].t+=num(pt.deslocacao);
+        if(!pt){ r1+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r2+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r3+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r4+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; return }
+        var n=pt.turno==='noite'; d++; x+=num(pt.extra); t+=num(pt.deslocacao); kk+=num(pt.km);
+        porDia[dd].p++; porDia[dd].x+=num(pt.extra); porDia[dd].t+=num(pt.deslocacao); porDia[dd].k+=num(pt.km);
+        r4+='<td class="'+(n?'p_xn':'p_xd')+'">'+esc(fmtH(pt.km))+'</td>';
         r1+='<td class="'+(n?'p_n':'p_d')+'">'+(n?'N':'D')+'</td>'; r2+='<td class="'+(n?'p_xn':'p_xd')+'">'+esc(fmtH(pt.extra))+'</td>'; r3+='<td class="'+(n?'p_xn':'p_xd')+'">'+esc(fmtH(pt.deslocacao))+'</td>';
       });
-      tD+=d; tX+=x; tT+=t;
+      tD+=d; tX+=x; tT+=t; tK+=kk;
       corpo+='<tbody>'+(ix===0?'<tr class="p_cat"><td colspan="'+(dias.length+3)+'">'+esc(g.nome||'Sem categoria')+' · '+g.itens.length+'</td></tr>':'')+
-        r1+'<td class="p_tt">'+d+' dias</td></tr>'+r2+'<td class="p_tt">'+esc(fmtT(x))+'</td></tr>'+r3+'<td class="p_tt">'+esc(fmtT(t))+'</td></tr></tbody>';
+        r1+'<td class="p_tt">'+d+' dias</td></tr>'+r2+'<td class="p_tt">'+esc(fmtT(x))+'</td></tr>'+r3+'<td class="p_tt">'+esc(fmtT(t))+'</td></tr>'+(temKm?r4+'<td class="p_tt">'+esc(fmtT(kk))+'</td></tr>':'')+'</tbody>';
     });
   });
-  var sm='<tbody><tr class="p_sum"><td class="p_nm" rowspan="3" style="background:#e6e6e6">Total do dia</td><td class="p_sbs">Pessoas</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+(porDia[d].p||'')+'</td>' }).join('')+'<td class="p_tt">'+tD+'</td></tr>'+
+  var sm='<tbody><tr class="p_sum"><td class="p_nm" rowspan="'+nRw+'" style="background:#e6e6e6">Total do dia</td><td class="p_sbs">Pessoas</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+(porDia[d].p||'')+'</td>' }).join('')+'<td class="p_tt">'+tD+'</td></tr>'+
     '<tr class="p_sum"><td class="p_sbs">Extra</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+esc(fmtH(porDia[d].x))+'</td>' }).join('')+'<td class="p_tt">'+esc(fmtT(tX))+'</td></tr>'+
-    '<tr class="p_sum p_ult"><td class="p_sbs">Desl.</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+esc(fmtH(porDia[d].t))+'</td>' }).join('')+'<td class="p_tt">'+esc(fmtT(tT))+'</td></tr></tbody>';
+    '<tr class="p_sum'+(temKm?'':' p_ult')+'"><td class="p_sbs">Desl.</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+esc(fmtH(porDia[d].t))+'</td>' }).join('')+'<td class="p_tt">'+esc(fmtT(tT))+'</td></tr>'+
+    (temKm?'<tr class="p_sum p_ult"><td class="p_sbs">Km</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+esc(fmtH(porDia[d].k))+'</td>' }).join('')+'<td class="p_tt">'+esc(fmtT(tK))+'</td></tr>':'')+'</tbody>';
   var h='<div class="eqpl"><div class="eqHd"><div class="eqLogo"><img src="'+((document.querySelector('.sbrand img')||{}).src||LOGO_PD)+'" alt=""></div>'+
     '<div class="eqTit"><div class="t1">Folha de Ponto — Pessoal</div><div class="t2">'+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+'</div><div class="t3">'+esc(mesNome(ptoMesAtual).toUpperCase())+'</div></div>'+
     '<div class="eqInf"><div><small>Período</small>'+esc(ptbr(ptoMesAtual+'-01'))+' a '+esc(ptbr(ptoMesAtual+'-'+dias[dias.length-1]))+'</div><div><small>Pessoas · dias · extra · deslocação</small><b>'+lista.length+' · '+tD+' · '+esc(fmtT(tX))+' h · '+esc(fmtT(tT))+' h</b></div><div style="font-size:6.2pt;color:#444">Emitido em '+dd0+'</div></div></div>';
@@ -3241,7 +3252,7 @@ function renderPtoMes(){
   var dias=[]; for(var i=1;i<=nd;i++)dias.push(('0'+i).slice(-2));
   $('#ptoMesLbl').textContent=mesNome(ptoMesAtual);
   $$('#ptoModos [data-pm]').forEach(function(b){ b.classList.toggle('on',b.dataset.pm===ptoModo) });
-  var modoNum=(ptoModo==='e'||ptoModo==='t');
+  var modoNum=(ptoModo==='e'||ptoModo==='t'||ptoModo==='k');
 
   function cabecalho(comTotal){
     var h='<tr class="semRow"><th class="stick">&nbsp;</th>', grpS=[];
@@ -3255,15 +3266,16 @@ function renderPtoMes(){
       var novaSemana=semAnt!=null&&sem!==semAnt; semAnt=sem;
       h+='<th class="diaCol'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+'" title="'+esc(diaSem(data))+'">'+dd+'<br><span style="font-weight:400;opacity:.6">'+diaSem(data).slice(0,1)+'</span></th>';
     });
-    if(comTotal)h+='<th class="totc">'+({p:'Dias',e:'Extra (h)',t:'Desl. (h)',d:'Dias'})[ptoModo]+'</th>';
+    if(comTotal)h+='<th class="totc">'+({p:'Dias',e:'Extra (h)',t:'Desl. (h)',k:'Km',d:'Dias'})[ptoModo]+'</th>';
     return h+'</tr>';
   }
 
   var dicas={
     p:'Clica numa célula para marcar dia, noite ou limpar.',
     e:'Escreve as horas extra em decimais (1,5). Enter ou ↓ passa à pessoa seguinte, Tab ao dia seguinte. Só quem esteve presente tem caixa.',
-    t:'A deslocação vem do local da parte diária. O que escreveres aqui fica como valor teu e já não muda sozinho.',
-    d:'Cada pessoa tem 3 linhas: D/N (clica para dia → noite → limpar), Extra e Desl. Só aparecem as pessoas com ponto neste mês. O ⋯ (ou o botão direito) abre a parte diária e a nota; o × ao lado do nome tira a pessoa do detalhe; o ● indica que já tem horas ou nota. Enter/↓ desce, Tab avança um dia.'
+    t:'Escreve as horas de deslocação de cada pessoa. O que escreveres aqui fica como valor teu.',
+    k:'Escreve os km de cada pessoa em cada dia. '+(valorKm()?'Valor por km: '+String(valorKm()).replace('.',',')+' € (muda em Resumo › Definições da obra).':'<b>Ainda sem valor por km</b>: define-o em Resumo › Definições da obra.'),
+    d:'Cada pessoa tem 4 linhas: D/N (clica para dia → noite → limpar), Extra, Desl. e Km. Só aparecem as pessoas com ponto neste mês. O ⋯ (ou o botão direito) abre a parte diária e a nota; o × ao lado do nome tira a pessoa do detalhe; o ● indica que já tem horas ou nota. Enter/↓ desce, Tab avança um dia.'
   };
   var h='';
   if(loteAberto)h+=loteBox();
@@ -3291,7 +3303,7 @@ function renderPtoMes(){
         var base='diaCel'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'');
         if(modoNum){
           if(pt){
-            var vv=ptoModo==='e'?pt.extra:pt.deslocacao;
+            var vv=ptoModo==='e'?pt.extra:ptoModo==='k'?pt.km:pt.deslocacao;
             h+='<td class="'+base+' '+(pt.turno==='noite'?'presN':'pres')+'"><input class="pti" data-pi="'+m.id+'|'+data+'" inputmode="decimal" value="'+esc(fmtH(vv))+'" title="'+esc(diaSem(data))+' '+dd+(pt.turno==='noite'?' (noite)':' (dia)')+'"></td>';
           }else h+='<td class="'+base+' vazio"></td>';
         }else{
@@ -3312,7 +3324,7 @@ function renderPtoMes(){
           h+='<tr><td colspan="'+(dias.length+2)+'"><div class="fields" style="align-items:end;padding:8px 6px;background:var(--soft)">'+
             '<b class="mono">'+ptbr(pt2.data)+' ('+(pt2.turno==='noite'?'noite':'dia')+')</b>'+
             fld('H. extra','<input class="num" id="detExtra" style="width:70px" value="'+esc(fmtH(pt2.extra))+'">')+
-            fld('H. deslocação','<input class="num" id="detDesl" style="width:70px" value="'+esc(fmtH(pt2.deslocacao))+'">')+
+            fld('H. deslocação','<input class="num" id="detDesl" style="width:70px" value="'+esc(fmtH(pt2.deslocacao))+'">')+fld('Km','<input class="num" id="detKm" style="width:70px" value="'+esc(fmtH(pt2.km))+'">')+
             fld('Parte diária','<select id="detPd"><option value="">— sem PD —</option>'+pds.map(function(p){return '<option value="'+esc(p.id)+'"'+(p.id===pt2.pdId?' selected':'')+'>'+esc(tipoNome(p.tipo))+' '+esc(p.num)+'</option>'}).join('')+'</select>')+
             ((ST.locais||[]).length?fld('Local','<select id="detLocal"><option value="">— sem local —</option>'+(ST.locais||[]).map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===pt2.localId?' selected':'')+'>'+esc(l.nome||'')+'</option>'}).join('')+'</select>'):'')+
             fld('Nota','<input id="detNota" style="width:220px" value="'+esc(pt2.nota||'')+'">')+
@@ -3374,7 +3386,7 @@ function renderPtoMes(){
     var tg=e.target.closest('[data-ptg]'); if(tg){ ptoFech[tg.dataset.ptg]=!ptoFech[tg.dataset.ptg]; renderPtoMes(); return }
     var rb=e.target.closest('[data-rep]');
     if(rb){
-      var moR=rb.dataset.rep, campo=ptoModo==='e'?'extra':'deslocacao', valor=0, achados=[];
+      var moR=rb.dataset.rep, campo=ptoModo==='e'?'extra':ptoModo==='k'?'km':'deslocacao', valor=0, achados=[];
       dias.forEach(function(dd){ var p2=pontoDe(moR,ptoMesAtual+'-'+dd); if(!p2)return; achados.push(p2); if(!valor&&num(p2[campo]))valor=num(p2[campo]) });
       if(!valor){ toast('Escreve primeiro um valor nessa linha.'); return }
       achados.forEach(function(p2){ if(!num(p2[campo])){ p2[campo]=valor; if(campo==='deslocacao')p2.deslManual=true } });
@@ -3427,8 +3439,9 @@ function renderPtoMes(){
   bind('#ptoBox','input',function(e){
     var t=e.target; if(!t.dataset||!t.dataset.pi)return;
     var pp=t.dataset.pi.split('|'), pt=pontoDe(pp[0],pp[1]); if(!pt)return;
-    var campoI=t.dataset.pf?(t.dataset.pf==='x'?'e':'t'):(ptoModo==='e'?'e':'t');
+    var campoI=t.dataset.pf?({x:'e',t:'t',k:'k'})[t.dataset.pf]:(ptoModo==='e'?'e':ptoModo==='k'?'k':'t');
     if(campoI==='e')pt.extra=num(t.value);
+    else if(campoI==='k')pt.km=num(t.value);
     else { pt.deslocacao=num(t.value); pt.deslManual=true }
     atualizaTotaisPto(); if(ptoModo==='d')atualizaTotaisDet();
   });
@@ -3439,7 +3452,7 @@ function renderPtoMes(){
     e.preventDefault();
     var pp=t.dataset.pi.split('|'), data=pp[1];
     if(t.dataset.pf){
-      var seq=[]; detOrdem.forEach(function(id){ seq.push([id,'x']); seq.push([id,'t']) });
+      var seq=[]; detOrdem.forEach(function(id){ seq.push([id,'x']); seq.push([id,'t']); seq.push([id,'k']) });
       var ixd=-1; seq.forEach(function(q,i){ if(q[0]===pp[0]&&q[1]===t.dataset.pf)ixd=i }); ixd+=d;
       while(ixd>=0&&ixd<seq.length){
         var nn=document.querySelector('.pti[data-pi="'+seq[ixd][0]+'|'+data+'"][data-pf="'+seq[ixd][1]+'"]');
@@ -3476,7 +3489,7 @@ function renderPtoMes(){
     var pdAntes=pt.pdId, pdNovo=$('#detPd').value;
     if((pdNovo||'')!==(pdAntes||'')&&(pdBloqId(pdAntes)||pdBloqId(pdNovo))){ avisoBloq(porId(ST.pd,pdBloqId(pdAntes)?pdAntes:pdNovo)); return }
     pt.pdId=pdNovo; var locAntes=pt.localId||''; pt.localId=$('#detLocal')?$('#detLocal').value:(pt.localId||'');
-    pt.extra=num($('#detExtra').value);
+    pt.extra=num($('#detExtra').value); if($('#detKm'))pt.km=num($('#detKm').value);
     var nd2=num($('#detDesl').value);
     if(nd2!==num(pt.deslocacao)){ pt.deslocacao=nd2; pt.deslManual=true }
     else if(pt.pdId!==pdAntes||pt.localId!==locAntes)aplicaDeslPt(pt);
@@ -4655,17 +4668,17 @@ function renderAna(){
   h+='<h3 class="sec">Custo e proveito por auto</h3>';
   if(!autos.length)h+='<div class="empty">Sem autos.</div>';
   else{
-    h+='<table><thead><tr><th>Auto</th><th class="num">Proveito</th><th class="num">Pessoal</th><th class="num">Equipamento</th><th class="num w1">Material (€)</th><th class="num">Margem</th><th class="num">%</th><th class="num">H. extra</th><th class="num">H. desloc.</th></tr></thead><tbody>';
+    h+='<table><thead><tr><th>Auto</th><th class="num">Proveito</th><th class="num">Pessoal</th><th class="num">Equipamento</th><th class="num w1">Material (€)</th><th class="num">Margem</th><th class="num">%</th><th class="num">H. extra</th><th class="num">H. desloc.</th><th class="num">Km</th></tr></thead><tbody>';
     autos.slice().reverse().forEach(function(a){
       var prov=0; autoLinhas(a).forEach(function(r){ prov+=r.val });
-      var cp=0, he=0, hd=0; (ST.ponto||[]).forEach(function(pt){ if(autoDe(pt.data)!==a)return; var m=moPorId(pt.moId); if(m)cp+=num(m.hora); he+=num(pt.extra); hd+=num(pt.deslocacao) });
+      var cp=0, he=0, hd=0, kmA=0; (ST.ponto||[]).forEach(function(pt){ if(autoDe(pt.data)!==a)return; var m=moPorId(pt.moId); if(m)cp+=num(m.hora); he+=num(pt.extra); hd+=num(pt.deslocacao); kmA+=num(pt.km) }); cp+=kmEur(kmA);
       var ce=0; ST.pd.forEach(function(p){ if(autoDe(p.data)!==a)return; (p.eqIds||[]).forEach(function(id){ var q=eqPorId(id); if(q)ce+=num(q.custo) }) });
       var mat=num(ST.materialAuto[a]), cus=cp+ce+mat, mg=prov-cus;
       h+='<tr><td>'+esc(autoLabel(a))+'</td><td class="num">'+eur(prov)+' €</td><td class="num">'+eur(cp)+' €</td><td class="num">'+eur(ce)+' €</td>'+
          '<td class="num"><input class="num" data-mat="'+a+'" value="'+esc(mat?String(mat).replace('.',','):'')+'" style="width:90px"></td>'+
-         '<td class="num"><b>'+eur(mg)+' €</b></td><td class="num">'+(prov?pct(mg/prov):'—')+'</td><td class="num">'+(he?fmtT(he):'—')+'</td><td class="num">'+(hd?fmtT(hd):'—')+'</td></tr>';
+         '<td class="num"><b>'+eur(mg)+' €</b></td><td class="num">'+(prov?pct(mg/prov):'—')+'</td><td class="num">'+(he?fmtT(he):'—')+'</td><td class="num">'+(hd?fmtT(hd):'—')+'</td><td class="num" title="'+(kmA?esc(fmtT(kmA)+' km × '+String(valorKm()).replace('.',',')+' € = '+eur(kmEur(kmA))+' € (já no Pessoal)'):'')+'">'+(kmA?fmtT(kmA):'—')+'</td></tr>';
     });
-    h+='</tbody></table><div class="hint" style="margin-top:6px">Pessoal = dias de Ponto × o valor da coluna «€/hora» do Mapa de pessoal (no teu Excel esse valor é o custo mensal ÷ 22, ou seja, por dia). Equipamento = custo/dia de cada equipamento associado às partes diárias do auto. O material escreves tu, a partir da app de Materiais. As horas extra e a deslocação ainda não entram no custo, só aparecem.</div>';
+    h+='</tbody></table><div class="hint" style="margin-top:6px">Pessoal = dias de Ponto × o valor da coluna «€/hora» do Mapa de pessoal, mais os km × o valor por km (Definições da obra) (no teu Excel esse valor é o custo mensal ÷ 22, ou seja, por dia). Equipamento = custo/dia de cada equipamento associado às partes diárias do auto. O material escreves tu, a partir da app de Materiais. As horas extra e a deslocação ainda não entram no custo, só aparecem.</div>';
   }
   $('#anaBox').innerHTML=h;
   bind('#anaBox','change',function(e){
@@ -5739,6 +5752,7 @@ function importa0(wb){
       rows.forEach(function(r){ var k=lower(r[0]),v=r[1];
         if(!k)return;
         if(k.indexOf('fecho do auto')>=0){ var dv=Math.round(num(v)); ST.diaAuto=(dv>=1&&dv<=28)?dv:20 }
+        else if(k.indexOf('valor por km')>=0){ ST.valorKm=num(v)||0 }
         else if(k.indexOf('nome')>=0)ST.nome=String(v||'');
         else if(k.indexOf('centro')>=0)ST.obra=String(v||'');
         else if(k.indexOf('contrato')>=0)ST.contrato=String(v||'');
@@ -5944,7 +5958,7 @@ function importa0(wb){
     var m=colMap(rows[hr]);
     var cId=pick(m,['id']),cPes=pick(m,['pessoa id']),cCat=pick(m,['categoria']),cNom=pick(m,['nome']),
         cDat=pick(m,['data']),cTur=pick(m,['turno']),cExt=pick(m,['horas extra']),cDes=pick(m,['horas deslocação','horas deslocacao']),
-        cPdId=pick(m,['pd id']),cNota=pick(m,['nota']),cDM=pick(m,['desl. manual','desl manual']),cLc=pick(m,['local id']);
+        cPdId=pick(m,['pd id']),cNota=pick(m,['nota']),cDM=pick(m,['desl. manual','desl manual']),cLc=pick(m,['local id']),cKm=pick(m,['km']);
     var novosPT=[];
     for(var i=hr+1;i<rows.length;i++){
       var r=rows[i]||[]; var d=dstr(cel(r,cDat)); if(!d)continue;
@@ -5960,7 +5974,7 @@ function importa0(wb){
       novosPT.push({id:String(cel(r,cId)||'').trim()||uid(),moId:moId,data:d,
         turno:lower(String(cel(r,cTur)||''))==='noite'?'noite':'dia',
         extra:num(cel(r,cExt)),deslocacao:num(cel(r,cDes)),pdId:pdId,nota:String(cel(r,cNota)||'').trim(),
-        deslManual:lower(String(cel(r,cDM)||''))==='sim',localId:cLc>=0?String(cel(r,cLc)||'').trim():''});
+        deslManual:lower(String(cel(r,cDM)||''))==='sim',localId:cLc>=0?String(cel(r,cLc)||'').trim():'',km:cKm>=0?num(cel(r,cKm)):0});
     }
     if(novosPT.length){ ST.ponto=novosPT; achou.push(novosPT.length+' registos de ponto') }
   });
@@ -6258,7 +6272,7 @@ function guarda(){
   ],[26,60]);
 
   add('Obra',[['Campo','Valor'],['Nome',ST.nome||''],['Centro de custo',ST.obra||''],['Contrato',ST.contrato||''],
-    ['Cliente',ST.cliente||''],['Disciplina',ST.disc||''],['Dia de fecho do auto',ST.diaAuto||20]],[20,60]);
+    ['Cliente',ST.cliente||''],['Disciplina',ST.disc||''],['Dia de fecho do auto',ST.diaAuto||20],['Valor por km (€)',num(ST.valorKm)||'']],[20,60]);
 
   var TP=[['ID','Nome','Prefixo']];
   (ST.tipos||[]).forEach(function(t){TP.push([t.id,t.nome,t.prefixo])});
@@ -6364,11 +6378,11 @@ function guarda(){
   (ST.catEq||[]).forEach(function(c){ CT.push([c.tipo==='L'?'Ligeiro':c.tipo==='V'?'Viatura':'Pesado',c.nome]) });
   add('Categorias',CT,[14,40]);
 
-  var PT=[['ID','Pessoa ID','Categoria','Nome','Data','Turno','Horas extra','Horas deslocação','PD ID','PD','Nota','Desl. manual','Local ID']];
+  var PT=[['ID','Pessoa ID','Categoria','Nome','Data','Turno','Horas extra','Horas deslocação','PD ID','PD','Nota','Desl. manual','Local ID','Km']];
   (ST.ponto||[]).forEach(function(pt){
     var m=moPorId(pt.moId), p2=pt.pdId?porId(ST.pd,pt.pdId):null;
     PT.push([pt.id,pt.moId,m?m.cat:'',m?m.nome:'',pt.data,pt.turno==='noite'?'Noite':'Dia',
-      num(pt.extra)||null,num(pt.deslocacao)||null,pt.pdId||'',p2?p2.num:'',pt.nota||'',pt.deslManual?'Sim':'',pt.localId||'']);
+      num(pt.extra)||null,num(pt.deslocacao)||null,pt.pdId||'',p2?p2.num:'',pt.nota||'',pt.deslManual?'Sim':'',pt.localId||'',num(pt.km)||null]);
   });
   add('Ponto',PT,[14,14,20,26,11,8,11,15,14,14,30,12,14]);
   var EP=[['ID','Equipa','Turno','Local ID','Local','Pessoas ID','Líder ID','Líder','Meios ID','Horário']];
@@ -6619,7 +6633,7 @@ function nmResumoProd(){
   var origens=[{id:'contrato',nome:nmNomeOrigem0()}].concat(ST.adicionais||[]).map(function(o){ return {id:o.id,nome:o.nome,total:totContrato('',o.id),executado:totalAcum('',o.id)} });
   var linhas=autos.map(function(a){
     var prov=0; autoLinhas(a).forEach(function(r){prov+=num(r.val)});
-    var cp=0; (ST.ponto||[]).forEach(function(pt){ if(autoDe(pt.data)!==a)return; var m=moPorId(pt.moId); if(m)cp+=num(m.hora) });
+    var cp=0, kmR=0; (ST.ponto||[]).forEach(function(pt){ if(autoDe(pt.data)!==a)return; var m=moPorId(pt.moId); if(m)cp+=num(m.hora); kmR+=num(pt.km) }); cp+=kmEur(kmR);
     var ce=0; ST.pd.forEach(function(p){ if(autoDe(p.data)!==a)return; (p.eqIds||[]).forEach(function(id){ var q=eqPorId(id); if(q)ce+=num(q.custo) }) });
     var fim=autoFimIso(a);
     return {auto:a,rotulo:autoLabel(a),fim:fim,proveito:prov,pessoal:cp,equip:ce,material:num((ST.materialAuto||{})[a]),previsto:planoAteData(ST.plano||[],fim),enviado:(ST.autosEnviados||[]).some(function(e){return e.auto===a})} });
