@@ -244,7 +244,7 @@ if(window.outerWidth<w-40||window.outerHeight<h-40){window.moveTo(screen.availLe
 <body>
 <div id="raiz"></div>
 <div id="avisos" aria-live="polite"></div>
-<script>window.__mvCentral=1</script><script src="design.js"></script>
+<script>window.__mvCentral=1</script><script src="design.js?v=20261105a"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const SB_URL='https://dnllrbgzkgrerkybtjjl.supabase.co';
@@ -354,8 +354,17 @@ async function arranca(){
   if(['equipa','convidado'].includes(eu.papel)){location.replace('obra.html');return}
   S.eu=eu;S.vista='obras';S.obra=null;
   if(gestor()){const b=await sb.from('bloqueios').select('chave,descricao');S.bloqLista=b.data||[];S.bloq=new Set(S.bloqLista.map(x=>x.chave))}
-  preparar();casca();vai('obras');
+  preparar();casca();
+  let rv=null;try{rv=JSON.parse(sessionStorage.getItem('mvVolta')||'null');sessionStorage.removeItem('mvVolta')}catch(e){}
+  if(rv&&rv.v&&rv.v!=='obras'&&Date.now()-(rv.t||0)<60000){try{vai(rv.v,rv.o||undefined)}catch(e){vai('obras')}}else vai('obras');
 }
+/* botão Atualizar (design.js): grava as apps abertas e volta a carregar a Central no mesmo sítio */
+window.mvAtualiza=async function(){
+  const ps=[];Object.keys(FR).forEach(k=>{try{if(window.mvGravaJanela)ps.push(...window.mvGravaJanela(FR[k].contentWindow))}catch(e){}});
+  await Promise.race([Promise.all(ps),new Promise(r=>setTimeout(r,2500))]);
+  try{sessionStorage.setItem('mvVolta',JSON.stringify({v:S.vista,o:S.obra?S.obra.id:null,t:Date.now()}))}catch(e){}
+  location.replace(location.pathname+'?r='+Date.now());
+};
 /* aquece a cache: descarrega em segundo plano o HTML e os scripts das apps, para abrirem mais depressa */
 /* ===== ecrã de arranque: prepara tudo (apps, base do catálogo, apps «sem obra») e só depois mostra a Central ===== */
 let ULT=0;

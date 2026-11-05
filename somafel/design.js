@@ -125,3 +125,23 @@ function mvTema(d){try{d=d||document;var r=d.documentElement,t=null;try{t=localS
     tp.textContent=t.getAttribute('data-tip');tp.style.opacity=1;var w=tp.offsetWidth,x=Math.min(innerWidth-w-8,ev.clientX+12),y=ev.clientY+16;if(y+tp.offsetHeight>innerHeight)y=ev.clientY-tp.offsetHeight-12;tp.style.left=Math.max(4,x)+'px';tp.style.top=y+'px'};
   document.addEventListener('mousemove',mv);document.addEventListener('mouseleave',function(){if(tp)tp.style.opacity=0},true);
 }catch(x){}})();
+
+/* ===== botão «Atualizar» no topo (Central e apps): grava o que estiver pendente e volta a carregar, no mesmo sítio ===== */
+(function(){try{
+  var ICO='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+  function gravaJanela(w){ var ps=[]; try{ if(w.__nm&&w.__nm.nmAuto)ps.push(Promise.resolve(w.__nm.nmAuto())) }catch(e){}
+    try{ if(w.__nm&&w.__nm.nmFlush)ps.push(Promise.resolve(w.__nm.nmFlush())) }catch(e){} return ps }
+  async function atualiza(){
+    try{ if(parent!==window&&parent.mvAtualiza){ parent.mvAtualiza(); return } }catch(e){}
+    if(window.mvAtualiza){ window.mvAtualiza(); return }
+    var ps=gravaJanela(window); await Promise.race([Promise.all(ps),new Promise(function(r){ setTimeout(r,2500) })]);
+    var u=new URL(location.href); u.searchParams.set('r',Date.now()); location.replace(u.toString()) }
+  window.mvAtualizaLocal=atualiza; window.mvGravaJanela=gravaJanela;
+  function poe(){ var a=document.getElementById('bAjuda'); if(!a||document.getElementById('bAtualiza'))return;
+    var b=document.createElement('button'); b.id='bAtualiza'; b.type='button'; b.className=a.className; b.title='Atualizar: grava o que falta e volta a carregar a página'; b.setAttribute('aria-label','Atualizar');
+    b.innerHTML=ICO; b.style.cssText='display:inline-flex;align-items:center;justify-content:center;min-width:'+(a.offsetWidth||32)+'px';
+    b.addEventListener('click',function(){ b.disabled=true; b.firstChild.style.animation='mvRoda .8s linear infinite'; atualiza() });
+    a.parentNode.insertBefore(b,a) }
+  var st=document.createElement('style'); st.textContent='@keyframes mvRoda{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#bAtualiza svg{animation:none!important}}'; (document.head||document.documentElement).appendChild(st);
+  setInterval(poe,800); if(document.readyState!=='loading')poe(); else document.addEventListener('DOMContentLoaded',poe);
+}catch(x){}})();
