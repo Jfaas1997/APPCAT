@@ -1173,7 +1173,7 @@ async function vObra(id){
       +(()=>{const g={};ctr.forEach(c=>{const k=(c.cliente||'').trim()||'Sem cliente';g[k]=(g[k]||0)+(+c.valor||0)});const ks=Object.keys(g);return ks.length>1?ks.map(k=>'<tr class="cliTot"><td class="hint">Total · '+esc(k)+'</td><td></td><td class="n"><b>'+eur(g[k])+'</b></td><td></td><td></td></tr>').join(''):''})()
       +'</tbody></table></div>':'<div class="card"><p class="hint" style="margin:0">Esta obra ainda não tem contratos. O primeiro é o contrato inicial; depois entram adicionais e propostas aprovadas.</p></div>';
     h+='<div class="sec" id="secPes">Pessoas com acesso a esta obra<span class="sp"></span>'+(admin()?'<button id="npe">+ Atribuir pessoa</button>':'')+'</div>';
-    h+='<div class="card"><p class="hint" style="margin-top:0">Administradores e encarregados veem todas as obras. As equipas veem só as obras em que estiverem aqui.</p><div class="lista">'
+    h+='<div class="card"><p class="hint" style="margin-top:0">Quem está nesta obra. Administradores, diretores de obra e encarregados conseguem abrir todas as obras; as equipas só veem as obras em que estiverem aqui.</p><div class="lista">'
       +(pes.length?pes.map(p=>'<span class="chip">'+esc(p.pessoas?p.pessoas.nome:'?')+' <span class="hint">· '+PAPEL[p.pessoas?p.pessoas.papel:'equipa']+'</span>'+(admin()?'<button class="x" data-q="'+p.pessoa_id+'" title="Retirar">×</button>':'')+'</span>').join(''):'<span class="hint">Ninguém atribuído.</span>')
       +'</div></div>';
   }
@@ -1191,9 +1191,10 @@ async function vObra(id){
     try{await ok(sb.from('contratos').delete().eq('id',c.id));aviso('Contrato apagado.');vObra(id)}catch(e){aviso(erroTxt(e),true)}});
   const npe=$('#npe');if(npe)npe.onclick=async()=>{
     const ja=new Set(pes.map(p=>p.pessoa_id));
-    const op=todas.filter(p=>p.ativo&&p.papel==='equipa'&&!ja.has(p.id)).map(p=>({v:p.id,t:p.nome}));
-    if(!op.length){aviso('Não há mais pessoas de equipa para atribuir.');return}
-    const v=await formulario('Atribuir pessoas à obra',[{id:'p',tipo:'checks',rotulo:'Equipas',opcoes:op}],'Atribuir');if(!v||!v.p.length)return;
+    const ord={diretor:0,encarregado:1,equipa:2,convidado:3};
+    const op=todas.filter(p=>p.ativo&&p.papel!=='administrador'&&!ja.has(p.id)).sort((a,b)=>(ord[a.papel]??9)-(ord[b.papel]??9)||String(a.nome).localeCompare(b.nome,'pt')).map(p=>({v:p.id,t:p.nome+' · '+(PAPEL[p.papel]||p.papel)}));
+    if(!op.length){aviso('Já estão atribuídas todas as pessoas ativas. Para acrescentar alguém, cria-o primeiro em Utilizadores.');return}
+    const v=await formulario('Atribuir pessoas à obra',[{tipo:'aviso',texto:'Diretores de obra e encarregados já conseguem abrir todas as obras; atribuí-los aqui serve para ficar registado quem está nesta obra. As equipas só veem as obras a que estiverem atribuídas.'},{id:'p',tipo:'checks',rotulo:'Pessoas',opcoes:op}],'Atribuir');if(!v||!v.p.length)return;
     try{await ok(sb.from('obra_pessoas').insert(v.p.map(pid=>({obra_id:id,pessoa_id:pid}))));aviso('Pessoas atribuídas.');vObra(id)}catch(e){aviso(erroTxt(e),true)}};
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
