@@ -6874,6 +6874,15 @@ async function nmAuto(){
   NM.gravando=true; nmInd();
   try{ await nmGrava(false) }catch(e){ if(!(e&&e.sp))NM.erro='Erro ao guardar' }
   NM.gravando=false; nmInd(); nmFlush() }
+/* conflito: junta o que está no servidor com o que está aberto — listas com id (ou capítulos por código) ficam com tudo; nos mesmos registos ganha o que está aberto */
+function juntaST(loc,srv){ var n=0;
+  Object.keys(srv||{}).forEach(function(k){ var a=loc[k], b=srv[k];
+    if(a===undefined||a===null){ loc[k]=b; return }
+    if(!Array.isArray(a)||!Array.isArray(b))return;
+    var chave=k==='capitulos'?'cod':'id'; if(!b.length||!b.every(function(x){ return x&&typeof x==='object'&&x[chave]!=null }))return;
+    var tem={}; a.forEach(function(x){ if(x&&x[chave]!=null)tem[x[chave]]=1 });
+    b.forEach(function(x){ if(!tem[x[chave]]){ a.push(x); tem[x[chave]]=1; n++ } }) });
+  return n }
 async function nmServidorAtual(){ var q=await sb.from('dados_apps').select('dados,versao,atualizado_em').eq('obra_id',NM.ob.id).eq('app','producao').maybeSingle(); return q.data }
 var _guardaProjeto=guardaProjeto;
 guardaProjeto=async function(){
@@ -6887,7 +6896,8 @@ guardaProjeto=async function(){
     try{ await nmGrava(false) }catch(e){
       if(e&&e.sp){ var s=await nmServidorAtual(), d=s&&new Date(s.atualizado_em);
         var r=await nmModal({titulo:'Os dados mudaram entretanto',corpo:'<p>Alguém (ou outra janela) guardou esta obra'+(d?' às '+nmHM(d):'')+'. Se guardar por cima, perde essas alterações.</p>',
-          botoes:[{t:'Cancelar',v:null},{t:'Carregar o que lá está',v:'ler'},{t:'Guardar por cima',v:'cima',p:true}],cancela:null});
+          botoes:[{t:'Cancelar',v:null},{t:'Carregar o que lá está',v:'ler'},{t:'Guardar por cima (perde o que lá está)',v:'cima'},{t:'Juntar as duas',v:'junta',p:true}],cancela:null});
+        if(r==='junta'&&s&&s.dados&&s.dados.st){ var add=juntaST(ST,s.dados.st); NM.versao=s.versao; buildIX&&buildIX(); render(); await nmGrava(false); toast('Juntado: ficaram as tuas alterações e '+(add?add+' registo'+(add===1?'':'s')+' que só estavam no servidor':'o que estava no servidor')+'.',4000); NM.gravando=false; nmInd(); nmFlush(); return }
         if(r==='ler'){ NM.versao=s.versao; nmCarrega(null,JSON.stringify(s.dados.st)); NM.conflito=false; toast('Carregada a versão mais recente.') ; NM.gravando=false; nmInd(); return }
         if(r!=='cima'){ NM.gravando=false; nmInd(); return }
         if(s)NM.versao=s.versao; await nmGrava(true)
