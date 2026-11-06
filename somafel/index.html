@@ -418,7 +418,6 @@ function preparar(){
   el.querySelector('#spX').onclick=fecha;
   const dorme=ms=>new Promise(r=>setTimeout(r,ms));
   const pronto=async(f,ms)=>{for(let i=0;i<ms/200&&!fechado;i++){try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');if(f.dataset.ok&&((l&&l.hidden)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)))return true}catch(e){}await dorme(200)}return false};
-  setTimeout(fecha,40000); /* nunca prende o utilizador */
   (async()=>{
     try{
       barra(4,'A preparar as aplicações…');
@@ -431,8 +430,9 @@ function preparar(){
       try{await catCarrega()}catch(e){}
       barra(98,'Pronto');await dorme(150);{const bx=el.querySelector('#spX');if(bx&&!fechado){bx.textContent='Entrar';bx.classList.add('ok');try{bx.focus({preventScroll:true})}catch(e){}}}
     }catch(e){console.error(e)}
-    await dorme(Math.max(0,9500-(Date.now()-T0SP)));
-    fecha();
+    /* arranque normal: fica nas fotos até carregares em «Entrar»; depois do botão Atualizar entra sozinho */
+    if(/[?&]r=\d/.test(location.search))fecha();
+    while(!fechado)await dorme(200);
     /* depois de entrar: prepara as apps «sem obra» em segundo plano, uma de cada vez, sem prender o ecrã */
     const ocioso=()=>new Promise(r=>(window.requestIdleCallback||setTimeout)(()=>r(),{timeout:2500}));
     await dorme(2500);
@@ -1002,7 +1002,7 @@ function frameApp(o,v){const k=o.id+'|'+v;let f=FR[k];if(f)return f;
   const revela=()=>{if(f.dataset.rd)return;f.dataset.rd='1';if(S.fk===k)posiciona();const c=document.querySelector('.carr[data-k="'+k+'"]');if(c){c.style.position='fixed';const r=(c.parentNode||c).getBoundingClientRect();c.style.left=r.left+'px';c.style.top=r.top+'px';c.style.width=r.width+'px';c.style.height=r.height+'px';c.style.zIndex=5;document.body.appendChild(c);requestAnimationFrame(()=>c.classList.add('sai'));setTimeout(()=>c.remove(),320)}};
   f.onload=()=>{f.dataset.ok='1';try{estiloApp(f,v);injetaVoltar(f.contentDocument,v)}catch(e){}
     const t0=Date.now(),espera=()=>{if(f.dataset.rd||!f.isConnected)return;let p=false;try{const w=f.contentWindow,l=f.contentDocument&&f.contentDocument.getElementById('nmLogin');p=!!((w.__nm&&w.__nm.NM&&w.__nm.NM.pronto)||(w.__on&&w.__on.ON&&w.__on.ON.pronto)||(l&&l.hidden))}catch(e){}
-      if(p||Date.now()-t0>9000)setTimeout(revela,60);else setTimeout(espera,80)};espera()};
+      if(p||Date.now()-t0>5000)setTimeout(revela,60);else setTimeout(espera,80)};espera()};
   document.body.appendChild(f);FR[k]=f;ocultaF(f);return f}
 function ocultaF(f){f.style.cssText='position:fixed;left:-9999px;top:0;width:1200px;height:800px;border:0;visibility:hidden;z-index:1'}
 function posiciona(){const ph=document.querySelector('.appfr');

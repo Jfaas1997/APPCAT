@@ -689,6 +689,7 @@ fieldset.lockfs .box,fieldset.lockfs .fields{opacity:.72}
 @media (pointer:coarse){button,select,input{min-height:40px}}
 tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-size:12px;color:var(--ink);padding-top:7px;padding-bottom:5px}tr.capH.n1 td{font-size:13px;text-transform:uppercase;letter-spacing:.02em;background:color-mix(in srgb,var(--brand,#F5C400) 14%,transparent)}tr.capH.n3 td,tr.capH.n4 td{font-weight:550;color:var(--muted)}
 .nColab{display:inline-block;min-width:46px;text-align:center;box-sizing:border-box;font-family:var(--mono,monospace);font-size:11px;font-weight:600;color:var(--muted);background:var(--soft,rgba(127,127,127,.12));border-radius:4px;padding:0 5px;margin-right:6px;vertical-align:1px}.nColab.vz{background:transparent;opacity:.5}
+.perBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px;margin:0 0 12px;border:1px solid var(--rule);border-radius:10px;background:var(--soft)}.perBar label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px}.perBar .sp{flex:1}#bPtoPer.on{background:var(--ink);color:var(--paper)}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -963,8 +964,9 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
       <span class="modos" id="ptoVistas" style="margin-left:0;margin-right:10px"><button data-pv="mes">Ponto</button><button data-pv="esc">Escala semanal</button><button data-pv="onde">Equipas</button><button data-pv="aus">Mapa de presenças</button></span>
       <span id="ptoMesCtl" style="display:contents">
       <button id="bPtoAnt">←</button>
-      <b id="ptoMesLbl" class="mono" style="min-width:150px;text-align:center"></b>
+      <b id="ptoMesLbl" class="mono" style="min-width:190px;text-align:center"></b>
       <button id="bPtoProx">→</button>
+      <button id="bPtoPer" title="Escolher entre que dias conta o ponto (normalmente do dia 16 ao dia 15 do mês seguinte)">Período…</button>
       <span class="modos" id="ptoModos"><button data-pm="p">Presença</button><button data-pm="e">Horas extra</button><button data-pm="t">Deslocação</button><button data-pm="k">Km</button><button data-pm="d">Detalhe</button></span>
       <span class="sp"></span>
       <label style="font-weight:400;font-size:12px">Ligar cliques à PD de <select id="ptoTipo"></select></label>
@@ -1174,6 +1176,37 @@ var vista='res', pdAberta=null, flt={pd:'',pdMes:'',pdEst:'',int:'',intAno:'',in
 var rubricaAberta=null; /* {cod,origem} da rubrica com a ficha (popup) aberta */
 var loteAberto=false; /* mostra/esconde a caixa de preenchimento em lote, no separador Ponto */
 var ptoMesAtual=''; /* AAAA-MM em exibição na grelha do Ponto; preenchido no arranque */
+/* período do ponto: por defeito do dia 16 de um mês ao dia 15 do mês seguinte (ST.pontoDia);
+   cada período pode ter datas próprias (ST.pontoPer[AAAA-MM]={de,ate}). ptoMesAtual = mês em que o período começa */
+var perAberto=false, MES3=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function ptoIni(){ var d=parseInt(ST.pontoDia,10); return d>=1&&d<=28?d:16 }
+function ptoPer(m){ m=m||ptoMesAtual; var c=(ST.pontoPer||{})[m]; if(c&&c.de&&c.ate&&c.de<=c.ate)return {de:c.de,ate:c.ate,esp:true};
+  var i=ptoIni(); if(i===1)return {de:m+'-01',ate:m+'-'+('0'+diasDoMes(m)).slice(-2)};
+  return {de:m+'-'+('0'+i).slice(-2),ate:mesProx(m)+'-'+('0'+(i-1)).slice(-2)} }
+function dtJ(s){ return new Date(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)) }
+function dtS(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2) }
+function ptoDatas(){ var p=ptoPer(),r=[],d=dtJ(p.de),e=dtJ(p.ate); while(d<=e&&r.length<62){ r.push(dtS(d)); d.setDate(d.getDate()+1) } return r }
+function noPer(dt){ var p=ptoPer(); return !!dt&&dt>=p.de&&dt<=p.ate }
+function ptoMesDe(dt){ var i=ptoIni(); return +dt.slice(8,10)>=i?dt.slice(0,7):mesAnt(dt.slice(0,7)) }
+function ptoPerLbl(){ var p=ptoPer(); if(!p.esp&&ptoIni()===1)return mesNome(ptoMesAtual);
+  var f=function(s,ano){ return +s.slice(8)+' '+MES3[+s.slice(5,7)-1]+(ano?' '+s.slice(0,4):'') };
+  return f(p.de,p.de.slice(0,4)!==p.ate.slice(0,4))+' – '+f(p.ate,true) }
+function perPainel(){
+  var p=ptoPer();
+  return '<div class="perBar"><b>Período do ponto</b>'+
+    '<label>Começa no dia <input id="perIni" type="number" min="1" max="28" value="'+ptoIni()+'" style="width:58px"> de cada mês</label>'+
+    '<span class="hint">('+(ptoIni()===1?'mês civil':'até ao dia '+(ptoIni()-1)+' do mês seguinte')+')</span>'+
+    '<span class="sp"></span><label>Este período: de <input id="perDe" type="date" value="'+p.de+'"></label><label>a <input id="perAte" type="date" value="'+p.ate+'"></label>'+
+    (p.esp?'<button id="perLimpa" title="Volta às datas normais">Repor normal</button>':'')+'<button id="perFecha">Fechar</button></div>' }
+document.addEventListener('change',function(e){ var t=e.target; if(!t||!t.closest||!t.closest('.perBar'))return;
+  if(t.id==='perIni'){ var v=Math.max(1,Math.min(28,parseInt(t.value,10)||16)); var dHoje=hoje(); ST.pontoDia=v; ptoMesAtual=ptoMesDe(dHoje); render(); toast('O ponto passa a contar do dia '+v+(v===1?' (mês civil).':' ao dia '+(v-1)+' do mês seguinte.')); return }
+  if(t.id==='perDe'||t.id==='perAte'){ var de=$('#perDe').value, ate=$('#perAte').value; if(!de||!ate)return; if(de>ate){ toast('A data de início tem de ser antes do fim.'); return }
+    if((dtJ(ate)-dtJ(de))/864e5>61){ toast('O período pode ter no máximo 62 dias.'); return }
+    ST.pontoPer=ST.pontoPer||{}; ST.pontoPer[ptoMesAtual]={de:de,ate:ate}; render(); toast('Período deste ponto: '+ptoPerLbl()+'.') } });
+document.addEventListener('click',function(e){ var t=e.target; if(!t||!t.closest)return;
+  if(t.closest('#perLimpa')){ if(ST.pontoPer)delete ST.pontoPer[ptoMesAtual]; render(); return }
+  if(t.closest('#perFecha')){ perAberto=false; render(); return }
+  if(t.closest('#bPtoPer')){ perAberto=!perAberto; render(); return } });
 var ptoTipoLigar=''; /* a que tipo de trabalho os cliques rápidos na grelha ligam a PD, se algum */
 var ptoDetalhe=null; /* {moId,data} da célula de pessoal com o painel de detalhe aberto */
 var ptoModo='p'; /* p = presença, e = horas extra, t = deslocação, d = detalhe */
@@ -1337,7 +1370,7 @@ function render(){
   var opOrigem='<option value="">Todas as origens</option><option value="contrato">'+origemNome('contrato')+'</option>'+
     ST.adicionais.map(function(ad){return '<option value="'+esc(ad.id)+'">'+esc(ad.nome)+'</option>'}).join('');
   ['#fOrigemMap','#fOrigemArt','#fOrigemPla'].forEach(function(sel){ var e=$(sel); if(e){ e.innerHTML=opOrigem; e.value=flt.origem } });
-  if(!ptoMesAtual)ptoMesAtual=mes(hoje());
+  if(!ptoMesAtual)ptoMesAtual=ptoMesDe(hoje());
   var selPT=$('#ptoTipo');
   if(selPT){
     selPT.innerHTML='<option value="">— não ligar —</option>'+ST.tipos.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.nome)+'</option>'}).join('');
@@ -2616,14 +2649,14 @@ function valPto(pt){ if(!pt)return 0; return ptoModo==='e'?num(pt.extra):ptoModo
 function valorKm(){ return num(ST.valorKm) }
 function kmEur(km){ return num(km)*valorKm() }
 function atualizaTotaisPto(){
-  var nd=diasDoMes(ptoMesAtual), dias=[]; for(var i=1;i<=nd;i++)dias.push(('0'+i).slice(-2));
+  var dias=ptoDatas();
   var diretos=ST.mo.filter(function(m){return m.direto!==false}), g=0;
   diretos.forEach(function(m){
-    var t=0; dias.forEach(function(dd){ t+=valPto(pontoDe(m.id,ptoMesAtual+'-'+dd)) }); g+=t;
+    var t=0; dias.forEach(function(dd){ t+=valPto(pontoDe(m.id,dd)) }); g+=t;
     var el=document.getElementById('ptr_'+m.id); if(el)el.textContent=fmtT(t);
   });
   dias.forEach(function(dd){
-    var t=0; diretos.forEach(function(m){ t+=valPto(pontoDe(m.id,ptoMesAtual+'-'+dd)) });
+    var t=0; diretos.forEach(function(m){ t+=valPto(pontoDe(m.id,dd)) });
     var el=document.getElementById('ptc_'+dd); if(el)el.textContent=fmtT(t);
   });
   var eg=document.getElementById('ptg'); if(eg)eg.textContent=fmtT(g);
@@ -3031,16 +3064,15 @@ function ausTira(moId,data){ ST.ausencias=(ST.ausencias||[]).filter(function(x){
 function ausPoe(moId,data,tipo,cc){ ST.ausencias=ST.ausencias||[]; var e=ausDe(moId,data); if(e){ e.tipo=tipo; e.cc=tipo==='T'?cc:'' } else ST.ausencias.push({id:uid(),moId:moId,data:data,tipo:tipo,cc:tipo==='T'?cc:''}) }
 function renderAus(){
   ST.ausencias=ST.ausencias||[];
-  var nd=diasDoMes(ptoMesAtual), ano=+ptoMesAtual.slice(0,4), mesN=+ptoMesAtual.slice(5,7), dias=[];
-  for(var i=1;i<=nd;i++)dias.push(ptoMesAtual+'-'+('0'+i).slice(-2));
+  var ano=0, mesN=0, dias=ptoDatas();
   var pess=moOrd(), ccs={}; ST.ausencias.forEach(function(x){ if(x.cc)ccs[x.cc]=1 });
-  var h='<div class="escNav"><button id="ausAnt">←</button><b class="mono" style="min-width:170px;text-align:center">'+esc(mesNome(ptoMesAtual))+'</b><button id="ausProx">→</button><span class="sp"></span><button id="ausImp" title="Imprime o mapa de presenças do mês, em A4 horizontal">Imprimir mapa</button></div>';
+  var h='<div class="escNav"><button id="ausAnt">←</button><b class="mono" style="min-width:170px;text-align:center">'+esc(ptoPerLbl())+'</b><button id="ausProx">→</button><button id="bPtoPer" title="Escolher entre que dias conta o ponto">Período…</button><span class="sp"></span><button id="ausImp" title="Imprime o mapa de presenças do mês, em A4 horizontal">Imprimir mapa</button></div>';
   h+='<div class="hint" style="margin-bottom:8px">O que acontece a cada pessoa quando não está a trabalhar. Escolhe o tipo no pincel e clica nos dias; clicar outra vez com o mesmo tipo limpa. Os dias com ponto aparecem com <b>P</b>. Não mexe no Ponto.</div>';
   h+='<div class="escPincel"><b>Pincel</b><select id="ausTipo">'+Object.keys(AUS_T).map(function(k){ return '<option value="'+k+'"'+(ausPincel.tipo===k?' selected':'')+'>'+k+' — '+AUS_T[k].nome+'</option>' }).join('')+'<option value="limpa"'+(ausPincel.tipo==='limpa'?' selected':'')+'>Limpar</option></select>'+
     '<label class="hint" id="ausCcL" style="display:'+(ausPincel.tipo==='T'?'inline-flex':'none')+';gap:6px;align-items:center">para o centro de custo <input id="ausCc" list="ausCcs" value="'+esc(ausPincel.cc)+'" placeholder="ex.: 4002511" style="width:110px"></label><datalist id="ausCcs">'+Object.keys(ccs).map(function(c){ return '<option value="'+esc(c)+'">' }).join('')+'</datalist>'+
     '<span style="margin-left:auto">'+Object.keys(AUS_T).map(function(k){ return '<span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+AUS_T[k].cor+'"></span>'+k+' '+AUS_T[k].nome+'</span>' }).join('')+'<span style="margin-left:10px;font-size:12px"><b>P</b> trabalhou</span></span></div>';
   h+='<div class="gridWrap"><table class="grelha gaus"><thead><tr><th class="stick">&nbsp;</th>';
-  dias.forEach(function(d){ var fd=[0,6].indexOf(new Date(ano,mesN-1,+d.slice(8)).getDay())>=0; h+='<th class="diaCol'+(fd?' fds':'')+'">'+d.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(d).slice(0,1)+'</span></th>' });
+  dias.forEach(function(d){ var fd=[0,6].indexOf(dtJ(d).getDay())>=0; h+='<th class="diaCol'+(fd?' fds':'')+'">'+d.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(d).slice(0,1)+'</span></th>' });
   h+='<th class="totc">Resumo</th></tr></thead><tbody>';
   var catAnt=null, porDia={}; dias.forEach(function(d){ porDia[d]={p:0,a:0} });
   pess.forEach(function(m){
@@ -3048,7 +3080,7 @@ function renderAus(){
     var cnt={F:0,C:0,D:0,T:0,P:0}, tcc={};
     h+='<tr><td class="stick escNome">'+numColab(m)+esc(m.nome||m.cat)+'</td>';
     dias.forEach(function(d){
-      var a=ausDe(m.id,d), pt=pontoDe(m.id,d), fd=[0,6].indexOf(new Date(ano,mesN-1,+d.slice(8)).getDay())>=0, txt='', st='', tt=diaSem(d)+' '+ptbr(d), cls='diaCel ausC'+(fd?' fds':'');
+      var a=ausDe(m.id,d), pt=pontoDe(m.id,d), fd=[0,6].indexOf(dtJ(d).getDay())>=0, txt='', st='', tt=diaSem(d)+' '+ptbr(d), cls='diaCel ausC'+(fd?' fds':'');
       if(pt){ cnt.P++; porDia[d].p++ }
       if(a){ cnt[a.tipo]++; porDia[d].a++; if(a.cc)tcc[a.cc]=(tcc[a.cc]||0)+1; txt=a.tipo; st='background:'+AUS_T[a.tipo].cor; tt+=' — '+AUS_T[a.tipo].nome+(a.cc?' para '+a.cc:''); if(pt){ cls+=' ausConf'; tt+=' · atenção: também tem ponto neste dia' } }
       else if(pt){ txt='P'; cls+=' ausP'; tt+=' — trabalhou ('+(pt.turno==='noite'?'noite':'dia')+')' }
@@ -3061,9 +3093,9 @@ function renderAus(){
   h+='<tr class="rodape"><td class="stick">A trabalhar</td>'+dias.map(function(d){ return '<td>'+(porDia[d].p||'')+'</td>' }).join('')+'<td></td></tr>';
   h+='<tr class="rodape"><td class="stick">Ausentes</td>'+dias.map(function(d){ return '<td>'+(porDia[d].a||'')+'</td>' }).join('')+'<td></td></tr>';
   h+='</tbody></table></div>';
-  $('#ptoBox').innerHTML=h;
-  var noMes=ST.ausencias.filter(function(x){ return x.data.slice(0,7)===ptoMesAtual }).length;
-  $('#ftPto').innerHTML='<b>'+noMes+'</b> dias de ausência registados em '+esc(mesNome(ptoMesAtual).toLowerCase());
+  $('#ptoBox').innerHTML=(perAberto?perPainel():'')+h;
+  var noMes=ST.ausencias.filter(function(x){ return noPer(x.data) }).length;
+  $('#ftPto').innerHTML='<b>'+noMes+'</b> dias de ausência registados em '+esc(ptoPerLbl().toLowerCase());
   bind('#ptoBox','click',function(e){
     var t=e.target;
     if(t.closest('#ausAnt')){ ptoMesAtual=mesAnt(ptoMesAtual); renderAus(); return }
@@ -3081,11 +3113,11 @@ function renderAus(){
   bind('#ptoBox','input',function(e){ if(e.target.id==='ausCc')ausPincel.cc=e.target.value.trim() });
 }
 function imprimeAus(){
-  var nd=diasDoMes(ptoMesAtual), dias=[]; for(var i=1;i<=nd;i++)dias.push(ptoMesAtual+'-'+('0'+i).slice(-2));
+  var dias=ptoDatas();
   var pess=moOrd(), lin='';
   pess.forEach(function(m){ lin+='<tr><td style="text-align:left;white-space:nowrap">'+(m.num?esc(m.num)+' · ':'')+esc(m.nome||m.cat)+'</td>'+dias.map(function(d){ var a=ausDe(m.id,d), pt=pontoDe(m.id,d); return '<td'+(a?' style="background:'+AUS_T[a.tipo].cor+'"':'')+'>'+(a?a.tipo+(a.cc?'<br><small>'+esc(a.cc)+'</small>':''):pt?'P':'')+'</td>' }).join('')+'</tr>' });
   var w=window.open('','_blank'); if(!w){ toast('O navegador bloqueou a janela de impressão.'); return }
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Mapa de presenças</title><style>@page{size:A4 landscape;margin:10mm}body{font:11px system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:2px;text-align:center;font-size:10px}small{font-size:8px}</style></head><body><h3>Mapa de presenças · '+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+' · '+esc(mesNome(ptoMesAtual))+'</h3><table><thead><tr><th>Pessoa</th>'+dias.map(function(d){ return '<th>'+d.slice(8)+'</th>' }).join('')+'</tr></thead><tbody>'+lin+'</tbody></table><p>P trabalhou · '+Object.keys(AUS_T).map(function(k){ return k+' '+AUS_T[k].nome }).join(' · ')+'</p><script>window.onload=function(){window.print()}<\/script></body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Mapa de presenças</title><style>@page{size:A4 landscape;margin:10mm}body{font:11px system-ui,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:2px;text-align:center;font-size:10px}small{font-size:8px}</style></head><body><h3>Mapa de presenças · '+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+' · '+esc(ptoPerLbl())+'</h3><table><thead><tr><th>Pessoa</th>'+dias.map(function(d){ return '<th>'+d.slice(8)+'</th>' }).join('')+'</tr></thead><tbody>'+lin+'</tbody></table><p>P trabalhou · '+Object.keys(AUS_T).map(function(k){ return k+' '+AUS_T[k].nome }).join(' · ')+'</p><script>window.onload=function(){window.print()}<\/script></body></html>');
   w.document.close();
 }
 /* --- Equipas: a semana, onde está cada um --- */
@@ -3257,18 +3289,18 @@ function detPainelHtml(pt2){
 }
 var detOrdem=[];
 function detalheHtml(dias,diretosMO,ano,mesN,cabecalho){
-  var pre={}; (ST.ponto||[]).forEach(function(pt){ if(mes(pt.data)===ptoMesAtual)pre[pt.moId]=1 });
+  var pre={}; (ST.ponto||[]).forEach(function(pt){ if(noPer(pt.data))pre[pt.moId]=1 });
   detMais.forEach(function(id){ pre[id]=1 });
   var lista=diretosMO.filter(function(m){return pre[m.id]});
   var grupos=recGrupos(lista,ST.catMO,function(m){return m.cat}).filter(function(g){return g.itens.length});
   detOrdem=[]; grupos.forEach(function(g){ g.itens.sort(function(a,b){return naturalCmp(a.nome||'',b.nome||'')}); g.itens.forEach(function(m){ detOrdem.push(m.id) }) });
   var outros=diretosMO.filter(function(m){return !pre[m.id]});
-  var h='<div class="detBar"><span class="hint">'+detOrdem.length+' pessoas com ponto em '+esc(mesNome(ptoMesAtual).toLowerCase())+'</span>'+
+  var h='<div class="detBar"><span class="hint">'+detOrdem.length+' pessoas com ponto em '+esc(ptoPerLbl().toLowerCase())+'</span>'+
     (outros.length?'<select id="detMais"><option value="">+ Acrescentar pessoa…</option>'+outros.map(function(m){ return '<option value="'+esc(m.id)+'">'+esc((m.cat||'—')+(m.nome?' · '+m.nome:''))+'</option>' }).join('')+'</select>':'')+'</div>';
   if(ptoDetalhe){ var pt2=pontoDe(ptoDetalhe.moId,ptoDetalhe.data); if(pt2)h+=detPainelHtml(pt2) }
   if(!detOrdem.length)return h+'<div class="empty">Ainda ninguém tem ponto neste mês. Marca presenças no modo «Presença» ou acrescenta uma pessoa acima.</div>';
   var nCol=dias.length+3, fdsL={}, novaL={}, semAnt=null;
-  dias.forEach(function(dd){ var data=ptoMesAtual+'-'+dd, sem=semana(data); fdsL[dd]=[0,6].indexOf(new Date(ano,mesN-1,+dd).getDay())>=0; novaL[dd]=semAnt!=null&&sem!==semAnt; semAnt=sem });
+  dias.forEach(function(dd){ var data=dd, sem=semana(data); fdsL[dd]=[0,6].indexOf(dtJ(dd).getDay())>=0; novaL[dd]=semAnt!=null&&sem!==semAnt; semAnt=sem });
   h+='<div class="gridWrap"><table class="grelha gdet"><thead>'+cabecalho(true).replace('<th class="stick">&nbsp;</th>','<th class="stick" rowspan="1">&nbsp;</th><th class="sub0"></th>').replace('<th class="stick">&nbsp;</th>','<th class="stick">Pessoa</th><th class="sub0"></th>').replace('>Dias</th>','>Total</th>')+'</thead><tbody>';
   grupos.forEach(function(g){
     h+='<tr class="grp"><td class="grpS" colspan="'+nCol+'">'+esc(g.nome||'Sem categoria')+' <span class="hint" style="font-weight:400">· '+g.itens.length+'</span></td></tr>';
@@ -3276,10 +3308,10 @@ function detalheHtml(dias,diretosMO,ano,mesN,cabecalho){
       var r1='<tr class="detP"><td class="stick nm" rowspan="4" title="'+esc((m.cat||'')+' — '+(m.nome||''))+'">'+numColab(m)+esc(m.nome||m.cat)+'<button type="button" class="x detTira" data-dtira="'+esc(m.id)+'" title="Tirar esta pessoa do detalhe deste mês">×</button></td><td class="sub">D/N</td>', r2='<tr><td class="sub">Extra</td>', r3='<tr><td class="sub">Desl.</td>', r4='<tr class="detL"><td class="sub">Km</td>';
       var d=0,x=0,t=0,km=0;
       dias.forEach(function(dd){
-        var data=ptoMesAtual+'-'+dd, pt=pontoDe(m.id,data), k=m.id+'|'+data, f=(fdsL[dd]?' fds':'')+(novaL[dd]?' semNova':'');
+        var data=dd, pt=pontoDe(m.id,data), k=m.id+'|'+data, f=(fdsL[dd]?' fds':'')+(novaL[dd]?' semNova':'');
         if(!pt){ r1+='<td class="diaCel detT'+f+'" data-pcel="'+k+'" title="Clica para marcar dia"></td>'; r2+='<td class="diaCel vazio'+f+'"></td>'; r3+='<td class="diaCel vazio'+f+'"></td>'; r4+='<td class="diaCel vazio'+f+'"></td>'; return }
         var n=pt.turno==='noite'; d++; x+=num(pt.extra); t+=num(pt.deslocacao); km+=num(pt.km);
-        r1+='<td class="diaCel detT '+(n?'noite':'dia')+f+'" data-pcel="'+k+'" title="'+esc(diaSem(data)+' '+dd+(n?' (noite)':' (dia)')+(pt.localId?' · '+localNome(pt.localId):''))+' — clica: dia → noite → limpar">'+(n?'N':'D')+
+        r1+='<td class="diaCel detT '+(n?'noite':'dia')+f+'" data-pcel="'+k+'" title="'+esc(diaSem(data)+' '+dd.slice(8)+(n?' (noite)':' (dia)')+(pt.localId?' · '+localNome(pt.localId):''))+' — clica: dia → noite → limpar">'+(n?'N':'D')+
           '<span class="detI" data-pdet="'+k+'" title="Parte diária, local e nota">'+((num(pt.extra)||num(pt.deslocacao)||num(pt.km)||pt.nota)?'●':'⋯')+'</span></td>';
         r2+='<td class="diaCel ex '+(n?'presN':'pres')+f+'"><input class="pti" data-pi="'+k+'" data-pf="x" inputmode="decimal" value="'+esc(fmtH(pt.extra))+'" title="Horas extra"></td>';
         r3+='<td class="diaCel ds '+(n?'presN':'pres')+f+'"><input class="pti" data-pi="'+k+'" data-pf="t" inputmode="decimal" value="'+esc(fmtH(pt.deslocacao))+'" title="Horas de deslocação"></td>';
@@ -3294,10 +3326,10 @@ function detalheHtml(dias,diretosMO,ano,mesN,cabecalho){
   return h+'</tbody></table></div>';
 }
 function atualizaTotaisDet(){
-  var nd=diasDoMes(ptoMesAtual);
+  var DTS=ptoDatas();
   ST.mo.forEach(function(m){
     var el=document.getElementById('dtd_'+m.id); if(!el)return;
-    var d=0,x=0,t=0,km=0; for(var i=1;i<=nd;i++){ var p2=pontoDe(m.id,ptoMesAtual+'-'+('0'+i).slice(-2)); if(p2){ d++; x+=num(p2.extra); t+=num(p2.deslocacao); km+=num(p2.km) } }
+    var d=0,x=0,t=0,km=0; for(var i=0;i<DTS.length;i++){ var p2=pontoDe(m.id,DTS[i]); if(p2){ d++; x+=num(p2.extra); t+=num(p2.deslocacao); km+=num(p2.km) } }
     el.textContent=d; document.getElementById('dtx_'+m.id).textContent=fmtT(x); document.getElementById('dtt_'+m.id).textContent=fmtT(t); var ek=document.getElementById('dtk_'+m.id); if(ek)ek.textContent=fmtT(km);
   });
 }
@@ -3305,17 +3337,16 @@ function atualizaTotaisDet(){
 /* --- Ponto · folha impressa (pessoal, detalhe): A4 horizontal --- */
 function imprimePonto(){
   var diretos=ST.mo.filter(function(m){return m.direto!==false});
-  var pre={}; (ST.ponto||[]).forEach(function(pt){ if(mes(pt.data)===ptoMesAtual)pre[pt.moId]=1 });
+  var pre={}; (ST.ponto||[]).forEach(function(pt){ if(noPer(pt.data))pre[pt.moId]=1 });
   detMais.forEach(function(id){ pre[id]=1 });
   var lista=diretos.filter(function(m){return pre[m.id]});
   if(!lista.length){ toast('Ainda ninguém tem ponto neste mês.'); return }
-  var nd=diasDoMes(ptoMesAtual), ano=+ptoMesAtual.slice(0,4), mesN=+ptoMesAtual.slice(5,7), dias=[];
-  for(var i=1;i<=nd;i++)dias.push(('0'+i).slice(-2));
-  var fds={}, grpS=[]; dias.forEach(function(dd){ var data=ptoMesAtual+'-'+dd; fds[dd]=[0,6].indexOf(new Date(ano,mesN-1,+dd).getDay())>=0;
+  var ano=0, mesN=0, dias=ptoDatas();
+  var fds={}, grpS=[]; dias.forEach(function(dd){ var data=dd; fds[dd]=[0,6].indexOf(dtJ(dd).getDay())>=0;
     var sm=semana(data); if(grpS.length&&grpS[grpS.length-1].s===sm)grpS[grpS.length-1].n++; else grpS.push({s:sm,n:1}) });
   var grupos=recGrupos(lista,ST.catMO,function(m){return m.cat}).filter(function(g){return g.itens.length});
   var dd0=hoje().split('-').reverse().join('/'), tD=0,tX=0,tT=0,tK=0, porDia={};
-  var temKm=(ST.ponto||[]).some(function(x){ return mes(x.data)===ptoMesAtual&&num(x.km) }), nRw=temKm?4:3;
+  var temKm=(ST.ponto||[]).some(function(x){ return noPer(x.data)&&num(x.km) }), nRw=temKm?4:3;
   dias.forEach(function(d){ porDia[d]={p:0,x:0,t:0,k:0} });
   var corpo='';
   grupos.forEach(function(g){
@@ -3323,7 +3354,7 @@ function imprimePonto(){
     g.itens.forEach(function(m,ix){
       var r1='<tr><td class="p_nm" rowspan="'+nRw+'">'+(m.num?'<small style="font-family:monospace;opacity:.7">'+esc(m.num)+'</small> ':'')+esc(m.nome||m.cat)+'</td><td class="p_sb">D/N</td>', r2='<tr><td class="p_sb">Extra</td>', r3='<tr'+(temKm?'':' class="p_ult"')+'><td class="p_sb">Desl.</td>', r4='<tr class="p_ult"><td class="p_sb">Km</td>', d=0,x=0,t=0,kk=0;
       dias.forEach(function(dd){
-        var pt=pontoDe(m.id,ptoMesAtual+'-'+dd);
+        var pt=pontoDe(m.id,dd);
         if(!pt){ r1+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r2+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r3+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; r4+='<td class="'+(fds[dd]?'p_f':'')+'"></td>'; return }
         var n=pt.turno==='noite'; d++; x+=num(pt.extra); t+=num(pt.deslocacao); kk+=num(pt.km);
         porDia[dd].p++; porDia[dd].x+=num(pt.extra); porDia[dd].t+=num(pt.deslocacao); porDia[dd].k+=num(pt.km);
@@ -3340,11 +3371,11 @@ function imprimePonto(){
     '<tr class="p_sum'+(temKm?'':' p_ult')+'"><td class="p_sbs">Desl.</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+esc(fmtH(porDia[d].t))+'</td>' }).join('')+'<td class="p_tt">'+esc(fmtT(tT))+'</td></tr>'+
     (temKm?'<tr class="p_sum p_ult"><td class="p_sbs">Km</td>'+dias.map(function(d){ return '<td class="'+(fds[d]?'p_f':'')+'">'+esc(fmtH(porDia[d].k))+'</td>' }).join('')+'<td class="p_tt">'+esc(fmtT(tK))+'</td></tr>':'')+'</tbody>';
   var h='<div class="eqpl"><div class="eqHd"><div class="eqLogo"><img src="'+((document.querySelector('.sbrand img')||{}).src||LOGO_PD)+'" alt=""></div>'+
-    '<div class="eqTit"><div class="t1">Folha de Ponto — Pessoal</div><div class="t2">'+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+'</div><div class="t3">'+esc(mesNome(ptoMesAtual).toUpperCase())+'</div></div>'+
-    '<div class="eqInf"><div><small>Período</small>'+esc(ptbr(ptoMesAtual+'-01'))+' a '+esc(ptbr(ptoMesAtual+'-'+dias[dias.length-1]))+'</div><div><small>Pessoas · dias · extra · deslocação</small><b>'+lista.length+' · '+tD+' · '+esc(fmtT(tX))+' h · '+esc(fmtT(tT))+' h</b></div><div style="font-size:6.2pt;color:#444">Emitido em '+dd0+'</div></div></div>';
+    '<div class="eqTit"><div class="t1">Folha de Ponto — Pessoal</div><div class="t2">'+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+'</div><div class="t3">'+esc(ptoPerLbl().toUpperCase())+'</div></div>'+
+    '<div class="eqInf"><div><small>Período</small>'+esc(ptbr(dias[0]))+' a '+esc(ptbr(dias[dias.length-1]))+'</div><div><small>Pessoas · dias · extra · deslocação</small><b>'+lista.length+' · '+tD+' · '+esc(fmtT(tX))+' h · '+esc(fmtT(tT))+' h</b></div><div style="font-size:6.2pt;color:#444">Emitido em '+dd0+'</div></div></div>';
   h+='<table class="ptf"><colgroup><col style="width:17%"><col style="width:3.4%">'+dias.map(function(){ return '<col>' }).join('')+'<col style="width:5.2%"></colgroup>'+
     '<thead><tr><th rowspan="2" colspan="2">Pessoa</th>'+grpS.map(function(g){ return '<th colspan="'+g.n+'" class="p_sem">S'+g.s+'</th>' }).join('')+'<th rowspan="2">Total</th></tr>'+
-    '<tr>'+dias.map(function(d){ return '<th class="'+(fds[d]?'p_fds':'')+'">'+d+'<br>'+esc(diaSem(ptoMesAtual+'-'+d).slice(0,1))+'</th>' }).join('')+'</tr></thead>'+corpo+sm+'</table>';
+    '<tr>'+dias.map(function(d){ return '<th class="'+(fds[d]?'p_fds':'')+'">'+d.slice(8)+'<br>'+esc(diaSem(d).slice(0,1))+'</th>' }).join('')+'</tr></thead>'+corpo+sm+'</table>';
   h+='<div class="eqLeg"><span><b>D</b> dia · <b>N</b> noite</span><span>Extra e deslocação em horas</span><span>Só pessoal com ponto neste mês</span></div></div>';
   imprimeHorizontal(h);
 }
@@ -3352,23 +3383,22 @@ function grpPto(k,nome,n,cols,topo){
   return '<tr class="'+(topo?'grp0':'grp')+'"><td class="grpS" colspan="'+cols+'"><button class="grpTg'+(ptoFech[k]?' fech':'')+'" data-ptg="'+esc(k)+'" title="Abrir / fechar"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button> '+esc(nome)+' <span class="hint" style="font-weight:400">· '+n+'</span></td></tr>';
 }
 function renderPtoMes(){
-  var nd=diasDoMes(ptoMesAtual), ano=+ptoMesAtual.slice(0,4), mesN=+ptoMesAtual.slice(5,7);
-  var dias=[]; for(var i=1;i<=nd;i++)dias.push(('0'+i).slice(-2));
-  $('#ptoMesLbl').textContent=mesNome(ptoMesAtual);
+  var ano=0, mesN=0; var dias=ptoDatas();
+  $('#ptoMesLbl').textContent=ptoPerLbl();
   $$('#ptoModos [data-pm]').forEach(function(b){ b.classList.toggle('on',b.dataset.pm===ptoModo) });
   var modoNum=(ptoModo==='e'||ptoModo==='t'||ptoModo==='k');
 
   function cabecalho(comTotal){
     var h='<tr class="semRow"><th class="stick">&nbsp;</th>', grpS=[];
-    dias.forEach(function(dd){ var s=semana(ptoMesAtual+'-'+dd); if(grpS.length&&grpS[grpS.length-1].s===s)grpS[grpS.length-1].n++; else grpS.push({s:s,n:1}) });
+    dias.forEach(function(dd){ var s=semana(dd); if(grpS.length&&grpS[grpS.length-1].s===s)grpS[grpS.length-1].n++; else grpS.push({s:s,n:1}) });
     grpS.forEach(function(g,i){ h+='<th colspan="'+g.n+'" class="semTh'+(i?' semNova':'')+'" title="Semana '+g.s+'">S'+g.s+'</th>' });
     if(comTotal)h+='<th class="totc"></th>';
     h+='</tr><tr><th class="stick">&nbsp;</th>';
     var semAnt=null;
     dias.forEach(function(dd){
-      var data=ptoMesAtual+'-'+dd, sem=semana(data), fimDeSemana=[0,6].indexOf(new Date(ano,mesN-1,+dd).getDay())>=0;
+      var data=dd, sem=semana(data), fimDeSemana=[0,6].indexOf(dtJ(dd).getDay())>=0;
       var novaSemana=semAnt!=null&&sem!==semAnt; semAnt=sem;
-      h+='<th class="diaCol'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+'" title="'+esc(diaSem(data))+'">'+dd+'<br><span style="font-weight:400;opacity:.6">'+diaSem(data).slice(0,1)+'</span></th>';
+      h+='<th class="diaCol'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+'" title="'+esc(diaSem(data))+'">'+dd.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(data).slice(0,1)+'</span></th>';
     });
     if(comTotal)h+='<th class="totc">'+({p:'Dias',e:'Extra (h)',t:'Desl. (h)',k:'Km',d:'Dias'})[ptoModo]+'</th>';
     return h+'</tr>';
@@ -3401,14 +3431,14 @@ function renderPtoMes(){
       h+='<tr><td class="stick mono" title="'+esc(m.cat)+' — '+esc(m.nome)+'">'+numColab(m)+esc(m.nome||m.cat)+'</td>';
       var semAnt=null;
       dias.forEach(function(dd){
-        var data=ptoMesAtual+'-'+dd, sem=semana(data), fimDeSemana=[0,6].indexOf(new Date(ano,mesN-1,+dd).getDay())>=0;
+        var data=dd, sem=semana(data), fimDeSemana=[0,6].indexOf(dtJ(dd).getDay())>=0;
         var novaSemana=semAnt!=null&&sem!==semAnt; semAnt=sem;
         var pt=pontoDe(m.id,data);
         var base='diaCel'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'');
         if(modoNum){
           if(pt){
             var vv=ptoModo==='e'?pt.extra:ptoModo==='k'?pt.km:pt.deslocacao;
-            h+='<td class="'+base+' '+(pt.turno==='noite'?'presN':'pres')+'"><input class="pti" data-pi="'+m.id+'|'+data+'" inputmode="decimal" value="'+esc(fmtH(vv))+'" title="'+esc(diaSem(data))+' '+dd+(pt.turno==='noite'?' (noite)':' (dia)')+'"></td>';
+            h+='<td class="'+base+' '+(pt.turno==='noite'?'presN':'pres')+'"><input class="pti" data-pi="'+m.id+'|'+data+'" inputmode="decimal" value="'+esc(fmtH(vv))+'" title="'+esc(diaSem(data))+' '+dd.slice(8)+(pt.turno==='noite'?' (noite)':' (dia)')+'"></td>';
           }else h+='<td class="'+base+' vazio"></td>';
         }else{
           var esP=escDe(m.id,data), cls=base+(pt?(pt.turno==='noite'?' noite':' dia'):'');
@@ -3417,7 +3447,7 @@ function renderPtoMes(){
           var lcT=(pt&&pt.localId)?localNome(pt.localId):(esP?localNome(esP.localId)+' (plano)':'');
           var extra=pt&&(num(pt.extra)||num(pt.deslocacao)||pt.nota)?'●':'';
           var tit=ptoModo==='d'?'clique: abrir o detalhe':'clique: vazio, dia ou noite';
-          h+='<td class="'+cls+'" data-pcel="'+m.id+'|'+data+'" title="'+esc(diaSem(data))+' '+dd+(lcT?' · '+lcT:'')+' — '+tit+'">'+txt+(extra?'<span class="marca">'+extra+'</span>':'')+'</td>';
+          h+='<td class="'+cls+'" data-pcel="'+m.id+'|'+data+'" title="'+esc(diaSem(data))+' '+dd.slice(8)+(lcT?' · '+lcT:'')+' — '+tit+'">'+txt+(extra?'<span class="marca">'+extra+'</span>':'')+'</td>';
         }
       });
       h+='<td class="totc"><span id="ptr_'+m.id+'"></span>'+(modoNum?'<button class="rep" data-rep="'+m.id+'" title="Repetir o primeiro valor da linha pelos dias presentes em branco">↔</button>':'')+'</td></tr>';
@@ -3465,7 +3495,7 @@ function renderPtoMes(){
       h+='<tr><td class="stick mono" title="'+esc(q.nome)+'">'+esc((q.nome&&q.nome!==q.categoria)?q.nome:(q.categoria||q.nome))+'</td>';
       var semAnt=null;
       dias.forEach(function(dd){
-        var data=ptoMesAtual+'-'+dd, sem=semana(data), fimDeSemana=[0,6].indexOf(new Date(ano,mesN-1,+dd).getDay())>=0;
+        var data=dd, sem=semana(data), fimDeSemana=[0,6].indexOf(dtJ(dd).getDay())>=0;
         var novaSemana=semAnt!=null&&sem!==semAnt; semAnt=sem;
         var presente=data<=hoje()&&(!q.entrada||data>=q.entrada)&&(!q.saida||data<=q.saida);
         var cls='diaCel'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+(presente?' dia eqp':'');
@@ -3478,29 +3508,29 @@ function renderPtoMes(){
     h+='</tbody></table></div>';
   }
 
-  $('#ptoBox').innerHTML=h;
+  $('#ptoBox').innerHTML=(perAberto?perPainel():'')+h; var bpp=$('#bPtoPer'); if(bpp)bpp.classList.toggle('on',perAberto);
   atualizaTotaisPto();
-  var totPontos=(ST.ponto||[]).filter(function(pt){return mes(pt.data)===ptoMesAtual}).length;
+  var totPontos=(ST.ponto||[]).filter(function(pt){return noPer(pt.data)}).length;
   var nDif=0, nFalta=0;
-  (ST.escala||[]).forEach(function(e){ if(mes(e.data)!==ptoMesAtual)return; var m=moPorId(e.moId); if(!m||m.direto===false)return; var pt=pontoDe(e.moId,e.data);
+  (ST.escala||[]).forEach(function(e){ if(!noPer(e.data))return; var m=moPorId(e.moId); if(!m||m.direto===false)return; var pt=pontoDe(e.moId,e.data);
     if(!pt){ if(e.data<=hoje())nFalta++ } else if(pt.turno!==e.turno||(pt.localId&&e.localId&&pt.localId!==e.localId))nDif++ });
-  $('#ftPto').innerHTML=totPontos+' pontos registados em '+mesNome(ptoMesAtual).toLowerCase()+(nDif?' · <b>'+nDif+'</b> diferentes do plano (≠)':'')+(nFalta?' · <b>'+nFalta+'</b> do plano ainda sem ponto':'');
+  $('#ftPto').innerHTML=totPontos+' pontos registados em '+ptoPerLbl().toLowerCase()+(nDif?' · <b>'+nDif+'</b> diferentes do plano (≠)':'')+(nFalta?' · <b>'+nFalta+'</b> do plano ainda sem ponto':'');
 
   bind('#ptoBox','click',function(e){
     var tg=e.target.closest('[data-ptg]'); if(tg){ ptoFech[tg.dataset.ptg]=!ptoFech[tg.dataset.ptg]; renderPtoMes(); return }
     var rb=e.target.closest('[data-rep]');
     if(rb){
       var moR=rb.dataset.rep, campo=ptoModo==='e'?'extra':ptoModo==='k'?'km':'deslocacao', valor=0, achados=[];
-      dias.forEach(function(dd){ var p2=pontoDe(moR,ptoMesAtual+'-'+dd); if(!p2)return; achados.push(p2); if(!valor&&num(p2[campo]))valor=num(p2[campo]) });
+      dias.forEach(function(dd){ var p2=pontoDe(moR,dd); if(!p2)return; achados.push(p2); if(!valor&&num(p2[campo]))valor=num(p2[campo]) });
       if(!valor){ toast('Escreve primeiro um valor nessa linha.'); return }
       achados.forEach(function(p2){ if(!num(p2[campo])){ p2[campo]=valor; if(campo==='deslocacao')p2.deslManual=true } });
       render(); return;
     }
     var dt=e.target.closest('[data-dtira]');
     if(dt){ var mid=dt.dataset.dtira, mm=moPorId(mid), nmD=mm?(mm.nome||mm.cat):'esta pessoa';
-      var doMes=(ST.ponto||[]).filter(function(x){ return x.moId===mid&&mes(x.data)===ptoMesAtual }), bloq=doMes.filter(function(x){ return pdBloqId(x.pdId) }), nA=doMes.length-bloq.length;
-      if(nA&&!confirm('Tirar «'+nmD+'» do ponto de '+mesNome(ptoMesAtual).toLowerCase()+'? Apaga '+nA+(nA===1?' marcação':' marcações')+(bloq.length?' (as '+bloq.length+' de partes diárias fechadas ficam)':'')+'. ↶ desfaz.'))return;
-      ST.ponto=(ST.ponto||[]).filter(function(x){ return !(x.moId===mid&&mes(x.data)===ptoMesAtual&&!pdBloqId(x.pdId)) });
+      var doMes=(ST.ponto||[]).filter(function(x){ return x.moId===mid&&noPer(x.data) }), bloq=doMes.filter(function(x){ return pdBloqId(x.pdId) }), nA=doMes.length-bloq.length;
+      if(nA&&!confirm('Tirar «'+nmD+'» do ponto de '+ptoPerLbl().toLowerCase()+'? Apaga '+nA+(nA===1?' marcação':' marcações')+(bloq.length?' (as '+bloq.length+' de partes diárias fechadas ficam)':'')+'. ↶ desfaz.'))return;
+      ST.ponto=(ST.ponto||[]).filter(function(x){ return !(x.moId===mid&&noPer(x.data)&&!pdBloqId(x.pdId)) });
       detMais=detMais.filter(function(x){ return x!==mid }); if(ptoDetalhe&&ptoDetalhe.moId===mid)ptoDetalhe=null;
       render(); toast('«'+nmD+'» saiu do detalhe.'); return }
     var di=e.target.closest('[data-pdet]');
