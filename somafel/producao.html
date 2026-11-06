@@ -690,6 +690,8 @@ fieldset.lockfs .box,fieldset.lockfs .fields{opacity:.72}
 tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-size:12px;color:var(--ink);padding-top:7px;padding-bottom:5px}tr.capH.n1 td{font-size:13px;text-transform:uppercase;letter-spacing:.02em;background:color-mix(in srgb,var(--brand,#F5C400) 14%,transparent)}tr.capH.n3 td,tr.capH.n4 td{font-weight:550;color:var(--muted)}
 .nColab{display:inline-block;min-width:46px;text-align:center;box-sizing:border-box;font-family:var(--mono,monospace);font-size:11px;font-weight:600;color:var(--muted);background:var(--soft,rgba(127,127,127,.12));border-radius:4px;padding:0 5px;margin-right:6px;vertical-align:1px}.nColab.vz{background:transparent;opacity:.5}
 .perBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px;margin:0 0 12px;border:1px solid var(--rule);border-radius:10px;background:var(--soft)}.perBar label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px}.perBar .sp{flex:1}#bPtoPer.on{background:var(--ink);color:var(--paper)}
+.retBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;margin:0 0 10px;border:1px solid var(--rule);border-radius:10px;background:color-mix(in srgb,var(--red,#d33) 7%,var(--sheet,transparent))}.retBar .sp{flex:1}tr.retM td{user-select:none}tr.retS td{background:color-mix(in srgb,var(--red,#d33) 13%,transparent)!important;text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--red,#d33) 60%,transparent)}.retCk{pointer-events:none;vertical-align:-2px;margin:0 6px 0 0!important;width:auto!important;min-width:0!important;display:inline-block!important;padding:0!important}#bMapRet.on{background:var(--ink);color:var(--paper)}
+.mapDes{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -993,6 +995,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
         <option value="dsv">Com desvio (&gt;100%)</option>
       </select>
       <span class="n sp" id="nMap"></span>
+      <button id="bMapRet" title="Escolher as rubricas que não são da Somafel (ex.: do consórcio) e tirá-las do mapa">Retirar rubricas…</button>
     </div>
     <div class="scroll"><div id="mapBox"></div></div>
     <div class="foot" id="ftMap"></div>
@@ -3908,7 +3911,9 @@ function mapPorPoste(rows){
   h+='<td class="totc">'+qtf(tg)+'</td></tr></tbody></table></div>';
   return h;
 }
+var mapRet=null, MAPVIS=[]; function mapLinhasVis(){ return MAPVIS||[] } /* null = normal; objeto {chave:true} = a escolher rubricas para retirar */
 function renderMap(){
+  var bmr=$('#bMapRet'); if(bmr)bmr.classList.toggle('on',!!mapRet);
   $$('#mapModos [data-mm]').forEach(function(b){ b.classList.toggle('on',b.dataset.mm===mapModo) });
   var f=lower(flt.map);
   var acu=acumArt(flt.tipo,flt.origem||''), doMes=flt.mapMes?execArt(flt.mapMes,flt.tipo,flt.origem||''):null;
@@ -3925,6 +3930,7 @@ function renderMap(){
     return lower(a.cod+' '+a.des).indexOf(f)>=0;
   });
   var T={tot:0,qm:0,vm:0,va:0};
+  MAPVIS=rows;
   rows.forEach(function(a){
     var k=chaveRub(a.cod,a.origem), e=acu[k]||{qt:0,val:0}, m=doMes?(doMes[k]||{qt:0,val:0}):null;
     T.tot+=num(a.qt)*num(a.pu); T.va+=e.val; if(m){T.qm+=m.qt;T.vm+=m.val}
@@ -3937,7 +3943,11 @@ function renderMap(){
     $('#ftMap').innerHTML='Vista por poste: cada linha é um poste ou PK, cada coluna uma rubrica';
     return;
   }
-  h+='<table><thead><tr><th style="width:120px">N.º Art.º</th><th>Designação</th><th class="w1">Un.</th><th style="width:110px">Origem</th>'+
+  if(mapRet){ var nSel=Object.keys(mapRet).length;
+    h+='<div class="retBar"><b>Retirar rubricas</b><span class="hint">Clica nas rubricas que não são tuas (ex.: do consórcio). Em «Capítulos», clicar num capítulo marca-o todo.</span><span class="sp"></span>'+
+      '<button id="retTodas">Marcar as '+rows.length+' visíveis</button><button id="retNenhuma">Limpar</button>'+
+      '<button id="retOk" class="pri"'+(nSel?'':' disabled')+'>Retirar '+nSel+(nSel===1?' rubrica':' rubricas')+'</button><button id="retCancela">Cancelar</button></div>' }
+  h+='<table><thead><tr><th style="width:175px">N.º Art.º</th><th>Designação</th><th class="w1">Un.</th><th style="width:110px">Origem</th>'+
     '<th class="num w1">Qt. contrato</th><th class="num w1">P.U.</th><th class="num w1">Total</th><th class="num w1">Anterior</th>'+
     (doMes?'<th class="num w1">Qt. mês</th><th class="num w1">Valor mês</th>':'')+
     '<th class="num w1">Qt. acum.</th><th class="num w1">Valor acum.</th><th class="num w1">%</th><th style="width:110px">Execução</th></tr></thead><tbody>';
@@ -3949,8 +3959,9 @@ function renderMap(){
     var e=acu[k]||{qt:0,val:0}, m=doMes?(doMes[k]||{qt:0,val:0}):null;
     var tot=num(a.qt)*num(a.pu), p=num(a.qt)?e.qt/num(a.qt):0;
     var cor=p>1.0001?'bad':(p>=.999?'ok':'');
-    return '<tr style="cursor:pointer" data-rubrica="'+esc(a.cod)+'|'+esc(a.origem||'contrato')+'">'+
-       '<td class="mono">'+esc(a.cod)+'</td><td>'+esc(a.des)+'</td><td class="w1 mono">'+esc(a.un||'')+'</td>'+
+    var selR=mapRet&&mapRet[k];
+    return '<tr style="cursor:pointer" class="'+(mapRet?'retM'+(selR?' retS':''):'')+'" data-rubrica="'+esc(a.cod)+'|'+esc(a.origem||'contrato')+'">'+
+       '<td class="mono" style="white-space:nowrap">'+(mapRet?'<input type="checkbox" class="retCk" tabindex="-1"'+(selR?' checked':'')+'> ':'')+esc(a.cod)+'</td><td><span class="mapDes" title="'+esc(a.des)+'">'+esc(a.des)+'</span></td><td class="w1 mono">'+esc(a.un||'')+'</td>'+
        '<td class="w1">'+((a.origem||'contrato')==='contrato'?'<span class="chip none">'+esc(origemNome('contrato'))+'</span>':'<span class="chip warn">'+esc(origemNome(a.origem))+'</span>')+'</td>'+
        '<td class="num">'+qtf(a.qt)+'</td><td class="num">'+eur(a.pu)+'</td><td class="num">'+eur(tot)+'</td>'+
        '<td class="num">'+(num(a.aini)?qtf(a.aini):'—')+'</td>'+
@@ -3991,6 +4002,16 @@ function renderMap(){
     ' · acumulado <b class="mono">'+eur(T.va)+' €</b> ('+(T.tot?pct(T.va/T.tot):'—')+')'+filtrado;
   bind('#mapBox','click',function(e){
     var vm=e.target.closest('[data-vmais]'); if(vm){ LIMV.map=vm.dataset.todas?1e9:LIMV.map+150; renderMap(); return }
+    if(mapRet){
+      if(e.target.closest('#retCancela')){ mapRet=null; renderMap(); return }
+      if(e.target.closest('#retNenhuma')){ mapRet={}; renderMap(); return }
+      if(e.target.closest('#retTodas')){ mapLinhasVis().forEach(function(a){ mapRet[chaveRub(a.cod,a.origem)]=true }); renderMap(); return }
+      if(e.target.closest('#retOk')){ retiraRubricas(); return }
+      var cr2=e.target.closest('[data-cap]');
+      if(cr2){ var c=cr2.dataset.cap, doCap=mapLinhasVis().filter(function(a){ return a.cod===c||String(a.cod).indexOf(c+'.')===0 }), todas=doCap.every(function(a){ return mapRet[chaveRub(a.cod,a.origem)] });
+        doCap.forEach(function(a){ var k=chaveRub(a.cod,a.origem); if(todas)delete mapRet[k]; else mapRet[k]=true }); renderMap(); return }
+      var tr2=e.target.closest('[data-rubrica]'); if(!tr2)return;
+      var q=tr2.dataset.rubrica.split('|'), k2=chaveRub(q[0],q[1]); if(mapRet[k2])delete mapRet[k2]; else mapRet[k2]=true; renderMap(); return }
     var cr=e.target.closest('[data-cap]');
     if(cr){ capFechados[cr.dataset.cap]=!capFechados[cr.dataset.cap]; renderMap(); return }
     var tr=e.target.closest('[data-rubrica]'); if(!tr)return;
@@ -3998,6 +4019,19 @@ function renderMap(){
     rubricaAberta={cod:pp[0],origem:pp[1]}; render();
   });
 }
+
+function retiraRubricas(){
+  var ks=Object.keys(mapRet||{}); if(!ks.length)return;
+  var sel=ST.art.filter(function(a){ return mapRet[chaveRub(a.cod,a.origem)] });
+  var acu=acumArt('',''), comExec=sel.filter(function(a){ var e=acu[chaveRub(a.cod,a.origem)]; return (e&&e.qt)||num(a.aini) });
+  var msg='Retirar '+sel.length+(sel.length===1?' rubrica':' rubricas')+' do mapa desta obra?';
+  if(comExec.length)msg+='\n\nAtenção: '+comExec.length+' já têm quantidades (acumulado anterior ou partes diárias): '+comExec.slice(0,6).map(function(a){return a.cod}).join(', ')+(comExec.length>6?'…':'')+'. As linhas das partes diárias ficam, mas passam a «sem rubrica».';
+  msg+='\n\nPodes desfazer com ↶.';
+  if(!confirm(msg))return;
+  ST.art=ST.art.filter(function(a){ return !mapRet[chaveRub(a.cod,a.origem)] });
+  mapRet=null; render(); toast(sel.length+(sel.length===1?' rubrica retirada':' rubricas retiradas')+' do mapa. ↶ desfaz.');
+}
+$('#bMapRet').addEventListener('click',function(){ mapRet=mapRet?null:{}; renderMap() });
 
 /* ---------- AUTOS DE MEDIÇÃO ---------- */
 var autSel='', autOrig='contrato', reconM={};
