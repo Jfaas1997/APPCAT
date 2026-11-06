@@ -3061,7 +3061,7 @@ function renderEsc(){
 
 
 /* --- Mapa de presenças: o que acontece a cada pessoa quando não está a trabalhar (separado do Ponto) --- */
-var AUS_T={F:{nome:'Férias',cor:'hsla(205,75%,55%,.38)'},C:{nome:'Compensação',cor:'hsla(275,55%,60%,.36)'},D:{nome:'Dispensado',cor:'hsla(30,10%,55%,.38)'},T:{nome:'Transferido',cor:'hsla(28,90%,55%,.40)'}};
+var AUS_T={F:{nome:'Férias',cor:'hsla(205,75%,55%,.38)'},C:{nome:'Compensação',cor:'hsla(275,55%,60%,.36)'},D:{nome:'Dispensado',cor:'hsla(30,10%,55%,.38)'},T:{nome:'Transferido',cor:'hsla(28,90%,55%,.40)'},B:{nome:'Baixa',cor:'hsla(355,75%,58%,.38)'}};
 var ausPincel={tipo:'F',cc:''};
 function ausDe(moId,data){ var a=ST.ausencias||[]; for(var i=0;i<a.length;i++)if(a[i].moId===moId&&a[i].data===data)return a[i]; return null }
 function ausTira(moId,data){ ST.ausencias=(ST.ausencias||[]).filter(function(x){ return !(x.moId===moId&&x.data===data) }) }
@@ -3077,11 +3077,11 @@ function renderAus(){
     '<span style="margin-left:auto">'+Object.keys(AUS_T).map(function(k){ return '<span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+AUS_T[k].cor+'"></span>'+k+' '+AUS_T[k].nome+'</span>' }).join('')+'<span style="margin-left:10px;font-size:12px"><b>P</b> trabalhou</span></span></div>';
   h+='<div class="gridWrap"><table class="grelha gaus"><thead><tr><th class="stick">&nbsp;</th>';
   dias.forEach(function(d){ var fd=[0,6].indexOf(dtJ(d).getDay())>=0; h+='<th class="diaCol'+(fd?' fds':'')+'">'+d.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(d).slice(0,1)+'</span></th>' });
-  h+='<th class="totc">Resumo</th></tr></thead><tbody>';
+  h+='<th class="totc" style="min-width:96px;white-space:nowrap;text-align:left">Resumo</th></tr></thead><tbody>';
   var catAnt=null, porDia={}; dias.forEach(function(d){ porDia[d]={p:0,a:0} });
   pess.forEach(function(m){
     if(m.cat!==catAnt){ catAnt=m.cat; h+='<tr class="grp"><td colspan="'+(dias.length+2)+'" style="text-align:left">'+esc(m.cat||'Sem categoria')+'</td></tr>' }
-    var cnt={F:0,C:0,D:0,T:0,P:0}, tcc={};
+    var cnt={F:0,C:0,D:0,T:0,B:0,P:0}, tcc={};
     h+='<tr><td class="stick escNome">'+numColab(m)+esc(m.nome||m.cat)+'</td>';
     dias.forEach(function(d){
       var a=ausDe(m.id,d), pt=pontoDe(m.id,d), fd=[0,6].indexOf(dtJ(d).getDay())>=0, txt='', st='', tt=diaSem(d)+' '+ptbr(d), cls='diaCel ausC'+(fd?' fds':'');
@@ -3099,7 +3099,7 @@ function renderAus(){
   h+='</tbody></table></div>';
   $('#ptoBox').innerHTML=(perAberto?perPainel():'')+h;
   var noMes=ST.ausencias.filter(function(x){ return noPer(x.data) }).length;
-  $('#ftPto').innerHTML='<b>'+noMes+'</b> dias de ausência registados em '+esc(ptoPerLbl().toLowerCase());
+  $('#ftPto').innerHTML='<b>'+noMes+'</b> '+(noMes===1?'dia de ausência registado':'dias de ausência registados')+' em '+esc(ptoPerLbl().toLowerCase());
   bind('#ptoBox','click',function(e){
     var t=e.target;
     if(t.closest('#ausAnt')){ ptoMesAtual=mesAnt(ptoMesAtual); renderAus(); return }
@@ -5884,7 +5884,7 @@ function importa0(wb){
       var ha=achaHdr(ra,['pessoa id']); if(ha<0)return;
       var ma=colMap(ra[ha]), la=[];
       for(var q9=ha+1;q9<ra.length;q9++){ var rw9=ra[q9]||[]; var ad=dstr(cel(rw9,pick(ma,['data']))), ap=String(cel(rw9,pick(ma,['pessoa id']))||'').trim(); if(!ad||!ap)continue;
-        var tx=lower(String(cel(rw9,pick(ma,['tipo']))||'')), tp=tx.indexOf('f')===0?'F':tx.indexOf('comp')===0||tx==='c'?'C':tx.indexOf('disp')===0||tx==='d'?'D':tx.indexOf('transf')===0||tx==='t'?'T':'';
+        var tx=lower(String(cel(rw9,pick(ma,['tipo']))||'')), tp=tx.indexOf('f')===0?'F':tx.indexOf('comp')===0||tx==='c'?'C':tx.indexOf('disp')===0||tx==='d'?'D':tx.indexOf('transf')===0||tx==='t'?'T':tx.indexOf('baixa')===0||tx==='b'?'B':'';
         if(tp)la.push({id:uid(),moId:ap,data:ad,tipo:tp,cc:String(cel(rw9,pick(ma,['centro de custo','cc']))||'').trim()}) }
       ST.ausencias=la; achou.push(la.length+' dias de ausência'); return;
     }
