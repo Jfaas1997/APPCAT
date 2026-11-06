@@ -692,6 +692,7 @@ tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-siz
 .perBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px;margin:0 0 12px;border:1px solid var(--rule);border-radius:10px;background:var(--soft)}.perBar label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px}.perBar .sp{flex:1}#bPtoPer.on{background:var(--ink);color:var(--paper)}
 .retBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;margin:0 0 10px;border:1px solid var(--rule);border-radius:10px;background:color-mix(in srgb,var(--red,#d33) 7%,var(--sheet,transparent))}.retBar .sp{flex:1}tr.retM td{user-select:none}tr.retS td{background:color-mix(in srgb,var(--red,#d33) 13%,transparent)!important;text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--red,#d33) 60%,transparent)}.retCk{pointer-events:none;vertical-align:-2px;margin:0 6px 0 0!important;width:auto!important;min-width:0!important;display:inline-block!important;padding:0!important}#bMapRet.on{background:var(--ink);color:var(--paper)}
 .mapDes{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tcC{font-size:10.5px;margin-top:2px;background:color-mix(in srgb,var(--brand,#F9D115) 22%,transparent);color:var(--ink)}input.respB{color:var(--red,#c33);font-weight:700}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -3858,6 +3859,13 @@ function naturalCmp(a,b){
   return 0;
 }
 function capChain(cod){ var p=String(cod||'').split('.'),o=[]; for(var i=1;i<p.length;i++)o.push(p.slice(0,i).join('.')); return o }
+/* adicionais: n.º do TC associado e responsabilidade (%). Com 50 %, a Somafel só tem direito a metade:
+   a.pu0 = preço do mapa · a.resp = % · a.pu = preço efetivo usado em todas as contas */
+function respDe(a){ var r=(a&&a.resp!=null&&a.resp!=='')?num(a.resp):100; return Math.max(0,Math.min(100,r)) }
+function aplicaResp(a){ if(a.pu0==null)a.pu0=num(a.pu); a.pu=Math.round(num(a.pu0)*respDe(a)/100*1e4)/1e4 }
+function adDe(id){ return (ST.adicionais||[]).filter(function(x){ return x.id===id })[0]||null }
+function tcTxt(t){ t=String(t||'').trim(); return /^tc/i.test(t)?t:'TC '+t }
+function tcChip(a){ var r=respDe(a), tc=a&&a.tc; return (tc||r<100)?' <span class="chip tcC" title="'+esc((tc?tcTxt(tc):'')+(r<100?(tc?' · ':'')+'responsabilidade '+r+' % — só conta '+r+' % do valor':''))+'">'+(tc?esc(tcTxt(tc)):'')+(r<100?(tc?' · ':'')+r+' %':'')+'</span>':'' }
 function capDes(c){ var f=(ST.capitulos||[]).filter(function(x){return x.cod===c})[0]; return f?f.des:'' }
 /* cabeçalhos dos capítulos (F-07, F-07.01, F-07.01.03…) antes de cada rubrica, para se perceber de onde vem */
 function capMapa(){ var m={}; (ST.capitulos||[]).forEach(function(x){ if(x&&x.cod)m[x.cod]=x.des||'' }); return m }
@@ -3961,7 +3969,7 @@ function renderMap(){
     var cor=p>1.0001?'bad':(p>=.999?'ok':'');
     var selR=mapRet&&mapRet[k];
     return '<tr style="cursor:pointer" class="'+(mapRet?'retM'+(selR?' retS':''):'')+'" data-rubrica="'+esc(a.cod)+'|'+esc(a.origem||'contrato')+'">'+
-       '<td class="mono" style="white-space:nowrap">'+(mapRet?'<input type="checkbox" class="retCk" tabindex="-1"'+(selR?' checked':'')+'> ':'')+esc(a.cod)+'</td><td><span class="mapDes" title="'+esc(a.des)+'">'+esc(a.des)+'</span></td><td class="w1 mono">'+esc(a.un||'')+'</td>'+
+       '<td class="mono" style="white-space:nowrap">'+(mapRet?'<input type="checkbox" class="retCk" tabindex="-1"'+(selR?' checked':'')+'> ':'')+esc(a.cod)+'</td><td><span class="mapDes" title="'+esc(a.des)+'">'+esc(a.des)+'</span>'+tcChip(a)+'</td><td class="w1 mono">'+esc(a.un||'')+'</td>'+
        '<td class="w1">'+((a.origem||'contrato')==='contrato'?'<span class="chip none">'+esc(origemNome('contrato'))+'</span>':'<span class="chip warn">'+esc(origemNome(a.origem))+'</span>')+'</td>'+
        '<td class="num">'+qtf(a.qt)+'</td><td class="num">'+eur(a.pu)+'</td><td class="num">'+eur(tot)+'</td>'+
        '<td class="num">'+(num(a.aini)?qtf(a.aini):'—')+'</td>'+
@@ -5440,34 +5448,38 @@ function renderArt(){
   var og=[{id:'contrato',nome:origemNome('contrato')}].concat(ST.adicionais||[]);
   var oh='<div class="orgs art">'+og.map(function(o){
     var n=ST.art.filter(function(a){return (a.origem||'contrato')===o.id}).length, v=totContrato('',o.id), ex=totalAcum('',o.id);
-    return '<div class="org'+(flt.origem===o.id?' on':'')+'" data-forg="'+esc(o.id)+'" title="Clica para ver só as rubricas desta origem"><span class="on1">'+((o.id==='contrato'||nmEhCtr(o.id))?'Contrato':'Adicional')+'</span><span style="font-weight:500">'+esc(o.nome)+'</span><b class="mono">'+eur(v)+' €</b><span class="on2">'+n+(n===1?' rubrica':' rubricas')+(v?' · '+pct(ex/v)+' executado':'')+'</span>'+
-      (o.id!=='contrato'?'<span class="oa"><button type="button" data-oren="'+esc(o.id)+'" title="Mudar o nome">✎</button><button type="button" data-odel="'+esc(o.id)+'" title="Apagar este adicional">×</button></span>':'')+'</div>';
+    return '<div class="org'+(flt.origem===o.id?' on':'')+'" data-forg="'+esc(o.id)+'" title="Clica para ver só as rubricas desta origem"><span class="on1">'+((o.id==='contrato'||(nmEhCtr(o.id)&&!/^adicional/i.test(o.nome||'')))?'Contrato':'Adicional')+'</span><span style="font-weight:500">'+esc(o.nome)+'</span><b class="mono">'+eur(v)+' €</b><span class="on2">'+n+(n===1?' rubrica':' rubricas')+(v?' · '+pct(ex/v)+' executado':'')+'</span>'+
+      (o.id!=='contrato'&&(o.tc||(o.resp!=null&&num(o.resp)<100))?'<span class="on2">'+(o.tc?esc(tcTxt(o.tc)):'')+(o.resp!=null&&num(o.resp)<100?(o.tc?' · ':'')+'resp. '+num(o.resp)+' %':'')+'</span>':'')+
+      (o.id!=='contrato'?'<span class="oa"><button type="button" data-otc="'+esc(o.id)+'" title="N.º do TC e responsabilidade deste adicional (aplica às suas rubricas)">TC</button><button type="button" data-oren="'+esc(o.id)+'" title="Mudar o nome">✎</button><button type="button" data-odel="'+esc(o.id)+'" title="Apagar este adicional">×</button></span>':'')+'</div>';
   }).join('')+'</div>';
-  var h='<table><thead><tr><th style="width:140px">N.º Art.º</th><th>Designação</th><th class="w1" style="width:60px">Un.</th><th style="width:150px">Origem</th>'+
-    '<th class="num w1">Quantidade</th><th class="num w1">Preço unit.</th><th class="num w1">Total</th>'+
+  var h='<table><thead><tr><th style="width:175px">N.º Art.º</th><th>Designação</th><th class="w1" style="width:60px">Un.</th><th style="width:150px">Origem</th>'+
+    '<th class="w1" style="width:80px" title="N.º do trabalho complementar (TC) associado">TC</th><th class="num w1" style="width:70px" title="Responsabilidade: com 50 % só conta metade do valor">Resp. %</th>'+
+    '<th class="num w1">Quantidade</th><th class="num w1" title="Preço do mapa do cliente">Preço unit.</th><th class="num w1" title="Quantidade × preço × responsabilidade">Total</th>'+
     '<th class="num w1" title="Produção já executada antes de começar a usar esta app">Acum. anterior</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
-  if(!rows.length)h+='<tr><td colspan="10"><div class="empty">Sem artigos'+(flt.origem?' nesta origem':'')+'. Usa <b>Importar mapa…</b> (Excel com N.º Art.º, Designação, Un., Qtd. e P.U.; o botão <b>Modelo do mapa</b> dá um exemplo) ou acrescenta linhas com <b>+ Artigo</b>.</div></td></tr>';
+  if(!rows.length)h+='<tr><td colspan="12"><div class="empty">Sem artigos'+(flt.origem?' nesta origem':'')+'. Usa <b>Importar mapa…</b> (Excel com N.º Art.º, Designação, Un., Qtd. e P.U.; o botão <b>Modelo do mapa</b> dá um exemplo) ou acrescenta linhas com <b>+ Artigo</b>.</div></td></tr>';
   var T=0, nArt=0, CM=capMapa(), CV={};
   rows.forEach(function(r){
     var a=r.a,t=num(a.qt)*num(a.pu); T+=t;
     if(++nArt>LIMV.art)return;
-    h+=capCabecalhos(a.cod,CM,CV,10);
+    h+=capCabecalhos(a.cod,CM,CV,12);
     h+='<tr><td><input data-a="'+r.i+'" data-k="cod" value="'+esc(a.cod||'')+'" class="mono"></td>'+
        '<td><input data-a="'+r.i+'" data-k="des" value="'+esc(a.des||'')+'"></td>'+
        '<td><input data-a="'+r.i+'" data-k="un" value="'+esc(a.un||'')+'" class="mono"></td>'+
        '<td><select data-a="'+r.i+'" data-k="origem">'+opOrigemSel.replace('value="'+esc(a.origem||'contrato')+'"','value="'+esc(a.origem||'contrato')+'" selected')+'</select></td>'+
+       '<td><input data-a="'+r.i+'" data-k="tc" value="'+esc(a.tc||'')+'" class="mono" placeholder="—" title="N.º do TC associado"></td>'+
+       '<td class="num"><input class="num'+(respDe(a)<100?' respB':'')+'" data-a="'+r.i+'" data-k="resp" value="'+esc(respDe(a))+'" title="Responsabilidade (%)"></td>'+
        '<td class="num"><input class="num" data-a="'+r.i+'" data-k="qt" value="'+esc(a.qt==null?'':a.qt)+'"></td>'+
-       '<td class="num"><input class="num" data-a="'+r.i+'" data-k="pu" value="'+esc(a.pu==null?'':a.pu)+'"></td>'+
+       '<td class="num"><input class="num" data-a="'+r.i+'" data-k="pu" value="'+esc(a.pu0!=null?a.pu0:(a.pu==null?'':a.pu))+'">'+(respDe(a)<100?'<small class="hint" style="display:block;text-align:right" title="Preço que conta para a Somafel">→ '+eur(a.pu)+'</small>':'')+'</td>'+
        '<td class="num">'+eur(t)+'</td>'+
        '<td class="num"><input class="num" data-a="'+r.i+'" data-k="aini" value="'+esc(a.aini==null?'':a.aini)+'"></td>'+
        '<td class="w1"><button data-adupl="'+r.i+'" title="Duplicar esta rubrica para outra origem (ex.: criar a mesma peça como Adicional)">⧉</button></td>'+
        '<td class="w1"><button class="x" data-adel="'+r.i+'">×</button></td></tr>';
   });
-  h+=maisLinhasHtml('art',rows.length-LIMV.art,10);
+  h+=maisLinhasHtml('art',rows.length-LIMV.art,12);
   h+='</tbody></table>';
   $('#artBox').innerHTML=oh+h;
   $('#bArtNovo').textContent=flt.origem?'+ Artigo · '+origemNome(flt.origem):'+ Artigo';
-  $('#ftArt').innerHTML='<b class="mono">'+rows.length+'</b> rubricas · valor <b class="mono">'+eur(T)+' €</b>';
+  $('#ftArt').innerHTML='<b class="mono">'+rows.length+'</b> '+(rows.length===1?'rubrica':'rubricas') · valor <b class="mono">'+eur(T)+' €</b>';
   bind('#artBox','change',function(e){
     var t=e.target;
     if(t.dataset.adsel!=null){
@@ -5478,7 +5490,11 @@ function renderArt(){
       return;
     }
     var k=t.dataset.k; if(t.dataset.a==null||!k)return;
-    var a=ST.art[+t.dataset.a]; a[k]=(k==='qt'||k==='pu'||k==='aini')?num(t.value):t.value;
+    var a=ST.art[+t.dataset.a];
+    if(k==='pu'){ a.pu0=num(t.value); aplicaResp(a) }
+    else if(k==='resp'){ var rv=String(t.value).replace('%','').trim(); a.resp=rv===''?100:Math.max(0,Math.min(100,num(rv))); aplicaResp(a); if(a.resp<100)toast('Responsabilidade '+a.resp+' %: esta rubrica só conta '+a.resp+' % do valor.') }
+    else if(k==='tc'){ a.tc=t.value.trim() }
+    else a[k]=(k==='qt'||k==='aini')?num(t.value):t.value;
     buildIX(); setTimeout(render,0);
   });
   bind('#artBox','click',function(e){
@@ -5494,6 +5510,13 @@ function renderArt(){
       var sl=$('#artBox select[data-adsel]'); if(sl)sl.focus();
       return;
     }
+    var otc=e.target.closest('[data-otc]'); if(otc){
+      var adt=adDe(otc.dataset.otc); if(!adt)return;
+      var tcn=prompt('N.º do TC associado a «'+adt.nome+'»:',adt.tc||''); if(tcn==null)return;
+      var rp=prompt('Responsabilidade (%) — com 50 % só temos direito a metade do valor:',adt.resp!=null?adt.resp:100); if(rp==null)return;
+      adt.tc=tcn.trim(); adt.resp=Math.max(0,Math.min(100,num(String(rp).replace('%',''))||0));
+      var nR=0; ST.art.forEach(function(a){ if(a.origem===adt.id){ a.tc=adt.tc; a.resp=adt.resp; aplicaResp(a); nR++ } });
+      buildIX(); render(); toast('«'+adt.nome+'»: '+(adt.tc?tcTxt(adt.tc)+' · ':'')+'responsabilidade '+adt.resp+' %'+(nR?' aplicada às '+nR+' rubricas.':'.')); return }
     var rn=e.target.closest('[data-oren]'); if(rn){
       var ad=(ST.adicionais||[]).filter(function(x){return x.id===rn.dataset.oren})[0]; if(!ad)return;
       var nn=prompt('Novo nome para este adicional:',ad.nome); if(nn==null)return; nn=nn.trim(); if(!nn||nn===ad.nome)return;
@@ -6464,13 +6487,13 @@ function guarda(){
   (ST.tipos||[]).forEach(function(t){TP.push([t.id,t.nome,t.prefixo])});
   add('Tipos',TP,[10,30,12]);
 
-  var A=[['Tipo','Origem','N.º Art.º','Designação','Un.','Qtd.','P.U.','Total','Acumulado anterior','Executado total','Valor acumulado','% executado','Qt. auto '+mesNome(mc),'Valor auto '+mesNome(mc)]];
+  var A=[['Tipo','Origem','N.º Art.º','Designação','Un.','Qtd.','P.U.','Total','Acumulado anterior','Executado total','Valor acumulado','% executado','Qt. auto '+mesNome(mc),'Valor auto '+mesNome(mc),'TC','Responsabilidade %','P.U. do mapa']];
   ST.art.forEach(function(a){
     var k=chaveRub(a.cod,a.origem), e=acu[k]||{qt:0,val:0}, m=doMes[k]||{qt:0,val:0};
     A.push([tipoNome(a.tipo||'cat'),origemNome(a.origem),a.cod,a.des,a.un,num(a.qt)||null,num(a.pu)||null,+(num(a.qt)*num(a.pu)).toFixed(2)||null,
-      num(a.aini)||null,e.qt||null,+e.val.toFixed(2)||null,num(a.qt)?+(e.qt/num(a.qt)).toFixed(4):null,m.qt||null,+m.val.toFixed(2)||null]);
+      num(a.aini)||null,e.qt||null,+e.val.toFixed(2)||null,num(a.qt)?+(e.qt/num(a.qt)).toFixed(4):null,m.qt||null,+m.val.toFixed(2)||null,a.tc||'',respDe(a),a.pu0!=null?num(a.pu0):(num(a.pu)||null)]);
   });
-  add('Artigos',A,[16,16,16,52,7,10,11,13,18,13,15,12,13,15]);
+  add('Artigos',A,[16,16,16,52,7,10,11,13,18,13,15,12,13,15,10,14,12]);
   var AE=[['ID','Auto','Versão','Data','Tipo','Origem','Código','Quantidade','Valor']];
   (ST.autosEnviados||[]).forEach(function(e){ e.linhas.forEach(function(x){ AE.push([e.id,e.auto,e.versao,e.data,tipoNome(x.tipo),origemNome(x.origem),x.cod,num(x.qt),+num(x.val).toFixed(2)||null]) }) });
   add('Autos enviados',AE,[12,10,8,24,16,16,16,12,12]);
