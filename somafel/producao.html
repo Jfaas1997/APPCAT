@@ -693,6 +693,16 @@ tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-siz
 .retBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;margin:0 0 10px;border:1px solid var(--rule);border-radius:10px;background:color-mix(in srgb,var(--red,#d33) 7%,var(--sheet,transparent))}.retBar .sp{flex:1}tr.retM td{user-select:none}tr.retS td{background:color-mix(in srgb,var(--red,#d33) 13%,transparent)!important;text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--red,#d33) 60%,transparent)}.retCk{pointer-events:none;vertical-align:-2px;margin:0 6px 0 0!important;width:auto!important;min-width:0!important;display:inline-block!important;padding:0!important}#bMapRet.on{background:var(--ink);color:var(--paper)}
 .mapDes{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tcC{font-size:10.5px;margin-top:2px;background:color-mix(in srgb,var(--brand,#F9D115) 22%,transparent);color:var(--ink)}input.respB{color:var(--red,#c33);font-weight:700}
+/* Ponto: cabeçalho fixo dentro de cada tabela (pessoal / equipamento) e as duas com as mesmas medidas */
+.ptoGW{max-height:calc(100vh - 230px);overflow:auto;overscroll-behavior:contain}
+.ptoGW thead{position:sticky;top:0;z-index:6;box-shadow:0 -6px 0 0 var(--sheet)}
+.ptoGW thead th{background:linear-gradient(var(--soft),var(--soft)),var(--sheet)!important}
+.ptoGW thead th.stick,.ptoGW thead th.totc{z-index:7}
+.ptoGW table.grelha{width:max-content}
+.ptoGW .stick{width:250px;min-width:250px;max-width:250px;overflow:hidden;text-overflow:ellipsis}
+.ptoGW th.diaCol,.ptoGW td.diaCel{width:26px;min-width:26px;max-width:26px}
+.ptoGW .totc{width:84px;min-width:84px}
+.artRO{margin:0 0 10px;padding:9px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--soft);font-size:12.5px}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -3425,7 +3435,7 @@ function renderPtoMes(){
   if(!diretosMO.length)h+='<div class="empty">Sem ninguém direto no Mapa de Pessoal e Equipamento.</div>';
   else if(ptoModo==='d')h+=detalheHtml(dias,diretosMO,ano,mesN,cabecalho);
   else{
-    h+='<div class="gridWrap"><table class="grelha'+(modoNum?' gnum':'')+'"><thead>'+cabecalho(true)+'</thead><tbody>';
+    h+='<div class="gridWrap ptoGW"><table class="grelha'+(modoNum?' gnum':'')+'"><thead>'+cabecalho(true)+'</thead><tbody>';
     recGrupos(diretosMO,ST.catMO,function(m){return m.cat}).forEach(function(gm){
      if(!gm.itens.length)return;
      var kgm='pm|'+gm.nome;
@@ -3483,7 +3493,7 @@ function renderPtoMes(){
   h+='<h3 class="sec">Equipamento</h3><div class="hint" style="margin-bottom:6px">Clica num dia vazio para pôr o equipamento na obra. Clica num dia com ✓ para o tirar a partir desse dia; no primeiro dia, tira-o por completo. ↶ desfaz.</div>';
   if(!diretosEQ.length)h+='<div class="empty">Sem equipamento direto no Mapa de Pessoal e Equipamento.</div>';
   else{
-    h+='<div class="gridWrap"><table class="grelha'+(modoNum?' gnum':'')+'"><thead>'+cabecalho(false)+'</thead><tbody>';
+    h+='<div class="gridWrap ptoGW"><table class="grelha'+(modoNum?' gnum':'')+'"><thead>'+cabecalho(true)+'</thead><tbody>';
     EQTIPOS.forEach(function(T){
      var listaT=(ST.catEq||[]).filter(function(c){return c.tipo===T[0]}).map(function(c){return c.nome});
      var itT=diretosEQ.filter(function(e){return tipoEq(e)===T[0]});
@@ -3497,15 +3507,16 @@ function renderPtoMes(){
       if(ptoFech[kge])return;
       ge.itens.forEach(function(q){
       h+='<tr><td class="stick mono" title="'+esc(q.nome)+'">'+esc((q.nome&&q.nome!==q.categoria)?q.nome:(q.categoria||q.nome))+'</td>';
-      var semAnt=null;
+      var semAnt=null, nPres=0;
       dias.forEach(function(dd){
         var data=dd, sem=semana(data), fimDeSemana=[0,6].indexOf(dtJ(dd).getDay())>=0;
         var novaSemana=semAnt!=null&&sem!==semAnt; semAnt=sem;
         var presente=data<=hoje()&&(!q.entrada||data>=q.entrada)&&(!q.saida||data<=q.saida);
         var cls='diaCel'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+(presente?' dia eqp':'');
+        if(presente)nPres++;
         h+='<td class="'+cls+'" data-ecel="'+q.id+'|'+data+'"'+(presente?' title="Na obra"':'')+'>'+(presente?'✓':'')+'</td>';
       });
-      h+='</tr>';
+      h+='<td class="totc">'+(nPres||'—')+'</td></tr>';
       });
      });
     });
@@ -3861,6 +3872,13 @@ function naturalCmp(a,b){
 function capChain(cod){ var p=String(cod||'').split('.'),o=[]; for(var i=1;i<p.length;i++)o.push(p.slice(0,i).join('.')); return o }
 /* adicionais: n.º do TC associado e responsabilidade (%). Com 50 %, a Somafel só tem direito a metade:
    a.pu0 = preço do mapa · a.resp = % · a.pu = preço efetivo usado em todas as contas */
+/* artigos do contrato: só o Diretor de Obra (papel «diretor») ou o administrador podem alterar */
+function podeArt(){ return typeof NM==='undefined'||!NM.ob||NM.papel==='administrador'||NM.papel==='diretor' }
+var ART0=null;
+function artFoto(){ return JSON.stringify({art:ST.art||[],capitulos:ST.capitulos||[]}) }
+function artGuarda(){ if(podeArt()||ART0==null)return false; if(artFoto()===ART0)return false;
+  var o=JSON.parse(ART0); ST.art=o.art; ST.capitulos=o.capitulos; try{ buildIX() }catch(e){}
+  toast('Os artigos do contrato só podem ser alterados pelo Diretor de Obra ou pelo administrador. Ficou como estava.',4500); return true }
 function respDe(a){ var r=(a&&a.resp!=null&&a.resp!=='')?num(a.resp):100; return Math.max(0,Math.min(100,r)) }
 function aplicaResp(a){ if(a.pu0==null)a.pu0=num(a.pu); a.pu=Math.round(num(a.pu0)*respDe(a)/100*1e4)/1e4 }
 function adDe(id){ return (ST.adicionais||[]).filter(function(x){ return x.id===id })[0]||null }
@@ -3921,7 +3939,7 @@ function mapPorPoste(rows){
 }
 var mapRet=null, MAPVIS=[]; function mapLinhasVis(){ return MAPVIS||[] } /* null = normal; objeto {chave:true} = a escolher rubricas para retirar */
 function renderMap(){
-  var bmr=$('#bMapRet'); if(bmr)bmr.classList.toggle('on',!!mapRet);
+  var bmr=$('#bMapRet'); if(bmr){ bmr.classList.toggle('on',!!mapRet); bmr.style.display=podeArt()?'':'none'; if(!podeArt())mapRet=null }
   $$('#mapModos [data-mm]').forEach(function(b){ b.classList.toggle('on',b.dataset.mm===mapModo) });
   var f=lower(flt.map);
   var acu=acumArt(flt.tipo,flt.origem||''), doMes=flt.mapMes?execArt(flt.mapMes,flt.tipo,flt.origem||''):null;
@@ -4029,6 +4047,7 @@ function renderMap(){
 }
 
 function retiraRubricas(){
+  if(!podeArt())return;
   var ks=Object.keys(mapRet||{}); if(!ks.length)return;
   var sel=ST.art.filter(function(a){ return mapRet[chaveRub(a.cod,a.origem)] });
   var acu=acumArt('',''), comExec=sel.filter(function(a){ var e=acu[chaveRub(a.cod,a.origem)]; return (e&&e.qt)||num(a.aini) });
@@ -4039,7 +4058,7 @@ function retiraRubricas(){
   ST.art=ST.art.filter(function(a){ return !mapRet[chaveRub(a.cod,a.origem)] });
   mapRet=null; render(); toast(sel.length+(sel.length===1?' rubrica retirada':' rubricas retiradas')+' do mapa. ↶ desfaz.');
 }
-$('#bMapRet').addEventListener('click',function(){ mapRet=mapRet?null:{}; renderMap() });
+$('#bMapRet').addEventListener('click',function(){ if(!podeArt())return; mapRet=mapRet?null:{}; renderMap() });
 
 /* ---------- AUTOS DE MEDIÇÃO ---------- */
 var autSel='', autOrig='contrato', reconM={};
@@ -5477,7 +5496,10 @@ function renderArt(){
   });
   h+=maisLinhasHtml('art',rows.length-LIMV.art,12);
   h+='</tbody></table>';
-  $('#artBox').innerHTML=oh+h;
+  var ro=!podeArt();
+  $('#artBox').innerHTML=(ro?'<div class="artRO">🔒 Só o <b>Diretor de Obra</b> ou o <b>administrador</b> podem alterar os artigos do contrato (rubricas, quantidades, preços, TC e responsabilidade). Aqui só podes consultar.</div>':'')+oh+h;
+  if(ro){ $$('#artBox input,#artBox select').forEach(function(e){ e.disabled=true }); $$('#artBox [data-adel],#artBox [data-adupl],#artBox .oa').forEach(function(e){ e.style.display='none' }) }
+  ['#bArtImp','#bAdicNovo','#bArtNovo'].forEach(function(q){ var b=$(q); if(b)b.style.display=ro?'none':'' });
   $('#bArtNovo').textContent=flt.origem?'+ Artigo · '+origemNome(flt.origem):'+ Artigo';
   $('#ftArt').innerHTML='<b class="mono">'+rows.length+'</b> '+(rows.length===1?'rubrica':'rubricas')+' · valor <b class="mono">'+eur(T)+' €</b>';
   bind('#artBox','change',function(e){
@@ -5490,6 +5512,7 @@ function renderArt(){
       return;
     }
     var k=t.dataset.k; if(t.dataset.a==null||!k)return;
+    if(!podeArt()){ renderArt(); return }
     var a=ST.art[+t.dataset.a];
     if(k==='pu'){ a.pu0=num(t.value); aplicaResp(a) }
     else if(k==='resp'){ var rv=String(t.value).replace('%','').trim(); a.resp=rv===''?100:Math.max(0,Math.min(100,num(rv))); aplicaResp(a); if(a.resp<100)toast('Responsabilidade '+a.resp+' %: esta rubrica só conta '+a.resp+' % do valor.') }
@@ -6854,7 +6877,7 @@ function nmResumoProd(){
 
 /* ---- servidor ---- */
 var sb=supabase.createClient('https://dnllrbgzkgrerkybtjjl.supabase.co','sb_publishable_Hro5FepbHNEFu2_w5TbBNw_FaHywmj_',{auth:{persistSession:true,autoRefreshToken:true}});
-function nmPayload(){ var r; try{ r=nmResumoProd(); r.v=1; r.cc=NM.ob.cc; r.gerado=new Date().toISOString() }catch(e){ r=null } return {esq:2,st:JSON.parse(uSnap()),resumo:r} }
+function nmPayload(){ if(artGuarda()){ try{ render() }catch(e){} } var r; try{ r=nmResumoProd(); r.v=1; r.cc=NM.ob.cc; r.gerado=new Date().toISOString() }catch(e){ r=null } return {esq:2,st:JSON.parse(uSnap()),resumo:r} }
 async function nmGrava(forca){
   var h=estadoHash(), p=nmPayload(), q;
   if(NM.versao==null){
@@ -6897,7 +6920,7 @@ guardaProjeto=async function(){
       if(e&&e.sp){ var s=await nmServidorAtual(), d=s&&new Date(s.atualizado_em);
         var r=await nmModal({titulo:'Os dados mudaram entretanto',corpo:'<p>Alguém (ou outra janela) guardou esta obra'+(d?' às '+nmHM(d):'')+'. Se guardar por cima, perde essas alterações.</p>',
           botoes:[{t:'Cancelar',v:null},{t:'Carregar o que lá está',v:'ler'},{t:'Guardar por cima (perde o que lá está)',v:'cima'},{t:'Juntar as duas',v:'junta',p:true}],cancela:null});
-        if(r==='junta'&&s&&s.dados&&s.dados.st){ var add=juntaST(ST,s.dados.st); NM.versao=s.versao; buildIX&&buildIX(); render(); await nmGrava(false); toast('Juntado: ficaram as tuas alterações e '+(add?add+' registo'+(add===1?'':'s')+' que só estavam no servidor':'o que estava no servidor')+'.',4000); NM.gravando=false; nmInd(); nmFlush(); return }
+        if(r==='junta'&&s&&s.dados&&s.dados.st){ var add=juntaST(ST,s.dados.st); if(!podeArt()&&ART0!=null){ var o0=JSON.parse(ART0); ART0=JSON.stringify(juntaST(o0,{art:s.dados.st.art||[],capitulos:s.dados.st.capitulos||[]})>=0?o0:o0); ST.art=JSON.parse(ART0).art; ST.capitulos=JSON.parse(ART0).capitulos } NM.versao=s.versao; buildIX&&buildIX(); render(); await nmGrava(false); toast('Juntado: ficaram as tuas alterações e '+(add?add+' registo'+(add===1?'':'s')+' que só estavam no servidor':'o que estava no servidor')+'.',4000); NM.gravando=false; nmInd(); nmFlush(); return }
         if(r==='ler'){ NM.versao=s.versao; nmCarrega(null,JSON.stringify(s.dados.st)); NM.conflito=false; toast('Carregada a versão mais recente.') ; NM.gravando=false; nmInd(); return }
         if(r!=='cima'){ NM.gravando=false; nmInd(); return }
         if(s)NM.versao=s.versao; await nmGrava(true)
@@ -6937,7 +6960,7 @@ function nmCarrega(wb,antes){
   try{
     if(antes){ ST=JSON.parse(antes) } else { ST=novo(); if(wb)importa0(wb) }
     if(NM.ob){ ST.obra=NM.ob.cc; ST.nome=NM.ob.nome }
-    nmSyncCtr(); vista='res'; pdAberta=null; $('#obraNome').value=ST.nome||''; buildIX(); render(); undoReset(); nmUi();
+    nmSyncCtr(); ART0=artFoto(); vista='res'; pdAberta=null; $('#obraNome').value=ST.nome||''; buildIX(); render(); undoReset(); nmUi();
   } finally { NM.carregando=false }
   setTimeout(marcaGuardado,200) }
 function nmRegarante(){ if(!NM.ob)return; ST.obra=NM.ob.cc; ST.nome=NM.ob.nome; nmSyncCtr(); $('#obraNome').value=ST.nome }
