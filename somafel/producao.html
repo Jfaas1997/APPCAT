@@ -3881,6 +3881,7 @@ function artFoto(){ return JSON.stringify({art:ST.art||[],capitulos:ST.capitulos
 function artGuarda(){ if(podeArt()||ART0==null)return false; if(artFoto()===ART0)return false;
   var o=JSON.parse(ART0); ST.art=o.art; ST.capitulos=o.capitulos; try{ buildIX() }catch(e){}
   toast('Os artigos do contrato só podem ser alterados pelo Diretor de Obra ou pelo administrador. Ficou como estava.',4500); return true }
+function clienteDe(orig){ if(!orig||orig==='contrato')return ST.clienteCtr||(ST.cliente||'').split(' / ')[0]||''; var a=adDe(orig); return (a&&a.cliente)||ST.clienteCtr||'' }
 function respDe(a){ var r=(a&&a.resp!=null&&a.resp!=='')?num(a.resp):100; return Math.max(0,Math.min(100,r)) }
 function aplicaResp(a){ if(a.pu0==null)a.pu0=num(a.pu); a.pu=Math.round(num(a.pu0)*respDe(a)/100*1e4)/1e4 }
 function adDe(id){ return (ST.adicionais||[]).filter(function(x){ return x.id===id })[0]||null }
@@ -4254,7 +4255,7 @@ function imprimeJust(auto,orig){
   var D=justDados(auto,orig); if(!D.blocos.length){ toast('Este auto ainda não tem produção para justificar.'); return }
   var env=ultimoEnviado(auto,orig), logo=((document.querySelector('.sbrand img')||{}).src||LOGO_PD);
   var h='<div class="eqpl"><div class="eqHd"><div class="eqLogo"><img src="'+logo+'" alt=""></div>'+
-    '<div class="eqTit"><div class="t1">Justificativo do Auto</div><div class="t2">'+esc(ST.nome||'')+(ST.contrato?' · Contrato '+esc(ST.contrato):'')+(ST.cliente?' · '+esc(ST.cliente):'')+'</div><div class="t3">'+esc(mesNome(auto).toUpperCase())+'</div></div>'+
+    '<div class="eqTit"><div class="t1">Justificativo do Auto</div><div class="t2">'+esc(ST.nome||'')+(ST.contrato?' · Contrato '+esc(autOrig&&autOrig!=='contrato'?origemNome(autOrig):ST.contrato):'')+(clienteDe(autOrig)||ST.cliente?' · '+esc(clienteDe(autOrig)||ST.cliente):'')+'</div><div class="t3">'+esc(mesNome(auto).toUpperCase())+'</div></div>'+
     '<div class="eqInf"><div><small>Origem</small><b>'+esc(origemNome(orig))+'</b></div><div><small>Período</small>'+esc(autoIntervalo(auto))+'</div>'+
     '<div><small>Estado</small>'+(env?'Submetido · versão '+env.versao+' · '+esc(dataPT(env.data)):'Rascunho (ainda não submetido)')+'</div><div><small>Total a faturar</small><b>'+eur(D.val)+' €</b></div></div></div></div>';
   h+='<div class="jst">'+justTabelaHtml(D,autJPk,true)+'<div class="nt">Quantidades por rubrica e data de execução, conforme as partes diárias fechadas. Emitido em '+esc(ptbr(hoje()))+'.</div></div>';
@@ -5469,7 +5470,7 @@ function renderArt(){
   var og=[{id:'contrato',nome:origemNome('contrato')}].concat(ST.adicionais||[]);
   var oh='<div class="orgs art">'+og.map(function(o){
     var n=ST.art.filter(function(a){return (a.origem||'contrato')===o.id}).length, v=totContrato('',o.id), ex=totalAcum('',o.id);
-    return '<div class="org'+(flt.origem===o.id?' on':'')+'" data-forg="'+esc(o.id)+'" title="Clica para ver só as rubricas desta origem"><span class="on1">'+((o.id==='contrato'||(nmEhCtr(o.id)&&!/^adicional/i.test(o.nome||'')))?'Contrato':'Adicional')+'</span><span style="font-weight:500">'+esc(o.nome)+'</span><b class="mono">'+eur(v)+' €</b><span class="on2">'+n+(n===1?' rubrica':' rubricas')+(v?' · '+pct(ex/v)+' executado':'')+'</span>'+
+    return '<div class="org'+(flt.origem===o.id?' on':'')+'" data-forg="'+esc(o.id)+'" title="Clica para ver só as rubricas desta origem"><span class="on1">'+((o.id==='contrato'||(nmEhCtr(o.id)&&!/^adicional/i.test(o.nome||'')))?'Contrato':'Adicional')+'</span><span style="font-weight:500">'+esc(o.nome)+'</span>'+(clienteDe(o.id)?'<span class="on2" title="Cliente">'+esc(clienteDe(o.id))+'</span>':'')+'<b class="mono">'+eur(v)+' €</b><span class="on2">'+n+(n===1?' rubrica':' rubricas')+(v?' · '+pct(ex/v)+' executado':'')+'</span>'+
       (o.id!=='contrato'&&(o.tc||(o.resp!=null&&num(o.resp)<100))?'<span class="on2">'+(o.tc?esc(tcTxt(o.tc)):'')+(o.resp!=null&&num(o.resp)<100?(o.tc?' · ':'')+'resp. '+num(o.resp)+' %':'')+'</span>':'')+
       (o.id!=='contrato'?'<span class="oa"><button type="button" data-otc="'+esc(o.id)+'" title="N.º do TC e responsabilidade deste adicional (aplica às suas rubricas)">TC</button><button type="button" data-oren="'+esc(o.id)+'" title="Mudar o nome">✎</button><button type="button" data-odel="'+esc(o.id)+'" title="Apagar este adicional">×</button></span>':'')+'</div>';
   }).join('')+'</div>';
@@ -5725,7 +5726,7 @@ function pdModeloHtml(p){
   function ln(v,cl){ return '<u'+(cl?' class="'+cl+'"':'')+'>'+(v?esc(v):'&nbsp;')+'</u>' }
   var h='<div class="pdm">';
   h+='<div class="cx"><div class="logoL"><img src="'+LOGO_PD+'" alt=""></div><div class="tit">PARTE DIÁRIA FACTURAÇÃO</div>'+
-     '<div class="hd"><div class="l">'+esc(ST.nome||'')+'<div style="height:5mm"></div>Contratos: '+esc(ST.contrato||'')+'<br>CLIENTE: '+esc(ST.cliente||'')+'</div>'+
+     '<div class="hd"><div class="l">'+esc(ST.nome||'')+'<div style="height:5mm"></div>Contratos: '+esc(ST.contrato||'')+'<br>CLIENTE: '+esc((function(){ var cl=[]; (p.lin||[]).forEach(function(l){ if(!l.cod)return; var c=clienteDe(l.origem); if(c&&cl.indexOf(c)<0)cl.push(c) }); return cl.length?cl.join(' / '):(ST.cliente||'') })())+'</div>'+
      '<div class="r"><b>PGQ - EVCEEF</b><br><b style="font-size:7pt">PDF</b><div class="fl">FICHA N.º: '+ln(p.ficha)+'<br>D.A.E.: '+ln(p.dae)+'</div></div></div></div>';
   h+='<div class="tp">'+marcas.map(function(m){ return '<span>'+esc(m[0])+'<span class="cb">'+(m[1]?'X':'')+'</span></span>' }).join('')+'</div>';
   h+='<div class="ac"><span>Acção Nº '+ln('','long')+'</span><span>N.º'+ln(p.num)+' DE '+ln(dt[2])+'/'+ln(dt[1])+'/'+ln(dt[0])+'</span></div>';
@@ -6953,7 +6954,8 @@ function nmNomeOrigem0(){ return nmMulti()?nmContratos()[0].nome:'Contrato' }
 function nmSyncCtr(){
   var cs=nmContratos(); if(!cs.length||!ST)return;
   ST.adicionais=ST.adicionais||[];
-  cs.slice(1).forEach(function(c){ var a=ST.adicionais.filter(function(x){ return x.id===c.id })[0]; if(!a)ST.adicionais.push({id:c.id,nome:c.nome,data:''}); else if(a.nome!==c.nome)a.nome=c.nome });
+  cs.slice(1).forEach(function(c){ var a=ST.adicionais.filter(function(x){ return x.id===c.id })[0]; if(!a)ST.adicionais.push({id:c.id,nome:c.nome,data:'',cliente:c.cliente||''}); else { if(a.nome!==c.nome)a.nome=c.nome; if((a.cliente||'')!==(c.cliente||''))a.cliente=c.cliente||'' } });
+  if((ST.clienteCtr||'')!==(cs[0].cliente||''))ST.clienteCtr=cs[0].cliente||'';
   if(cs.length>=2){ var j=cs.map(function(c){ return c.nome }).join(' · '); if(ST.contrato!==j)ST.contrato=j;
     var cl=[]; cs.forEach(function(c){ if(c.cliente&&cl.indexOf(c.cliente)<0)cl.push(c.cliente) }); if(cl.length&&ST.cliente!==cl.join(' / '))ST.cliente=cl.join(' / ') }
   else { if(!ST.contrato&&cs[0].nome&&cs[0].nome!=='Contrato inicial')ST.contrato=cs[0].nome; if(cs[0].cliente&&(!ST.cliente||ST.cliente===novo().cliente))ST.cliente=cs[0].cliente } }

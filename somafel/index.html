@@ -335,7 +335,7 @@ function formulario(titulo,campos,okTxt){
       if(c.tipo==='aviso')return '<p class="hint">'+esc(c.texto)+'</p>';
       if(c.tipo==='select')return '<label>'+esc(c.rotulo)+'</label><select name="'+c.id+'">'+c.opcoes.map(o=>'<option value="'+esc(o.v)+'"'+(String(o.v)===String(c.valor)?' selected':'')+'>'+esc(o.t)+'</option>').join('')+'</select>';
       if(c.tipo==='checks')return '<label>'+esc(c.rotulo)+'</label>'+(c.opcoes.length?c.opcoes.map(o=>'<label class="chk"><input type="checkbox" name="'+c.id+'" value="'+esc(o.v)+'"'+((c.valor||[]).includes(o.v)?' checked':'')+'> '+esc(o.t)+'</label>').join(''):'<p class="hint">Nenhuma opção disponível.</p>');
-      return '<label>'+esc(c.rotulo)+'</label><input name="'+c.id+'" type="'+(c.tipo||'text')+'" value="'+esc(c.valor??'')+'"'+(c.obrig?' required':'')+(c.tipo==='password'?' autocomplete="new-password" minlength="8"':'')+(c.ph?' placeholder="'+esc(c.ph)+'"':'')+'>';
+      return '<label>'+esc(c.rotulo)+'</label><input name="'+c.id+'" type="'+(c.tipo||'text')+'" value="'+esc(c.valor??'')+'"'+(c.lista?' list="dl_'+c.id+'"':'')+(c.obrig?' required':'')+(c.tipo==='password'?' autocomplete="new-password" minlength="8"':'')+(c.ph?' placeholder="'+esc(c.ph)+'"':'')+'>'+(c.lista?'<datalist id="dl_'+c.id+'">'+c.lista.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>':'')+(c.ajuda?'<p class="hint" style="margin:2px 0 8px">'+esc(c.ajuda)+'</p>':'');
     }).join('')+'<div class="bt"><button type="button" class="cancela">Cancelar</button><button class="pri" type="submit">'+esc(okTxt||'Guardar')+'</button></div>';
     w.corpo.appendChild(f);
     const p=f.querySelector('input:not([type=checkbox]),select');if(p)p.focus();
@@ -1144,7 +1144,7 @@ async function vObras(){
       const ct=o.contratos||[],R=S.RES[o.id]||{apps:{}};
       let corpo='';
       if(gestor()){const q=pResumo(o),fin=pode('contas');
-        corpo='<div class="cl">'+ct.length+' contrato'+(ct.length===1?'':'s')+(fin&&q.tot?' · '+pEurk(q.tot):'')+(ct[0]&&ct[0].cliente?' · '+esc(ct[0].cliente):'')+'</div>'
+        corpo='<div class="cl">'+ct.length+' contrato'+(ct.length===1?'':'s')+(fin&&q.tot?' · '+pEurk(q.tot):'')+(()=>{const cl=[...new Set(ct.map(x=>(x.cliente||'').trim()).filter(Boolean))];return cl.length?' · '+esc(cl.length>2?cl.slice(0,2).join(', ')+' +'+(cl.length-2):cl.join(', ')):''})()+'</div>'
          +'<div class="b"><i style="width:'+(q.pct*100).toFixed(1)+'%"></i></div><div class="om"><div><small>Feito</small><b>'+Math.round(q.pct*100)+'%</b></div>'
          +(fin?'<div><small>Faturado</small><b>'+(q.fat?pEurk(q.fat):'—')+'</b></div><div><small>Margem</small><b style="color:'+(!q.fat?'inherit':q.marg>=0?'var(--ok)':'var(--red)')+'">'+(q.fat?(q.marg>=0?'+':'−')+pEurk(Math.abs(q.marg)):'—')+'</b></div>':'')+'</div>'
          +'<div class="pills">'+APPS.map(a=>{const k=a[0].slice(4),d=R.apps&&R.apps[k];return '<span class="pill'+(d?' on':'')+'" title="'+(d?'Última gravação: '+quandoT(d.t):'Ainda sem dados')+'">'+esc(a[1])+(d?' · '+quandoT(d.t):'')+'</span>'}).join('')+'</div>'}
@@ -1174,6 +1174,7 @@ async function vObra(id){
     h+='<div class="sec" id="secCtr">Contratos<span class="sp"></span>'+(pc?'<button id="nct">+ Novo contrato</button>':'<span class="hint">Só leitura (contas bloqueadas para encarregados)</span>')+'</div>';
     h+=ctr.length?'<div class="card" style="padding:4px 8px"><table><thead><tr><th>Contrato</th><th>Cliente</th><th class="n">Valor</th><th class="n">Rubricas</th><th></th></tr></thead><tbody>'
       +ctr.map(c=>'<tr><td><b>'+esc(c.nome)+'</b></td><td>'+esc(c.cliente||'—')+'</td><td class="n">'+eur(c.valor)+'</td><td class="n">'+(c.rubricas||[]).filter(r=>r.valor!=null).length+'</td><td class="ac"><button data-r="'+c.id+'">Rubricas</button>'+(pc?'<button data-e="'+c.id+'">Editar</button>':'')+(admin()?'<button class="perigo" data-a="'+c.id+'">Apagar</button>':'')+'</td></tr>').join('')
+      +(()=>{const g={};ctr.forEach(c=>{const k=(c.cliente||'').trim()||'Sem cliente';g[k]=(g[k]||0)+(+c.valor||0)});const ks=Object.keys(g);return ks.length>1?ks.map(k=>'<tr class="cliTot"><td class="hint">Total · '+esc(k)+'</td><td></td><td class="n"><b>'+eur(g[k])+'</b></td><td></td><td></td></tr>').join(''):''})()
       +'</tbody></table></div>':'<div class="card"><p class="hint" style="margin:0">Esta obra ainda não tem contratos. O primeiro é o contrato inicial; depois entram adicionais e propostas aprovadas.</p></div>';
     h+='<div class="sec" id="secPes">Pessoas com acesso a esta obra<span class="sp"></span>'+(admin()?'<button id="npe">+ Atribuir pessoa</button>':'')+'</div>';
     h+='<div class="card"><p class="hint" style="margin-top:0">Administradores e encarregados veem todas as obras. As equipas veem só as obras em que estiverem aqui.</p><div class="lista">'
@@ -1315,9 +1316,10 @@ try{const st=document.createElement('style');st.id='ln-css';st.textContent=LN_CS
 async function vProj(){const o=S.obra;DOCCACHE.velho=true;if(!PROJCATS.includes(DOCCAT))DOCCAT='pecas_projeto';titulo('Projeto',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod"><div id="docs"></div></div></div>';docsObra(o)}
 async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('OS e PDT',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
 async function editaContrato(obraId,c){
+  let clis=[];try{const q=await sb.from('contratos').select('cliente');clis=[...new Set((q.data||[]).map(x=>(x.cliente||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'))}catch(e){}
   const v=await formulario(c?'Editar contrato':'Novo contrato',[
     {id:'nome',rotulo:'Nome do contrato',obrig:true,valor:c?c.nome:'',ph:'ex.: Contrato inicial'},
-    {id:'cliente',rotulo:'Cliente',valor:c?c.cliente:''},
+    {id:'cliente',rotulo:'Cliente',valor:c?c.cliente:'',lista:clis,ph:'ex.: INFRAESTRUTURAS DE PORTUGAL, S.A.',ajuda:'Cada contrato tem o seu cliente: a mesma obra (centro de custo) pode trabalhar para vários.'},
     {id:'valor',rotulo:'Valor (€)',valor:c&&c.valor!=null?String(c.valor).replace('.',','):'',ph:'ex.: 125000,00'},
     {tipo:'aviso',texto:'Só se carregam contratos aprovados.'}],'Guardar');
   if(!v)return;
