@@ -3,6 +3,7 @@
 <head>
 <link rel="prefetch" href="xlsx.full.min.js" as="script">
 <meta charset="utf-8">
+<link rel="preload" as="image" href="logo-somafel.png" fetchpriority="high">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Somafel Catenária</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -188,7 +189,7 @@ button.sm{padding:4px 10px;font-size:12.5px}
 .cman figure{margin:0 0 10px;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:#fff}.cman img{display:block;width:100%;height:auto}.cman figcaption{font-size:11px;color:var(--muted);padding:5px 10px;border-top:1px solid var(--rule)}
 #splash{position:fixed;inset:0;z-index:9999;background:#14181d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .4s}
 #splash.fim{opacity:0;pointer-events:none}
-#splash img{width:150px;height:auto}
+#splash img{width:210px;height:auto}
 #splash .sb{width:280px;height:4px;background:rgba(255,255,255,.14);border-radius:4px;overflow:hidden}
 #splash .sb{position:relative}#splash .sb::after{content:'';position:absolute;top:0;left:0;height:100%;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:spB 1.4s linear infinite}@keyframes spB{from{transform:translateX(-100%)}to{transform:translateX(300%)}}
 #splash .sb i{display:block;height:100%;width:0;background:#F9D115;border-radius:4px;transition:width .35s ease}
@@ -271,7 +272,17 @@ if(window.outerWidth<w-40||window.outerHeight<h-40){window.moveTo(screen.availLe
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
 </head>
 <body>
+<div id="splash0" style="position:fixed;inset:0;z-index:10000;background:#14181d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;isolation:isolate;transition:opacity .35s">
+<div id="sp0F" style="position:absolute;inset:0;z-index:-2;background-size:cover;background-position:center;opacity:0;transition:opacity .6s ease"></div>
+<div style="position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(12,14,18,.55),rgba(12,14,18,.82) 70%,rgba(12,14,18,.92))"></div>
+<img src="logo-somafel.png" alt="SOMAFEL" fetchpriority="high" style="width:210px;height:auto">
+<div style="color:#F9D115;font:600 12.5px/1.3 system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:0 16px">SOMAFEL — ENGENHARIA E OBRAS FERROVIÁRIAS</div>
+</div>
+<script>/* primeira coisa a aparecer: logótipo; a foto entra assim que estiver carregada */
+(function(){try{if(/[?&]emb=1/.test(location.search))return;var n=6,i=Math.floor(Math.random()*n);window.__F0i=i;var src='fotos/obra'+(i+1)+'.jpg',im=new Image();im.onload=function(){var f=document.getElementById('sp0F');if(f){f.style.backgroundImage='url('+src+')';f.style.opacity=1}};im.src=src;
+setTimeout(function(){var e=document.getElementById('splash0');if(e)e.remove()},20000)}catch(e){}})();</script>
 <div id="raiz"></div>
+<script>try{new MutationObserver(function(m,o){if(document.querySelector('#raiz #entrada')){var e=document.getElementById('splash0');if(e){e.style.opacity=0;setTimeout(function(){e.remove()},380)}o.disconnect()}}).observe(document.getElementById('raiz'),{childList:true})}catch(e){}</script>
 <div id="avisos" aria-live="polite"></div>
 <script>window.__mvCentral=1</script><script src="design.js?v=20261105c"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -349,12 +360,15 @@ function confirmar(texto,okTxt){
 /* fotos de apresentação (obras Somafel) para o arranque, o ecrã de entrada e o carregamento das apps */
 const FOTOS=['fotos/obra1.jpg','fotos/obra2.jpg','fotos/obra3.jpg','fotos/obra4.jpg','fotos/obra5.jpg','fotos/obra6.jpg'];
 const LEMA='SOMAFEL — ENGENHARIA E OBRAS FERROVIÁRIAS';
+const FIMG={};function fotoPronta(src){return FIMG[src]||(FIMG[src]=new Promise(r=>{const im=new Image();im.onload=im.onerror=()=>r();im.src=src}))}
+function tiraSplash0(){const e=document.getElementById('splash0');if(e){e.style.opacity=0;setTimeout(()=>e.remove(),380)}}
 function fotoAoAcaso(){return FOTOS[Math.floor(Math.random()*FOTOS.length)]}
 function fotosFundo(el,ms){/* desliza entre as fotos com esbatimento; devolve função para parar */
-  let i=Math.floor(Math.random()*FOTOS.length),t=null;const cam=[0,1].map(()=>{const d=document.createElement('div');d.className='spF';el.insertBefore(d,el.firstChild);return d});
-  let k=0;const mostra=()=>{const d=cam[k%2],o=cam[(k+1)%2];d.style.backgroundImage='url('+FOTOS[i%FOTOS.length]+')';d.classList.remove('on');void d.offsetWidth;d.classList.add('on');o.classList.remove('on');i++;k++};
+  let i=(window.__F0i!=null&&!window.__F0u)?(window.__F0u=1,window.__F0i):Math.floor(Math.random()*FOTOS.length),t=null;const cam=[0,1].map(()=>{const d=document.createElement('div');d.className='spF';el.insertBefore(d,el.firstChild);return d});
+  let k=0;const mostra=()=>{const src=FOTOS[i%FOTOS.length];i++;fotoPronta(src).then(()=>{const d=cam[k%2],o=cam[(k+1)%2];d.style.backgroundImage='url('+src+')';d.classList.remove('on');void d.offsetWidth;d.classList.add('on');o.classList.remove('on');k++;fotoPronta(FOTOS[i%FOTOS.length])})};
   mostra();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)t=setInterval(mostra,ms||3200);return ()=>clearInterval(t)}
 function ecraEntrada(modo){
+  tiraSplash0();
   modo=modo||'entrar';
   const titulos={entrar:'Entrar',criar:'Primeiro acesso',recuperar:'Recuperar palavra-passe'};
   $('#raiz').innerHTML='<div id="entrada"><div class="enLema">'+LEMA+'</div><form class="cx" id="fl"><div class="logo"><img src="logo-somafel.png" alt="SOMAFEL"><div><h1>Somafel Catenária</h1><p class="sub">Engenharia e obras ferroviárias</p></div></div>'
@@ -411,7 +425,7 @@ function preparar(){
   const el=document.createElement('div');el.id='splash';
   el.innerHTML='<img src="logo-somafel.png" alt="SOMAFEL"><div class="spLema">'+LEMA+'</div><div class="sb"><i></i></div><p id="spT">A preparar…</p><button type="button" id="spX">Entrar já</button>';
   const paraFotos=fotosFundo(el,2200);const T0SP=Date.now();
-  document.body.appendChild(el);
+  document.body.appendChild(el);setTimeout(tiraSplash0,60);
   let pct=0,fechado=false,fim;
   const barra=(p,t)=>{if(fechado)return;pct=Math.max(pct,p);el.querySelector('.sb i').style.width=pct+'%';if(t)el.querySelector('#spT').textContent=t};
   const fecha=()=>{if(fechado)return;fechado=true;barra(100);el.classList.add('fim');setTimeout(()=>paraFotos(),1100);document.body.classList.add('mvAbre');setTimeout(()=>{el.remove();document.body.classList.remove('mvAbre')},1100)};
@@ -441,7 +455,7 @@ function preparar(){
 async function sair(){await sb.auth.signOut();S={eu:null,bloq:new Set(),bloqLista:[],obras:[],pessoas:[],vista:'obras',obra:null};ecraEntrada()}
 
 function ico(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
-function casca(){
+function casca(){tiraSplash0();
   const ger=gestor();
   $('#raiz').innerHTML='<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></symbol><symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/></symbol><symbol id="i-fact" viewBox="0 0 24 24"><path d="M3 21V10l6 4v-4l6 4V6h6v15z"/></symbol><symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol><symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></symbol><symbol id="i-linha" viewBox="0 0 24 24"><path d="M2 15h20M2 19h20"/><path d="M6 15V6M14 15V6M6 7h11l-3 2.5L17 12H6"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol><symbol id="i-norma" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol></defs></svg>'
    +'<div id="app"><nav id="side" aria-label="Navegação"><div class="sbrand"><img src="logo-somafel.png" alt="SOMAFEL"><button id="bSide" title="Recolher o menu (Ctrl+B)" aria-label="Recolher o menu">'+ico('chev')+'</button></div>'
