@@ -3864,7 +3864,7 @@ function capChain(cod){ var p=String(cod||'').split('.'),o=[]; for(var i=1;i<p.l
 function respDe(a){ var r=(a&&a.resp!=null&&a.resp!=='')?num(a.resp):100; return Math.max(0,Math.min(100,r)) }
 function aplicaResp(a){ if(a.pu0==null)a.pu0=num(a.pu); a.pu=Math.round(num(a.pu0)*respDe(a)/100*1e4)/1e4 }
 function adDe(id){ return (ST.adicionais||[]).filter(function(x){ return x.id===id })[0]||null }
-function tcTxt(t){ t=String(t||'').trim(); return /^tc/i.test(t)?t:'TC '+t }
+function tcTxt(t){ t=String(t||'').trim(); return /^\d/.test(t)?'TC '+t:t }
 function tcChip(a){ var r=respDe(a), tc=a&&a.tc; return (tc||r<100)?' <span class="chip tcC" title="'+esc((tc?tcTxt(tc):'')+(r<100?(tc?' · ':'')+'responsabilidade '+r+' % — só conta '+r+' % do valor':''))+'">'+(tc?esc(tcTxt(tc)):'')+(r<100?(tc?' · ':'')+r+' %':'')+'</span>':'' }
 function capDes(c){ var f=(ST.capitulos||[]).filter(function(x){return x.cod===c})[0]; return f?f.des:'' }
 /* cabeçalhos dos capítulos (F-07, F-07.01, F-07.01.03…) antes de cada rubrica, para se perceber de onde vem */
