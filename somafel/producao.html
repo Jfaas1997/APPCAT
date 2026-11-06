@@ -5479,7 +5479,7 @@ function renderArt(){
   h+='</tbody></table>';
   $('#artBox').innerHTML=oh+h;
   $('#bArtNovo').textContent=flt.origem?'+ Artigo · '+origemNome(flt.origem):'+ Artigo';
-  $('#ftArt').innerHTML='<b class="mono">'+rows.length+'</b> '+(rows.length===1?'rubrica':'rubricas') · valor <b class="mono">'+eur(T)+' €</b>';
+  $('#ftArt').innerHTML='<b class="mono">'+rows.length+'</b> '+(rows.length===1?'rubrica':'rubricas')+' · valor <b class="mono">'+eur(T)+' €</b>';
   bind('#artBox','change',function(e){
     var t=e.target;
     if(t.dataset.adsel!=null){
