@@ -694,15 +694,17 @@ tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-siz
 .mapDes{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tcC{font-size:10.5px;margin-top:2px;background:color-mix(in srgb,var(--brand,#F9D115) 22%,transparent);color:var(--ink)}input.respB{color:var(--red,#c33);font-weight:700}
 /* Ponto: cabeçalho fixo dentro de cada tabela (pessoal / equipamento) e as duas com as mesmas medidas */
-.ptoGW{max-height:calc(100vh - 230px);overflow:auto;overscroll-behavior:contain}
-.ptoGW thead{position:sticky;top:0;z-index:6;box-shadow:0 -6px 0 0 var(--sheet)}
+.ptoGW{overflow:visible;width:max-content;max-width:none}
+.ptoGW thead{position:sticky;top:-1px;z-index:6;box-shadow:0 -8px 0 0 var(--paper)}
 .ptoGW thead th{background:linear-gradient(var(--soft),var(--soft)),var(--sheet)!important}
 .ptoGW thead th.stick,.ptoGW thead th.totc{z-index:7}
+.ptoGW tbody .stick,.ptoGW tbody .totc{z-index:auto}
 .ptoGW table.grelha{width:max-content}
 .ptoGW .stick{width:250px;min-width:250px;max-width:250px;overflow:hidden;text-overflow:ellipsis}
 .ptoGW th.diaCol,.ptoGW td.diaCel{width:26px;min-width:26px;max-width:26px}
 .ptoGW .totc{width:84px;min-width:84px}
 .artRO{margin:0 0 10px;padding:9px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--soft);font-size:12.5px}
+table.grelha thead th.hojeC{background:var(--brand,#F9D115)!important;color:#1b1f24!important;box-shadow:inset 0 -3px 0 #1b1f24}table.grelha thead th.hojeC span{opacity:.85!important;color:#1b1f24}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -2944,7 +2946,7 @@ function renderEsc(){
 
   /* grelha */
   h+='<div class="gridWrap"><table class="grelha gesc"><thead><tr><th class="stick">&nbsp;</th><th colspan="7" class="semTh">Semana '+semana(escSemana)+'</th></tr><tr><th class="stick">&nbsp;</th>';
-  dias.forEach(function(d,i){ h+='<th class="diaCol'+(i>=5?' fds':'')+'">'+NDIA[i]+' '+d.slice(8)+'<br><button class="x" data-escdia="'+d+'" title="Preencher o Ponto deste dia com o plano" style="font-size:10px;padding:0 4px">→ Ponto</button></th>' });
+  dias.forEach(function(d,i){ h+='<th class="diaCol'+(i>=5?' fds':'')+(d===hoje()?' hojeC':'')+'"'+(d===hoje()?' title="Hoje"':'')+'>'+NDIA[i]+' '+d.slice(8)+'<br><button class="x" data-escdia="'+d+'" title="Preencher o Ponto deste dia com o plano" style="font-size:10px;padding:0 4px">→ Ponto</button></th>' });
   h+='</tr></thead><tbody>';
   /* linhas: primeiro cada equipa (líder à cabeça, depois as pessoas, depois os meios da equipa); no fim quem não está em nenhuma */
   var linhaP=function(m,lid){
@@ -3086,7 +3088,7 @@ function renderAus(){
     '<label class="hint" id="ausCcL" style="display:'+(ausPincel.tipo==='T'?'inline-flex':'none')+';gap:6px;align-items:center">para o centro de custo <input id="ausCc" list="ausCcs" value="'+esc(ausPincel.cc)+'" placeholder="ex.: 4002511" style="width:110px"></label><datalist id="ausCcs">'+Object.keys(ccs).map(function(c){ return '<option value="'+esc(c)+'">' }).join('')+'</datalist>'+
     '<span style="margin-left:auto">'+Object.keys(AUS_T).map(function(k){ return '<span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+AUS_T[k].cor+'"></span>'+k+' '+AUS_T[k].nome+'</span>' }).join('')+'<span style="margin-left:10px;font-size:12px"><b>P</b> trabalhou</span></span></div>';
   h+='<div class="gridWrap"><table class="grelha gaus"><thead><tr><th class="stick">&nbsp;</th>';
-  dias.forEach(function(d){ var fd=[0,6].indexOf(dtJ(d).getDay())>=0; h+='<th class="diaCol'+(fd?' fds':'')+'">'+d.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(d).slice(0,1)+'</span></th>' });
+  dias.forEach(function(d){ var fd=[0,6].indexOf(dtJ(d).getDay())>=0; h+='<th class="diaCol'+(fd?' fds':'')+(d===hoje()?' hojeC':'')+'"'+(d===hoje()?' title="Hoje"':'')+'>'+d.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(d).slice(0,1)+'</span></th>' });
   h+='<th class="totc" style="min-width:96px;white-space:nowrap;text-align:left">Resumo</th></tr></thead><tbody>';
   var catAnt=null, porDia={}; dias.forEach(function(d){ porDia[d]={p:0,a:0} });
   pess.forEach(function(m){
@@ -3412,7 +3414,7 @@ function renderPtoMes(){
     dias.forEach(function(dd){
       var data=dd, sem=semana(data), fimDeSemana=[0,6].indexOf(dtJ(dd).getDay())>=0;
       var novaSemana=semAnt!=null&&sem!==semAnt; semAnt=sem;
-      h+='<th class="diaCol'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+'" title="'+esc(diaSem(data))+'">'+dd.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(data).slice(0,1)+'</span></th>';
+      h+='<th class="diaCol'+(fimDeSemana?' fds':'')+(novaSemana?' semNova':'')+(data===hoje()?' hojeC':'')+'" title="'+esc(diaSem(data))+(data===hoje()?' — hoje':'')+'">'+dd.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(data).slice(0,1)+'</span></th>';
     });
     if(comTotal)h+='<th class="totc">'+({p:'Dias',e:'Extra (h)',t:'Desl. (h)',k:'Km',d:'Dias'})[ptoModo]+'</th>';
     return h+'</tr>';
