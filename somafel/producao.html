@@ -969,7 +969,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 
   <!-- RECURSOS -->
   <div class="view" id="vRec">
-    <div class="bar"><input id="recQ" type="search" placeholder="Procurar pessoa, categoria ou equipamento…" style="min-width:280px"><span class="sp"></span><button id="bRecNorm" title="Liga as categorias que já tens às categorias da lista (mostra antes o que vai mudar)">Normalizar categorias</button><button id="bRecTudo">Recolher tudo</button></div>
+    <div class="bar"><input id="recQ" type="search" placeholder="Procurar pessoa, categoria ou equipamento…" style="min-width:280px"><span class="sp"></span><button id="bRecPes" title="Escolher pessoas do Pessoal geral da empresa (Central › Pessoal) e trazê-las para esta obra, com categoria e n.º de colaborador" class="pri">Importar do Pessoal geral…</button><button id="bRecNorm" title="Liga as categorias que já tens às categorias da lista (mostra antes o que vai mudar)">Normalizar categorias</button><button id="bRecTudo">Recolher tudo</button></div>
     <div class="scroll"><div class="pad" id="recBox"></div></div>
   </div>
 
@@ -1340,7 +1340,44 @@ function autoCorrente(){ var m=autosUsados(); return m.length?m[m.length-1]:auto
 
 /* ---------- render geral ---------- */
 function garanteIds(arr){ (arr||[]).forEach(function(x){ if(!x.id)x.id=uid(); if(x.direto==null)x.direto=true }) }
+/* MO e EQ: trazer pessoas do Pessoal geral (tabela «pessoal» da Central) */
+function catDeFuncao(f){ f=String(f||'').trim(); var l=lower(f), cats=ST.catMO||[];
+  var mapa=[[/mont/, 'Montador de Catenária'],[/aux/, 'Auxiliar de Catenária'],[/chefe/, 'Chefe de Equipa'],[/encarreg/, 'Encarregado'],[/arvor/, 'Arvorado'],[/serr/, 'Serralheiro Mecânico'],[/eng/, 'Engenheiro'],[/t[ée]cn/, 'Técnico de Produção'],[/pilot/, 'Piloto de Via Interdita'],[/condut/, 'Condutor de Via Interdita']];
+  var ex=cats.filter(function(c){ return lower(c)===l })[0]; if(ex)return ex;
+  for(var i=0;i<mapa.length;i++)if(mapa[i][0].test(l))return mapa[i][1];
+  return f||'Sem categoria' }
+async function importaPessoalGeral(){
+  if(typeof NM==='undefined'||!NM.ob){ toast('Disponível com a obra aberta a partir da Somafel Catenária.'); return }
+  var q=await sb.from('pessoal').select('id,nome,funcao,numero,estado').order('nome');
+  if(q.error){ toast('Não foi possível ler o Pessoal geral: '+q.error.message,4000); return }
+  var ja={}; (ST.mo||[]).forEach(function(m){ if(m.pessoalId)ja[m.pessoalId]=1; if(m.nome)ja['n:'+lower(m.nome)]=1; if(m.num)ja['#'+m.num]=1 });
+  var lista=(q.data||[]).filter(function(p){ return !p.estado||lower(p.estado)==='ativo' });
+  var novos=lista.filter(function(p){ return !ja[p.id]&&!ja['n:'+lower(p.nome||'')]&&!(p.numero&&ja['#'+p.numero]) });
+  if(!novos.length){ toast(lista.length?'Todas as pessoas ativas do Pessoal geral já estão nesta obra.':'O Pessoal geral está vazio (Central › Pessoal).',4000); return }
+  var g={}; novos.forEach(function(p){ var c=catDeFuncao(p.funcao); (g[c]=g[c]||[]).push(p) });
+  var corpo='<p class="hint" style="margin-top:0">Escolhe quem vem para esta obra. Ficam em MO e EQ com a categoria e o n.º de colaborador; o custo/hora acertas depois.</p>'+
+    '<input id="pgQ" type="search" placeholder="Procurar nome, função ou n.º…" style="width:100%;margin-bottom:8px">'+
+    '<label style="display:flex;gap:6px;align-items:center;margin:0 0 6px;font-weight:600"><input type="checkbox" id="pgTodos"> Marcar todos ('+novos.length+')</label>'+
+    '<div class="pgLista" style="max-height:52vh;overflow:auto;border:1px solid var(--rule);border-radius:8px;padding:4px 8px">'+
+    Object.keys(g).sort().map(function(c){ return '<div class="pgG" style="margin:8px 0 2px;font-weight:650;font-size:12px;color:var(--muted)">'+esc(c)+' · '+g[c].length+'</div>'+
+      g[c].map(function(p){ return '<label class="pgL" style="display:flex;gap:8px;align-items:center;padding:3px 0;font-size:13px" data-t="'+esc(lower((p.nome||'')+' '+(p.funcao||'')+' '+(p.numero||'')))+'"><input type="checkbox" data-pi="'+esc(p.id)+'"><span class="nColab">'+esc(p.numero||'—')+'</span><span>'+esc(p.nome||'')+'</span><span class="hint">'+esc(p.funcao||'')+'</span></label>' }).join('') }).join('')+'</div>';
+  var pr=nmModal({titulo:'Importar do Pessoal geral',corpo:corpo,botoes:[{t:'Cancelar',v:null},{t:'Importar selecionados',p:true,v:function(c){ return [].slice.call(c.querySelectorAll('input[data-pi]:checked')).map(function(i){ return i.getAttribute('data-pi') }) }}],cancela:null});
+  setTimeout(function(){ var c=document.querySelector('.nmCard'); if(!c)return;
+    var qi=c.querySelector('#pgQ'), td=c.querySelector('#pgTodos');
+    if(qi)qi.oninput=function(){ var t=lower(qi.value); [].forEach.call(c.querySelectorAll('.pgL'),function(l){ l.style.display=!t||l.getAttribute('data-t').indexOf(t)>=0?'flex':'none' }); [].forEach.call(c.querySelectorAll('.pgG'),function(g){ var n=g.nextElementSibling, v=false; while(n&&n.classList.contains('pgL')){ if(n.style.display!=='none')v=true; n=n.nextElementSibling } g.style.display=v?'':'none' }) };
+    if(td)td.onchange=function(){ [].forEach.call(c.querySelectorAll('.pgL'),function(l){ if(l.style.display!=='none')l.querySelector('input').checked=td.checked }) } },40);
+  var ids=await pr; if(!ids||!ids.length)return;
+  var por={}; novos.forEach(function(p){ por[p.id]=p }); ST.catMO=ST.catMO||[]; var n=0;
+  ids.forEach(function(id){ var p=por[id]; if(!p)return; var c=catDeFuncao(p.funcao); if(ST.catMO.indexOf(c)<0)ST.catMO.push(c);
+    ST.mo.push({id:uid(),cat:c,nome:p.nome||'',num:p.numero||'',hora:0,custo:0,direto:true,pessoalId:p.id}); n++ });
+  render(); toast(n+(n===1?' pessoa importada':' pessoas importadas')+' do Pessoal geral. ↶ desfaz.',3500) }
+function prodOff(){ return (typeof NM!=='undefined'&&NM.ob&&NM.ob.prodOff)||[] }
+function aplicaMods(){ var off=prodOff();
+  $$('#side .tab[data-v]').forEach(function(b){ b.hidden=off.indexOf(b.dataset.v)>=0 });
+  $$('#side .sgrp').forEach(function(g){ var n=g.nextElementSibling, vis=false; while(n&&!n.classList.contains('sgrp')&&!n.classList.contains('sfoot')){ if(n.classList.contains('tab')&&!n.hidden)vis=true; n=n.nextElementSibling } g.hidden=!vis });
+  if(off.indexOf(vista)>=0){ var b=$$('#side .tab[data-v]').filter(function(x){ return !x.hidden })[0]; if(b){ vista=b.dataset.v; $$('#side .tab').forEach(function(x){ x.classList.toggle('on',x===b) }) } } }
 function render(){
+  aplicaMods();
   buildIX();
   renumeraPDs();
   garanteIds(ST.mo); garanteIds(ST.eqp);
@@ -2539,7 +2576,7 @@ function renderRec(){
          '<td class="w1"><button class="x" data-mdel="'+m.id+'">×</button></td></tr>';
     });
   });
-  if(!algumMO)h+='<tr><td colspan="8"><div class="empty">'+(filtra?'Nada encontrado.':'Sem pessoal. Acrescenta uma pessoa numa categoria ou importa-a do teu Excel.')+'</div></td></tr>';
+  if(!algumMO)h+='<tr><td colspan="8"><div class="empty">'+(filtra?'Nada encontrado.':'Sem pessoal. Carrega em <button type="button" onclick="importaPessoalGeral()" class="pri" style="margin:0 4px">Importar do Pessoal…</button> para trazer pessoas do Pessoal geral da empresa, ou acrescenta numa categoria.')+'</div></td></tr>';
   h+='<tr><td colspan="8"><span class="grpAdd" style="float:none"><input id="nCatMO" placeholder="Nova categoria de MO"><button id="bCatMO">+ Categoria</button></span></td></tr>';
   h+='</tbody></table>';
 
@@ -6931,6 +6968,7 @@ guardaProjeto=async function(){
     toast('Guardado.',2000)
   }catch(e){ if(!(e&&e.sp))NM.erro='Erro ao guardar' }
   NM.gravando=false; nmInd(); nmFlush() };
+$('#bRecPes').addEventListener('click',function(){ importaPessoalGeral() });
 (function(){ var b=$('#bSave'), n=b.cloneNode(true); b.replaceWith(n); n.addEventListener('click',function(){ guardaProjeto() }) })();
 window.addEventListener('online',function(){ nmInd(); nmAuto() });
 window.addEventListener('offline',nmInd);
@@ -6993,11 +7031,11 @@ async function nmArranque(){
   var pq=await sb.from('pessoas').select('papel,ativo').eq('id',NM.uid).maybeSingle(); NM.papel=pq.data&&pq.data.papel;
   if(!pq.data||!pq.data.ativo||['equipa','convidado'].includes(NM.papel)){ nmEcra('<div class="box"><h2>Sem acesso</h2><p>Esta app é para a gestão da obra. As equipas usam a App de Obra no telemóvel.</p></div>'); return }
   var id=new URLSearchParams(location.search).get('obra'), ob;
-  if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle(); ob=oq.data }
+  if(id){ var oq=await sb.from('obras').select('id,centro_custo,nome,modulos').eq('id',id).maybeSingle(); if(oq.error){ oq=await sb.from('obras').select('id,centro_custo,nome').eq('id',id).maybeSingle() } ob=oq.data }
   if(!ob)ob=await nmListaObras();
   nmEcra('<div class="box"><h2>A abrir a obra…</h2></div>');
   var cq=await sb.from('contratos').select('id,nome,cliente,valor,criado_em').eq('obra_id',ob.id).order('criado_em');
-  NM.ob={id:ob.id,cc:ob.centro_custo,nome:ob.nome,contratos:(cq.data||[]).map(function(c){ return {id:c.id,nome:c.nome,cliente:c.cliente||'',valor:c.valor} })};
+  NM.ob={id:ob.id,cc:ob.centro_custo,nome:ob.nome,prodOff:(ob.modulos&&ob.modulos.prodOff)||[],contratos:(cq.data||[]).map(function(c){ return {id:c.id,nome:c.nome,cliente:c.cliente||'',valor:c.valor} })};
   var bq=await sb.from('bloqueios').select('chave'), bl=(bq.data||[]).map(function(b){ return b.chave });
   NM.soLeitura=!(NM.papel==='administrador'||NM.papel==='diretor'||(NM.papel==='encarregado'&&bl.indexOf('app:producao')<0));
   var d=await nmServidorAtual(), rasc=await idbGet('rascunho:'+NM.ob.id);

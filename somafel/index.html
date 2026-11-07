@@ -974,11 +974,29 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.da
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
 const LIVRE=['med','cons','rct'];
 const OBRAV=['visao','docs','proj','linha','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
+const MODS=[['mat','Materiais'],['prod','Produção'],['docs','OS e PDT'],['proj','Projeto'],['linha','Linha'],['med','Medições CAT'],['cons','Dimensionamento CAT'],['rct','Medição RCT']];
+const PRODV=[['res','Resumo'],['pd','Partes diárias'],['int','Interdições'],['rec','MO e EQ'],['pto','Ponto'],['map','Mapa de produção'],['art','Artigos do contrato'],['pla','Plano'],['sr','Sem rubrica'],['aut','Autos'],['ana','Análise'],['mat','Materiais'],['amb','Resíduos']];
+/* funcionalidades desligadas numa obra (obras.modulos = {off:[…], prodOff:[…]}) */
+function modOff(v,o){o=o||S.obra;return !!(o&&o.modulos&&(o.modulos.off||[]).includes(v))}
+async function escolheModulos(o){
+  const m=o.modulos||{},off=m.off||[],poff=m.prodOff||[];
+  const v=await formulario('Funcionalidades da obra',[
+    {tipo:'aviso',texto:'Escolhe o que esta obra usa. O que desligares deixa de aparecer no menu desta obra (os dados não se apagam; podes voltar a ligar quando quiseres).'},
+    {id:'ap',tipo:'checks',rotulo:'Aplicações e áreas',opcoes:MODS.map(([k,t])=>({v:k,t})),valor:MODS.map(x=>x[0]).filter(k=>!off.includes(k))},
+    {id:'pv',tipo:'checks',rotulo:'Dentro da Produção',opcoes:PRODV.map(([k,t])=>({v:k,t})),valor:PRODV.map(x=>x[0]).filter(k=>!poff.includes(k))}],'Guardar');
+  if(!v)return;
+  const ap=v.ap||[],pv=v.pv||[];
+  if(!pv.length){aviso('Deixa pelo menos uma área ligada na Produção.',true);return}
+  const novo={off:MODS.map(x=>x[0]).filter(k=>!ap.includes(k)),prodOff:PRODV.map(x=>x[0]).filter(k=>!pv.includes(k))};
+  const val=(novo.off.length||novo.prodOff.length)?novo:null;
+  try{await ok(sb.from('obras').update({modulos:val}).eq('id',o.id));o.modulos=val;const x=(S.obras||[]).find(q=>q.id===o.id);if(x)x.modulos=val;
+    largaApps(null);aviso('Funcionalidades guardadas.');rSide();vObra(o.id)}catch(e){aviso(erroTxt(e),true)}}
 async function vai(v,obraId){
   if(v==='obra')v='visao';
   if(obraId&&(!S.obra||S.obra.id!==obraId)){try{S.obra=await ok(sb.from('obras').select('*').eq('id',obraId).single());largaApps(obraId)}catch(e){aviso(erroTxt(e),true);return}}
   if(OBRAV.includes(v)&&!S.obra&&!LIVRE.includes(v))v='obras';
   if((v==='docs'||v==='proj'||v==='linha')&&!gestor())v='visao';
+  if(S.obra&&MODS.some(x=>x[0]===v)&&modOff(v)){aviso('Esta funcionalidade está desligada nesta obra (Visão geral › Funcionalidades).');v='visao'}
   if(v==='obras'&&S.obra){largaApps(null);S.obra=null}
   S.vista=v;S.fk=null;
   const R=document.documentElement,app=!!APPV[v];
@@ -993,6 +1011,7 @@ async function vai(v,obraId){
 }
 function rSide(){const o=S.obra;$('#sObra').hidden=!o;$('#sVolta').hidden=!o;if(o)$('#sObraT').textContent='Obra '+o.centro_custo;
   document.querySelectorAll('#side [data-need]').forEach(b=>b.hidden=!o);
+  MODS.forEach(([k])=>document.querySelectorAll('#side .tab[data-v="'+k+'"]').forEach(b=>b.hidden=!!(o&&modOff(k,o))));
   const el=$('#sObras');if(el)el.innerHTML=(S.obras||[]).map(x=>{const q=pResumo(x);return '<button class="so'+(o&&o.id===x.id?' on':'')+'" data-so="'+x.id+'" title="'+esc(x.centro_custo+' · '+x.nome)+'"><span class="n">'+esc(x.nome)+'</span>'+(gestor()?'<span class="b"><i style="width:'+(q.pct*100).toFixed(1)+'%"></i></span><span class="m"><span>'+Math.round(q.pct*100)+'% feito</span><span>'+(q.fat?pEurk(q.fat):esc(x.centro_custo))+'</span></span>':'<span class="m"><span>'+esc(x.centro_custo)+'</span></span>')+'</button>'}).join('');
   if(el)el.querySelectorAll('[data-so]').forEach(b=>b.onclick=()=>vai('obra',b.dataset.so))}
 const FR={},MAPA={med:'med',mat:'mat',cons:'cons',rct:'rct',prod:'prod'};
@@ -1054,9 +1073,14 @@ setInterval(atualizaSave,10000);
 function quandoT(t){if(!t)return '—';const d=new Date(t),h=new Date(),p=n=>('0'+n).slice(-2),hm=p(d.getHours())+':'+p(d.getMinutes());
   if(d.toDateString()===h.toDateString())return 'hoje '+hm;const o=new Date(h);o.setDate(h.getDate()-1);if(d.toDateString()===o.toDateString())return 'ontem '+hm;return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+hm}
 async function novaObra(){
-  const v=await formulario('Nova obra',[{id:'cc',rotulo:'Centro de custo',obrig:true,ph:'ex.: 4002437'},{id:'nome',rotulo:'Nome da obra',obrig:true}],'Criar obra');
+  const v=await formulario('Nova obra',[{id:'cc',rotulo:'Centro de custo',obrig:true,ph:'ex.: 4002437'},{id:'nome',rotulo:'Nome da obra',obrig:true},
+    {id:'uso',tipo:'select',rotulo:'O que esta obra vai usar',valor:'tudo',opcoes:[{v:'tudo',t:'Tudo (obra completa)'},{v:'ponto',t:'Só o ponto do pessoal (ex.: formação, estaleiro)'},{v:'escolher',t:'Escolher agora as funcionalidades…'}]},
+    {tipo:'aviso',texto:'Podes mudar depois na Visão geral da obra › Funcionalidades.'}],'Criar obra');
   if(!v)return;
-  try{await ok(sb.from('obras').insert({organizacao_id:S.eu.organizacao_id,centro_custo:v.cc,nome:v.nome}));aviso('Obra criada.');vObras()}catch(e){aviso(erroTxt(e),true)}
+  const mods=v.uso==='ponto'?{off:MODS.map(x=>x[0]).filter(k=>k!=='prod'),prodOff:PRODV.map(x=>x[0]).filter(k=>k!=='rec'&&k!=='pto')}:null;
+  try{const nova=await ok(sb.from('obras').insert({organizacao_id:S.eu.organizacao_id,centro_custo:v.cc,nome:v.nome,modulos:mods}).select('*').single());
+    aviso('Obra criada.'+(mods?' Só com MO e EQ e Ponto.':''));
+    if(v.uso==='escolher'&&nova){await escolheModulos(nova)}else vObras()}catch(e){aviso(erroTxt(e),true)}
 }
 function pPct(v){return (v*100).toLocaleString('pt-PT',{maximumFractionDigits:1})+'%'}
 function pEurk(v){var a=Math.abs(v);return a>=1e6?(v/1e6).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})+' M€':a>=1e3?(v/1e3).toLocaleString('pt-PT',{maximumFractionDigits:0})+' k€':Math.round(v)+' €'}
@@ -1172,6 +1196,11 @@ async function vObra(id){
       +ctr.map(c=>'<tr><td><b>'+esc(c.nome)+'</b></td><td>'+esc(c.cliente||'—')+'</td><td class="n">'+eur(c.valor)+'</td><td class="n">'+(c.rubricas||[]).filter(r=>r.valor!=null).length+'</td><td class="ac"><button data-r="'+c.id+'">Rubricas</button>'+(pc?'<button data-e="'+c.id+'">Editar</button>':'')+(admin()?'<button class="perigo" data-a="'+c.id+'">Apagar</button>':'')+'</td></tr>').join('')
       +(()=>{const g={};ctr.forEach(c=>{const k=(c.cliente||'').trim()||'Sem cliente';g[k]=(g[k]||0)+(+c.valor||0)});const ks=Object.keys(g);return ks.length>1?ks.map(k=>'<tr class="cliTot"><td class="hint">Total · '+esc(k)+'</td><td></td><td class="n"><b>'+eur(g[k])+'</b></td><td></td><td></td></tr>').join(''):''})()
       +'</tbody></table></div>':'<div class="card"><p class="hint" style="margin:0">Esta obra ainda não tem contratos. O primeiro é o contrato inicial; depois entram adicionais e propostas aprovadas.</p></div>';
+    {const m=o.modulos||{},off=m.off||[],poff=m.prodOff||[];
+     h+='<div class="sec" id="secMod">Funcionalidades<span class="sp"></span>'+(po?'<button id="bMod">Escolher…</button>':'')+'</div>';
+     h+='<div class="card"><p class="hint" style="margin-top:0">'+(off.length||poff.length?'Esta obra usa só parte das funcionalidades.':'Todas as funcionalidades estão ligadas.')+'</p><div class="lista">'
+       +MODS.filter(([k])=>!off.includes(k)).map(([k,t])=>'<span class="chip">'+esc(t)+(k==='prod'&&poff.length?' <span class="hint">· '+esc(PRODV.filter(x=>!poff.includes(x[0])).map(x=>x[1]).join(', '))+'</span>':'')+'</span>').join('')
+       +(off.length?'<span class="chip" style="opacity:.55;text-decoration:line-through">'+esc(MODS.filter(([k])=>off.includes(k)).map(x=>x[1]).join(', '))+'</span>':'')+'</div></div>'}
     h+='<div class="sec" id="secPes">Pessoas com acesso a esta obra<span class="sp"></span>'+(admin()?'<button id="npe">+ Atribuir pessoa</button>':'')+'</div>';
     h+='<div class="card"><p class="hint" style="margin-top:0">Quem está nesta obra. Administradores, diretores de obra e encarregados conseguem abrir todas as obras; as equipas só veem as obras em que estiverem aqui.</p><div class="lista">'
       +(pes.length?pes.map(p=>'<span class="chip">'+esc(p.pessoas?p.pessoas.nome:'?')+' <span class="hint">· '+PAPEL[p.pessoas?p.pessoas.papel:'equipa']+'</span>'+(admin()?'<button class="x" data-q="'+p.pessoa_id+'" title="Retirar">×</button>':'')+'</span>').join(''):'<span class="hint">Ninguém atribuído.</span>')
@@ -1189,6 +1218,7 @@ async function vObra(id){
   pg.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{const c=ctr.find(x=>x.id===b.dataset.a);
     if(!await confirmar('Apagar o contrato "'+c.nome+'" e as suas rubricas? Esta ação não se desfaz.','Apagar'))return;
     try{await ok(sb.from('contratos').delete().eq('id',c.id));aviso('Contrato apagado.');vObra(id)}catch(e){aviso(erroTxt(e),true)}});
+  const bmo=$('#bMod');if(bmo)bmo.onclick=()=>escolheModulos(o);
   const npe=$('#npe');if(npe)npe.onclick=async()=>{
     const ja=new Set(pes.map(p=>p.pessoa_id));
     const ord={diretor:0,encarregado:1,equipa:2,convidado:3};
