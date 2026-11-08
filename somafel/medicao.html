@@ -111,6 +111,8 @@ main.colapsado #painelEstruturas .ph{padding:8px 6px;justify-content:center}
 .scroll{flex:1 1 auto;overflow-y:auto;min-height:0}
 .bar{flex:0 0 auto;display:flex;gap:6px;padding:7px 10px;border-bottom:1px solid var(--soft)}
 .bar input{flex:1;min-width:0;font-size:13px;padding:4px 8px}
+#fMat{min-width:120px}
+#scope{flex:0 1 auto;min-width:0;max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* --- estruturas --- */
 .grp{border-bottom:1px solid var(--soft)}
@@ -5984,7 +5986,7 @@ function rLoteSel(){
   const og=$('#scope').querySelector('option[value="global"]');
   if(variosLotes()&&!og)$('#scope').insertAdjacentHTML('afterbegin','<option value="global">Obra global (todos os lotes)</option>');
   if(!variosLotes()&&og){if($('#scope').value==='global')$('#scope').value='obra';og.remove()}
-  const ob=$('#scope').querySelector('option[value="obra"]'); if(ob)ob.textContent=variosLotes()?'Este lote ('+a.nome+')':'Obra toda';
+  const ob=$('#scope').querySelector('option[value="obra"]'); if(ob){ob.textContent=variosLotes()?'Este lote':'Obra toda';ob.title=variosLotes()?a.nome:''}
 }
 function rLoteOutros(){
   const box=$('#loteOutros'); if(!box)return;
@@ -6307,7 +6309,7 @@ const _rLoteSel=rLoteSel;
 rLoteSel=function(){ _rLoteSel();
   if(NM.ob){ const o=$('#loteSel').querySelector('option[value="__gerir"]'); if(o)o.textContent='Contratos da obra…';
     const g=$('#scope').querySelector('option[value="global"]'); if(g)g.textContent='Todos os contratos';
-    const ob=$('#scope').querySelector('option[value="obra"]'); if(ob&&variosLotes())ob.textContent='Este contrato ('+loteAtivo().nome+')' } };
+    const ob=$('#scope').querySelector('option[value="obra"]'); if(ob&&variosLotes()){ob.textContent='Este contrato';ob.title=loteAtivo().nome; $('#scope').title=$('#scope').value==='obra'?loteAtivo().nome:''} } };
 const _rLotesModal=rLotesModal;
 rLotesModal=function(){ _rLotesModal(); if($('#ltModal').hidden)return;
   const h=$('#ltModal h3'); if(h)h.textContent=NM.ob?'Contratos da obra':'Lotes da obra';
