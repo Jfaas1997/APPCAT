@@ -328,7 +328,7 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
 .dirty{color:var(--brand);font-size:11.5px;align-self:center;margin-right:2px;white-space:nowrap}
 tr.linaberta{background:var(--verdbg)}
 td .chip{margin-right:5px}
-#fTipoGlobal{margin-right:2px}
+#fTipoGlobal{margin-right:2px}#fCliGlobal{max-width:190px;margin-right:2px}
 .modalOverlay{position:fixed;inset:0;background:rgba(20,20,18,.45);display:flex;align-items:center;justify-content:center;z-index:80;padding:24px}
 [hidden]{display:none!important}
 .modalBox{background:var(--sheet);border-radius:6px;max-width:680px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
@@ -914,7 +914,8 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
     <div class="stat"><b id="sApr">0%</b><span>aproveitamento</span></div>
   </div>
   <div class="tools">
-    <select id="fTipoGlobal" title="Tipo de trabalho em edição"></select>
+    <select id="fCliGlobal" title="Cliente: as partes diárias são numeradas por cliente e especialidade" hidden></select>
+    <select id="fTipoGlobal" title="Especialidade em edição"></select>
     <button id="bNovaPD" class="pri">Nova parte diária</button>
     <button id="bUndo" title="Desfazer (Ctrl+Z)" aria-label="Desfazer" disabled>↶</button><button id="bRedo" title="Refazer (Ctrl+Y)" aria-label="Refazer" disabled>↷</button>
     <span id="gst" role="status" aria-live="polite"></span>
@@ -1177,6 +1178,13 @@ var ST=novo();
 function novo(){ return {obra:'',nome:'',contrato:'',cliente:'INFRAESTRUTURAS DE PORTUGAL, S.A.',disc:'CATENÁRIA',
   tipos:[{id:'cat',nome:'Catenária',prefixo:'CAT'},{id:'sin',nome:'Sinalização',prefixo:'SIN'},{id:'vt',nome:'Varas de terra',prefixo:'VT'}],
   art:[],mo:[],eqp:[],int:[],pd:[],ponto:[],adicionais:[],locais:[],diaAuto:20,autosEnviados:[],ajustes:[],plano:[],planoOriginal:null,prev:[],prevOriginal:null,prevPes:[],mat:null,materialAuto:{}} }
+/* clientes da obra (vêm dos contratos na Somafel Catenária); a numeração das partes diárias é por cliente + especialidade */
+function clientesObra(){ var r=[], add=function(c){ c=String(c||'').trim(); if(c&&r.indexOf(c)<0)r.push(c) };
+  add(clienteDe('contrato')); (ST.adicionais||[]).forEach(function(a){ add(a.cliente) }); (ST.pd||[]).forEach(function(p){ add(p.cli) }); return r }
+function cliAtual(){ var cs=clientesObra(); return cs.indexOf(flt.cli)>=0?flt.cli:(cs[0]||'') }
+function pdCli(p){ return (p&&p.cli)||clientesObra()[0]||'' }
+function multiCli(){ return clientesObra().length>1 }
+function pdDoGrupo(p,tipoId,cli){ return (p.tipo||'cat')===tipoId&&(!multiCli()||pdCli(p)===cli) }
 function tipoAtual(){ return (ST.tipos||[]).filter(function(t){return t.id===flt.tipo})[0]||(ST.tipos||[])[0]||null }
 function tipoNome(id){ var t=(ST.tipos||[]).filter(function(x){return x.id===id})[0]; return t?t.nome:(id||'—') }
 
@@ -1206,7 +1214,7 @@ function frentesAbertas(tipo){
 }
 function hm2days(iso){ if(!iso)return 0; var d=new Date(iso+'T00:00:00'); return Math.floor(d.getTime()/86400000) }
 
-var vista='res', pdAberta=null, flt={pd:'',pdMes:'',pdEst:'',int:'',intAno:'',intEst:'',map:'',mapMes:'',mapQue:'',art:'',tipo:'cat',origem:''};
+var vista='res', pdAberta=null, flt={pd:'',pdMes:'',pdEst:'',int:'',intAno:'',intEst:'',map:'',mapMes:'',mapQue:'',art:'',tipo:'cat',origem:'',cli:''};
 var rubricaAberta=null; /* {cod,origem} da rubrica com a ficha (popup) aberta */
 var loteAberto=false; /* mostra/esconde a caixa de preenchimento em lote, no separador Ponto */
 var ptoMesAtual=''; /* AAAA-MM em exibição na grelha do Ponto; preenchido no arranque */
@@ -1431,6 +1439,8 @@ function render(){
   var ti=totaisInt('');
   setNum('#sMes',vm,eur); setNum('#sAcum',va,eur); setNum('#sPct',tot?va/tot:null,pct); setNum('#sApr',ti.conc?ti.trab/ti.conc:null,pct);
   $('#obraNome').value=ST.nome||'';
+  var selC=$('#fCliGlobal'), csO=clientesObra();
+  if(selC){ selC.hidden=csO.length<2; selC.innerHTML=csO.map(function(c){ return '<option>'+esc(c)+'</option>' }).join(''); selC.value=cliAtual() }
   var selT=$('#fTipoGlobal');
   if(selT){
     selT.innerHTML=ST.tipos.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.nome)+'</option>'}).join('');
@@ -1823,7 +1833,8 @@ function renderRes(){
      '<span class="hint" style="margin-bottom:6px">Os km escrevem-se no Ponto (modo «Km» ou no Detalhe). O custo dos km entra no custo de pessoal de cada auto.</span></div></div></div>';
 
   /* gestão de tipos de trabalho */
-  h+='<div class="box" style="margin-top:12px"><div class="bh">Tipos de trabalho<span class="sp"></span><button id="bTipoAdd">+ Tipo</button></div><div class="bb">'+
+  h+='<div class="box" style="margin-top:12px"><div class="bh">Especialidades<span class="sp"></span><button id="bTipoAdd">+ Especialidade</button></div><div class="bb">'+
+     '<p class="hint" style="margin-top:0">As partes diárias são numeradas <b>por cliente e por especialidade</b>: cada especialidade nova começa no 1 («PREFIXO - 1»), e cada cliente tem a sua própria contagem.'+(multiCli()?' Clientes desta obra: '+clientesObra().map(esc).join(', ')+'.':'')+'</p>'+
      '<table><thead><tr><th>Nome</th><th style="width:110px">Prefixo da numeração</th><th class="w1"></th></tr></thead><tbody>';
   (ST.tipos||[]).forEach(function(t,ix){
     var usado=ST.pd.some(function(p){return (p.tipo||'cat')===t.id})||ST.art.some(function(a){return (a.tipo||'cat')===t.id})||ST.int.some(function(i){return (i.tipo||'cat')===t.id});
@@ -1845,8 +1856,12 @@ function renderRes(){
       vista='pd'; abrePD(tr.dataset.abre); render(); return;
     }
     if(e.target.id==='bTipoAdd'){
+      var nmE=prompt('Nome da nova especialidade (ex.: Via, Construção civil, Telecomunicações):',''); if(nmE==null||!nmE.trim())return;
+      var pfE=prompt('Prefixo da numeração das partes diárias desta especialidade (ex.: VIA → «VIA - 1»):',nmE.trim().slice(0,3).toUpperCase()); if(pfE==null)return;
+      pfE=(pfE.trim()||nmE.trim().slice(0,3)).toUpperCase();
+      if((ST.tipos||[]).some(function(t){ return String(t.prefixo).toUpperCase()===pfE })){ toast('Já há uma especialidade com o prefixo «'+pfE+'».'); return }
       var novoId='t'+uid();
-      ST.tipos.push({id:novoId,nome:'Novo tipo',prefixo:'NT'}); renderRes(); return;
+      ST.tipos.push({id:novoId,nome:nmE.trim(),prefixo:pfE}); flt.tipo=novoId; render(); toast('Especialidade «'+nmE.trim()+'» criada: as partes diárias começam em «'+pfE+' - 1».',4000); return;
     }
     var bd=e.target.closest('[data-tidel]'); if(bd){ ST.tipos.splice(+bd.dataset.tidel,1); renderRes(); return }
     var ba=e.target.closest('[data-abreobra]'); if(ba){
@@ -1884,8 +1899,10 @@ function renderPd(){
   $('#bPdVoltar').style.display='none'; $('#bPdImp').style.display='none'; $('#bPdDup').style.display='none';
   var f=lower(flt.pd); if($('#fPdEst'))$('#fPdEst').value=flt.pdEst||'';
   var rows=ST.pd.slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'')||String(b.num||'').localeCompare(String(a.num||''))});
+  var cliF=cliAtual(), mc=multiCli();
   rows=rows.filter(function(p){
     if((p.tipo||'cat')!==flt.tipo)return false;
+    if(mc&&pdCli(p)!==cliF)return false;
     if(flt.pdMes&&autoDe(p.data)!==flt.pdMes)return false;
     if(flt.pdEst==='inc'&&!pdFalta(p).length)return false;
     if(!f)return true;
@@ -1938,16 +1955,17 @@ function abrePD(id){ pdAberta=id; pdDesbl=false }
    Números escritos noutro formato ficam como estão. */
 function renumeraPDs(){
   var mudou=0;
-  (ST.tipos||[]).forEach(function(t){
+  var CLS=multiCli()?clientesObra():[null];
+  (ST.tipos||[]).forEach(function(t){ CLS.forEach(function(cl){
     var re=new RegExp('^'+String(t.prefixo||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*-\\s*(\\d+)\\s*$','i');
-    var lst=[]; ST.pd.forEach(function(p){ if((p.tipo||'cat')!==t.id)return; var m=String(p.num||'').match(re); if(m)lst.push({p:p,n:+m[1]}) });
+    var lst=[]; ST.pd.forEach(function(p){ if((p.tipo||'cat')!==t.id)return; if(cl!==null&&pdCli(p)!==cl)return; var m=String(p.num||'').match(re); if(m)lst.push({p:p,n:+m[1]}) });
     if(lst.length<1)return;
     var ini=Math.min.apply(null,lst.map(function(x){return x.n}));
     var usados={}; lst.forEach(function(x){ if(x.p.bloq)usados[x.n]=1 });   /* as impressas ficam com o número que têm */
     var livres=lst.filter(function(x){return !x.p.bloq}).sort(function(a,b){ return (a.p.data||'9999').localeCompare(b.p.data||'9999')||(a.n-b.n)||String(a.p.id).localeCompare(String(b.p.id)) });
     var c=ini;
     livres.forEach(function(x){ while(usados[c])c++; var nn=t.prefixo+' - '+c; c++; if(x.p.num!==nn){ x.p.num=nn; mudou++ } });
-  });
+  }) });
   return mudou;
 }
 function pdBloq(p){ return !!(p&&p.bloq) }
@@ -1964,20 +1982,21 @@ function imprimeEBloqueia(p){
   } else { imprimePD(p); bloqueiaPD(p,'reimpressa') }
   pdDesbl=false; render();
 }
-function pdDoDia(tipoId,data){
-  var achada=ST.pd.filter(function(p){return (p.tipo||'cat')===tipoId&&p.data===data})[0];
+function pdDoDia(tipoId,data,cli){
+  if(cli==null)cli=cliAtual();
+  var achada=ST.pd.filter(function(p){return pdDoGrupo(p,tipoId,cli)&&p.data===data})[0];
   if(achada)return achada;
   var tp=(ST.tipos||[]).filter(function(t){return t.id===tipoId})[0], pref=tp?tp.prefixo:'CAT';
-  var n=0; ST.pd.forEach(function(p){ if((p.tipo||'cat')!==tipoId)return; var m=String(p.num||'').match(/(\d+)\s*$/); if(m)n=Math.max(n,+m[1]) });
-  var p={id:uid(),tipo:tipoId,num:pref+' - '+(n+1),data:data,turno:'noite',ficha:'',dae:'',obs:'',ints:[],lin:[],mo:[],eqP:[],eqL:[],eqIds:[],lev:[],apl:[]};
+  var n=0; ST.pd.forEach(function(p){ if(!pdDoGrupo(p,tipoId,cli))return; var m=String(p.num||'').match(/(\d+)\s*$/); if(m)n=Math.max(n,+m[1]) });
+  var p={id:uid(),tipo:tipoId,cli:cli,num:pref+' - '+(n+1),data:data,turno:'noite',ficha:'',dae:'',obs:'',ints:[],lin:[],mo:[],eqP:[],eqL:[],eqIds:[],lev:[],apl:[]};
   ST.int.forEach(function(i){ if(i.data===data&&(i.tipo||'cat')===tipoId&&(dur(i.cI,i.cF)||i.os))p.ints.push(i.id) });
   ST.pd.push(p); return p;
 }
 function dataOrigemPonto(pdData,turno){ return turno==='noite'?addD(pdData,-1):pdData }
 function novaPD(base){
-  var tipoId=flt.tipo, tp=tipoAtual(), pref=tp?tp.prefixo:'CAT';
-  var n=0; ST.pd.forEach(function(p){ if((p.tipo||'cat')!==tipoId)return; var m=String(p.num||'').match(/(\d+)\s*$/); if(m)n=Math.max(n,+m[1]) });
-  var p={id:uid(),tipo:tipoId,num:pref+' - '+(n+1),data:hoje(),turno:'noite',ficha:'',dae:'',obs:'',
+  var tipoId=flt.tipo, tp=tipoAtual(), pref=tp?tp.prefixo:'CAT', cli=cliAtual();
+  var n=0; ST.pd.forEach(function(p){ if(!pdDoGrupo(p,tipoId,cli))return; var m=String(p.num||'').match(/(\d+)\s*$/); if(m)n=Math.max(n,+m[1]) });
+  var p={id:uid(),tipo:tipoId,cli:cli,num:pref+' - '+(n+1),data:hoje(),turno:'noite',ficha:'',dae:'',obs:'',
     ints:[],lin:[],mo:[],eqP:[],eqL:[],eqIds:[],lev:[],apl:[]};
   if(base){ p.mo=JSON.parse(JSON.stringify(base.mo||[])); p.eqP=JSON.parse(JSON.stringify(base.eqP||[])); p.eqL=JSON.parse(JSON.stringify(base.eqL||[])) }
   /* interdições da data, do mesmo tipo */
@@ -2007,7 +2026,8 @@ function renderPDedit(){
     '<span class="hint">'+diaSem(p.data)+', '+ptbr(p.data)+'</span></div>';
 
   h+='<div class="fields">'+
-    fld('Nº','<input data-k="num" value="'+esc(p.num)+'" style="width:210px" title="A numeração «'+esc((tipoAtual()||{}).prefixo||'CAT')+' - n» acompanha a data. Se escreveres outro formato, fica como escreveste.">')+
+    fld('Nº','<input data-k="num" value="'+esc(p.num)+'" style="width:210px" title="A numeração «'+esc((tipoAtual()||{}).prefixo||'CAT')+' - n» é por cliente e especialidade e acompanha a data. Se escreveres outro formato, fica como escreveste.">')+
+    (multiCli()?fld('Cliente','<select data-k="cli" title="A numeração das partes diárias é por cliente e especialidade">'+clientesObra().map(function(c){ return '<option'+(pdCli(p)===c?' selected':'')+'>'+esc(c)+'</option>' }).join('')+'</select>'):'')+
     fld('Data','<input type="date" data-k="data" value="'+esc(p.data)+'">')+
     fld('Auto','<div class="mono" style="padding:8px 0" title="Período do auto a que esta parte diária pertence ('+esc(autoIntervalo(autoDe(p.data)))+')">'+esc(mesNome(autoDe(p.data)))+'</div>')+
     fld('Turno','<select data-k="turno"><option value="noite"'+(p.turno!=='dia'?' selected':'')+'>Noite</option><option value="dia"'+(p.turno==='dia'?' selected':'')+'>Dia</option></select>')+
@@ -5766,6 +5786,7 @@ function bind(sel,ev,fn){
 $$('.tab').forEach(function(t){ t.addEventListener('click',function(){ vista=t.dataset.v; if(vista!=='pd')pdAberta=null; render() }) });
 $('#obraNome').addEventListener('change',function(){ ST.nome=this.value });
 $('#fTipoGlobal').addEventListener('change',function(){ flt.tipo=this.value; pdAberta=null; render() });
+$('#fCliGlobal').addEventListener('change',function(){ flt.cli=this.value; pdAberta=null; render() });
 $('#bNovaPD').addEventListener('click',function(){ novaPD(ST.pd.length?ST.pd[ST.pd.length-1]:null) });
 $('#bPdVoltar').addEventListener('click',function(){ pdAberta=null; render() });
 $('#bPdDup').addEventListener('click',function(){ var p=porId(ST.pd,pdAberta); if(p)novaPD(p) });
@@ -5854,7 +5875,7 @@ function pdModeloHtml(p){
   function ln(v,cl){ return '<u'+(cl?' class="'+cl+'"':'')+'>'+(v?esc(v):'&nbsp;')+'</u>' }
   var h='<div class="pdm">';
   h+='<div class="cx"><div class="logoL"><img src="'+LOGO_PD+'" alt=""></div><div class="tit">PARTE DIÁRIA FACTURAÇÃO</div>'+
-     '<div class="hd"><div class="l">'+esc(ST.nome||'')+'<div style="height:5mm"></div>Contratos: '+esc(ST.contrato||'')+'<br>CLIENTE: '+esc((function(){ var cl=[]; (p.lin||[]).forEach(function(l){ if(!l.cod)return; var c=clienteDe(l.origem); if(c&&cl.indexOf(c)<0)cl.push(c) }); return cl.length?cl.join(' / '):(ST.cliente||'') })())+'</div>'+
+     '<div class="hd"><div class="l">'+esc(ST.nome||'')+'<div style="height:5mm"></div>Contratos: '+esc(ST.contrato||'')+'<br>CLIENTE: '+esc(p.cli?p.cli:(function(){ var cl=[]; (p.lin||[]).forEach(function(l){ if(!l.cod)return; var c=clienteDe(l.origem); if(c&&cl.indexOf(c)<0)cl.push(c) }); return cl.length?cl.join(' / '):(ST.cliente||'') })())+'</div>'+
      '<div class="r"><b>PGQ - EVCEEF</b><br><b style="font-size:7pt">PDF</b><div class="fl">FICHA N.º: '+ln(p.ficha)+'<br>D.A.E.: '+ln(p.dae)+'</div></div></div></div>';
   h+='<div class="tp">'+marcas.map(function(m){ return '<span>'+esc(m[0])+'<span class="cb">'+(m[1]?'X':'')+'</span></span>' }).join('')+'</div>';
   h+='<div class="ac"><span>Acção Nº '+ln('','long')+'</span><span>N.º'+ln(p.num)+' DE '+ln(dt[2])+'/'+ln(dt[1])+'/'+ln(dt[0])+'</span></div>';
@@ -7161,8 +7182,10 @@ var PCAL={mes:null,sel:null,vis:'c'};
 try{ PCAL.vis=localStorage.getItem('pdVis')||'c' }catch(e){}
 function pcalFiltra(){
   var f=lower(flt.pd||'');
+  var cliF=cliAtual(), mc=multiCli();
   return ST.pd.filter(function(p){
     if((p.tipo||'cat')!==flt.tipo)return false;
+    if(mc&&pdCli(p)!==cliF)return false;
     if(flt.pdEst==='inc'&&!pdFalta(p).length)return false;
     if(!f)return true;
     var t=lower([p.num,p.data,p.obs,(p.lin||[]).map(function(l){return l.cod+' '+l.des+' '+l.pki+' '+l.pkf}).join(' ')].join(' '));
