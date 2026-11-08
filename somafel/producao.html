@@ -1836,11 +1836,12 @@ function renderRes(){
   /* gestão de tipos de trabalho */
   h+='<div class="rvc defW"><div style="display:flex;align-items:center;gap:10px"><h4 style="flex:1">Especialidades</h4><button id="bTipoAdd" class="pri">+ Especialidade</button></div>'+
      '<div class="sub">As partes diárias são numeradas <b>por cliente e por especialidade</b>: cada especialidade nova começa no 1 («PREFIXO - 1»), e cada cliente tem a sua própria contagem.'+(multiCli()?' Clientes desta obra: '+clientesObra().map(esc).join(', ')+'.':'')+'</div>'+
-     '<table><thead><tr><th>Nome</th><th style="width:110px">Prefixo da numeração</th><th class="w1"></th></tr></thead><tbody>';
+     '<table><thead><tr><th>Nome</th><th style="width:110px">Prefixo da numeração</th><th style="width:170px" title="Quando outras equipas também fazem partes diárias desta especialidade (ex.: SCPVI), a impressão mostra só a sigla e o número fica para preencher à mão">N.º na impressão</th><th class="w1"></th></tr></thead><tbody>';
   (ST.tipos||[]).forEach(function(t,ix){
     var usado=ST.pd.some(function(p){return (p.tipo||'cat')===t.id})||ST.art.some(function(a){return (a.tipo||'cat')===t.id})||ST.int.some(function(i){return (i.tipo||'cat')===t.id});
     h+='<tr><td><input data-ti="'+ix+'" data-tk="nome" value="'+esc(t.nome||'')+'"></td>'+
        '<td class="mono"><input data-ti="'+ix+'" data-tk="prefixo" value="'+esc(t.prefixo||'')+'" style="width:80px"></td>'+
+       '<td><label style="display:inline-flex;gap:6px;align-items:center;font-size:12.5px;white-space:nowrap"><input type="checkbox" data-ti="'+ix+'" data-tk="semNum"'+(t.semNum?'':' checked')+'> '+(t.semNum?'só a sigla «'+esc(t.prefixo||'')+'»':'número completo')+'</label></td>'+
        '<td class="w1">'+(usado?'':'<button class="x" data-tidel="'+ix+'">×</button>')+'</td></tr>';
   });
   h+='</tbody></table></div></div></section>';
@@ -1883,6 +1884,7 @@ function renderRes(){
     if(t.id==='diaAuto'){ var dv=Math.round(num(t.value)); ST.diaAuto=(dv>=1&&dv<=28)?dv:20; render(); return }
     if(t.dataset.justif){ var pt=porId(ST.ponto,t.dataset.justif); if(pt)pt.nota=t.value; setTimeout(render,0); return }
     if(t.dataset.ti==null)return;
+    if(t.dataset.tk==='semNum'){ ST.tipos[+t.dataset.ti].semNum=!t.checked; render(); return }
     ST.tipos[+t.dataset.ti][t.dataset.tk]=t.value; render();
   });
 }
@@ -5892,7 +5894,8 @@ function pdModeloHtml(p){
      '<div class="hd"><div class="l">'+esc(ST.nome||'')+'<div style="height:5mm"></div>Contratos: '+esc(ST.contrato||'')+'<br>CLIENTE: '+esc(p.cli?p.cli:(function(){ var cl=[]; (p.lin||[]).forEach(function(l){ if(!l.cod)return; var c=clienteDe(l.origem); if(c&&cl.indexOf(c)<0)cl.push(c) }); return cl.length?cl.join(' / '):(ST.cliente||'') })())+'</div>'+
      '<div class="r"><b>PGQ - EVCEEF</b><br><b style="font-size:7pt">PDF</b><div class="fl">FICHA N.º: '+ln(p.ficha)+'<br>D.A.E.: '+ln(p.dae)+'</div></div></div></div>';
   h+='<div class="tp">'+marcas.map(function(m){ return '<span>'+esc(m[0])+'<span class="cb">'+(m[1]?'X':'')+'</span></span>' }).join('')+'</div>';
-  h+='<div class="ac"><span>Acção Nº '+ln('','long')+'</span><span>N.º'+ln(p.num)+' DE '+ln(dt[2])+'/'+ln(dt[1])+'/'+ln(dt[0])+'</span></div>';
+  var tpI=(ST.tipos||[]).filter(function(t){ return t.id===(p.tipo||'cat') })[0], numI=(tpI&&tpI.semNum)?(tpI.prefixo||''):p.num;
+  h+='<div class="ac"><span>Acção Nº '+ln('','long')+'</span><span>N.º'+ln(numI)+' DE '+ln(dt[2])+'/'+ln(dt[1])+'/'+ln(dt[0])+'</span></div>';
 
   /* interdições */
   var ints=(p.ints||[]).map(function(id){return porId(ST.int,id)}).filter(Boolean);
@@ -7188,7 +7191,7 @@ function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de produção',corpo:
   +'<table><tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Guardar</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Desfazer / refazer</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Procurar</td></tr></table>',botoes:[{t:'Fechar',v:true,p:true}]}) }
 $('#bAjuda').onclick=nmAjuda;
 nmUi();
-window.__nm={dbg:function(){return JSON.stringify({saveq:!!SAVEQ,eq:estadoHash()===LASTHASH,l:LASTHASH,h:estadoHash(),on:navigator.onLine,ob:!!NM.ob,dirty:DIRTY})},ST:function(){return ST},render:function(){render()},NM:NM,nmAuto:nmAuto,nmFlush:nmFlush,nmCarrega:nmCarrega,ready:null};
+window.__nm={dbg:function(){return JSON.stringify({saveq:!!SAVEQ,eq:estadoHash()===LASTHASH,l:LASTHASH,h:estadoHash(),on:navigator.onLine,ob:!!NM.ob,dirty:DIRTY})},ST:function(){return ST},render:function(){render()},NM:NM,nmAuto:nmAuto,nmFlush:nmFlush,nmCarrega:nmCarrega,pdHtml:function(p){return pdModeloHtml(p)},ready:null};
 window.__nm.ready=nmArranque().catch(function(e){ console.error(e); nmEcra('<div class="box"><h2>Erro</h2><p>'+esc(e.message||String(e))+'</p></div>') });
 
 /* ================= Partes diárias em calendário ================= */
