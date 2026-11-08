@@ -303,7 +303,9 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
   #print .eqpl table.ptf th{font-size:6.3pt;height:auto;padding:.3mm 0;line-height:1.1}
   #print .eqpl table.ptf th.p_sem{background:#c4c4c4;font-size:6.6pt}
   #print .eqpl table.ptf th.p_fds{background:#bcbcbc}
-  #print .eqpl table.ptf td.p_au{background:#ececec;font-weight:700;font-size:6.6pt}
+  #print .eqpl table.ptf td.p_au{font-weight:800;font-size:6.6pt;line-height:1;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print .eqpl table.ptf td.p_au small.p_cc{display:block;font-size:3.9pt;font-weight:600;letter-spacing:-.02em;margin-top:.2mm}
+  #print .eqpl .eqLeg i.p_lg{display:inline-block;font-style:normal;font-weight:800;min-width:3.2mm;text-align:center;border:.4pt solid #888;padding:0 .6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #print .eqpl table.ptf td.p_tt small{font-weight:600;font-size:5.6pt;color:#333}
   #print .eqpl table.ptf td.p_nm{text-align:left;font-weight:700;font-size:6.9pt;padding:0 1.2mm;line-height:1.1;overflow-wrap:anywhere;word-break:break-word;background:#fff}
   #print .eqpl table.ptf td.p_sb{font-size:5.6pt;color:#222;text-align:left;padding:0 .8mm;background:#f0f0f0;white-space:nowrap}
@@ -3398,8 +3400,6 @@ function atualizaTotaisDet(){
 }
 
 /* --- Ponto · folha impressa (pessoal, detalhe): A4 horizontal --- */
-/* Imprimir o ponto: escolhe-se o que entra (presença D/N, horas extra, deslocação, km, férias/baixas/…) */
-var PTOIMP_K='prodPtoImp';
 /* pré-visualização genérica: mostra a folha como vai sair (A4), com opções ao lado, e imprime daqui */
 function cssImpressao(){ var t='';
   [].forEach.call(document.styleSheets,function(ss){ var rr; try{ rr=ss.cssRules }catch(e){ return } if(!rr)return;
@@ -3433,6 +3433,8 @@ function previsualiza(o){ /* o:{titulo, horizontal, html(op)->string, opcoes:[[k
   desenha();
 }
 var PTOIMP_K='prodPtoImp';
+/* cores das ausências na folha impressa (claras, para se lerem bem em papel) */
+var AUS_IMP={F:'#cdeac0',C:'#cfe2f7',D:'#e2d8f1',T:'#fde0bd',B:'#f7c6c6'};
 function imprimePontoEscolha(){
   var o={pto:1,ext:1,desl:1,km:1,aus:1}; try{ var g=JSON.parse(localStorage.getItem(PTOIMP_K)||'null'); if(g)o=g }catch(e){}
   previsualiza({titulo:'Ponto · '+ptoPerLbl(),horizontal:true,op:o,
@@ -3464,25 +3466,26 @@ function imprimePonto(op,soHtml){
   grupos.forEach(function(g){
     g.itens.sort(function(a,b){return naturalCmp(a.nome||'',b.nome||'')});
     g.itens.forEach(function(m,ix){
-      var R={}, S={p:0,x:0,t:0,k:0}, aus={};
+      var R={}, S={p:0,x:0,t:0,k:0}, aus={}, ccP={};
       L.forEach(function(k){ R[k]='' });
       dias.forEach(function(dd){
         var pt=pontoDe(m.id,dd), au=op.aus?ausDe(m.id,dd):null, f=fds[dd]?'p_f':'';
         if(pt){ var n=pt.turno==='noite'; S.p++; S.x+=num(pt.extra); S.t+=num(pt.deslocacao); S.k+=num(pt.km);
           porDia[dd].p++; porDia[dd].x+=num(pt.extra); porDia[dd].t+=num(pt.deslocacao); porDia[dd].k+=num(pt.km) }
-        if(au){ aus[au.tipo]=(aus[au.tipo]||0)+1; ausTot[au.tipo]=(ausTot[au.tipo]||0)+1; porDia[dd].a++; if(au.tipo==='T'&&au.cc)ccT[au.cc]=1 }
+        if(au){ aus[au.tipo]=(aus[au.tipo]||0)+1; if(au.tipo==='T'&&au.cc){ ccP[au.cc]=(ccP[au.cc]||0)+1 } ausTot[au.tipo]=(ausTot[au.tipo]||0)+1; porDia[dd].a++; if(au.tipo==='T'&&au.cc)ccT[au.cc]=1 }
         L.forEach(function(k){
           if(k==='p'||k==='a'){
             if(k==='p'&&pt){ var nn=pt.turno==='noite'; R[k]+='<td class="'+(nn?'p_n':'p_d')+'">'+(nn?'N':'D')+'</td>' }
-            else if(au)R[k]+='<td class="p_au" title="'+esc((AUS_T[au.tipo]||{}).nome||au.tipo)+(au.cc?' · '+esc(au.cc):'')+'">'+esc(au.tipo)+'</td>';
+            else if(au)R[k]+='<td class="p_au" style="background:'+(AUS_IMP[au.tipo]||'#eee')+'" title="'+esc((AUS_T[au.tipo]||{}).nome||au.tipo)+(au.cc?' · '+esc(au.cc):'')+'">'+esc(au.tipo)+(au.tipo==='T'&&au.cc?'<small class="p_cc">'+esc(au.cc)+'</small>':'')+'</td>';
             else R[k]+='<td class="'+f+'"></td>';
           } else if(pt){ var v=k==='x'?pt.extra:k==='t'?pt.deslocacao:pt.km, nn2=pt.turno==='noite'; R[k]+='<td class="'+(nn2?'p_xn':'p_xd')+'">'+esc(fmtH(v))+'</td>' }
           else R[k]+='<td class="'+f+'"></td>';
         });
       });
       T.p+=S.p; T.x+=S.x; T.t+=S.t; T.k+=S.k;
-      var ausTxt=Object.keys(aus).map(function(t){ return t+' '+aus[t] }).join(' · ');
-      var tot={p:S.p+(S.p===1?' dia':' dias')+(ausTxt?'<br><small>'+esc(ausTxt)+'</small>':''),a:ausTxt||'—',x:esc(fmtT(S.x)),t:esc(fmtT(S.t)),k:esc(fmtT(S.k))};
+      var ausTxt=Object.keys(aus).map(function(t){ return t+' '+aus[t]+(t==='T'&&Object.keys(ccP).length?' → '+Object.keys(ccP).join(', '):'') }).join(' · ');
+      var ausHtml=Object.keys(aus).map(function(t){ return '<span style="background:'+(AUS_IMP[t]||'#eee')+';padding:0 .5mm">'+t+' '+aus[t]+'</span>'+(t==='T'&&Object.keys(ccP).length?' → '+esc(Object.keys(ccP).join(', ')):'') }).join('<br>');
+      var tot={p:S.p+(S.p===1?' dia':' dias')+(ausHtml?'<br><small>'+ausHtml+'</small>':''),a:ausHtml||'—',x:esc(fmtT(S.x)),t:esc(fmtT(S.t)),k:esc(fmtT(S.k))};
       corpo+='<tbody>'+(ix===0?'<tr class="p_cat"><td colspan="'+(dias.length+3)+'">'+esc(g.nome||'Sem categoria')+' · '+g.itens.length+'</td></tr>':'');
       L.forEach(function(k,i){
         corpo+='<tr'+(i===nR-1?' class="p_ult"':'')+'>'+(i===0?'<td class="p_nm" rowspan="'+nR+'">'+(m.num?'<small style="font-family:monospace;opacity:.7">'+esc(m.num)+'</small> ':'')+esc(m.nome||m.cat)+'</td>':'')+
@@ -3498,11 +3501,11 @@ function imprimePonto(op,soHtml){
   var h='<div class="eqpl"><div class="eqHd"><div class="eqLogo"><img src="'+((document.querySelector('.sbrand img')||{}).src||LOGO_PD)+'" alt=""></div>'+
     '<div class="eqTit"><div class="t1">Folha de Ponto — Pessoal</div><div class="t2">'+esc(ST.nome||'')+(ST.obra?' · '+esc(ST.obra):'')+'</div><div class="t3">'+esc(ptoPerLbl().toUpperCase())+'</div></div>'+
     '<div class="eqInf"><div><small>Período</small>'+esc(ptbr(dias[0]))+' a '+esc(ptbr(dias[dias.length-1]))+'</div><div><small>'+esc(inc)+'</small><b>'+resumo+'</b></div><div style="font-size:6.2pt;color:#444">Emitido em '+dd0+'</div></div></div>';
-  h+='<table class="ptf"><colgroup><col style="width:17%"><col style="width:3.4%">'+dias.map(function(){ return '<col>' }).join('')+'<col style="width:6%"></colgroup>'+
+  h+='<table class="ptf"><colgroup><col style="width:17%"><col style="width:3.4%">'+dias.map(function(){ return '<col>' }).join('')+'<col style="width:7.5%"></colgroup>'+
     '<thead><tr><th rowspan="2" colspan="2">Pessoa</th>'+grpS.map(function(g){ return '<th colspan="'+g.n+'" class="p_sem">S'+g.s+'</th>' }).join('')+'<th rowspan="2">Total</th></tr>'+
     '<tr>'+dias.map(function(d){ return '<th class="'+(fds[d]?'p_fds':'')+'">'+d.slice(8)+'<br>'+esc(diaSem(d).slice(0,1))+'</th>' }).join('')+'</tr></thead>'+corpo+sm+'</table>';
   var leg=[]; if(op.pto)leg.push('<b>D</b> dia · <b>N</b> noite'); if(op.ext||op.desl)leg.push((op.ext&&op.desl?'Extra e deslocação':op.ext?'Horas extra':'Deslocação')+' em horas'); if(op.km)leg.push('Km por dia');
-  if(op.aus){ leg.push(Object.keys(AUS_T).map(function(t){ return '<b>'+t+'</b> '+esc(AUS_T[t].nome)+(ausTot[t]?' ('+ausTot[t]+')':'') }).join(' · ')); var cc=Object.keys(ccT); if(cc.length)leg.push('Transferidos para: '+cc.map(esc).join(', ')) }
+  if(op.aus){ leg.push(Object.keys(AUS_T).map(function(t){ return '<i class="p_lg" style="background:'+(AUS_IMP[t]||'#eee')+'">'+t+'</i> '+esc(AUS_T[t].nome)+(ausTot[t]?' ('+ausTot[t]+')':'') }).join(' &nbsp; ')); var cc=Object.keys(ccT); if(cc.length)leg.push('Transferidos para: '+cc.map(esc).join(', ')) }
   h+='<div class="eqLeg">'+leg.map(function(x){ return '<span>'+x+'</span>' }).join('')+'</div></div>';
   if(soHtml)return h;
   imprimeHorizontal(h);
