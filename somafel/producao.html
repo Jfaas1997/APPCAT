@@ -496,7 +496,7 @@ tr:hover td{background:var(--soft)}
 #vzTip{position:fixed;z-index:80;pointer-events:none;background:var(--ink);color:var(--paper);border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.35;box-shadow:var(--sh);max-width:320px}
 #vzTip b{display:block;font-size:12.5px;margin-bottom:2px}
 #vzTip[hidden]{display:none}
-details.defs{margin-top:26px}
+section.defs{margin-top:26px}.defsT{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px}.defsG{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:stretch}.defsG .defW{grid-column:1/-1}.defsG .rvc .fields{margin:0}
 details.defs>summary{cursor:pointer;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 @media (max-width:700px){.rvh{grid-template-columns:1fr 1fr}.rvt.hero{grid-column:1/-1}.rvg{grid-template-columns:1fr}}
 
@@ -1825,17 +1825,17 @@ function renderRes(){
     }
   }
 
-  h+='<details class="defs"><summary>Definições da obra</summary>';
-  h+='<div class="box" style="margin-top:22px"><div class="bh">Fecho do auto</div><div class="bb"><div class="fields" style="align-items:end">'+
+  h+='<section class="defs"><div class="defsT">Definições da obra</div><div class="defsG">';
+  h+='<div class="rvc"><h4>Fecho do auto</h4><div class="sub">Dia em que fecha cada auto de medição.</div><div class="fields" style="align-items:end">'+
      fld('Dia do mês em que o auto fecha','<input class="num" id="diaAuto" style="width:70px" value="'+esc(ST.diaAuto||20)+'">')+
-     '<span class="hint" style="margin-bottom:6px">O auto de '+esc(mesNome(autoDe(hoje())).toLowerCase())+' cobre '+esc(autoIntervalo(autoDe(hoje())))+'. Uma parte diária no dia a seguir ao fecho já entra no auto seguinte.</span></div></div></div>'+
-     '<div class="box" style="margin-top:12px"><div class="bh">Quilómetros</div><div class="bb"><div class="fields" style="align-items:end">'+
+     '<span class="hint" style="margin-bottom:6px;flex-basis:100%">O auto de '+esc(mesNome(autoDe(hoje())).toLowerCase())+' cobre '+esc(autoIntervalo(autoDe(hoje())))+'. Uma parte diária no dia a seguir ao fecho já entra no auto seguinte.</span></div></div>'+
+     '<div class="rvc"><h4>Quilómetros</h4><div class="sub">Valor pago por km de deslocação.</div><div class="fields" style="align-items:end">'+
      fld('Valor por km (€)','<input class="num" id="valorKm" style="width:90px" inputmode="decimal" value="'+esc(ST.valorKm!=null&&ST.valorKm!==''?String(ST.valorKm).replace('.',','):'')+'" placeholder="0,36">')+
-     '<span class="hint" style="margin-bottom:6px">Os km escrevem-se no Ponto (modo «Km» ou no Detalhe). O custo dos km entra no custo de pessoal de cada auto.</span></div></div></div>';
+     '<span class="hint" style="margin-bottom:6px;flex-basis:100%">Os km escrevem-se no Ponto (modo «Km» ou no Detalhe). O custo dos km entra no custo de pessoal de cada auto.</span></div></div>';
 
   /* gestão de tipos de trabalho */
-  h+='<div class="box" style="margin-top:12px"><div class="bh">Especialidades<span class="sp"></span><button id="bTipoAdd">+ Especialidade</button></div><div class="bb">'+
-     '<p class="hint" style="margin-top:0">As partes diárias são numeradas <b>por cliente e por especialidade</b>: cada especialidade nova começa no 1 («PREFIXO - 1»), e cada cliente tem a sua própria contagem.'+(multiCli()?' Clientes desta obra: '+clientesObra().map(esc).join(', ')+'.':'')+'</p>'+
+  h+='<div class="rvc defW"><div style="display:flex;align-items:center;gap:10px"><h4 style="flex:1">Especialidades</h4><button id="bTipoAdd" class="pri">+ Especialidade</button></div>'+
+     '<div class="sub">As partes diárias são numeradas <b>por cliente e por especialidade</b>: cada especialidade nova começa no 1 («PREFIXO - 1»), e cada cliente tem a sua própria contagem.'+(multiCli()?' Clientes desta obra: '+clientesObra().map(esc).join(', ')+'.':'')+'</div>'+
      '<table><thead><tr><th>Nome</th><th style="width:110px">Prefixo da numeração</th><th class="w1"></th></tr></thead><tbody>';
   (ST.tipos||[]).forEach(function(t,ix){
     var usado=ST.pd.some(function(p){return (p.tipo||'cat')===t.id})||ST.art.some(function(a){return (a.tipo||'cat')===t.id})||ST.int.some(function(i){return (i.tipo||'cat')===t.id});
@@ -1843,7 +1843,7 @@ function renderRes(){
        '<td class="mono"><input data-ti="'+ix+'" data-tk="prefixo" value="'+esc(t.prefixo||'')+'" style="width:80px"></td>'+
        '<td class="w1">'+(usado?'':'<button class="x" data-tidel="'+ix+'">×</button>')+'</td></tr>';
   });
-  h+='</tbody></table></div></div></details>';
+  h+='</tbody></table></div></div></section>';
 
   $('#resBox').innerHTML=h;
   bind('#resBox','click',function(e){
