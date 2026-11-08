@@ -723,6 +723,7 @@ table.grelha thead th.hojeC{background:var(--brand,#F9D115)!important;color:#1b1
 .gaus .ausC.ausSemCc{outline:2px solid var(--red,#c33);outline-offset:-2px}.gaus .ausCc.ausCcF{color:var(--red,#c33);font-weight:800}
 .gaus .totc{position:static!important;width:118px;min-width:118px;max-width:150px;white-space:normal!important;text-align:left;font-size:11px;line-height:1.25}
 .gaus .ausN,.ccLeg .ausN{display:inline-block;min-width:15px;height:15px;line-height:15px;border-radius:50%;background:var(--sheet,#fff);color:var(--ink);border:1px solid var(--ink);font-size:10px;font-weight:800;font-style:normal;text-align:center;margin-left:2px;vertical-align:1px}.gaus .ausN{display:inline;border:0;background:none;min-width:0;width:auto;height:auto;line-height:0;font-size:9px;vertical-align:sub;margin-left:1px}.gaus .ausN.ausCcF{border-color:var(--red,#c33);color:var(--red,#c33)}.ccLeg{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin:10px 2px 0;font-size:12.5px}.ccLeg span{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono,monospace)}
+.linOri{margin-top:3px}.linOri select{font-size:11.5px;padding:2px 6px;height:auto}.chip.oriAd{background:color-mix(in srgb,var(--brand,#F9D115) 30%,transparent);color:var(--ink)}.chip.oriCt{background:var(--soft);color:var(--muted)}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -1322,7 +1323,7 @@ function equipPD(p){
 }
 function totalAdic(a){ var t=0; (a.adic||[]).forEach(function(x){t+=num(x.qtd)}); return t }
 function valorPD(p){
-  var t=0; (p.lin||[]).forEach(function(l){ var a=look(l.cod); if(a)t+=num(l.qt)*num(a.pu) }); return t;
+  var t=0; (p.lin||[]).forEach(function(l){ var a=look(l.cod,l.origem); if(a)t+=num(l.qt)*num(a.pu) }); return t;
 }
 function horasInt(i){
   return { pt:dur(i.ptI,i.ptF), os:dur(i.osI,i.osF), conc:dur(i.cI,i.cF), trab:dur(i.tI,i.tF) };
@@ -1915,7 +1916,7 @@ function renderPd(){
   rows.forEach(function(p){
     var hs=0; (p.ints||[]).forEach(function(id){var i=porId(ST.int,id); if(i)hs+=dur(i.tI,i.tF)});
     var nmo=(p.mo||[]).reduce(function(s,x){return s+num(x.qt)},0);
-    var des=(p.lin||[]).map(function(l){return (l.des||(look(l.cod)||{}).des||l.cod||'')}).filter(Boolean);
+    var des=(p.lin||[]).map(function(l){return (l.des||(look(l.cod,l.origem)||{}).des||l.cod||'')}).filter(Boolean);
     var fal=pdFalta(p);
     h+='<tr><td class="mono" style="white-space:nowrap"><a href="#" data-abre="'+p.id+'">'+esc(p.num||'—')+'</a></td>'+
        '<td class="w1">'+(p.bloq?'<span class="chip none" title="Impressa em '+esc(dataPT(p.impEm||''))+'">🔒</span> ':'')+(fal.length?'<span class="chip warn" title="Falta: '+esc(fal.join(', '))+'">incompleta · '+esc(fal.join(', '))+'</span>':'<span class="chip ok">completa</span>')+'</td>'+
@@ -2082,8 +2083,10 @@ function renderPDedit(){
      '<th class="num w1">Valor</th><th style="width:128px" title="Período do auto de medição a que esta quantidade fica atribuída">Auto</th>'+
      '<th style="width:100px">Estado</th><th class="w1"></th></tr></thead><tbody>';
   if(!(p.lin||[]).length)h+='<tr><td colspan="10"><div class="empty">Sem trabalhos registados.</div></td></tr>';
+  var oksP=origensPD(p);
   (p.lin||[]).forEach(function(l,ix){
-    var a=look(l.cod), aberta=l.frenteId&&(l.estado||'fechada')==='aberta';
+    var a=look(l.cod,l.origem), aberta=l.frenteId&&(l.estado||'fechada')==='aberta';
+    var alt=l.cod?oksP.filter(function(o){ return look(l.cod,o) }):[];
     var fechadaL=!aberta&&((l.cod||l.des))&&!ehSemRub(l);
     var autoDif=fechadaL&&l.auto&&l.auto!==autoDe(p.data);
     if(l.semRub){
@@ -2097,7 +2100,8 @@ function renderPDedit(){
       return;
     }
     h+='<tr class="'+(aberta?'linaberta':'')+(MV_NOVO.has(l)?' mv-novo':'')+'"><td style="white-space:nowrap"><input data-l="'+ix+'" data-k="cod" list="artList" value="'+esc(l.cod||'')+'" class="mono" style="width:calc(100% - 34px)"> <button data-rubpick="'+ix+'" title="Escolher a rubrica numa lista" style="padding:2px 7px">▾</button></td>'+
-       '<td>'+(a?'<span title="'+esc(a.des)+'">'+esc(a.des)+'</span>':'<input data-l="'+ix+'" data-k="des" value="'+esc(l.des||'')+'" placeholder="designação livre">')+'</td>'+
+       '<td>'+(a?'<span title="'+esc(a.des)+'">'+esc(a.des)+'</span>':'<input data-l="'+ix+'" data-k="des" value="'+esc(l.des||'')+'" placeholder="designação livre">')+
+         (l.cod&&(a||alt.length)?'<div class="linOri">'+(alt.length>1?'<select data-l="'+ix+'" data-k="origem" title="Esta rubrica existe em mais de um contrato/adicional: escolhe de onde vem">'+alt.map(function(o){ var ao=look(l.cod,o); return '<option value="'+esc(o)+'"'+((l.origem||'contrato')===o?' selected':'')+'>'+esc(o==='contrato'?'Contrato':origemNome(o).replace(/\s*—.*$/,''))+(ao&&ao.tc?' · '+esc(tcTxt(ao.tc)):'')+(ao&&respDe(ao)<100?' · '+respDe(ao)+' %':'')+'</option>' }).join('')+'</select>':origemChip(l.origem||'contrato',a))+'</div>':'')+'</td>'+
        '<td class="w1 mono">'+esc(a?a.un:(l.un||''))+'</td>'+
        '<td><input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'"></td>'+
        '<td><input data-l="'+ix+'" data-k="pki" value="'+esc(l.pki||'')+'" class="mono"></td>'+
@@ -2258,27 +2262,33 @@ var MV_NOVO=new WeakSet(); /* linhas acabadas de criar: brilham uma vez */
 function mvNovo(o){ MV_NOVO.add(o); setTimeout(function(){ MV_NOVO.delete(o) },1800); return o }
 var rubSel=null; /* {q, cap, ix (linha a preencher, -1 = acrescentar linhas), n (acrescentadas)} */
 function rubCap1(cod){ return String(cod||'').split('.')[0] }
+/* origens (contrato e adicionais) que servem a parte diária: as do cliente da PD */
+function origensPD(p){ var os=['contrato'].concat((ST.adicionais||[]).map(function(a){ return a.id })); if(!multiCli())return os; var c=pdCli(p); return os.filter(function(o){ return clienteDe(o)===c }) }
+function origemChip(orig,a){ var ad=orig&&orig!=='contrato'; var r=a?respDe(a):100;
+  return '<span class="chip '+(ad?'oriAd':'oriCt')+'" title="'+esc(origemNome(orig))+(a&&a.tc?' · '+esc(tcTxt(a.tc)):'')+(r<100?' · responsabilidade '+r+' %':'')+'">'+esc(ad?(origemNome(orig).replace(/\s*—.*$/,'')):'Contrato')+(a&&a.tc?' · '+esc(tcTxt(a.tc)):'')+(r<100?' · '+r+' %':'')+'</span>' }
 function rubItens(p){
-  var tp=p.tipo||'cat', q=lower(rubSel.q||'').trim(), ac=acumArt(tp,'contrato'), out=[];
+  var tp=p.tipo||'cat', q=lower(rubSel.q||'').trim(), oks=origensPD(p), ACs={}, out=[];
   ST.art.forEach(function(a){
-    if((a.tipo||'cat')!==tp||(a.origem||'contrato')!=='contrato'||!a.cod)return;
+    var o=a.origem||'contrato';
+    if((a.tipo||'cat')!==tp||oks.indexOf(o)<0||!a.cod)return;
+    if(rubSel.orig&&o!==rubSel.orig)return;
     if(rubSel.cap&&rubCap1(a.cod)!==rubSel.cap)return;
-    if(q){ var hay=lower(a.cod+' '+a.des); if(!q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0}))return }
-    var ex=(ac[chaveRub(a.cod,'contrato')]||{qt:0}).qt;
-    out.push({a:a,ex:ex,saldo:num(a.qt)-ex});
+    if(q){ var hay=lower(a.cod+' '+a.des+' '+(a.tc||'')+' '+origemNome(o)); if(!q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0}))return }
+    var ac=ACs[o]||(ACs[o]=acumArt(tp,o)); var ex=(ac[chaveRub(a.cod,o)]||{qt:0}).qt;
+    out.push({a:a,o:o,ex:ex,saldo:num(a.qt)-ex});
   });
-  out.sort(function(x,y){return naturalCmp(x.a.cod,y.a.cod)});
+  out.sort(function(x,y){return naturalCmp(x.a.cod,y.a.cod)||(x.o==='contrato'?-1:y.o==='contrato'?1:0)});
   return out;
 }
 function rubListaHtml(p){
   var it=rubItens(p);
   if(!it.length)return '<div class="empty">'+(ST.art.length?'Nenhuma rubrica com este filtro.':'Ainda não há rubricas do contrato. Importa o mapa de quantidades em «Artigos».')+'</div>';
-  var h='<table><thead><tr><th style="width:110px">N.º Art.º</th><th>Designação</th><th class="w1">Un.</th><th class="num">Contrato</th><th class="num">Executado</th><th class="num">Saldo</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th style="width:110px">N.º Art.º</th><th>Designação</th><th style="width:170px">Origem</th><th class="w1">Un.</th><th class="num">Contrato</th><th class="num">Executado</th><th class="num">Saldo</th></tr></thead><tbody>';
   var CM=capMapa(), CV={};
   it.slice(0,300).forEach(function(r){
     var a=r.a;
-    h+=capCabecalhos(a.cod,CM,CV,6);
-    h+='<tr data-rubsel="'+esc(a.cod)+'" style="cursor:pointer"><td class="mono"><b>'+esc(a.cod)+'</b></td><td>'+esc(a.des)+'</td><td class="mono">'+esc(a.un)+'</td>'+
+    h+=capCabecalhos(a.cod,CM,CV,7);
+    h+='<tr data-rubsel="'+esc(a.cod)+'|'+esc(r.o)+'" style="cursor:pointer"><td class="mono"><b>'+esc(a.cod)+'</b></td><td>'+esc(a.des)+'</td><td>'+origemChip(r.o,a)+'</td><td class="mono">'+esc(a.un)+'</td>'+
        '<td class="num mono">'+qtf(a.qt)+'</td><td class="num mono">'+qtf(r.ex)+'</td><td class="num mono" style="'+(r.saldo<-1e-9?'color:var(--bad,#b00020)':'')+'">'+qtf(r.saldo)+'</td></tr>';
   });
   h+='</tbody></table>';
@@ -2291,11 +2301,13 @@ function renderRubSel(){
   if(!p){ rubSel=null; ov.hidden=true; return }
   ov.hidden=false;
   var tp=p.tipo||'cat', caps={};
-  ST.art.forEach(function(a){ if((a.tipo||'cat')===tp&&(a.origem||'contrato')==='contrato'&&a.cod)caps[rubCap1(a.cod)]=1 });
-  var h='<div style="display:flex;justify-content:space-between;align-items:start;gap:10px"><div><h3>Escolher rubrica do contrato</h3>'+
+  var oks=origensPD(p);
+  ST.art.forEach(function(a){ if((a.tipo||'cat')===tp&&oks.indexOf(a.origem||'contrato')>=0&&a.cod)caps[rubCap1(a.cod)]=1 });
+  var h='<div style="display:flex;justify-content:space-between;align-items:start;gap:10px"><div><h3>Escolher rubrica'+(multiCli()?' · '+esc(pdCli(p)):'')+'</h3>'+
     '<div class="hint">'+(rubSel.ix>=0?'Clica na rubrica para a pôr na linha '+(rubSel.ix+1)+'.':'Clica numa rubrica para a acrescentar à parte diária. Podes escolher várias seguidas.')+'</div></div>'+
     '<button id="rubFechar" class="pri">'+(rubSel.n?'Concluir ('+rubSel.n+')':'Fechar')+'</button></div>'+
     '<div class="selbar"><input type="search" id="rubQ" placeholder="Procurar por código ou palavras da designação…" value="'+esc(rubSel.q||'')+'" style="flex:1;min-width:200px" autocomplete="off">'+
+    (oks.length>1?'<select id="rubOrig"><option value="">Contrato e adicionais</option>'+oks.map(function(o){ return '<option value="'+esc(o)+'"'+(o===rubSel.orig?' selected':'')+'>'+esc(origemNome(o))+'</option>' }).join('')+'</select>':'')+
     '<select id="rubCap"><option value="">Todos os capítulos</option>'+Object.keys(caps).sort(naturalCmp).map(function(c){ var d=capDes(c); return '<option value="'+esc(c)+'"'+(c===rubSel.cap?' selected':'')+'>'+esc(c+(d?' — '+d:''))+'</option>' }).join('')+'</select></div>'+
     '<div id="rubList" style="max-height:60vh;overflow:auto">'+rubListaHtml(p)+'</div>';
   $('#rubSelBox').innerHTML=h;
@@ -2313,7 +2325,9 @@ function renderRubSel(){
     rubSel.q=e.target.value; var p=porId(ST.pd,pdAberta); if(p)$('#rubList').innerHTML=rubListaHtml(p);
   });
   box.addEventListener('change',function(e){
-    if(e.target.id!=='rubCap'||!rubSel)return;
+    if(!rubSel)return;
+    if(e.target.id==='rubOrig'){ rubSel.orig=e.target.value; renderRubSel(); var q0=$('#rubQ'); if(q0)q0.focus(); return }
+    if(e.target.id!=='rubCap')return;
     rubSel.cap=e.target.value; renderRubSel(); var q=$('#rubQ'); if(q)q.focus();
   });
   box.addEventListener('click',function(e){
@@ -2322,10 +2336,10 @@ function renderRubSel(){
     var tr=e.target.closest('[data-rubsel]'); if(!tr)return;
     var p=porId(ST.pd,pdAberta); if(!p)return;
     if(p.bloq){ avisoBloq(p); return }
-    var a=look(tr.dataset.rubsel); if(!a)return;
-    if(rubSel.ix>=0&&p.lin[rubSel.ix]){ var l=p.lin[rubSel.ix]; l.cod=a.cod; l.des=''; l.un=a.un; mvNovo(l); rubSel.n=1; fecha(); return }
-    p.lin.push(mvNovo({cod:a.cod,des:'',un:a.un,qt:null,pki:'',pkf:''}));
-    rubSel.n++; tr.style.background='var(--soft)'; toast(a.cod+' acrescentada.');
+    var rq=tr.dataset.rubsel.split('|'), oSel=rq[1]||'contrato', a=look(rq[0],oSel); if(!a)return;
+    if(rubSel.ix>=0&&p.lin[rubSel.ix]){ var l=p.lin[rubSel.ix]; l.cod=a.cod; l.origem=oSel; l.des=''; l.un=a.un; mvNovo(l); rubSel.n=1; fecha(); return }
+    p.lin.push(mvNovo({cod:a.cod,origem:oSel,des:'',un:a.un,qt:null,pki:'',pkf:''}));
+    rubSel.n++; tr.style.background='var(--soft)'; toast(a.cod+' acrescentada ('+(oSel==='contrato'?'contrato':origemNome(oSel))+(a.tc?' · '+tcTxt(a.tc):'')+').');
     var bt=$('#rubFechar'); if(bt)bt.textContent='Concluir ('+rubSel.n+')';
   });
   ov.addEventListener('click',function(e){ if(e.target===ov)fecha() });
@@ -2397,7 +2411,7 @@ function ligaPD(p){
     var t=e.target,k=t.dataset.k;
     if(t.dataset.ti){ var it=porId(ST.int,t.dataset.ti); if(it){ it[t.dataset.tk]=(hm(t.value)==null?'':hstr(hm(t.value))) } setTimeout(function(){renderPDedit();encheMeses()},0); return }
     if(t.dataset.l!=null&&k){ var l=p.lin[+t.dataset.l]; l[k]=k==='qt'?num(t.value):t.value;
-      if(k==='cod'){ var a=look(t.value); if(a){l.des='';l.un=a.un} } setTimeout(renderPDedit,0); return }
+      if(k==='cod'){ var pdo=porId(ST.pd,pdAberta), okO=pdo?origensPD(pdo):['contrato'], oo=okO.filter(function(o){ return look(t.value,o) }); if(oo.length&&oo.indexOf(l.origem||'contrato')<0)l.origem=oo[0]; var a=look(t.value,l.origem); if(a){l.des='';l.un=a.un} } setTimeout(renderPDedit,0); return }
     if(t.dataset.r&&k){ var arr=p[t.dataset.r]; var o=arr[+t.dataset.i];
       if(k==='compId')aplicaComp(o,t.value); else o[k]=(k==='qt'||k==='pes')?num(t.value):t.value;
       setTimeout(renderPDedit,0); return }
@@ -5897,7 +5911,7 @@ function pdModeloHtml(p){
   for(var k2=0;k2<Math.max(10,lin.length);k2++){ var l=lin[k2];
     if(!l){ h+='<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>'; continue }
     var a=look(l.cod,l.origem), aberta=l.frenteId&&(l.estado||'fechada')==='aberta';
-    h+='<tr><td>'+esc(l.cod||'')+'</td><td>'+esc(a?a.des:(l.des||''))+(aberta?' (em curso)':'')+'</td><td class="num">'+esc(a?a.un:(l.un||''))+'</td><td class="num">'+(aberta?'—':qtf(l.qt))+'</td><td>'+esc(l.pki||'')+'</td><td>'+esc(l.pkf||'')+'</td></tr>';
+    h+='<tr><td>'+esc(l.cod||'')+'</td><td>'+esc(a?a.des:(l.des||''))+(a&&a.tc&&(l.origem||'contrato')!=='contrato'?' <b>('+esc(tcTxt(a.tc))+')</b>':'')+(aberta?' (em curso)':'')+'</td><td class="num">'+esc(a?a.un:(l.un||''))+'</td><td class="num">'+(aberta?'—':qtf(l.qt))+'</td><td>'+esc(l.pki||'')+'</td><td>'+esc(l.pkf||'')+'</td></tr>';
   }
   h+='</table></div>';
 
@@ -7224,7 +7238,7 @@ function pcalRender(){
   /* painel do dia */
   var sp=porDia[PCAL.sel]||[], sd=ST.int.filter(function(i){ return i.data===PCAL.sel&&(i.tipo||'cat')===flt.tipo });
   h+='<aside class="pcSide"><div class="pcSideBox"><div class="pcEy">Dia selecionado</div><h3>'+esc(diaSem(PCAL.sel))+', '+esc(ptbr(PCAL.sel))+'</h3>'+
-    (sp.length?sp.map(function(p){ var fal=pdFalta(p), des=(p.lin||[]).map(function(l){ return l.des||(look(l.cod)||{}).des||l.cod||'' }).filter(Boolean);
+    (sp.length?sp.map(function(p){ var fal=pdFalta(p), des=(p.lin||[]).map(function(l){ return l.des||(look(l.cod,l.origem)||{}).des||l.cod||'' }).filter(Boolean);
       return '<button class="pcCard" data-pcabre="'+esc(p.id)+'"><strong>'+esc(p.num||'—')+' · '+(p.turno==='dia'?'Dia':'Noite')+(p.bloq?' 🔒':'')+'</strong><span>'+esc(des.slice(0,2).join(' · ').slice(0,100)||'Sem trabalhos preenchidos')+'</span><span class="pcMeta"><em class="'+(fal.length?'w':'o')+'">'+(fal.length?'falta '+esc(fal.join(', ')):'completa')+'</em><em>'+des.length+' trabalho'+(des.length===1?'':'s')+'</em><em>'+eur(valorPD(p))+' €</em></span></button>' }).join(''):'<div class="pcVazio">Ainda não há partes diárias neste dia.</div>')+
     (sd.length?'<div class="pcEy" style="margin-top:12px">Interdições do dia</div>'+sd.map(function(i){ return '<div class="pcInt">'+(i.os?'OS '+esc(i.os)+' · ':'')+esc(i.via||'')+' <span class="mono">'+esc(i.cI||'')+'–'+esc(i.cF||'')+'</span></div>' }).join(''):'')+
     '<div class="pcAcs"><button class="pri" data-pcnova="dia">+ Parte diurna</button><button data-pcnova="noite">+ Parte noturna</button></div>'+
