@@ -707,6 +707,14 @@ tr.capH td{background:var(--soft,rgba(127,127,127,.08));font-weight:650;font-siz
 .ptoGW .totc{width:84px;min-width:84px}
 .artRO{margin:0 0 10px;padding:9px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--soft);font-size:12.5px}
 table.grelha thead th.hojeC{background:var(--brand,#F9D115)!important;color:#1b1f24!important;box-shadow:inset 0 -3px 0 #1b1f24}table.grelha thead th.hojeC span{opacity:.85!important;color:#1b1f24}
+.pvW{position:fixed;inset:0;z-index:9000;background:color-mix(in srgb,var(--ink,#111) 55%,transparent);display:flex;flex-direction:column;backdrop-filter:blur(2px)}
+.pvTop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 16px;background:var(--sheet,#fff);border-bottom:1px solid var(--rule);box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.pvTop .sp{flex:1}.pvOp{display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+.pvZ{display:inline-flex;align-items:center;gap:4px}.pvZ span{min-width:48px;text-align:center;font-size:12px;font-family:var(--mono,monospace)}
+.pvArea{flex:1;overflow:auto;padding:24px;display:flex;justify-content:center;align-items:flex-start}
+.pvFolha{background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.35);overflow:hidden;flex:none}
+.pvFolha iframe{border:0;transform-origin:0 0;display:block;background:#fff}
+.pvVaz{color:#fff;font-size:14px;margin-top:20vh}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -3392,27 +3400,56 @@ function atualizaTotaisDet(){
 /* --- Ponto · folha impressa (pessoal, detalhe): A4 horizontal --- */
 /* Imprimir o ponto: escolhe-se o que entra (presença D/N, horas extra, deslocação, km, férias/baixas/…) */
 var PTOIMP_K='prodPtoImp';
-async function imprimePontoEscolha(){
-  var o={pto:1,ext:1,desl:1,km:1,aus:1}; try{ var g=JSON.parse(localStorage.getItem(PTOIMP_K)||'null'); if(g)o=g }catch(e){}
-  var temKm=(ST.ponto||[]).some(function(x){ return noPer(x.data)&&num(x.km) }), nAus=(ST.ausencias||[]).filter(function(x){ return noPer(x.data) }).length;
-  var it=[['pto','Ponto — presença (D dia · N noite)'],['ext','Horas extra'],['desl','Horas de deslocação'],['km','Quilómetros'+(temKm?'':' (sem km neste período)')],['aus','Férias, compensações, dispensas, transferências e baixas'+(nAus?' ('+nAus+' dias)':' (nada registado)')]];
-  var r=await nmModal({titulo:'Imprimir o ponto',corpo:'<p class="hint" style="margin-top:0">Período <b>'+esc(ptoPerLbl())+'</b>. Escolhe o que entra na folha:</p>'+
-    it.map(function(x){ return '<label style="display:flex;gap:8px;align-items:center;padding:5px 0;font-size:13.5px"><input type="checkbox" data-pi="'+x[0]+'"'+(o[x[0]]?' checked':'')+'> '+esc(x[1])+'</label>' }).join('')+
-    '<p class="hint" style="margin-bottom:0">Sai em A4 horizontal, uma linha por cada coisa escolhida, com os totais por pessoa e por dia.</p>',
-    botoes:[{t:'Cancelar',v:null},{t:'Imprimir',p:true,v:function(c){ var x={}; [].forEach.call(c.querySelectorAll('input[data-pi]'),function(i){ x[i.getAttribute('data-pi')]=i.checked?1:0 }); return x }}]});
-  if(!r)return;
-  if(!r.pto&&!r.ext&&!r.desl&&!r.km&&!r.aus){ toast('Escolhe pelo menos uma coisa para imprimir.'); return }
-  try{ localStorage.setItem(PTOIMP_K,JSON.stringify(r)) }catch(e){}
-  imprimePonto(r);
+/* pré-visualização genérica: mostra a folha como vai sair (A4), com opções ao lado, e imprime daqui */
+function cssImpressao(){ var t='';
+  [].forEach.call(document.styleSheets,function(ss){ var rr; try{ rr=ss.cssRules }catch(e){ return } if(!rr)return;
+    [].forEach.call(rr,function(r){ if(r.media&&/print/.test(r.media.mediaText||'')){ [].forEach.call(r.cssRules||[],function(x){ if(x.type===6)return; var sel=x.selectorText||''; if(/^(body|#app|#side|#stip|#toast|\.modalOverlay|#cmdk|#dirty)\b/.test(sel))return; t+=x.cssText+'\n' }) } }) });
+  return t }
+function previsualiza(o){ /* o:{titulo, horizontal, html(op)->string, opcoes:[[k,txt]], op, guarda(op), imprime(op)} */
+  var op=Object.assign({},o.op||{}), css=cssImpressao();
+  var w=document.createElement('div'); w.className='pvW';
+  w.innerHTML='<div class="pvTop"><b>'+esc(o.titulo||'Pré-visualização')+'</b>'+(o.opcoes||[]).map(function(x){ return '<label class="pvOp"><input type="checkbox" data-po="'+x[0]+'"'+(op[x[0]]?' checked':'')+'> '+esc(x[1])+'</label>' }).join('')+
+    '<span class="sp"></span><span class="pvZ"><button type="button" data-pz="-">−</button><span id="pvZv">Ajustar</span><button type="button" data-pz="+">+</button></span><button type="button" class="pri" data-pa="imp">Imprimir</button><button type="button" data-pa="x">Fechar</button></div>'+
+    '<div class="pvArea"><div class="pvFolha"><iframe title="Pré-visualização"></iframe></div><p class="pvVaz" hidden></p></div>';
+  document.body.appendChild(w);
+  var ifr=w.querySelector('iframe'), folha=w.querySelector('.pvFolha'), area=w.querySelector('.pvArea'), zoom=0;
+  var larg=o.horizontal?1123:794, alt0=o.horizontal?794:1123;
+  var ajusta=function(){ var d=ifr.contentDocument; if(!d||!d.body)return; var hh=Math.max(alt0,d.documentElement.scrollHeight);
+    ifr.style.width=larg+'px'; ifr.style.height=hh+'px';
+    var esc0=Math.min(1.6,(area.clientWidth-48)/larg), k=zoom?zoom:esc0; ifr.style.transform='scale('+k+')';
+    folha.style.width=(larg*k)+'px'; folha.style.height=(hh*k)+'px'; var zv=w.querySelector('#pvZv'); if(zv)zv.textContent=Math.round(k*100)+'%' };
+  var desenha=function(){ var h=o.html(op), vz=w.querySelector('.pvVaz');
+    if(!h){ folha.hidden=true; vz.hidden=false; vz.textContent=o.vazio||'Nada para mostrar com estas opções.'; return } folha.hidden=false; vz.hidden=true;
+    ifr.srcdoc='<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}#print{display:block!important;padding:'+(o.horizontal?'6mm 7mm':'8mm 9mm')+';box-sizing:border-box;width:'+larg+'px}'+css+'</style></head><body><div id="print">'+h+'</div></body></html>';
+    ifr.onload=function(){ ajusta(); setTimeout(ajusta,120) } };
+  var fecha=function(){ window.removeEventListener('resize',ajusta); document.removeEventListener('keydown',tecla,true); w.remove() };
+  var tecla=function(e){ if(e.key==='Escape'){ e.stopPropagation(); fecha() } };
+  document.addEventListener('keydown',tecla,true); window.addEventListener('resize',ajusta);
+  w.addEventListener('change',function(e){ var t=e.target; if(!t.dataset.po)return; op[t.dataset.po]=t.checked?1:0; if(o.guarda)o.guarda(op); desenha() });
+  w.addEventListener('click',function(e){ var b=e.target.closest('[data-pa],[data-pz]'); if(!b)return;
+    if(b.dataset.pz){ var cur=parseFloat(ifr.style.transform.replace(/[^0-9.]/g,''))||1; zoom=Math.max(.3,Math.min(2.5,cur+(b.dataset.pz==='+'?.15:-.15))); ajusta(); return }
+    if(b.dataset.pa==='x'){ fecha(); return }
+    if(b.dataset.pa==='imp'){ var h=o.html(op); if(!h){ toast(o.vazio||'Nada para imprimir.'); return } fecha(); o.imprime(op,h) } });
+  desenha();
 }
-function imprimePonto(op){
+var PTOIMP_K='prodPtoImp';
+function imprimePontoEscolha(){
+  var o={pto:1,ext:1,desl:1,km:1,aus:1}; try{ var g=JSON.parse(localStorage.getItem(PTOIMP_K)||'null'); if(g)o=g }catch(e){}
+  previsualiza({titulo:'Ponto · '+ptoPerLbl(),horizontal:true,op:o,
+    opcoes:[['pto','Presença D/N'],['ext','Horas extra'],['desl','Deslocação'],['km','Km'],['aus','Férias, baixas…']],
+    vazio:'Escolhe pelo menos uma coisa — ou ainda ninguém tem ponto neste período.',
+    guarda:function(op){ try{ localStorage.setItem(PTOIMP_K,JSON.stringify(op)) }catch(e){} },
+    html:function(op){ if(!op.pto&&!op.ext&&!op.desl&&!op.km&&!op.aus)return ''; return imprimePonto(op,true)||'' },
+    imprime:function(op,h){ imprimeHorizontal(h) }});
+}
+function imprimePonto(op,soHtml){
   op=op||{pto:1,ext:1,desl:1,km:1,aus:1};
   var diretos=ST.mo.filter(function(m){return m.direto!==false});
   var pre={}; (ST.ponto||[]).forEach(function(pt){ if(noPer(pt.data))pre[pt.moId]=1 });
   if(op.aus)(ST.ausencias||[]).forEach(function(a){ if(noPer(a.data))pre[a.moId]=1 });
   detMais.forEach(function(id){ pre[id]=1 });
   var lista=diretos.filter(function(m){return pre[m.id]});
-  if(!lista.length){ toast('Ainda ninguém tem ponto'+(op.aus?' nem ausências':'')+' neste período.'); return }
+  if(!lista.length){ if(soHtml)return ''; toast('Ainda ninguém tem ponto'+(op.aus?' nem ausências':'')+' neste período.'); return }
   var dias=ptoDatas();
   var fds={}, grpS=[]; dias.forEach(function(dd){ fds[dd]=[0,6].indexOf(dtJ(dd).getDay())>=0;
     var sm=semana(dd); if(grpS.length&&grpS[grpS.length-1].s===sm)grpS[grpS.length-1].n++; else grpS.push({s:sm,n:1}) });
@@ -3467,6 +3504,7 @@ function imprimePonto(op){
   var leg=[]; if(op.pto)leg.push('<b>D</b> dia · <b>N</b> noite'); if(op.ext||op.desl)leg.push((op.ext&&op.desl?'Extra e deslocação':op.ext?'Horas extra':'Deslocação')+' em horas'); if(op.km)leg.push('Km por dia');
   if(op.aus){ leg.push(Object.keys(AUS_T).map(function(t){ return '<b>'+t+'</b> '+esc(AUS_T[t].nome)+(ausTot[t]?' ('+ausTot[t]+')':'') }).join(' · ')); var cc=Object.keys(ccT); if(cc.length)leg.push('Transferidos para: '+cc.map(esc).join(', ')) }
   h+='<div class="eqLeg">'+leg.map(function(x){ return '<span>'+x+'</span>' }).join('')+'</div></div>';
+  if(soHtml)return h;
   imprimeHorizontal(h);
 }
 function grpPto(k,nome,n,cols,topo){
