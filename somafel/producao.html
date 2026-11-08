@@ -304,8 +304,7 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
   #print .eqpl table.ptf th.p_sem{background:#c4c4c4;font-size:6.6pt}
   #print .eqpl table.ptf th.p_fds{background:#bcbcbc}
   #print .eqpl table.ptf td.p_au{font-weight:800;font-size:6.6pt;line-height:1;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  #print .eqpl table.ptf td.p_au small.p_tl{display:block;font-size:4.6pt;font-weight:800;line-height:1}
-  #print .eqpl table.ptf td.p_au b.p_cc{display:block;font-size:4.9pt;font-weight:800;letter-spacing:-.03em;line-height:1.05;white-space:nowrap}
+  #print .eqpl table.ptf td.p_au b.p_cc{display:block;margin:.3mm auto 0;width:2.8mm;font-size:5.2pt;font-weight:800;background:#fff;border:.4pt solid #000;border-radius:50%;min-width:2.6mm;line-height:2.4mm;text-align:center}
   #print .eqpl table.ptf td.p_au b.p_ccF{color:#c00}
   #print .eqpl .eqLeg i.p_lg{display:inline-block;font-style:normal;font-weight:800;min-width:3.2mm;text-align:center;border:.4pt solid #888;padding:0 .6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #print .eqpl table.ptf td.p_tt small{font-weight:600;font-size:5.6pt;color:#333}
@@ -721,6 +720,7 @@ table.grelha thead th.hojeC{background:var(--brand,#F9D115)!important;color:#1b1
 .pvVaz{color:#fff;font-size:14px;margin-top:20vh}
 .gaus .ausC.ausSemCc{outline:2px solid var(--red,#c33);outline-offset:-2px}.gaus .ausCc.ausCcF{color:var(--red,#c33);font-weight:800}
 .gaus .totc{position:static!important;width:118px;min-width:118px;max-width:150px;white-space:normal!important;text-align:left;font-size:11px;line-height:1.25}
+.gaus .ausN,.ccLeg .ausN{display:inline-block;min-width:15px;height:15px;line-height:15px;border-radius:50%;background:var(--sheet,#fff);color:var(--ink);border:1px solid var(--ink);font-size:10px;font-weight:800;font-style:normal;text-align:center;margin-left:2px;vertical-align:1px}.gaus .ausN{display:block;margin:1px auto 0;width:15px;min-width:0}.gaus .ausN.ausCcF{border-color:var(--red,#c33);color:var(--red,#c33)}.ccLeg{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin:10px 2px 0;font-size:12.5px}.ccLeg span{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono,monospace)}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -3134,7 +3134,7 @@ function ausPoe(moId,data,tipo,cc){ ST.ausencias=ST.ausencias||[]; var e=ausDe(m
 function renderAus(){
   ST.ausencias=ST.ausencias||[];
   var ano=0, mesN=0, dias=ptoDatas();
-  var pess=moOrd(), ccs={}; ST.ausencias.forEach(function(x){ if(x.cc)ccs[x.cc]=1 });
+  var pess=moOrd(), ccs={}, CCN=ccNumeros(); ST.ausencias.forEach(function(x){ if(x.cc)ccs[x.cc]=1 });
   var h='<div class="escNav"><button id="ausAnt">←</button><b class="mono" style="min-width:170px;text-align:center">'+esc(ptoPerLbl())+'</b><button id="ausProx">→</button><button id="bPtoPer" title="Escolher entre que dias conta o ponto">Período…</button><span class="sp"></span><button id="ausImp" title="Imprime o mapa de presenças do mês, em A4 horizontal">Imprimir mapa</button></div>';
   h+='<div class="hint" style="margin-bottom:8px">O que acontece a cada pessoa quando não está a trabalhar. Escolhe o tipo no pincel e clica nos dias; clicar outra vez com o mesmo tipo limpa. Os dias com ponto aparecem com <b>P</b>. Não mexe no Ponto.</div>';
   h+='<div class="escPincel"><b>Pincel</b><select id="ausTipo">'+Object.keys(AUS_T).map(function(k){ return '<option value="'+k+'"'+(ausPincel.tipo===k?' selected':'')+'>'+k+' — '+AUS_T[k].nome+'</option>' }).join('')+'<option value="limpa"'+(ausPincel.tipo==='limpa'?' selected':'')+'>Limpar</option></select>'+
@@ -3154,15 +3154,16 @@ function renderAus(){
       if(a){ cnt[a.tipo]++; porDia[d].a++; if(a.cc)tcc[a.cc]=(tcc[a.cc]||0)+1; txt=a.tipo; st='background:'+AUS_T[a.tipo].cor; tt+=' — '+AUS_T[a.tipo].nome+(a.cc?' para '+a.cc:''); if(pt){ cls+=' ausConf'; tt+=' · atenção: também tem ponto neste dia' } }
       else if(pt){ txt='P'; cls+=' ausP'; tt+=' — trabalhou ('+(pt.turno==='noite'?'noite':'dia')+')' }
       if(a&&a.tipo==='T'&&!a.cc){ cls+=' ausSemCc'; tt+=' — falta o centro de custo (clica com o pincel T e o centro de custo escrito)' }
-      h+='<td class="'+cls+'" data-aus="'+m.id+'|'+d+'" style="'+st+'" title="'+esc(tt)+'">'+txt+(a&&a.tipo==='T'?'<span class="ausCc'+(a.cc?'':' ausCcF')+'">'+(a.cc?esc(a.cc):'CC?')+'</span>':'')+'</td>';
+      h+='<td class="'+cls+'" data-aus="'+m.id+'|'+d+'" style="'+st+'" title="'+esc(tt)+'">'+txt+(a&&a.tipo==='T'?'<span class="ausN'+(a.cc?'':' ausCcF')+'">'+(a.cc?CCN[a.cc]:'?')+'</span>':'')+'</td>';
     });
-    var rs=Object.keys(AUS_T).filter(function(k){ return cnt[k] }).map(function(k){ return k+' '+cnt[k]+(k==='T'&&Object.keys(tcc).length?' ('+Object.keys(tcc).join(', ')+')':'') });
+    var rs=Object.keys(AUS_T).filter(function(k){ return cnt[k] }).map(function(k){ return k+' '+cnt[k]+(k==='T'&&Object.keys(tcc).length?' → '+Object.keys(tcc).sort(function(a,b){ return CCN[a]-CCN[b] }).map(function(c){ return CCN[c] }).join(', '):'') });
     h+='<td class="totc" style="text-align:left;font-size:11px;white-space:nowrap">'+(cnt.P?'P '+cnt.P+(rs.length?' · ':''):'')+esc(rs.join(' · '))+'</td></tr>';
   });
   if(!pess.length)h+='<tr><td colspan="'+(dias.length+2)+'"><div class="empty">Sem pessoal direto em MO e EQ.</div></td></tr>';
   h+='<tr class="rodape"><td class="stick">A trabalhar</td>'+dias.map(function(d){ return '<td>'+(porDia[d].p||'')+'</td>' }).join('')+'<td></td></tr>';
   h+='<tr class="rodape"><td class="stick">Ausentes</td>'+dias.map(function(d){ return '<td>'+(porDia[d].a||'')+'</td>' }).join('')+'<td></td></tr>';
   h+='</tbody></table></div>';
+  if(Object.keys(CCN).length)h+='<div class="ccLeg"><b>Transferências (T) — centro de custo</b>'+Object.keys(CCN).sort(function(a,b){ return CCN[a]-CCN[b] }).map(function(k){ return '<span><i class="ausN">'+CCN[k]+'</i> '+esc(k)+'</span>' }).join('')+'</div>';
   $('#ptoBox').innerHTML=(perAberto?perPainel():'')+h;
   var noMes=ST.ausencias.filter(function(x){ return noPer(x.data) }).length;
   $('#ftPto').innerHTML='<b>'+noMes+'</b> '+(noMes===1?'dia de ausência registado':'dias de ausência registados')+' em '+esc(ptoPerLbl().toLowerCase());
@@ -3440,6 +3441,10 @@ function previsualiza(o){ /* o:{titulo, horizontal, html(op)->string, opcoes:[[k
 }
 var PTOIMP_K='prodPtoImp';
 /* cores das ausências na folha impressa (claras, para se lerem bem em papel) */
+/* transferências: cada centro de custo do período ganha um número (1, 2, 3…) que aparece por baixo do T, com legenda */
+function ccNumeros(){ var L=(ST.ausencias||[]).filter(function(a){ return a.tipo==='T'&&a.cc&&noPer(a.data) }).sort(function(a,b){ return a.data<b.data?-1:a.data>b.data?1:0 }), m={}, n=0;
+  L.forEach(function(a){ if(!m[a.cc])m[a.cc]=++n }); return m }
+function ccLegenda(M){ var ks=Object.keys(M).sort(function(a,b){ return M[a]-M[b] }); return ks.map(function(k){ return '<b>'+M[k]+'</b> = '+esc(k) }).join(' · ') }
 var AUS_IMP={F:'#cdeac0',C:'#cfe2f7',D:'#e2d8f1',T:'#fde0bd',B:'#f7c6c6'};
 function imprimePontoEscolha(){
   var o={pto:1,ext:1,desl:1,km:1,aus:1}; try{ var g=JSON.parse(localStorage.getItem(PTOIMP_K)||'null'); if(g)o=g }catch(e){}
@@ -3466,7 +3471,7 @@ function imprimePonto(op,soHtml){
   /* linhas escolhidas: a presença junta as ausências; sem presença, as ausências têm linha própria */
   var L=[]; if(op.pto)L.push('p'); else if(op.aus)L.push('a'); if(op.ext)L.push('x'); if(op.desl)L.push('t'); if(op.km)L.push('k');
   var NOME={p:'D/N',a:'Aus.',x:'Extra',t:'Desl.',k:'Km'};
-  var T={p:0,x:0,t:0,k:0}, porDia={}, ausTot={}, ccT={};
+  var T={p:0,x:0,t:0,k:0}, porDia={}, ausTot={}, ccT={}, CCN=ccNumeros();
   dias.forEach(function(d){ porDia[d]={p:0,x:0,t:0,k:0,a:0} });
   var corpo='', nR=L.length;
   grupos.forEach(function(g){
@@ -3482,7 +3487,7 @@ function imprimePonto(op,soHtml){
         L.forEach(function(k){
           if(k==='p'||k==='a'){
             if(k==='p'&&pt){ var nn=pt.turno==='noite'; R[k]+='<td class="'+(nn?'p_n':'p_d')+'">'+(nn?'N':'D')+'</td>' }
-            else if(au)R[k]+='<td class="p_au" style="background:'+(AUS_IMP[au.tipo]||'#eee')+'" title="'+esc((AUS_T[au.tipo]||{}).nome||au.tipo)+(au.cc?' · '+esc(au.cc):'')+'">'+(au.tipo==='T'?'<small class="p_tl">T</small><b class="p_cc'+(au.cc?'':' p_ccF')+'">'+(au.cc?esc(au.cc):'CC?')+'</b>':esc(au.tipo))+'</td>';
+            else if(au)R[k]+='<td class="p_au" style="background:'+(AUS_IMP[au.tipo]||'#eee')+'" title="'+esc((AUS_T[au.tipo]||{}).nome||au.tipo)+(au.cc?' · '+esc(au.cc):'')+'">'+(au.tipo==='T'?'T<b class="p_cc'+(au.cc?'':' p_ccF')+'">'+(au.cc?CCN[au.cc]:'?')+'</b>':esc(au.tipo))+'</td>';
             else R[k]+='<td class="'+f+'"></td>';
           } else if(pt){ var v=k==='x'?pt.extra:k==='t'?pt.deslocacao:pt.km, nn2=pt.turno==='noite'; R[k]+='<td class="'+(nn2?'p_xn':'p_xd')+'">'+esc(fmtH(v))+'</td>' }
           else R[k]+='<td class="'+f+'"></td>';
@@ -3490,7 +3495,7 @@ function imprimePonto(op,soHtml){
       });
       T.p+=S.p; T.x+=S.x; T.t+=S.t; T.k+=S.k;
       var ausTxt=Object.keys(aus).map(function(t){ return t+' '+aus[t]+(t==='T'&&Object.keys(ccP).length?' → '+Object.keys(ccP).join(', '):'') }).join(' · ');
-      var ausHtml=Object.keys(aus).map(function(t){ return '<span style="background:'+(AUS_IMP[t]||'#eee')+';padding:0 .5mm">'+t+' '+aus[t]+'</span>'+(t==='T'?(function(){ var ks=Object.keys(ccP), semCc=aus.T-ks.reduce(function(z,k){ return z+ccP[k] },0); return ' → '+esc(ks.map(function(k){ return k+(ccP[k]>1?' ('+ccP[k]+')':'') }).join(', '))+(semCc>0?(ks.length?', ':'')+'<b style="color:#c00">'+semCc+' sem CC</b>':'') })():'') }).join('<br>');
+      var ausHtml=Object.keys(aus).map(function(t){ return '<span style="background:'+(AUS_IMP[t]||'#eee')+';padding:0 .5mm">'+t+' '+aus[t]+'</span>'+(t==='T'?(function(){ var ks=Object.keys(ccP), semCc=aus.T-ks.reduce(function(z,k){ return z+ccP[k] },0); return ' → '+ks.sort(function(a,b){ return CCN[a]-CCN[b] }).map(function(k){ return '<b>'+CCN[k]+'</b>'+(ccP[k]>1?'×'+ccP[k]:'') }).join(' ')+(semCc>0?' <b style="color:#c00">?×'+semCc+'</b>':'') })():'') }).join('<br>');
       var tot={p:S.p+(S.p===1?' dia':' dias')+(ausHtml?'<br><small>'+ausHtml+'</small>':''),a:ausHtml||'—',x:esc(fmtT(S.x)),t:esc(fmtT(S.t)),k:esc(fmtT(S.k))};
       corpo+='<tbody>'+(ix===0?'<tr class="p_cat"><td colspan="'+(dias.length+3)+'">'+esc(g.nome||'Sem categoria')+' · '+g.itens.length+'</td></tr>':'');
       L.forEach(function(k,i){
@@ -3511,7 +3516,7 @@ function imprimePonto(op,soHtml){
     '<thead><tr><th rowspan="2" colspan="2">Pessoa</th>'+grpS.map(function(g){ return '<th colspan="'+g.n+'" class="p_sem">S'+g.s+'</th>' }).join('')+'<th rowspan="2">Total</th></tr>'+
     '<tr>'+dias.map(function(d){ return '<th class="'+(fds[d]?'p_fds':'')+'">'+d.slice(8)+'<br>'+esc(diaSem(d).slice(0,1))+'</th>' }).join('')+'</tr></thead>'+corpo+sm+'</table>';
   var leg=[]; if(op.pto)leg.push('<b>D</b> dia · <b>N</b> noite'); if(op.ext||op.desl)leg.push((op.ext&&op.desl?'Extra e deslocação':op.ext?'Horas extra':'Deslocação')+' em horas'); if(op.km)leg.push('Km por dia');
-  if(op.aus){ leg.push(Object.keys(AUS_T).map(function(t){ return '<i class="p_lg" style="background:'+(AUS_IMP[t]||'#eee')+'">'+t+'</i> '+esc(AUS_T[t].nome)+(ausTot[t]?' ('+ausTot[t]+')':'') }).join(' &nbsp; ')); var cc=Object.keys(ccT); if(cc.length)leg.push('Transferidos para: '+cc.map(esc).join(', ')) }
+  if(op.aus){ leg.push(Object.keys(AUS_T).map(function(t){ return '<i class="p_lg" style="background:'+(AUS_IMP[t]||'#eee')+'">'+t+'</i> '+esc(AUS_T[t].nome)+(ausTot[t]?' ('+ausTot[t]+')':'') }).join(' &nbsp; ')); if(Object.keys(CCN).length)leg.push('<b>Transferências (T) — centro de custo:</b> '+ccLegenda(CCN)) }
   h+='<div class="eqLeg">'+leg.map(function(x){ return '<span>'+x+'</span>' }).join('')+'</div></div>';
   if(soHtml)return h;
   imprimeHorizontal(h);
