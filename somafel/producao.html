@@ -328,7 +328,7 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
 .dirty{color:var(--brand);font-size:11.5px;align-self:center;margin-right:2px;white-space:nowrap}
 tr.linaberta{background:var(--verdbg)}
 td .chip{margin-right:5px}
-#fTipoGlobal{margin-right:2px}#fCliGlobal{max-width:190px;margin-right:2px}
+#fTipoGlobal{margin-right:2px;min-width:84px;font-family:var(--mono,monospace);font-weight:700}#fCliGlobal{max-width:190px;margin-right:2px}
 .modalOverlay{position:fixed;inset:0;background:rgba(20,20,18,.45);display:flex;align-items:center;justify-content:center;z-index:80;padding:24px}
 [hidden]{display:none!important}
 .modalBox{background:var(--sheet);border-radius:6px;max-width:680px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
@@ -1444,8 +1444,8 @@ function render(){
   if(selC){ selC.hidden=csO.length<2; selC.innerHTML=csO.map(function(c){ return '<option>'+esc(c)+'</option>' }).join(''); selC.value=cliAtual() }
   var selT=$('#fTipoGlobal');
   if(selT){
-    selT.innerHTML=ST.tipos.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.nome)+'</option>'}).join('');
-    selT.value=flt.tipo;
+    selT.innerHTML=ST.tipos.map(function(t){return '<option value="'+esc(t.id)+'" title="'+esc(t.nome)+'">'+esc(t.prefixo||t.nome)+'</option>'}).join('');
+    selT.value=flt.tipo; var tA=tipoAtual(); selT.title='Especialidade: '+(tA?tA.nome:'');
   }
   if(!ST.adicionais)ST.adicionais=[];
   garanteIds(ST.adicionais);
