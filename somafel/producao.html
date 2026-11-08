@@ -4148,7 +4148,7 @@ function renderMap(){
       ult=ch;
       if(!ch.some(function(c){return capFechados[c]}))h+=linha(a);
     });
-  } else rows.forEach(function(a){ h+=linha(a) });
+  } else { var CMm=capMapa(), CVm={}; rows.forEach(function(a){ h+=capCabecalhos(a.cod,CMm,CVm,doMes?14:12)+linha(a) }) }
   h+=maisLinhasHtml('map',nMapL-LIMV.map,14);
   h+='</tbody></table>';
   $('#mapBox').innerHTML=h;
