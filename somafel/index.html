@@ -264,9 +264,12 @@ tr.rbCap td{font-weight:650;background:var(--soft)}tr.rbCap.n1 td{text-transform
 <style>.vz>*,#m.entra>*,tbody tr,.lin,.jan>*{animation:none!important}.card.obra:hover,.obra:hover,.card.obra:active,.obra:active{transform:none!important;box-shadow:none}.so{transition:background .15s,border-color .15s}.pg.entra{animation:entra .18s ease-out}</style>
 <script src="movimento.js"></script>
 <link rel="manifest" href="manifest-central.json">
-<script>/* janela própria (atalho): abre maximizada, uma vez por sessão */
-(function(){try{if(parent!==window||sessionStorage.getItem('mx'))return;sessionStorage.setItem('mx','1');var w=screen.availWidth,h=screen.availHeight;
-if(window.outerWidth<w-40||window.outerHeight<h-40){window.moveTo(screen.availLeft||0,screen.availTop||0);window.resizeTo(w,h)}}catch(e){}})();</script>
+<script>/* janela própria (app instalada ou atalho «abrir como janela»): ocupa o ecrã todo ao abrir.
+   Tenta logo, depois de carregar e mais duas vezes (alguns sistemas só aceitam depois da janela aparecer). Uma vez por janela. */
+(function(){try{if(parent!==window)return;var app=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: minimal-ui)').matches||matchMedia('(display-mode: window-controls-overlay)').matches;
+if(!app||sessionStorage.getItem('mx2'))return;sessionStorage.setItem('mx2','1');
+var max=function(){try{var w=screen.availWidth,h=screen.availHeight;if(window.outerWidth<w-24||window.outerHeight<h-24){window.moveTo(screen.availLeft||0,screen.availTop||0);window.resizeTo(w,h)}}catch(e){}};
+max();addEventListener('load',function(){max();setTimeout(max,350);setTimeout(max,1200)})}catch(e){}})();</script>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#FBD015">
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>

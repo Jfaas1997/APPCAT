@@ -4,6 +4,7 @@
  "start_url": "./index.html",
  "scope": "./",
  "display": "standalone",
+ "display_override": ["standalone"],
  "background_color": "#FBD015",
  "theme_color": "#FBD015",
  "lang": "pt-PT",
