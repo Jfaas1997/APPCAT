@@ -304,7 +304,9 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
   #print .eqpl table.ptf th.p_sem{background:#c4c4c4;font-size:6.6pt}
   #print .eqpl table.ptf th.p_fds{background:#bcbcbc}
   #print .eqpl table.ptf td.p_au{font-weight:800;font-size:6.6pt;line-height:1;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  #print .eqpl table.ptf td.p_au small.p_cc{display:block;font-size:3.9pt;font-weight:600;letter-spacing:-.02em;margin-top:.2mm}
+  #print .eqpl table.ptf td.p_au small.p_tl{display:block;font-size:4.6pt;font-weight:800;line-height:1}
+  #print .eqpl table.ptf td.p_au b.p_cc{display:block;font-size:4.9pt;font-weight:800;letter-spacing:-.03em;line-height:1.05;white-space:nowrap}
+  #print .eqpl table.ptf td.p_au b.p_ccF{color:#c00}
   #print .eqpl .eqLeg i.p_lg{display:inline-block;font-style:normal;font-weight:800;min-width:3.2mm;text-align:center;border:.4pt solid #888;padding:0 .6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #print .eqpl table.ptf td.p_tt small{font-weight:600;font-size:5.6pt;color:#333}
   #print .eqpl table.ptf td.p_nm{text-align:left;font-weight:700;font-size:6.9pt;padding:0 1.2mm;line-height:1.1;overflow-wrap:anywhere;word-break:break-word;background:#fff}
@@ -355,7 +357,7 @@ table.grelha.gnum .diaCol,table.grelha.gnum .diaCel{width:42px;min-width:42px}
 .diaCel.pres{background:var(--okbg)}
 .gdet td.nm{position:relative;padding-right:22px}.gdet .detTira{position:absolute;right:2px;top:4px;opacity:.35;padding:0 5px;line-height:1.3}.gdet tr:hover .detTira,.gdet .detTira:focus-visible{opacity:1}
 .gesc tr.escEq td{background:var(--soft)!important;font-weight:600;border-top:2px solid var(--rule)}.gesc tr.escLid td.escNome{font-weight:600}.gesc .lidS{color:#C98500}.gesc tr.escMeio td.escNome .chip{font-size:10px;padding:0 5px}
-.gaus .diaCol,.gaus .diaCel{width:30px;min-width:30px}.gaus .ausC{cursor:pointer;text-align:center;font-weight:600;font-size:11px;position:relative}.gaus .ausC.ausP{color:var(--muted);font-weight:400}.gaus .ausC.ausConf{box-shadow:inset 0 0 0 2px var(--amber)}.gaus .ausCc{display:block;font-size:8px;font-weight:400;line-height:1}
+.gaus .diaCol,.gaus .diaCel{width:27px;min-width:27px}.gaus .ausC{cursor:pointer;text-align:center;font-weight:600;font-size:11px;position:relative}.gaus .ausC.ausP{color:var(--muted);font-weight:400}.gaus .ausC.ausConf{box-shadow:inset 0 0 0 2px var(--amber)}.gaus .ausCc{display:block;font-size:8px;font-weight:400;line-height:1}
 .diaCel.dia.eqp{background:#2E9A5C;color:#fff;font-size:12px;text-align:center}
 :root[data-tema="escuro"] .diaCel.dia.eqp{background:#33B06A;color:#0f1a14}
 @media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .diaCel.dia.eqp{background:#33B06A;color:#0f1a14}}
@@ -717,6 +719,8 @@ table.grelha thead th.hojeC{background:var(--brand,#F9D115)!important;color:#1b1
 .pvFolha{background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.35);overflow:hidden;flex:none}
 .pvFolha iframe{border:0;transform-origin:0 0;display:block;background:#fff}
 .pvVaz{color:#fff;font-size:14px;margin-top:20vh}
+.gaus .ausC.ausSemCc{outline:2px solid var(--red,#c33);outline-offset:-2px}.gaus .ausCc.ausCcF{color:var(--red,#c33);font-weight:800}
+.gaus .totc{position:static!important;width:118px;min-width:118px;max-width:150px;white-space:normal!important;text-align:left;font-size:11px;line-height:1.25}
 </style>
 <style id="norma-comum">
 /* Norma comum v1 · Produção v2 */
@@ -3122,7 +3126,7 @@ function renderEsc(){
 
 
 /* --- Mapa de presenças: o que acontece a cada pessoa quando não está a trabalhar (separado do Ponto) --- */
-var AUS_T={F:{nome:'Férias',cor:'hsla(205,75%,55%,.38)'},C:{nome:'Compensação',cor:'hsla(275,55%,60%,.36)'},D:{nome:'Dispensado',cor:'hsla(30,10%,55%,.38)'},T:{nome:'Transferido',cor:'hsla(28,90%,55%,.40)'},B:{nome:'Baixa',cor:'hsla(355,75%,58%,.38)'}};
+var AUS_T={F:{nome:'Férias',cor:'hsla(110,50%,48%,.40)'},C:{nome:'Compensação',cor:'hsla(210,75%,58%,.40)'},D:{nome:'Dispensado',cor:'hsla(268,50%,62%,.40)'},T:{nome:'Transferido',cor:'hsla(28,90%,55%,.40)'},B:{nome:'Baixa',cor:'hsla(355,75%,58%,.38)'}};
 var ausPincel={tipo:'F',cc:''};
 function ausDe(moId,data){ var a=ST.ausencias||[]; for(var i=0;i<a.length;i++)if(a[i].moId===moId&&a[i].data===data)return a[i]; return null }
 function ausTira(moId,data){ ST.ausencias=(ST.ausencias||[]).filter(function(x){ return !(x.moId===moId&&x.data===data) }) }
@@ -3138,7 +3142,7 @@ function renderAus(){
     '<span style="margin-left:auto">'+Object.keys(AUS_T).map(function(k){ return '<span style="margin-left:10px;font-size:12px"><span class="chipcor" style="background:'+AUS_T[k].cor+'"></span>'+k+' '+AUS_T[k].nome+'</span>' }).join('')+'<span style="margin-left:10px;font-size:12px"><b>P</b> trabalhou</span></span></div>';
   h+='<div class="gridWrap"><table class="grelha gaus"><thead><tr><th class="stick">&nbsp;</th>';
   dias.forEach(function(d){ var fd=[0,6].indexOf(dtJ(d).getDay())>=0; h+='<th class="diaCol'+(fd?' fds':'')+(d===hoje()?' hojeC':'')+'"'+(d===hoje()?' title="Hoje"':'')+'>'+d.slice(8)+'<br><span style="font-weight:400;opacity:.6">'+diaSem(d).slice(0,1)+'</span></th>' });
-  h+='<th class="totc" style="min-width:96px;white-space:nowrap;text-align:left">Resumo</th></tr></thead><tbody>';
+  h+='<th class="totc" style="width:118px;min-width:118px;white-space:nowrap;text-align:left">Resumo</th></tr></thead><tbody>';
   var catAnt=null, porDia={}; dias.forEach(function(d){ porDia[d]={p:0,a:0} });
   pess.forEach(function(m){
     if(m.cat!==catAnt){ catAnt=m.cat; h+='<tr class="grp"><td colspan="'+(dias.length+2)+'" style="text-align:left">'+esc(m.cat||'Sem categoria')+'</td></tr>' }
@@ -3149,7 +3153,8 @@ function renderAus(){
       if(pt){ cnt.P++; porDia[d].p++ }
       if(a){ cnt[a.tipo]++; porDia[d].a++; if(a.cc)tcc[a.cc]=(tcc[a.cc]||0)+1; txt=a.tipo; st='background:'+AUS_T[a.tipo].cor; tt+=' — '+AUS_T[a.tipo].nome+(a.cc?' para '+a.cc:''); if(pt){ cls+=' ausConf'; tt+=' · atenção: também tem ponto neste dia' } }
       else if(pt){ txt='P'; cls+=' ausP'; tt+=' — trabalhou ('+(pt.turno==='noite'?'noite':'dia')+')' }
-      h+='<td class="'+cls+'" data-aus="'+m.id+'|'+d+'" style="'+st+'" title="'+esc(tt)+'">'+txt+(a&&a.tipo==='T'&&a.cc?'<span class="ausCc">'+esc(a.cc)+'</span>':'')+'</td>';
+      if(a&&a.tipo==='T'&&!a.cc){ cls+=' ausSemCc'; tt+=' — falta o centro de custo (clica com o pincel T e o centro de custo escrito)' }
+      h+='<td class="'+cls+'" data-aus="'+m.id+'|'+d+'" style="'+st+'" title="'+esc(tt)+'">'+txt+(a&&a.tipo==='T'?'<span class="ausCc'+(a.cc?'':' ausCcF')+'">'+(a.cc?esc(a.cc):'CC?')+'</span>':'')+'</td>';
     });
     var rs=Object.keys(AUS_T).filter(function(k){ return cnt[k] }).map(function(k){ return k+' '+cnt[k]+(k==='T'&&Object.keys(tcc).length?' ('+Object.keys(tcc).join(', ')+')':'') });
     h+='<td class="totc" style="text-align:left;font-size:11px;white-space:nowrap">'+(cnt.P?'P '+cnt.P+(rs.length?' · ':''):'')+esc(rs.join(' · '))+'</td></tr>';
@@ -3168,6 +3173,7 @@ function renderAus(){
     if(t.closest('#ausImp')){ imprimeAus(); return }
     var c=t.closest('[data-aus]'); if(!c)return;
     var pp=c.dataset.aus.split('|'), a=ausDe(pp[0],pp[1]), tp=ausPincel.tipo;
+    if(tp==='T'&&a&&a.tipo==='T'&&!a.cc&&ausPincel.cc.trim()){ a.cc=ausPincel.cc.trim(); render(); return }
     if(tp==='limpa'||(a&&a.tipo===tp&&(tp!=='T'||a.cc===ausPincel.cc))){ ausTira(pp[0],pp[1]); render(); return }
     if(tp==='T'&&!ausPincel.cc.trim()){ toast('Escreve primeiro o centro de custo para onde foi transferido.'); var ic=$('#ausCc'); if(ic)ic.focus(); return }
     ausPoe(pp[0],pp[1],tp,ausPincel.cc.trim()); render();
@@ -3476,7 +3482,7 @@ function imprimePonto(op,soHtml){
         L.forEach(function(k){
           if(k==='p'||k==='a'){
             if(k==='p'&&pt){ var nn=pt.turno==='noite'; R[k]+='<td class="'+(nn?'p_n':'p_d')+'">'+(nn?'N':'D')+'</td>' }
-            else if(au)R[k]+='<td class="p_au" style="background:'+(AUS_IMP[au.tipo]||'#eee')+'" title="'+esc((AUS_T[au.tipo]||{}).nome||au.tipo)+(au.cc?' · '+esc(au.cc):'')+'">'+esc(au.tipo)+(au.tipo==='T'&&au.cc?'<small class="p_cc">'+esc(au.cc)+'</small>':'')+'</td>';
+            else if(au)R[k]+='<td class="p_au" style="background:'+(AUS_IMP[au.tipo]||'#eee')+'" title="'+esc((AUS_T[au.tipo]||{}).nome||au.tipo)+(au.cc?' · '+esc(au.cc):'')+'">'+(au.tipo==='T'?'<small class="p_tl">T</small><b class="p_cc'+(au.cc?'':' p_ccF')+'">'+(au.cc?esc(au.cc):'CC?')+'</b>':esc(au.tipo))+'</td>';
             else R[k]+='<td class="'+f+'"></td>';
           } else if(pt){ var v=k==='x'?pt.extra:k==='t'?pt.deslocacao:pt.km, nn2=pt.turno==='noite'; R[k]+='<td class="'+(nn2?'p_xn':'p_xd')+'">'+esc(fmtH(v))+'</td>' }
           else R[k]+='<td class="'+f+'"></td>';
@@ -3484,7 +3490,7 @@ function imprimePonto(op,soHtml){
       });
       T.p+=S.p; T.x+=S.x; T.t+=S.t; T.k+=S.k;
       var ausTxt=Object.keys(aus).map(function(t){ return t+' '+aus[t]+(t==='T'&&Object.keys(ccP).length?' → '+Object.keys(ccP).join(', '):'') }).join(' · ');
-      var ausHtml=Object.keys(aus).map(function(t){ return '<span style="background:'+(AUS_IMP[t]||'#eee')+';padding:0 .5mm">'+t+' '+aus[t]+'</span>'+(t==='T'&&Object.keys(ccP).length?' → '+esc(Object.keys(ccP).join(', ')):'') }).join('<br>');
+      var ausHtml=Object.keys(aus).map(function(t){ return '<span style="background:'+(AUS_IMP[t]||'#eee')+';padding:0 .5mm">'+t+' '+aus[t]+'</span>'+(t==='T'?(function(){ var ks=Object.keys(ccP), semCc=aus.T-ks.reduce(function(z,k){ return z+ccP[k] },0); return ' → '+esc(ks.map(function(k){ return k+(ccP[k]>1?' ('+ccP[k]+')':'') }).join(', '))+(semCc>0?(ks.length?', ':'')+'<b style="color:#c00">'+semCc+' sem CC</b>':'') })():'') }).join('<br>');
       var tot={p:S.p+(S.p===1?' dia':' dias')+(ausHtml?'<br><small>'+ausHtml+'</small>':''),a:ausHtml||'—',x:esc(fmtT(S.x)),t:esc(fmtT(S.t)),k:esc(fmtT(S.k))};
       corpo+='<tbody>'+(ix===0?'<tr class="p_cat"><td colspan="'+(dias.length+3)+'">'+esc(g.nome||'Sem categoria')+' · '+g.itens.length+'</td></tr>':'');
       L.forEach(function(k,i){
