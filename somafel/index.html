@@ -283,7 +283,7 @@ setTimeout(function(){var e=document.getElementById('splash');if(e&&e.dataset.es
 <div id="raiz"></div>
 <script>try{new MutationObserver(function(m,o){if(document.querySelector('#raiz #entrada')){var e=document.getElementById('splash');if(e&&e.dataset.estatico&&!e.dataset.adot){e.classList.add('fim');setTimeout(function(){e.remove()},450)}o.disconnect()}}).observe(document.getElementById('raiz'),{childList:true})}catch(e){}</script>
 <div id="avisos" aria-live="polite"></div>
-<script>window.__mvCentral=1</script><script src="design.js?v=20261105c"></script>
+<script>window.__mvCentral=1</script><script src="design.js?v=20261105c"></script><script src="interdicoes.js?v=20261116"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const SB_URL='https://dnllrbgzkgrerkybtjjl.supabase.co';
@@ -465,7 +465,7 @@ function casca(){tiraSplash0();
    +'<button class="tab" data-v="visao">'+ico('dash')+'<span>Visão geral</span></button>'
    +'<button class="tab" data-v="mat">'+ico('box')+'<span>Materiais</span></button>'
    +'<button class="tab" data-v="prod">'+ico('fact')+'<span>Produção</span></button>'
-   +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>OS e PDT</span></button><button class="tab" data-v="proj">'+ico('book')+'<span>Projeto</span></button><button class="tab" data-v="linha">'+ico('linha')+'<span>Linha</span></button>':'')+'</div>'
+   +(ger?'<button class="tab" data-v="docs">'+ico('norma')+'<span>Interdições</span></button><button class="tab" data-v="proj">'+ico('book')+'<span>Projeto</span></button><button class="tab" data-v="linha">'+ico('linha')+'<span>Linha</span></button>':'')+'</div>'
    +(ger?'<div class="sgrp">Aplicações</div><button class="tab" data-v="med">'+ico('ruler')+'<span>Medições CAT</span></button><button class="tab" data-v="rct">'+ico('box')+'<span>Medição RCT</span></button><button class="tab" data-v="cons">'+ico('calc')+'<span>Dimensionamento CAT</span></button>'
      +'<button class="tab" data-v="normas">'+ico('norma')+'<span>Normas</span></button><button class="tab" data-v="desenhos">'+ico('book')+'<span>Catálogo e desenhos</span></button><button class="tab" data-v="esq">'+ico('norma')+'<span>Esquemas</span></button>':'')
    +(ger?'<div class="sgrp">Administração</div><button class="tab" data-v="pessoal">'+IC.pessoas+'<span>Pessoal</span><b id="sPessN" hidden></b></button><button class="tab" data-v="forn">'+IC.pessoas+'<span>Fornecedores</span></button><button class="tab" data-v="equip">'+IC.def+'<span>Equipamentos</span></button><button class="tab" data-v="pessoas">'+IC.pessoas+'<span>Utilizadores</span></button>'+(admin()?'<button class="tab" data-v="def">'+IC.def+'<span>Definições</span></button>':''):'')
@@ -485,7 +485,7 @@ function ajuda(){vai('livro')}
 /* ===== Livro de instruções interativo (versão online) ===== */
 const LV={sec:'inicio',q:'',aberta:null};
 const LV_APPS=[
-  {k:'central',t:'Somafel Catenária',s:'Obras, contratos, pessoas, OS e PDT, projeto, linha, painel económico',v:'obras',txt:'É o ponto de entrada. Escolhes a obra, vês a Visão geral (contratos, pessoas, painel económico, partes diárias), carregas OS e fazes os PDT, guardas o projeto e vês a Linha. Também tem o que é de toda a empresa: Pessoal, Equipamentos, Fornecedores, Normas, Catálogo e desenhos, Esquemas e Utilizadores.'},
+  {k:'central',t:'Somafel Catenária',s:'Obras, contratos, pessoas, interdições (PTI, pedidos, OS e PDT), projeto, linha, painel económico',v:'obras',txt:'É o ponto de entrada. Escolhes a obra, vês a Visão geral (contratos, pessoas, painel económico, partes diárias), carregas OS e fazes os PDT, guardas o projeto e vês a Linha. Também tem o que é de toda a empresa: Pessoal, Equipamentos, Fornecedores, Normas, Catálogo e desenhos, Esquemas e Utilizadores.'},
   {k:'med',t:'Medições CAT',s:'estruturas, montagens, lanços, pendulagem, execução',v:'med',app:1,txt:'Mede a obra estrutura a estrutura (postes, pórticos) com as montagens e peças da base IP. Lanços de catenária e pendulagem calculam o cabo e os pendurais. Na Execução marcas o que já foi montado. Alimenta os Materiais e o painel.'},
   {k:'cons',t:'Dimensionamento CAT',s:'consolas, postes, pórticos, caderno de montagem',v:'cons',app:1,txt:'Calcula consolas, postes e pórticos (incluindo pórticos rígidos) e verifica-os. Cada apoio enviado passa a ser uma folha do caderno de montagem, com desenho cotado, peças e verificações.'},
   {k:'mat',t:'Materiais',s:'medição, compras, notas de encomenda, guias, stock',v:'mat',app:1,txt:'Controla o material da obra: o que a medição pede, os comparativos de fornecedores, as notas de encomenda (NE), as guias de remessa, o stock e o consumo por auto. O Cruzamento mostra o que falta encomendar ou receber.'},
@@ -496,7 +496,7 @@ const LV_APPS=[
 const LV_CICLO=[
   {t:'Criar a obra',v:'obras',txt:'Em Obras, «+ Nova obra»: centro de custo e nome. Depois, na Visão geral, junta os contratos aprovados e as pessoas com acesso.',tour:'obra'},
   {t:'Preparar',v:'esq',txt:'Associa à obra os esquemas elétricos e de sinalização (biblioteca em Esquemas) e carrega as peças de projeto em Projeto.',tour:'esquemas'},
-  {t:'OS e PDT',v:'docs',txt:'Em OS e PDT carregas o PDF da OS: a Somafel Catenária lê o número, a semana e os períodos. Com «Criar PDT» fazes o programa diário de cada noite, com o esquema elétrico em anexo.',tour:'pdt'},
+  {t:'Interdições',v:'docs',txt:'Em Interdições fazes o PTI e os pedidos de interdição, carregas o PDF da OS: a Somafel Catenária lê o número, a semana e os períodos. Com «Criar PDT» fazes o programa diário de cada noite, com o esquema elétrico em anexo.',tour:'pdt'},
   {t:'Medir',v:'med',txt:'Na Medição CAT juntas as estruturas e as montagens. O Dimensionamento CAT verifica consolas, postes e pórticos.',tour:'medir'},
   {t:'Materiais',v:'mat',txt:'Nos Materiais fazes os comparativos, as notas de encomenda e registas as guias. O stock acompanha o que entra e sai.',tour:null},
   {t:'Executar',v:'prod',txt:'Cada noite: parte diária na Produção (ou no telemóvel), com as rubricas executadas, o pessoal, o equipamento e as horas da interdição.',tour:'parte'},
@@ -506,10 +506,10 @@ const LV_TAREFAS=[
   {c:'Obra',t:'Criar uma obra nova',p:['Abre «Obras» na barra lateral.','Carrega em «+ Nova obra» no cabeçalho.','Escreve o centro de custo e o nome e confirma.'],tour:'obra'},
   {c:'Obra',t:'Juntar um contrato à obra',p:['Abre a obra (Visão geral).','Em «Contratos», carrega em «+ Novo contrato».','Nome (obrigatório), cliente e valor. O primeiro é o contrato inicial.'],tour:'contrato'},
   {c:'Obra',t:'Dar acesso a uma pessoa',p:['Em «Utilizadores», «Convidar por email»: nome, email, papel e obras. A pessoa recebe um email para definir a palavra-passe.','As equipas só veem as obras onde estão: na Visão geral da obra usa «+ Atribuir pessoa».'],tour:'pessoas'},
-  {c:'OS e PDT',t:'Carregar uma OS',p:['Abre «OS e PDT» na obra.','Em «Ordens de serviço», «Adicionar ficheiros…» (ou arrasta o PDF).','A Somafel Catenária lê o número, a semana e os períodos e cria a OS na tabela. Se não conseguir ler, usa «+ Nova OS».'],tour:'os'},
-  {c:'OS e PDT',t:'Fazer os PDT de uma OS',p:['Na tabela da OS, «Criar PDT».','Escolhe as noites; à esquerda preenches o formulário e à direita vês o PDT a ser construído.','Os separadores «OS», «Sinalização» e «Elétrico» mostram os documentos ao lado.','«Guardar»/«Criar PDT» grava; «Exportar» dá Word ou PDF.'],tour:'pdt'},
-  {c:'OS e PDT',t:'Marcar o esquema elétrico no PDT',p:['No PDT, separador «Elétrico».','Ferramentas: «Corte de tensão» (clica os pontos da via, duplo clique termina), «Zona dos trabalhos» (arrasta), «Varas de terra» (clica).','Se o corte passa por dois esquemas, «+ Outro esquema».','«Pré-visualizar anexo» mostra como fica no PDF (vetorial, mesma qualidade do esquema).'],tour:null},
-  {c:'OS e PDT',t:'Associar esquemas à obra',p:['Os esquemas ficam na biblioteca comum («Esquemas»): carrega lá os PDF.','Na obra, «OS e PDT» › «Esquemas elétricos» ou «Esquemas de sinalização» › associar da biblioteca.','Nos esquemas de sinalização confirmas os sinais e PK: só os confirmados entram nos PDT.'],tour:'esquemas'},
+  {c:'Interdições',t:'Carregar uma OS',p:['Abre «Interdições» na obra.','Em «Ordens de serviço», «Adicionar ficheiros…» (ou arrasta o PDF).','A Somafel Catenária lê o número, a semana e os períodos e cria a OS na tabela. Se não conseguir ler, usa «+ Nova OS».'],tour:'os'},
+  {c:'Interdições',t:'Fazer os PDT de uma OS',p:['Na tabela da OS, «Criar PDT».','Escolhe as noites; à esquerda preenches o formulário e à direita vês o PDT a ser construído.','Os separadores «OS», «Sinalização» e «Elétrico» mostram os documentos ao lado.','«Guardar»/«Criar PDT» grava; «Exportar» dá Word ou PDF.'],tour:'pdt'},
+  {c:'Interdições',t:'Marcar o esquema elétrico no PDT',p:['No PDT, separador «Elétrico».','Ferramentas: «Corte de tensão» (clica os pontos da via, duplo clique termina), «Zona dos trabalhos» (arrasta), «Varas de terra» (clica).','Se o corte passa por dois esquemas, «+ Outro esquema».','«Pré-visualizar anexo» mostra como fica no PDF (vetorial, mesma qualidade do esquema).'],tour:null},
+  {c:'Interdições',t:'Associar esquemas à obra',p:['Os esquemas ficam na biblioteca comum («Esquemas»): carrega lá os PDF.','Na obra, «Interdições» › «Esquemas elétricos» ou «Esquemas de sinalização» › associar da biblioteca.','Nos esquemas de sinalização confirmas os sinais e PK: só os confirmados entram nos PDT.'],tour:'esquemas'},
   {c:'Projeto',t:'Guardar desenhos do projeto',p:['Abre «Projeto» na obra.','Escolhe a categoria e «Adicionar ficheiros…» (PDF, DWG…).','Os desenhos ficam disponíveis no telemóvel da equipa. Os DWG abrem diretamente no navegador.'],tour:'projeto'},
   {c:'Produção',t:'Fazer uma parte diária',p:['Abre a «Produção» e o separador «Partes diárias».','«Nova parte diária».','Em «Trabalhos executados», «Escolher rubrica…»: procura por código ou palavras, escolhe as rubricas e escreve as quantidades.','Junta o pessoal, o equipamento, os materiais e as horas da interdição.'],tour:'parte'},
   {c:'Produção',t:'Criar as interdições a partir das OS',p:['Na «Produção», separador «Interdições».','«Importar das OS»: cria uma interdição por período, com as horas previstas e concedidas e os limites do PDT.','Depois preenches as horas trabalhadas.'],tour:'interd'},
@@ -978,7 +978,7 @@ window.addEventListener('message',async e=>{if(e.origin!==location.origin||!e.da
     m.sort((a,b)=>revDe(b.nome)-revDe(a.nome));abreBib(m[0].path,m[0].nome)}catch(er){aviso(erroTxt(er),true)}}});
 const LIVRE=['med','cons','rct'];
 const OBRAV=['visao','docs','proj','linha','mat','prod','med','cons','rct'],APPV={mat:'materiais',prod:'producao',med:'medicao',cons:'consolas',rct:'rct'},APPNOME={mat:'Materiais',prod:'Produção',med:'Medição',cons:'Dimensionamento CAT',rct:'Medição RCT'};
-const MODS=[['mat','Materiais'],['prod','Produção'],['docs','OS e PDT'],['proj','Projeto'],['linha','Linha'],['med','Medições CAT'],['rct','Medição RCT'],['cons','Dimensionamento CAT']];
+const MODS=[['mat','Materiais'],['prod','Produção'],['docs','Interdições'],['proj','Projeto'],['linha','Linha'],['med','Medições CAT'],['rct','Medição RCT'],['cons','Dimensionamento CAT']];
 const PRODV=[['res','Resumo'],['pd','Partes diárias'],['int','Interdições'],['rec','MO e EQ'],['pto','Ponto'],['map','Mapa de produção'],['art','Artigos do contrato'],['pla','Plano'],['sr','Sem rubrica'],['aut','Autos'],['ana','Análise'],['mat','Materiais'],['amb','Resíduos']];
 /* funcionalidades desligadas numa obra (obras.modulos = {off:[…], prodOff:[…]}) */
 function modOff(v,o){o=o||S.obra;return !!(o&&o.modulos&&(o.modulos.off||[]).includes(v))}
@@ -1232,7 +1232,7 @@ async function vObra(id){
     try{await ok(sb.from('obra_pessoas').insert(v.p.map(pid=>({obra_id:id,pessoa_id:pid}))));aviso('Pessoas atribuídas.');vObra(id)}catch(e){aviso(erroTxt(e),true)}};
   pg.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_pessoas').delete().eq('obra_id',id).eq('pessoa_id',b.dataset.q));vObra(id)}catch(e){aviso(erroTxt(e),true)}});
 }
-const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
+const PROJCATS=['pecas_projeto','preparacao','desenhos','documentos'],OSCATS=['pti','ped','os','pdt','odt','esq_eletricos','esq_sinalizacao'];
 /* ===== Linha da obra por PK: constrói-se sozinha com os PK que vão entrando (PDT, esquemas, partes diárias) ===== */
 const LN={dia:null,zoom:'tudo',cam:{int:1,corte:1,sin:1,terra:1,fr:1,exe:1},ate:null,play:null};
 function lnPk(t){t=String(t==null?'':t);let m=t.match(/(\d{2,3})\s*\+\s*(\d{1,3})/);if(m)return +m[1]+(+m[2])/1000;
@@ -1345,7 +1345,7 @@ const LN_CSS='.lnCard{padding:14px 16px}.lnBar{display:flex;gap:10px;align-items
   +'@media (prefers-reduced-motion:reduce){.lnE,.lnVia,.lnExe,.lnInt,.lnVivo{animation:none!important}}';
 try{const st=document.createElement('style');st.id='ln-css';st.textContent=LN_CSS;document.head.appendChild(st)}catch(e){}
 async function vProj(){const o=S.obra;DOCCACHE.velho=true;if(!PROJCATS.includes(DOCCAT))DOCCAT='pecas_projeto';titulo('Projeto',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod"><div id="docs"></div></div></div>';docsObra(o)}
-async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('OS e PDT',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
+async function vDocs(){const o=S.obra;DOCCACHE.velho=true;if(!OSCATS.includes(DOCCAT))DOCCAT='os';titulo('Interdições',o.centro_custo);$('#hSub').textContent=o.nome;const pg=$('#pg');pg.innerHTML='<div class="vz vz2"><div id="mod">'+Mov.skel(4)+'</div></div>';modulosObra(o,'docs')}
 async function editaContrato(obraId,c){
   let clis=[];try{const q=await sb.from('contratos').select('cliente');clis=[...new Set((q.data||[]).map(x=>(x.cliente||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'))}catch(e){}
   const v=await formulario(c?'Editar contrato':'Novo contrato',[
@@ -1905,7 +1905,7 @@ async function modulosObra(o,vista){
 }
 
 /* ---------- desenhos e documentos (bucket «documentos») ---------- */
-const CATDOC={desenhos:'Desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',odt:"ODT's",esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
+const CATDOC={pti:'PTI · pedido trimestral de interdições',ped:'Pedidos de interdição',desenhos:'Desenhos',os:'Ordens de serviço',pdt:'Planos diários (PDT)',odt:"ODT's",esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparação dos trabalhos',documentos:'Outros documentos'};
 const osDoc=n=>{const m=/\bOS\s*[-_ ]*(\d{3,5})|ordem\s+de\s+servi[cç]o\s*n?[oº.]*\s*(\d{3,5})/i.exec(n||'');return m?(m[1]||m[2]):''};
 const diaDoc=n=>{n=n||'';let m=/(\d{4})[-_.](\d{2})[-_.](\d{2})/.exec(n);if(m)return m[1]+'-'+m[2]+'-'+m[3];m=/(\d{2})[-_.](\d{2})[-_.](\d{4})/.exec(n);if(m)return m[3]+'-'+m[2]+'-'+m[1];m=/(20\d{2})(\d{2})(\d{2})/.exec(n);return m?m[1]+'-'+m[2]+'-'+m[3]:''};
 async function resumoApps(o){
@@ -1933,8 +1933,8 @@ async function valCons(o){
 function nomeSeguro(n){return n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(-120)||'ficheiro'}
 function tamTxt(b){return b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(b/1024))+' kB'}
 let OSLISTA=[],DOCQ='',DOCCAT='os',DOCCACHE={id:null,t:null,velho:false};
-const DOCCURTO={os:'Ordens de serviço',pdt:'PDT',odt:"ODT's",esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparações',desenhos:'Desenhos',documentos:'Outros'};
-const DOCHINT={odt:'ODT recebidas (um ficheiro por dia). Escreve a data no nome (26.10.2026 ou 26-10-2026) para ficarem no dia certo.',os:'Põe aqui as OS recebidas. Num PDF, a app lê o número, a semana e os períodos e cria a OS sozinha (aparece na tabela mais abaixo).',pdt:'Um ficheiro por dia. O nome com a data (14-10-2026 ou 2026-10-14) coloca-o no dia certo no telemóvel.',esq_eletricos:'Esquemas elétricos. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',esq_sinalizacao:'Esquemas de sinalização. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',pecas_projeto:'Peças de projeto (desenhos, listas, memórias). Escreve «OS 4104» no nome para as ligar à OS.',preparacao:'Preparações dos trabalhos. Escreve «OS 4104» no nome para as ligar à OS.',desenhos:'Desenhos desta obra (PDF, imagens). Ficam disponíveis no telemóvel da equipa.',documentos:'Outros documentos da obra.'};
+const DOCCURTO={pti:'PTI',ped:'Pedidos de interdição',os:'Ordens de serviço',pdt:'PDT',odt:"ODT's",esq_eletricos:'Esquemas elétricos',esq_sinalizacao:'Esquemas de sinalização',pecas_projeto:'Peças de projeto',preparacao:'Preparações',desenhos:'Desenhos',documentos:'Outros'};
+const DOCHINT={pti:'O PTI é o plano trimestral das interdições que a Somafel vai pedir. Cada semana do PTI dá um pedido de interdição. Podes guardar aqui também os ficheiros enviados à IP.',ped:'Os pedidos de interdição semanais que a Somafel envia à IP; são eles que dão origem às OS. O Excel sai no formato da IP. Podes guardar aqui também os ficheiros enviados.',odt:'ODT recebidas (um ficheiro por dia). Escreve a data no nome (26.10.2026 ou 26-10-2026) para ficarem no dia certo.',os:'Põe aqui as OS recebidas. Num PDF, a app lê o número, a semana e os períodos e cria a OS sozinha (aparece na tabela mais abaixo).',pdt:'Um ficheiro por dia. O nome com a data (14-10-2026 ou 2026-10-14) coloca-o no dia certo no telemóvel.',esq_eletricos:'Esquemas elétricos. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',esq_sinalizacao:'Esquemas de sinalização. Escreve «OS 4104» no nome do ficheiro para o ligar à sua OS.',pecas_projeto:'Peças de projeto (desenhos, listas, memórias). Escreve «OS 4104» no nome para as ligar à OS.',preparacao:'Preparações dos trabalhos. Escreve «OS 4104» no nome para as ligar à OS.',desenhos:'Desenhos desta obra (PDF, imagens). Ficam disponíveis no telemóvel da equipa.',documentos:'Outros documentos da obra.'};
 const diaCurto=t=>{const d=new Date(t);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')};
 function tabelaOS(L,okq){
   const usados=new Set(),filtro=DOCQ.toLowerCase();
@@ -1961,9 +1961,10 @@ async function docsObra(o){
       DOCCACHE={id:o.id,t:todos,velho:false}}
     EAS=await ok(sb.from('obra_esquemas').select('esquemas(*)').eq('obra_id',o.id)).then(r=>r.map(x=>x.esquemas).filter(Boolean));
     PDTS=await ok(sb.from('pdts').select('*').eq('obra_id',o.id).order('dia',{ascending:false})).catch(()=>[]);
+    if(S.vista!=='proj')await piCarrega(o);
   }catch(e){el.innerHTML='<div class="msg e">'+esc(erroTxt(e))+'</div>';return}
-  const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',proj=S.vista==='proj',chave=proj?PROJCATS:['os','pdt','odt','esq_eletricos','esq_sinalizacao'];
-  const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c)+(c==='pdt'?PDTS.length:0);
+  const q=DOCQ.toLowerCase(),porOS=DOCCAT==='porOS',proj=S.vista==='proj',chave=proj?PROJCATS:OSCATS;
+  const nA=c=>ESQCAT[c]?EAS.filter(x=>x.tipo===ESQCAT[c]).length:0,n=c=>todos.filter(x=>x.cat===c).length+nA(c)+(c==='pdt'?PDTS.length:0)+(c==='pti'?PIS.filter(x=>x.tipo==='pti').length:c==='ped'?PIS.filter(x=>x.tipo==='pedido').length:0);
   const okq=x=>!q||(x.nome+' '+x.os+' '+(x.dia?fmtData(x.dia):'')+' '+DOCCURTO[x.cat]).toLowerCase().includes(q);
   const linha=(x,mc)=>'<tr><td>'+(x.dia?fmtData(x.dia):'—')+'</td>'+(mc?'<td><span class="hint">'+DOCCURTO[x.cat]+'</span></td>':'')+'<td class="mono">'+(x.os||'<span class="hint">—</span>')+'</td><td>'+esc(x.nome)+'</td><td class="n">'+tamTxt(x.tam)+'</td><td class="ac"><button data-da="'+esc(x.path)+'">Abrir</button><button class="perigo" data-dd="'+esc(x.path)+'">Apagar</button></td></tr>';
   let h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px">'+chave.map(c=>'<button data-dc="'+c+'" class="'+(DOCCAT===c?'pri':'')+'">'+DOCCURTO[c]+' <span style="opacity:.7">'+n(c)+'</span></button>').join('')+'</div>'
@@ -1975,7 +1976,7 @@ async function docsObra(o){
     const ehOS=DOCCAT==='os';
     h+='<div class="card" style="padding:0" id="dz"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--rule)"><b>'+CATDOC[DOCCAT]+'</b><button class="pri" id="dup">Adicionar ficheiros…</button>'+(ehEA?'<button id="eaA">Associar da biblioteca…</button>':'')+(ehOS?'<button id="nos">+ Nova OS</button>':'')+'<span class="hint">'+tot+(tot===1?' ficheiro':' ficheiros')+' · ou arrasta os ficheiros para aqui</span><input type="file" id="dfi" multiple hidden></div>'
       +'<p class="hint" style="margin:10px 14px 0">'+esc(DOCHINT[DOCCAT])+'</p>'
-      +(DOCCAT==='pdt'?pdtTabela():'')
+      +(DOCCAT==='pdt'?pdtTabela():'')+(DOCCAT==='pti'?piTabela('pti'):DOCCAT==='ped'?piTabela('pedido'):'')
       +(ehEA&&EA.length?'<table><thead><tr><th>Da biblioteca</th><th>Via / troço</th><th></th></tr></thead><tbody>'+EA.map(x=>'<tr><td><b>'+esc(x.tipo==='sinalizacao'?(x.estacao||x.nome):x.nome)+'</b></td><td>'+esc([x.via,x.troco].filter(Boolean).join(' · ')||'—')+'</td><td class="ac"><button data-eab="'+x.id+'">Abrir</button>'+(x.tipo==='sinalizacao'?'<button data-eas="'+x.id+'">Sinais</button>':'')+'<button data-eat="'+x.id+'">Tirar da obra</button></td></tr>').join('')+'</tbody></table>':'')
       +(ehOS?tabelaOS(L,okq):L.length?'<table><thead><tr><th>Dia</th><th>OS</th><th>Ficheiro</th><th class="n">Tamanho</th><th></th></tr></thead><tbody>'+L.map(x=>linha(x,false)).join('')+'</tbody></table>':(ehEA&&EA.length&&!tot?'':'<p class="hint" style="margin:14px">'+(tot?'Nada com esse texto.':'Ainda não há ficheiros.')+'</p>'))+'</div>';
   }
@@ -2002,7 +2003,7 @@ async function docsObra(o){
   el.querySelectorAll('[data-eat]').forEach(b=>b.onclick=async()=>{try{await ok(sb.from('obra_esquemas').delete().eq('obra_id',o.id).eq('esquema_id',b.dataset.eat));refaz()}catch(e){aviso(erroTxt(e),true)}});
   el.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>periodosOS(OSLISTA.find(x=>x.id===b.dataset.op),refaz));
   el.querySelectorAll('[data-pdt]').forEach(b=>b.onclick=()=>criaPDT(o,OSLISTA.find(x=>x.id===b.dataset.pdt),refaz));
-  pdtLiga(el,o,refaz);
+  pdtLiga(el,o,refaz);if(DOCCAT==='pti'||DOCCAT==='ped')piLiga(el,o,refaz);
   el.querySelectorAll('[data-od]').forEach(b=>b.onclick=async()=>{const x=OSLISTA.find(y=>y.id===b.dataset.od);
     if(!await confirmar('Apagar a OS '+x.numero+' e os seus períodos? O ficheiro da OS não é apagado.','Apagar'))return;
     try{await ok(sb.from('os_interdicoes').delete().eq('id',x.id));refaz()}catch(e){aviso(erroTxt(e),true)}});
@@ -2300,11 +2301,21 @@ function acharSinal(esqs,est,sinalTxt){
 const hhmm=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 const dmy=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
 function diasOS(os){
-  const m=new Map();(os.os_periodos||[]).slice().sort((a,b)=>a.inicio<b.inicio?-1:1).forEach(p=>{const a=new Date(p.inicio),b=new Date(p.fim),k=dmy(a);(m.get(k)||m.set(k,{d:a,p:[]}).get(k)).p.push(hhmm(a)+' às '+hhmm(b))});
-  return [...m.entries()].map(([k,v])=>({k,d:v.d,p:v.p}))}
+  const m=new Map();(os.os_periodos||[]).slice().sort((a,b)=>a.inicio<b.inicio?-1:1).forEach(p=>{const a=new Date(p.inicio),b=new Date(p.fim),k=dmy(a),e=m.get(k)||m.set(k,{d:a,p:[],t:[]}).get(k);e.p.push(hhmm(a)+' às '+hhmm(b));String(p.trabalhos||'').split(/[,; ]+/).filter(Boolean).forEach(t=>{if(!e.t.includes(t))e.t.push(t)})});
+  return [...m.entries()].map(([k,v])=>({k,d:v.d,p:v.p,t:v.t.join(', ')}))}
 function pdtCampos(txt){return String(txt||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(';').map(x=>x.trim()))}
 function pdtDescarrega(nome,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
-async function pdtDocx(modBuf,d){await carregaZip();const z=await JSZip.loadAsync(modBuf),xml=await z.file('word/document.xml').async('string');z.file('word/document.xml',pdtXml(xml,d));return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
+/* Margens mais pequenas (1 cm; 1,2 cm em cima), tabela alargada ao espaço ganho e folga dentro das células (o estilo do modelo não tem nenhuma) */
+function pdtAjusta(xml){
+  const pg=/<w:pgSz w:w="(\d+)"/.exec(xml),W=pg?+pg[1]:11910,M=567,T=680;
+  let t0=0;(xml.match(/<w:tr[ >][\s\S]*?<\/w:tr>/g)||[]).forEach(tr=>{let w=0;tr.replace(/<w:tcW w:w="(\d+)" w:type="dxa"/g,(m,v)=>{w+=+v});t0=Math.max(t0,w)});
+  const tw=/<w:tblW w:w="(\d+)" w:type="dxa"\/>/.exec(xml);t0=Math.max(t0,tw?+tw[1]:0);const k=t0?Math.min(1.2,(W-2*M-60)/t0):1;
+  xml=xml.replace(/<w:pgMar [^>]*\/>/g,'<w:pgMar w:top="'+T+'" w:right="'+M+'" w:bottom="'+M+'" w:left="'+M+'" w:header="340" w:footer="340" w:gutter="0"/>');
+  if(k>1.001){const sc=(m,a,v,b)=>a+Math.round(+v*k)+b;
+    xml=xml.replace(/(<w:gridCol w:w=")(\d+)(")/g,sc).replace(/(<w:tcW w:w=")(\d+)(" w:type="dxa")/g,sc).replace(/(<w:tblW w:w=")(\d+)(" w:type="dxa")/g,sc)}
+  if(!/<w:tblCellMar>/.test(xml))xml=xml.replace(/<w:tblLayout w:type="fixed"\/>/g,'$&<w:tblCellMar><w:top w:w="28" w:type="dxa"/><w:left w:w="85" w:type="dxa"/><w:bottom w:w="28" w:type="dxa"/><w:right w:w="85" w:type="dxa"/></w:tblCellMar>');
+  return xml}
+async function pdtDocx(modBuf,d){await carregaZip();const z=await JSZip.loadAsync(modBuf),xml=await z.file('word/document.xml').async('string');z.file('word/document.xml',pdtAjusta(pdtXml(xml,d)));return z.generateAsync({type:'arraybuffer',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
 let PDTS=[];
 const isoDia=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 function pdtNome(r){const k=r.dados.dia.k,v=/DESCENDENTE/i.test(r.dados.F.ms1||'')?' VD':/ASCENDENTE/i.test(r.dados.F.ms1||'')?' VA':'';return 'OS '+r.numero_os+' PDT '+k.replace(/\//g,'-')+v}
@@ -2511,7 +2522,7 @@ async function criaPDT(o,os,fim,ed){
       lim[i]=[titulado(e),oc.linha||'',viaL,sg,ach?ach.pk:'']})}
     const per=(oc.agentes||[]).map(a=>a['Função']+'- '+a['Matrícula']+' '+a.Nome+' '+(a.TpAtivid||'')+' '+(a['Telemóvel']||'')+(a['Observação']?' ('+a['Observação']+')':'')).map(s=>s.replace(/\s+/g,' ').trim());
     (oc.chefe||[]).forEach(c=>per.push('Chefe dos Trabalhos- '+c.Nome+' '+(c.TpAtivid||'')+' '+(c.PrestServ||'')+' '+(c['Telemóvel']||'')));
-    F={trab:((os.os_periodos||[])[0]||{}).trabalhos||base.trabalho||'',ent:oc.tipo,ms1:oc.interdicao,ms2:oc.corte,lim,ap:(oc.aparelhos||[]).join('\n'),po:'',pt:oc.protTrans,
+    F={trab:(diasOS(os)[0]||{}).t||((os.os_periodos||[])[0]||{}).trabalhos||base.trabalho||'',ent:oc.tipo,ms1:oc.interdicao,ms2:oc.corte,lim,ap:(oc.aparelhos||[]).join('\n'),po:'',pt:oc.protTrans,
       fr:base.frentes||'',te:base.terra||'',pe:base.pessoal||'',ma:base.maquinas||'',sc:base.scpvi||'',co:base.coord||'',ct:per.join('\n')}}
   const dias=ed?[ed.dados.dia]:diasOS(os);w.fecha();pdtEditor(o,os,fim,ed,F,dias,mod)}
 const PDTCOLS={
@@ -2597,7 +2608,10 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
       w.fecha();desenhaG(k);agenda();if(esc2.length)aviso(esc2.length+' pessoa'+(esc2.length===1?'':'s')+' adicionada'+(esc2.length===1?'':'s')+'.')}}
   ['fr','lim','ap','te','pe','ma','sc'].forEach(desenhaG);
   ov.querySelectorAll('[data-t]').forEach(i=>i.oninput=()=>{T[i.dataset.t]=i.value;agenda()});
-  ov.querySelectorAll('[data-dia]').forEach(c=>c.onchange=()=>{c.checked?sel.add(+c.dataset.dia):sel.delete(+c.dataset.dia);agenda()});
+  ov.querySelectorAll('[data-dia]').forEach(c=>c.onchange=()=>{c.checked?sel.add(+c.dataset.dia):sel.delete(+c.dataset.dia);
+    /* o trabalho acompanha o dia escolhido (o da noite marcada, não o do primeiro período da OS), se não foi escrito à mão */
+    const ant=dias.find(d=>d.t===T.trab), pri=dias.find((d,i)=>sel.has(i)); if(pri&&pri.t&&(ant||!T.trab)){T.trab=pri.t;const it=ov.querySelector('[data-t="trab"]');if(it)it.value=T.trab}
+    agenda()});
   /* estado → dados */
   const lin=k=>G[k].filter(r=>r.some(x=>String(x).trim())).map(r=>r.map(x=>String(x).replace(/;/g,',').trim()).join(' ; ')).join('\n');
   const F2=()=>({trab:T.trab,ent:T.ent,ms1:T.ms1,ms2:T.ms2,lim:G.lim.map(r=>r.map(x=>x.trim())),ap:G.ap.map(r=>r[0]).join('\n'),po:G.ap.map(r=>r[1]).join('\n'),pt:T.pt,fr:lin('fr'),te:lin('te'),pe:lin('pe'),ma:lin('ma'),sc:lin('sc'),co:T.co,ct:T.ct});
@@ -2621,7 +2635,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
       r.map(x=>x.esquemas).filter(Boolean).forEach(e=>{const it={nome:(e.tipo==='sinalizacao'?(e.estacao||e.nome):e.nome)+(e.via||e.troco?' · '+[e.via,e.troco].filter(Boolean).join(' '):''),path:e.ficheiro};if(e.tipo==='sinalizacao')DOCV.sin.push(it);else DOCV.ele.push(it)})}catch(e){}})();
   async function abreDoc(k){
     await docvP;if(k==='ele')return abreMarcador();if(k==='cert')return abreCert();
-    const lista=(k==='os'?DOCV.os:DOCV[k])||[],vazio={os:'Não encontrei o PDF desta OS nos documentos.',sin:'Não há esquemas de sinalização associados a esta obra (OS e PDT → Esquemas de sinalização → Associar da biblioteca).',ele:'Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).'}[k];
+    const lista=(k==='os'?DOCV.os:DOCV[k])||[],vazio={os:'Não encontrei o PDF desta OS nos documentos.',sin:'Não há esquemas de sinalização associados a esta obra (Interdições → Esquemas de sinalização → Associar da biblioteca).',ele:'Não há esquemas elétricos associados a esta obra (Interdições → Esquemas elétricos → Associar da biblioteca).'}[k];
     if(!lista.length){V.innerHTML='<div style="padding:30px;color:#eee">'+esc(vazio)+'</div>';return}
     V.innerHTML='<div style="display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--sheet);border-bottom:1px solid var(--rule)">'+(lista.length>1?'<select id="edVs" style="max-width:420px">'+lista.map((x,i)=>'<option value="'+i+'">'+esc(x.nome)+'</option>').join('')+'</select>':'<b style="font-size:13px">'+esc(lista[0].nome)+'</b>')+'<span class="sp"></span><button class="sm" id="edVn">Abrir noutra janela</button></div><iframe id="edVi" style="flex:1;border:0;background:#fff;width:100%"></iframe>';
     const carrega=async i=>{const u=await sb.storage.from('documentos').createSignedUrl(lista[i].path,3600);if(u.error){aviso(erroTxt(u.error),true);return}$('#edVi',V).src=u.data.signedUrl;$('#edVn',V).onclick=()=>window.open(u.data.signedUrl,'_blank')};
@@ -2660,7 +2674,7 @@ function pdtEditor(o,os,fim,ed,F,dias,mod){
   const axPng=()=>pdtAnexosPng(AXS,os.numero,diaAtual().k,6000);
   async function abreMarcador(){
     const lista=DOCV.ele||[];
-    if(!lista.length&&!AX.path){V.innerHTML='<div style="padding:30px;color:#eee">Não há esquemas elétricos associados a esta obra (OS e PDT → Esquemas elétricos → Associar da biblioteca).</div>';return}
+    if(!lista.length&&!AX.path){V.innerHTML='<div style="padding:30px;color:#eee">Não há esquemas elétricos associados a esta obra (Interdições → Esquemas elétricos → Associar da biblioteca).</div>';return}
     const opcoes=lista.slice();if(AX.path&&!opcoes.some(x=>x.path===AX.path))opcoes.unshift({nome:AX.nome||'Esquema do PDT',path:AX.path});
     if(!AX.path){const livre=opcoes.find(x=>!AXS.some(a=>a.path===x.path))||opcoes[0];AX.path=livre.path;AX.nome=livre.nome}
     const FER=[['mover','Mover'],['linha','Corte de tensão'],['ret','Zona dos trabalhos'],['terra','Varas de terra'],['apaga','Apagar']];
