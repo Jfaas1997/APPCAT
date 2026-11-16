@@ -6,6 +6,7 @@ const PI_TIPOS = ['I/CT', 'I/CGT', 'I', 'CT', 'CGT'];
 const PI_VIAS = ['VA', 'VD', 'VA,VD', 'VU'];
 const PI_DOW = ['Dom', '2ª', '3ª', '4ª', '5ª', '6ª', 'Sáb'];
 const PI_MOD = () => '_org/' + S.eu.organizacao_id + '/modelos/pedido_interdicao.xlsx';
+const PI_MOD_PTI = () => '_org/' + S.eu.organizacao_id + '/modelos/pti.xlsx';
 const PI_COLS = [['d', 'Data', 104, 'date'], ['hi', 'Início', 66], ['hf', 'Fim', 66], ['tp', 'Tipo', 70, 'tp'], ['via', 'Via', 66, 'via'], ['ei', 'Estação início', 130], ['si', 'Sinal', 90], ['pi', 'Poste limite', 90], ['ef', 'Estação fim', 130], ['sf', 'Sinal', 90], ['pf', 'Poste limite', 90], ['tr', 'Trabalhos a executar', 220]];
 const carregaExcelJS = () => carregaJs('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', () => window.ExcelJS);
 
@@ -25,7 +26,7 @@ async function piCarrega(o) { try { PIS = await ok(sb.from('pedidos_interdicao')
 
 function piTabela(tipo) {
   const L = PIS.filter(x => x.tipo === tipo);
-  const bt = tipo === 'pti' ? '<button class="pri" data-pin="pti">+ Novo PTI</button><button data-pimp="1">Importar PTI do Excel…</button>'
+  const bt = tipo === 'pti' ? '<button class="pri" data-pin="pti">+ Novo PTI</button><button data-pimp="1">Importar PTI do Excel…</button><button data-pmodp="1">Modelo Excel do PTI…</button>'
     : '<button class="pri" data-pin="pedido">+ Novo pedido</button>' + (PIS.some(x => x.tipo === 'pti') ? '<button data-pdpti="1">Pedidos a partir do PTI…</button>' : '') + '<button data-pmod="1">Modelo Excel da IP…</button>';
   let h = '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px">' + bt + '</div>';
   if (!L.length) return h + '<p class="hint" style="margin:4px 14px 14px">' + (tipo === 'pti' ? 'Ainda não há PTI nesta obra. Cria um ou importa o Excel do PTI.' : 'Ainda não há pedidos de interdição. Cria um à mão ou a partir de uma semana do PTI.') + '</p>';
@@ -45,11 +46,13 @@ function piLiga(el, o, refaz) {
     try { await ok(sb.from('pedidos_interdicao').delete().eq('id', r.id)); aviso('Apagado.'); refaz() } catch (e) { aviso(erroTxt(e), true) } });
   const im = el.querySelector('[data-pimp]'); if (im) im.onclick = () => piImportaPTI(o, refaz);
   const pp = el.querySelector('[data-pdpti]'); if (pp) pp.onclick = () => piPedidosDoPTI(o, refaz);
-  const pm = el.querySelector('[data-pmod]'); if (pm) pm.onclick = () => piModeloDlg();
+  const pm = el.querySelector('[data-pmod]'); if (pm) pm.onclick = () => piModeloDlg(false);
+  const pm2 = el.querySelector('[data-pmodp]'); if (pm2) pm2.onclick = () => piModeloDlg(true);
 }
 
 /* ---------- importar o Excel do PTI (folhas com «Data», «Hora Inicio», «Tipo Interdição»…) ---------- */
 function piLeFolha(ws) {
+  const rg0 = XLSX.utils.decode_range(ws['!ref'] || 'A1'), verde = (r, c) => { const x = ws[XLSX.utils.encode_cell({ r: r + rg0.s.r, c: c + rg0.s.c })]; const s = x && x.s; return !!(s && s.patternType === 'solid' && s.fgColor && (s.fgColor.theme === 9 || /^FF?E2EFDA$|^E2EFDA$|C6E0B4/i.test(s.fgColor.rgb || ''))) };
   const A = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
   const nrm = v => String(v).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   let hr = -1; for (let i = 0; i < Math.min(A.length, 15); i++) if (A[i].some(v => nrm(v) === 'hora inicio') && A[i].some(v => nrm(v) === 'data')) { hr = i; break }
@@ -65,13 +68,13 @@ function piLeFolha(ws) {
   const out = []; let d0 = '';
   for (let i = hr + 1; i < A.length; i++) { const r = A[i], g = c => c >= 0 ? String(r[c] ?? '').trim() : '';
     const d = data(r[cD]); if (d) d0 = d; const hi = hora(r[cHi]), hf = hora(r[cHf]); if (!hi && !hf) continue;
-    out.push({ d: d0, hi, hf, tp: g(cTp), via: g(cV).replace(/\s+/g, ''), ei: g(cEi), si: g(cSi), pi: g(cPi), ef: g(cEf), sf: g(cSf), pf: g(cPf), tr: g(cTr) }) }
+    out.push({ cor: verde(i, cTr >= 0 ? cTr : cHi) || undefined, d: d0, hi, hf, tp: g(cTp), via: g(cV).replace(/\s+/g, ''), ei: g(cEi), si: g(cSi), pi: g(cPi), ef: g(cEf), sf: g(cSf), pf: g(cPf), tr: g(cTr) }) }
   return out;
 }
 async function piImportaPTI(o, refaz) {
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xlsm,.xls';
   inp.onchange = async () => { const f = inp.files[0]; if (!f) return;
-    try { await carregaXlsx(); const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), { type: 'array', cellDates: false });
+    try { await carregaXlsx(); const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), { type: 'array', cellDates: false, cellStyles: true });
       const fol = wb.SheetNames.map(n => ({ n, r: piLeFolha(wb.Sheets[n]) })).filter(x => x.r && x.r.some(r => r.d));
       if (!fol.length) { aviso('Não encontrei nenhuma folha com o formato do PTI (Data, Hora Inicio, Hora Fim…).', true); return }
       const v = await formulario('Importar PTI', [{ tipo: 'aviso', texto: f.name + ': escolhe as folhas a importar. Cada folha fica um PTI.' }, { id: 'f', tipo: 'checks', rotulo: 'Folhas', opcoes: fol.map(x => ({ v: x.n, t: x.n + ' (' + x.r.length + ' períodos)' })), valor: fol.map(x => x.n) }], 'Importar');
@@ -109,26 +112,30 @@ async function piPedidosDoPTI(o, refaz) {
 }
 
 /* ---------- modelo Excel da IP (fica na organização, não na app) ---------- */
-async function piModeloDlg() {
-  const w = janela('Modelo Excel do pedido de interdição'); let tem = false;
-  try { const r = await sb.storage.from('documentos').list(PI_MOD().replace(/\/[^/]+$/, ''), { search: 'pedido_interdicao' }); tem = (r.data || []).some(x => x.name === 'pedido_interdicao.xlsx') } catch (e) { }
-  w.corpo.innerHTML = '<p>' + (tem ? 'Já há um modelo carregado. O Excel de cada pedido é feito a partir dele, na folha da via (VA, VD, VA+VD…), mantendo o formato da IP.' : 'Ainda não há modelo. Carrega o Excel «Pedido de Interdições» da IP: cada folha (VA+VD, VD, VA…) serve de base à via correspondente.') + '</p><p class="hint">Só o administrador pode substituir o modelo.</p><div class="bt"><button class="n">Fechar</button><button class="pri" id="pmUp">' + (tem ? 'Substituir modelo…' : 'Carregar modelo…') + '</button></div>';
+async function piModeloDlg(pti) {
+  const path = pti ? PI_MOD_PTI() : PI_MOD(), nm = path.split('/').pop(), w = janela(pti ? 'Modelo Excel do PTI' : 'Modelo Excel do pedido de interdição'); let tem = false;
+  try { const r = await sb.storage.from('documentos').list(path.replace(/\/[^/]+$/, ''), { search: nm.replace('.xlsx', '') }); tem = (r.data || []).some(x => x.name === nm) } catch (e) { }
+  const txt = pti ? (tem ? 'Já há um modelo carregado: o Excel do PTI é feito no teu ficheiro (cabeçalho, larguras, letra e impressão), com as linhas da app.' : 'Ainda não há modelo. Carrega o Excel do PTI que usas: a folha com «Hora Inicio» e «Trabalhos a Executar» serve de base.')
+    : (tem ? 'Já há um modelo carregado. O Excel de cada pedido é feito a partir dele, na folha da via (VA, VD, VA+VD…), mantendo o formato da IP.' : 'Ainda não há modelo. Carrega o Excel «Pedido de Interdições» da IP: cada folha (VA+VD, VD, VA…) serve de base à via correspondente.');
+  w.corpo.innerHTML = '<p>' + txt + '</p><p class="hint">Só o administrador pode substituir o modelo.</p><div class="bt"><button class="n">Fechar</button><button class="pri" id="pmUp">' + (tem ? 'Substituir modelo…' : 'Carregar modelo…') + '</button></div>';
   w.corpo.querySelector('.n').onclick = w.fecha;
-  w.corpo.querySelector('#pmUp').onclick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.xlsx'; i.onchange = async () => { const f = i.files[0]; if (!f) return;
-    const r = await sb.storage.from('documentos').upload(PI_MOD(), f, { upsert: true, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  w.corpo.querySelector('#pmUp').onclick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.xlsx,.xlsm'; i.onchange = async () => { const f = i.files[0]; if (!f) return;
+    const r = await sb.storage.from('documentos').upload(path, f, { upsert: true, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     if (r.error) aviso(erroTxt(r.error), true); else { aviso('Modelo guardado.'); w.fecha() } }; i.click() };
 }
 
 /* ---------- pré-visualização (HTML para imprimir) ---------- */
 const PI_CSS = '.piF{font:11px/1.3 Arial,Helvetica,sans-serif;color:#000;background:#fff}.piF table{border-collapse:collapse;width:100%}.piF td,.piF th{border:1px solid #000;padding:3px 5px;vertical-align:middle;height:15px}'
   + '.piF th{background:#e8e8e8;font-weight:700;color:#000;text-transform:none;letter-spacing:0;font-size:inherit;text-align:center}.piF .l{background:#f2f2f2;font-weight:700;white-space:nowrap}.piF .v{background:#fffbe0}.piF .bx{display:inline-block;width:11px;height:11px;border:1px solid #000;text-align:center;line-height:10px;font-size:10px;font-weight:700;margin:0 4px 0 8px;vertical-align:-2px}'
-  + '.piF .sem td{border-top:2px solid #000}.piF h1{font-size:13px;margin:0 0 6px;font-weight:700}.piF .nb td{border:0}.piF .c{text-align:center}.piF .mono{font-family:Consolas,monospace}';
+  + '.piF .sem td{border-top:2px solid #000}.piT{font-family:"Aptos Narrow","Arial Narrow",Arial,sans-serif}.piT th{background:none;border:0;border-bottom:1px solid #000;font-size:1.27em;padding:4px 3px;white-space:nowrap}.piT td{border:0;height:2.1em;padding:1px 3px;text-align:center;white-space:nowrap}.piT td.tW{white-space:pre-wrap}.piT td.tL{border-bottom:1px solid #000}.piT td.tI{border-top:1px solid #000}.piT td.tB{border-bottom:1px solid #000}.piT tr.tV td:not(.tS){background:#e2efda}.piT td{display:table-cell}.piF h1{font-size:13px;margin:0 0 6px;font-weight:700}.piF .nb td{border:0}.piF .c{text-align:center}.piF .mono{font-family:Consolas,monospace}';
 const piBx = (on, t) => '<span class="bx">' + (on ? 'X' : '') + '</span>' + esc(t);
 function piHtmlPTI(nome, rows) {
-  const R = piOrd(rows); let sem0 = null, d0 = null;
-  return '<div class="piF"><h1>PTI · ' + esc(nome || '') + '</h1><table><thead><tr><th>Semana</th><th>Data</th><th>Reg. Freq.</th><th>Hora início</th><th>Hora fim</th><th>Tipo interdição</th><th>Via/Linha</th><th>Estação início</th><th>Sinal</th><th>Poste limite</th><th>Estação fim</th><th>Sinal</th><th>Poste limite</th><th>Trabalhos a executar</th></tr></thead><tbody>'
-    + R.map(r => { const w = r.d ? piSemana(r.d) : null, sk = w ? w.s + '/' + w.a : '', ns = sk !== sem0, nd = r.d !== d0; sem0 = sk; d0 = r.d;
-      return '<tr' + (ns ? ' class="sem"' : '') + '><td class="c">' + (ns && w ? w.s : '') + '</td><td class="c">' + (nd ? piFmt(r.d) : '') + '</td><td class="c">' + (nd && r.d ? piReg(r.d) : '') + '</td><td class="c">' + esc(r.hi) + '</td><td class="c">' + esc(r.hf) + '</td><td class="c">' + esc(r.tp) + '</td><td class="c">' + esc(r.via) + '</td><td>' + esc(r.ei) + '</td><td>' + esc(r.si) + '</td><td>' + esc(r.pi) + '</td><td>' + esc(r.ef) + '</td><td>' + esc(r.sf) + '</td><td>' + esc(r.pf) + '</td><td>' + esc(r.tr) + '</td></tr>' }).join('')
+  const R = piOrd(rows), sk = r => r && r.d ? piSemana(r.d).s + '/' + piSemana(r.d).a : null;
+  return '<div class="piF piT"><table><thead><tr>' + ['Semana', 'Data', 'Reg. Freq.', 'Hora Inicio', 'Hora Fim', 'Tipo Interdição', 'Via/Linha', 'Estação Inicio', '', 'Poste Limite', 'Estação Fim', '', 'Poste Limite', 'Trabalhos a Executar'].map(x => '<th>' + x + '</th>').join('') + '</tr></thead><tbody>'
+    + R.map((r, i) => { const a = R[i - 1], b = R[i + 1], iniD = !a || a.d !== r.d, fimD = !b || b.d !== r.d, iniS = sk(r) !== sk(a), fimS = sk(r) !== sk(b), w = r.d ? piSemana(r.d) : null;
+      const cd = 'tD' + (iniD ? ' tI' : '') + (fimD ? ' tB' : '');
+      return '<tr' + (r.cor ? ' class="tV"' : '') + '><td class="tS' + (fimS ? ' tB' : '') + '">' + ((iniS || fimS) && w ? w.s : '') + '</td><td class="' + cd + '">' + (iniD ? piFmt(r.d) : '') + '</td><td class="' + cd + '">' + (iniD && r.d ? piReg(r.d) : '') + '</td>'
+        + [r.hi, r.hf, r.tp, r.via, r.ei, r.si, r.pi, r.ef, r.sf, r.pf, r.tr].map((v, k) => '<td class="tL' + (k >= 9 ? ' tW' : '') + '">' + esc(v || '') + '</td>').join('') + '</tr>' }).join('')
     + '</tbody></table></div>';
 }
 function piHtmlPedido(P) {
@@ -166,17 +173,35 @@ function piImprime(html, paisagem, titulo) {
 }
 
 /* ---------- Excel ---------- */
+/* PTI no formato do modelo da IP usado na obra: só linhas horizontais; data e Reg. Freq. na 1.ª linha do dia
+   (traço em cima e no fim do dia); semana na 1.ª e na última linha da semana; linhas em destaque a verde claro. */
 async function piExcelPTI(nome, rows) {
-  await carregaExcelJS(); const wb = new ExcelJS.Workbook(), ws = wb.addWorksheet('PTI', { pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .3, right: .3, top: .4, bottom: .4, header: .2, footer: .2 } } });
-  const cab = ['Semana', 'Data', 'Reg. Freq.', 'Hora Inicio', 'Hora Fim', 'Tipo Interdição', 'Via/Linha', 'Estação Inicio', '', 'Poste Limite', 'Estação Fim', '', 'Poste Limite', 'Trabalhos a Executar'];
-  ws.columns = [10, 12, 9, 10, 10, 13, 10, 18, 14, 12, 18, 14, 12, 42].map(w => ({ width: w }));
-  const h = ws.addRow(cab); h.font = { bold: true }; h.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; h.eachCell(c => { c.border = { bottom: { style: 'medium' } } });
-  let s0 = null, d0 = null;
-  piOrd(rows).forEach(r => { const w = r.d ? piSemana(r.d) : null, sk = w ? w.s + '/' + w.a : '', ns = sk !== s0, nd = r.d !== d0; s0 = sk; d0 = r.d;
-    const x = ws.addRow([ns && w ? w.s : '', nd && r.d ? piD(r.d) : '', nd && r.d ? piReg(r.d) : '', r.hi, r.hf, r.tp, r.via, r.ei, r.si, r.pi, r.ef, r.sf, r.pf, r.tr]);
-    x.getCell(2).numFmt = 'dd/mm/yyyy'; x.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; x.getCell(14).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
-    x.eachCell({ includeEmpty: true }, c => { c.border = Object.assign({ bottom: { style: 'hair' } }, ns ? { top: { style: 'medium' } } : {}) }) });
-  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  await carregaExcelJS(); let wb = new ExcelJS.Workbook(), ws = null;
+  const m = await sb.storage.from('documentos').download(PI_MOD_PTI());
+  if (!m.error) { try { await wb.xlsx.load(await m.data.arrayBuffer()); const nr = v => String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      ws = wb.worksheets.find(w => /hora inicio/.test(nr(w.getCell('E1').value)) && /trabalhos/.test(nr(w.getCell('O1').value))) || wb.worksheets.find(w => /hora inicio/.test(nr(w.getCell('E1').value))) || null } catch (e) { ws = null } }
+  /* livro novo (o modelo traz linhas ocultas e fórmulas antigas); do modelo copiam-se o cabeçalho, as larguras e a impressão */
+  const mod = ws, nw = new ExcelJS.Workbook(), out = nw.addWorksheet('PTI', { views: [{ state: 'frozen', ySplit: 1, showGridLines: mod ? mod.views && mod.views[0] && mod.views[0].showGridLines !== false : true }] });
+  const W0 = [1.1, 15.9, 13, 9, 10, 10, 17.3, 15.9, 13, 15.9, 15.9, 13, 15.9, 38.1, 9];
+  for (let k = 1; k <= 15; k++) out.getColumn(k).width = mod && mod.getColumn(k).width ? mod.getColumn(k).width : W0[k - 1];
+  const cab = ['', 'Semana', 'Data', 'Reg. Freq.', 'Hora Inicio', 'Hora Fim', 'Tipo Interdição', 'Via/Linha', 'Estação Inicio', '', 'Poste Limite', 'Estação Fim', '', 'Poste Limite', 'Trabalhos a Executar'];
+  const h = out.getRow(1); h.height = mod && mod.getRow(1).height ? mod.getRow(1).height : 30;
+  cab.forEach((t, k) => { const c = h.getCell(k + 1), m0 = mod ? mod.getRow(1).getCell(k + 1) : null; c.value = m0 && m0.value != null ? m0.value : (t || null);
+    if (k) { c.font = m0 && m0.font && m0.font.size ? Object.assign({}, m0.font) : { name: 'Aptos Narrow', size: 14, bold: true }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = { bottom: { style: 'thin' } } } });
+  const ps = mod ? Object.assign({}, mod.pageSetup) : {}; out.pageSetup = Object.assign({ orientation: 'landscape', paperSize: 9, horizontalCentered: true, margins: { left: .24, right: .24, top: .75, bottom: .75, header: .3, footer: .3 } }, { orientation: ps.orientation || 'landscape', paperSize: ps.paperSize || 9, margins: ps.margins || { left: .24, right: .24, top: .75, bottom: .75, header: .3, footer: .3 }, horizontalCentered: true }, { fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:1' });
+  wb = nw; ws = out;
+  const R = piOrd(rows), F = { name: 'Aptos Narrow', size: 11 }, T = { style: 'thin' }, verde = { type: 'pattern', pattern: 'solid', fgColor: { theme: 9, tint: 0.7999816888943144 } };
+  const t = h => { const m = piMin(h); return m == null ? (h || null) : (String(h).trim() === '24:00' ? 1 : m / 1440) };
+  R.forEach((r, i) => { const n = i + 2, w = r.d ? piSemana(r.d) : null, sk = w ? w.s + '/' + w.a : '', ant = R[i - 1], seg = R[i + 1];
+    const skA = ant && ant.d ? piSemana(ant.d).s + '/' + piSemana(ant.d).a : null, skS = seg && seg.d ? piSemana(seg.d).s + '/' + piSemana(seg.d).a : null;
+    const iniD = !ant || ant.d !== r.d, fimD = !seg || seg.d !== r.d, iniS = sk !== skA, fimS = sk !== skS;
+    const row = ws.getRow(n); row.height = 25.15;
+    const val = [null, (iniS || fimS) && w ? w.s : null, iniD && r.d ? new Date(Date.UTC(+r.d.slice(0, 4), +r.d.slice(5, 7) - 1, +r.d.slice(8, 10))) : null, iniD && r.d ? piReg(r.d) : null, t(r.hi), t(r.hf), r.tp || null, r.via || null, r.ei || null, r.si || null, r.pi || null, r.ef || null, r.sf || null, r.pf || null, r.tr || null];
+    val.forEach((v, k) => { if (!k) return; const c = row.getCell(k + 1); c.value = v; c.font = F; c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: k >= 13 };
+      c.border = k === 1 ? (fimS ? { bottom: T } : {}) : k <= 3 ? Object.assign({}, iniD ? { top: T } : {}, fimD ? { bottom: T } : {}) : { bottom: T };
+      if (k === 2) c.numFmt = 'dd/mm/yyyy'; if (k === 4) c.numFmt = 'h:mm'; if (k === 5) c.numFmt = '[h]:mm';
+      if (r.cor && k >= 2) c.fill = verde });
+    row.commit && row.commit() });
   pdtDescarrega((nome || 'PTI').replace(/[\\/:*?"<>|]+/g, ' ') + '.xlsx', new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 }
 async function piExcelPedido(nome, P) {
@@ -218,7 +243,7 @@ function piEditor(o, rec, tipo, refaz) {
   const sec = (t, c, a) => '<details class="pdS"' + (a !== false ? ' open' : '') + '><summary>' + t + '</summary><div class="pdB">' + c + '</div></details>';
   const css = '<style>#piEd .pdS{border:1px solid var(--rule);border-radius:8px;background:var(--sheet);margin:0 0 10px}#piEd summary{cursor:pointer;padding:9px 12px;font-weight:600;font-size:13.5px}#piEd .pdB{padding:4px 12px 12px}#piEd label{font-size:12px;color:var(--muted);display:block;margin:8px 0 3px}'
     + '#piEd .tb{display:flex;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--rule);background:var(--sheet);flex-wrap:wrap}#piEd .sp{flex:1}#piEd .cs{display:grid;grid-template-columns:minmax(420px,' + (pti ? '58%' : '46%') + ') 1fr;flex:1;min-height:0}#piEd .cf{overflow:auto;padding:12px 14px}#piEd .cw{display:flex;flex-direction:column;min-height:0;min-width:0}'
-    + '#piEd .cp{overflow:auto;background:#6b6f76;flex:1;min-height:0}#piEd .piPg{background:#fff;margin:14px auto;padding:10mm;box-shadow:0 2px 10px rgba(0,0,0,.35);width:' + (pti ? 'calc(100% - 28px)' : '190mm') + ';max-width:calc(100% - 28px);box-sizing:border-box}' + PI_CSS
+    + '#piEd .cp{overflow:auto;background:#6b6f76;flex:1;min-height:0}#piEd .piPg{background:#fff;margin:14px auto;padding:10mm;box-shadow:0 2px 10px rgba(0,0,0,.35);' + (pti ? 'width:max-content;min-width:calc(100% - 28px);margin:14px' : 'width:190mm;max-width:calc(100% - 28px)') + ';box-sizing:border-box}' + PI_CSS
     + '#piEd .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}#piEd .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px}#piEd .piPg .piF{font-size:' + (pti ? '10px' : '11px') + '}#piEd .chk{display:inline-flex;gap:5px;align-items:center;margin:4px 12px 4px 0;color:var(--ink);font-size:13px}'
     + '#piEd .gr{overflow-x:auto}#piEd .gr table{border-collapse:collapse}#piEd .gr th{font-size:11px;color:var(--muted);text-align:left;padding:2px 3px;font-weight:600;white-space:nowrap}#piEd .gr td{padding:1px 2px}#piEd .gr input,#piEd .gr select{padding:4px 5px;font-size:12.5px;min-width:0;width:100%;box-sizing:border-box}'
     + '#piEd .gr tr.sem td{border-top:2px solid var(--rule)}#piEd .gr .ix{font-size:11px;color:var(--muted);white-space:nowrap;padding-right:4px}@media(max-width:900px){#piEd .cs{grid-template-columns:1fr}}</style>';
@@ -251,14 +276,15 @@ function piEditor(o, rec, tipo, refaz) {
   function grelha() {
     const el = $o('#piGr');
     if (pti) { const R = D.rows; let s0 = null;
-      el.innerHTML = '<table><thead><tr><th></th>' + PI_COLS.map(c => '<th>' + c[1] + '</th>').join('') + '<th></th></tr></thead><tbody>' + R.map((r, i) => { const w = r.d ? piSemana(r.d) : null, sk = w ? w.s : '', ns = sk !== s0; s0 = sk;
+      el.innerHTML = '<table><thead><tr><th></th>' + PI_COLS.map(c => '<th>' + c[1] + '</th>').join('') + '<th title="Linha em destaque (verde claro, como no PTI)">Verde</th><th></th></tr></thead><tbody>' + R.map((r, i) => { const w = r.d ? piSemana(r.d) : null, sk = w ? w.s : '', ns = sk !== s0; s0 = sk;
         return '<tr' + (ns && i ? ' class="sem"' : '') + '><td class="ix">' + (r.d ? 'S' + w.s + ' ' + PI_DOW[piD(r.d).getDay()] : '') + '</td>' + PI_COLS.map(c => '<td style="min-width:' + c[2] + 'px">' + (c[3] === 'tp' || c[3] === 'via' ? '<select data-r="' + i + '" data-c="' + c[0] + '">' + [''].concat(c[3] === 'tp' ? PI_TIPOS : PI_VIAS).concat((c[3] === 'tp' ? PI_TIPOS : PI_VIAS).includes(r[c[0]]) || !r[c[0]] ? [] : [r[c[0]]]).map(v => '<option' + (v === (r[c[0]] || '') ? ' selected' : '') + '>' + esc(v) + '</option>').join('') + '</select>'
-          : '<input data-r="' + i + '" data-c="' + c[0] + '"' + (c[3] === 'date' ? ' type="date"' : '') + ' value="' + esc(r[c[0]] || '') + '">') + '</td>').join('') + '<td style="white-space:nowrap"><button class="sm" data-dup="' + i + '" title="Duplicar">⧉</button><button class="sm" data-del="' + i + '" title="Tirar">✕</button></td></tr>' }).join('') + '</tbody></table>';
+          : '<input data-r="' + i + '" data-c="' + c[0] + '"' + (c[3] === 'date' ? ' type="date"' : '') + ' value="' + esc(r[c[0]] || '') + '">') + '</td>').join('') + '<td style="text-align:center"><input type="checkbox" data-cor="' + i + '"' + (r.cor ? ' checked' : '') + '></td><td style="white-space:nowrap"><button class="sm" data-dup="' + i + '" title="Duplicar">⧉</button><button class="sm" data-del="' + i + '" title="Tirar">✕</button></td></tr>' }).join('') + '</tbody></table>';
       $o('#piCont').textContent = R.length + ' período' + (R.length === 1 ? '' : 's') + (R.length ? ' · ' + new Set(R.filter(r => r.d).map(r => { const w = piSemana(r.d); return w.s + '/' + w.a })).size + ' semanas' : '');
     } else { const R = D.per;
       el.innerHTML = '<table><thead><tr><th>Data</th><th>Hora início</th><th>Hora fim</th><th>Duração</th><th></th></tr></thead><tbody>' + R.map((p, i) => '<tr><td><input type="date" data-r="' + i + '" data-c="d" value="' + esc(p.d || '') + '"></td><td><input data-r="' + i + '" data-c="hi" value="' + esc(p.hi || '') + '" placeholder="00:00"></td><td><input data-r="' + i + '" data-c="hf" value="' + esc(p.hf || '') + '" placeholder="05:30"></td><td class="ix">' + piDur(p.hi, p.hf) + (p.d ? ' · ' + PI_DOW[piD(p.d).getDay()] : '') + '</td><td><button class="sm" data-del="' + i + '">✕</button></td></tr>').join('') + '</tbody></table>';
       $o('#piAdd').disabled = R.length >= 20 }
     el.querySelectorAll('[data-r]').forEach(x => x.onchange = () => { (pti ? D.rows : D.per)[+x.dataset.r][x.dataset.c] = x.value.trim(); mexe(); if (x.dataset.c === 'd') grelha() });
+    el.querySelectorAll('[data-cor]').forEach(x => x.onchange = () => { D.rows[+x.dataset.cor].cor = x.checked; mexe() });
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { (pti ? D.rows : D.per).splice(+b.dataset.del, 1); grelha(); mexe() });
     el.querySelectorAll('[data-dup]').forEach(b => b.onclick = () => { const i = +b.dataset.dup; D.rows.splice(i + 1, 0, Object.assign({}, D.rows[i])); grelha(); mexe() });
   }
