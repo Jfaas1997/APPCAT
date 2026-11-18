@@ -343,6 +343,7 @@ td .chip{margin-right:5px}
 .rmTot td{font-weight:600;background:var(--soft)}
 .rmTot.hi td{background:var(--sheet);border-top:2px solid var(--brand)}
 tr.rmHist td{color:var(--muted)}
+.rmPostes{width:100%}.rmPostes thead th{position:sticky;top:0;background:var(--sheet);z-index:1}
 .rmDif{margin:8px 0 0;padding:8px 10px;border-radius:6px;font-size:13px;border:1px solid var(--rule)}
 .rmDif.mais{background:var(--amberbg);border-color:var(--amber)}
 .rmDif.menos{background:var(--redbg);border-color:var(--red)}
@@ -1995,8 +1996,9 @@ function renumeraPDs(){
     var ini=Math.min.apply(null,lst.map(function(x){return x.n}));
     var usados={}; lst.forEach(function(x){ if(x.p.bloq)usados[x.n]=1 });   /* as impressas ficam com o número que têm */
     var livres=lst.filter(function(x){return !x.p.bloq}).sort(function(a,b){ return (a.p.data||'9999').localeCompare(b.p.data||'9999')||(a.n-b.n)||String(a.p.id).localeCompare(String(b.p.id)) });
-    var c=ini;
-    livres.forEach(function(x){ while(usados[c])c++; var nn=t.prefixo+' - '+c; c++; if(x.p.num!==nn){ x.p.num=nn; mudou++ } });
+    var c=ini, fix=lst.filter(function(x){return x.p.bloq});
+    /* uma PD nova nunca fica com um número livre «para trás»: vem depois da última impressa com data igual ou anterior */
+    livres.forEach(function(x){ fix.forEach(function(f){ if((f.p.data||'')<=(x.p.data||'9999')&&f.n>=c)c=f.n+1 }); while(usados[c])c++; var nn=t.prefixo+' - '+c; c++; if(x.p.num!==nn){ x.p.num=nn; mudou++ } });
   }) });
   return mudou;
 }
@@ -2146,7 +2148,11 @@ function renderPDedit(){
           '<select data-l="'+ix+'" data-k="fase" title="Taxa de execução: em que fase está esta quantidade" style="width:100%;margin-bottom:3px"><option value="">100 %</option>'+fasesDe(a).map(function(f,fi){ return '<option value="'+fi+'"'+(l.fase===fi?' selected':'')+'>'+esc(f.nome)+' · '+esc(String(f.pct).replace('.',','))+'%</option>' }).join('')+'</select>'+
           (l.fase!=null&&linFase(l)?'<input class="num" data-l="'+ix+'" data-k="qb" value="'+esc(l.qb==null?'':l.qb)+'" title="Quantidade física (postes, metros…)"><small class="hint" style="display:block;text-align:right">conta '+qtf(l.qt)+'</small>':'<input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'">')
         :'<input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'">')+'</td>'+
-       '<td><input data-l="'+ix+'" data-k="pki" value="'+esc(l.pki||'')+'" class="mono"></td>'+
+       '<td><input data-l="'+ix+'" data-k="pki" value="'+esc(l.pki||'')+'" class="mono">'+(function(){
+          if(!a||!limitePoste(a)||!String(l.pki||'').trim()||l.estado==='historica')return '';
+          var ja=jaNoPoste(l.cod,l.origem,l.pki,l), fica=ja+num(l.qt);
+          if(!ja&&fica<=1+1e-9)return '';
+          return '<small class="hint" style="display:block;white-space:nowrap;color:'+(fica>1+1e-9?'var(--red)':'')+'" title="Neste poste, nesta rubrica, já foram lançados '+qtf(ja)+' (autos fechados e outras partes diárias)">'+(fica>1+1e-9?'⚠ passa de 100 %: fica '+postePctTxt(fica):'já '+postePctTxt(ja)+' · falta '+postePctTxt(Math.max(0,1-ja)))+'</small>' })()+'</td>'+
        '<td><input data-l="'+ix+'" data-k="pkf" value="'+esc(l.pkf||'')+'" class="mono"></td>'+
        '<td class="num w1">'+(a?eur(num(l.qt)*num(a.pu)):'—')+'</td>'+
        '<td class="w1">'+(fechadaL&&l.estado!=='historica'?'<input type="month" data-l="'+ix+'" data-k="auto" value="'+esc(l.auto||autoDe(p.data))+'">':'—')+'</td>'+
@@ -2454,6 +2460,12 @@ function ligaPD(p){
     if(t.dataset.ti){ var it=porId(ST.int,t.dataset.ti); if(it){ it[t.dataset.tk]=(hm(t.value)==null?'':hstr(hm(t.value))) } setTimeout(function(){renderPDedit();encheMeses()},0); return }
     if(t.dataset.l!=null&&k==='fase'){ var lf=p.lin[+t.dataset.l]; if(t.value===''){ if(lf.qb!=null)lf.qt=num(lf.qb); delete lf.fase; delete lf.qb } else { if(lf.fase==null)lf.qb=num(lf.qt)||1; lf.fase=+t.value; linRecalc(lf) } setTimeout(renderPDedit,0); return }
     if(t.dataset.l!=null&&k==='qb'){ var lq=p.lin[+t.dataset.l]; lq.qb=num(t.value); linRecalc(lq); setTimeout(renderPDedit,0); return }
+    if(t.dataset.l!=null&&k==='pki'){ var lp=p.lin[+t.dataset.l]; lp.pki=t.value; var ap=look(lp.cod,lp.origem), fz=fasesDe(ap);
+      if(ap&&limitePoste(ap)&&String(lp.pki).trim()){ var ja0=jaNoPoste(lp.cod,lp.origem,lp.pki,lp);
+        if(fz&&ja0>1e-9&&ja0<1-1e-9){ var falta=Math.round((1-ja0)*1e4)/100, fi=-1; fz.forEach(function(f,i){ if(Math.abs(num(f.pct)-falta)<0.01)fi=i });
+          if(fi>=0&&lp.fase!==fi){ lp.fase=fi; lp.qb=1; linRecalc(lp); toast('Poste '+lp.pki+': já tem '+postePctTxt(ja0)+' faturado. Pus a fase «'+fz[fi].nome+'» ('+fz[fi].pct+' %).',4500) } }
+        if(ja0>=1-1e-9)toast('Atenção: o poste '+lp.pki+' já está a 100 % nesta rubrica.',4500); }
+      setTimeout(renderPDedit,0); return }
     if(t.dataset.l!=null&&k){ var l=p.lin[+t.dataset.l]; l[k]=k==='qt'?num(t.value):t.value;
       if(k==='cod'){ var pdo=porId(ST.pd,pdAberta), okO=pdo?origensPD(pdo):['contrato'], oo=okO.filter(function(o){ return look(t.value,o) }); if(oo.length&&oo.indexOf(l.origem||'contrato')<0)l.origem=oo[0]; var a=look(t.value,l.origem); if(a){l.des='';l.un=a.un} } setTimeout(renderPDedit,0); return }
     if(t.dataset.r&&k){ var arr=p[t.dataset.r]; var o=arr[+t.dataset.i];
@@ -3922,7 +3934,15 @@ function lancamentosRubrica(cod,origem){
   return out.sort(function(a,b){return (b.data||'').localeCompare(a.data||'')});
 }
 function limitePoste(a){ return a&&/^un/i.test(String(a.un||'').trim())?1:0 }
-function somaPk(lancs,pk){ var t=0; lancs.forEach(function(x){ if(x.pki===pk)t+=num(x.qt) }); return t }
+function pkN(s){ return String(s||'').toUpperCase().replace(/\s+/g,'') }
+function somaPk(lancs,pk){ var t=0, k=pkN(pk); lancs.forEach(function(x){ if(!x.hist&&pkN(x.pki)===k)t+=num(x.qt) }); return t }
+/* quanto de um poste já foi lançado numa rubrica (autos fechados + partes diárias), sem contar a linha «fora» */
+function jaNoPoste(cod,origem,pk,fora){
+  var k=pkN(pk), kr=chaveRub(cod,origem), t=0; if(!k)return 0;
+  ST.pd.forEach(function(p){ (p.lin||[]).forEach(function(l){ if(l===fora)return; if((l.estado||'fechada')!=='fechada'||!l.cod)return; if(chaveRub(l.cod,l.origem)!==kr)return; if(pkN(l.pki)===k)t+=num(l.qt) }) });
+  return t;
+}
+function postePctTxt(q){ return Math.round(q*1000)/10+' %' }
 var lancEdit=null; /* {pdId,ix} do lançamento em correção na ficha da rubrica */
 function parseLotePostes(txt,qtPad){
   var out=[];
@@ -3970,6 +3990,22 @@ function renderRubricaModal(){
     h+='<div class="rmDif '+(dx>0?'mais':'menos')+'"><b>Executado '+qtf(a.exeAnt)+' '+un+' · faturado até ao Auto 16 '+qtf(fa0)+' '+un+'</b> — '+(dx>0?'há '+qtf(dx)+' '+un+' executados por faturar ('+eur(dx*pu)+' €)':'faturou-se '+qtf(-dx)+' '+un+' a mais do que o executado ('+eur(-dx*pu)+' €)')+'. <span class="hint">Segundo '+esc((ST.exeAntFonte&&ST.exeAntFonte.nome)||'o controlo de produção')+'.</span></div>' }
   if(fasesDe(a))h+='<div class="hint">Taxas de execução: '+esc(fasesTxt(a))+'.</div>';
   if(depQ)h+='<div class="hint">Há ainda '+qtf(depQ)+' '+un+' lançados em autos seguintes, que não entram nestas contas.</div>';
+
+  /* por poste: acumulado anterior, este auto e acumulado atual de cada poste/PK */
+  (function(){
+    var P={}, ord=[];
+    lancs.forEach(function(x){ if(x.hist||x.auto>AU)return; var k=pkN(x.pki)||'—'; var r=P[k]; if(!r){ r=P[k]={pk:String(x.pki||'').trim()||'(sem poste)',ant:0,mes:0}; ord.push(k) } if(x.auto<AU)r.ant+=num(x.qt); else r.mes+=num(x.qt) });
+    if(!ord.length)return;
+    var lim=limitePoste(a); ord.sort(function(x,y){ return naturalCmp(P[x].pk,P[y].pk) });
+    var nC=0,nP=0,nX=0; ord.forEach(function(k){ var t=P[k].ant+P[k].mes; if(lim){ if(t>lim+1e-9)nX++; else if(t>=lim-1e-9)nC++; else nP++ } });
+    h+='<h3 class="sec">Por poste</h3>'+(lim?'<div class="hint" style="margin-bottom:6px">'+ord.length+' postes · <b>'+nC+'</b> a 100 %'+(nP?' · <b>'+nP+'</b> por completar':'')+(nX?' · <b style="color:var(--red)">'+nX+' acima de 100 %</b>':'')+'</div>':'');
+    h+='<div style="max-height:320px;overflow:auto;border:1px solid var(--rule);border-radius:6px"><table class="rmPostes"><thead><tr><th>Poste / PK</th><th class="num">Acumulado anterior</th><th class="num">'+esc(mesNome(AU))+'</th><th class="num">Acumulado atual</th>'+(lim?'<th class="num">Falta</th><th style="width:110px"></th>':'')+'</tr></thead><tbody>';
+    ord.forEach(function(k){ var r=P[k], t=r.ant+r.mes;
+      var f=lim?(lim-t):0, cor=lim?(t>lim+1e-9?'var(--red)':(t>=lim-1e-9?'var(--ok)':'var(--amber)')):'';
+      h+='<tr><td class="mono">'+esc(r.pk)+'</td><td class="num">'+(r.ant?(lim?postePctTxt(r.ant):qtf(r.ant)):'—')+'</td><td class="num">'+(r.mes?'<b>'+(lim?postePctTxt(r.mes):qtf(r.mes))+'</b>':'—')+'</td><td class="num"><b>'+(lim?postePctTxt(t):qtf(t))+'</b></td>'+
+        (lim?'<td class="num" style="color:'+cor+'">'+(f>1e-9?postePctTxt(f):(f<-1e-9?'+'+postePctTxt(-f):'—'))+'</td><td><span style="display:block;height:7px;background:var(--soft);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:'+Math.min(100,t/lim*100).toFixed(1)+'%;background:'+cor+'"></span></span></td>':'')+'</tr>' });
+    h+='</tbody></table></div>';
+  })();
 
   h+='<h3 class="sec">Histórico</h3>';
   if(!lancs.length&&!ini)h+='<div class="empty">Ainda não há nenhum lançamento nesta rubrica.</div>';
@@ -4023,10 +4059,12 @@ function renderRubricaModal(){
 
   bind('#rubricaModalBox','input',function(e){
     if(e.target.id==='rmPk'||e.target.id==='rmQt'){
-      var pk=$('#rmPk').value.trim(), inf=$('#rmPkInfo'), lim=limitePoste(a), ja=pk?somaPk(lancs,pk):0, q=num($('#rmQt').value);
-      inf.textContent=!pk||!ja?'':(lim?'Já tem '+qtf(ja)+' lançado'+(ja<lim-1e-9?' · falta '+qtf(lim-ja):' · completo'):'Já tem '+qtf(ja)+' lançado');
+      var pk=$('#rmPk').value.trim(), inf=$('#rmPkInfo'), lim=limitePoste(a), ja=pk?somaPk(lancs,pk):0, q=num($('#rmQt').value), fsx=$('#rmFase');
+      if(e.target.id==='rmPk'&&fsx&&lim&&ja>1e-9&&ja<1-1e-9){ var falta=Math.round((1-ja)*1e4)/100; fasesDe(a).forEach(function(f,i){ if(Math.abs(num(f.pct)-falta)<0.01)fsx.value=String(i) }); if(!$('#rmQt').value)$('#rmQt').value='1'; q=num($('#rmQt').value) }
+      if(fsx&&fsx.value!==''){ var fx=fasesDe(a)[+fsx.value]; if(fx)q=q*num(fx.pct)/100 }
+      inf.textContent=!pk||!ja?'':(lim?'Já tem '+postePctTxt(ja)+(ja<lim-1e-9?' · falta '+postePctTxt(lim-ja):' · completo'):'Já tem '+qtf(ja)+' lançado');
       inf.style.color=(lim&&q&&ja+q>lim+1e-9)?'var(--red)':'';
-      if(lim&&q&&ja+q>lim+1e-9)inf.textContent+=' · com este fica '+qtf(ja+q);
+      if(lim&&q&&ja+q>lim+1e-9)inf.textContent+=' · com este fica '+postePctTxt(ja+q);
       return;
     }
     if(e.target.id!=='rlTxt'&&e.target.id!=='rlQtPad')return;
@@ -4082,13 +4120,14 @@ function renderRubricaModal(){
     }
     if(e.target.id==='rmOk'){
       var d=$('#rmData').value, pk=$('#rmPk').value, q=num($('#rmQt').value);
+      var qf=q, fsel=$('#rmFase'); if(fsel&&fsel.value!==''){ var ff=fasesDe(a)[+fsel.value]; if(ff)q=Math.round(q*num(ff.pct)/100*1e6)/1e6 }
       if(!d){ toast('Escolhe a data.'); return }
       if(!q){ toast('Escreve a quantidade.'); return }
       var lim=limitePoste(look(a.cod,a.origem)), ja=pk?somaPk(lancs,pk):0;
       if(pk&&(lim?ja+q>lim+1e-9:ja>0)&&!confirm(lim?'O poste «'+pk+'» já tem '+qtf(ja)+' lançado; com este fica '+qtf(ja+q)+', mais do que '+lim+'. Continuar na mesma?':'Já há um lançamento nesta rubrica no poste/PK «'+pk+'». Continuar na mesma?'))return;
       var pdN=pdDoDia(a.tipo,d); if(pdBloq(pdN)){ avisoBloq(pdN); return }
       var nl={cod:a.cod,origem:a.origem||'contrato',des:'',un:'',qt:q,pki:pk,pkf:'',estado:'fechada'};
-      var fs=$('#rmFase'); if(fs&&fs.value!==''){ nl.fase=+fs.value; nl.qb=q; linRecalc(nl) }
+      var fs=$('#rmFase'); if(fs&&fs.value!==''){ nl.fase=+fs.value; nl.qb=qf; linRecalc(nl) }
       pdN.lin.push(nl);
       render(); toast('Lançado em '+tipoNome(a.tipo)+' '+pdN.num+'.'+pdAviso(pdN));
       return;
