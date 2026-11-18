@@ -344,6 +344,16 @@ td .chip{margin-right:5px}
 .rmTot.hi td{background:var(--sheet);border-top:2px solid var(--brand)}
 tr.rmHist td{color:var(--muted)}
 .rmPostes{width:100%}.rmPostes thead th{position:sticky;top:0;background:var(--sheet);z-index:1}
+.rmTabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin:14px 0 10px}
+.rmTabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 14px;font-weight:600;color:var(--muted)}
+.rmTabs button.on{color:var(--ink);border-bottom-color:var(--brand)}
+.rmBar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}.rmBar label{display:flex;gap:6px;align-items:center}
+.rmFil{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}.rmFil button{border:0;border-radius:0;padding:5px 10px}.rmFil button.on{background:var(--ink);color:var(--sheet)}
+.rmPWrap{max-height:52vh;overflow:auto;border:1px solid var(--rule);border-radius:6px}
+.rmF{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.rmF.feito{background:var(--okbg);color:var(--ok)}.rmF.agora{background:var(--brand);color:#1a1a1a}
+.rmFat{padding:3px 10px;font-size:12px}
+.rmNovoP{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 .rmDif{margin:8px 0 0;padding:8px 10px;border-radius:6px;font-size:13px;border:1px solid var(--rule)}
 .rmDif.mais{background:var(--amberbg);border-color:var(--amber)}
 .rmDif.menos{background:var(--redbg);border-color:var(--red)}
@@ -3928,7 +3938,7 @@ function lancamentosRubrica(cod,origem){
       var est=l.estado||'fechada'; if(est!=='fechada'&&est!=='historica')return;
       if(String(l.cod||'').trim().toUpperCase()!==String(cod).trim().toUpperCase())return;
       if((l.origem||'contrato')!==(origem||'contrato'))return;
-      out.push({pdId:p.id,pdNum:p.num,pdTipo:p.tipo,data:p.data,pki:l.pki||'',qt:l.qt,lineIx:ix,auto:l.auto||autoDe(p.data),hist:est==='historica'});
+      out.push({pdId:p.id,pdNum:p.num,pdTipo:p.tipo,data:p.data,pki:l.pki||'',qt:l.qt,lineIx:ix,auto:l.auto||autoDe(p.data),hist:est==='historica',fase:l.fase});
     });
   });
   return out.sort(function(a,b){return (b.data||'').localeCompare(a.data||'')});
@@ -3943,6 +3953,7 @@ function jaNoPoste(cod,origem,pk,fora){
   return t;
 }
 function postePctTxt(q){ return Math.round(q*1000)/10+' %' }
+var rmTab='postes', rmFil='', rmPBusca='', rmPData='';
 var lancEdit=null; /* {pdId,ix} do lançamento em correção na ficha da rubrica */
 function parseLotePostes(txt,qtPad){
   var out=[];
@@ -3977,37 +3988,60 @@ function renderRubricaModal(){
   h+='<div class="fields" style="margin-top:10px">'+
     '<span class="chip '+((a.origem||'contrato')==='contrato'?'none':'warn')+'">'+esc(origemNome(a.origem))+'</span>'+
     '<span class="ts">Preço unitário: <b class="mono">'+eur(pu)+' €</b> · Auto em preenchimento: <b>'+esc(mesNome(AU))+'</b> <span class="hint">('+esc(autoIntervalo(AU))+')</span></span></div>';
+  var dataPad=autoDe(hoje())===AU?hoje():(AU+'-'+('0'+(+ST.diaAuto||20)).slice(-2));
   h+='<div class="rmRes">'+
-    cel('Contrato',qc)+
     cel('Acumulado anterior',antQ,pc(antQ))+
-    cel('A carregar no auto de '+esc(mesNome(AU).toLowerCase()),mesQ,'',true)+
+    cel('Este auto · '+esc(mesNome(AU).toLowerCase()),mesQ,'',true)+
     cel('Acumulado atual',atuQ,pc(atuQ))+
-    cel(atuQ>qc+1e-9?'Acima do contrato':'Falta executar',Math.abs(qc-atuQ))+
+    cel(atuQ>qc+1e-9?'Acima do contrato':'Falta',Math.abs(qc-atuQ),' · contrato '+qtf(qc)+' '+un)+
   '</div>';
-  if(ini)h+='<div class="hint">O acumulado anterior inclui o saldo inicial de '+qtf(ini)+' '+un+'.</div>';
   var fa0=fatAnt(a);
   if(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-fa0)>1e-9){ var dx=num(a.exeAnt)-fa0;
-    h+='<div class="rmDif '+(dx>0?'mais':'menos')+'"><b>Executado '+qtf(a.exeAnt)+' '+un+' · faturado até ao Auto 16 '+qtf(fa0)+' '+un+'</b> — '+(dx>0?'há '+qtf(dx)+' '+un+' executados por faturar ('+eur(dx*pu)+' €)':'faturou-se '+qtf(-dx)+' '+un+' a mais do que o executado ('+eur(-dx*pu)+' €)')+'. <span class="hint">Segundo '+esc((ST.exeAntFonte&&ST.exeAntFonte.nome)||'o controlo de produção')+'.</span></div>' }
-  if(fasesDe(a))h+='<div class="hint">Taxas de execução: '+esc(fasesTxt(a))+'.</div>';
-  if(depQ)h+='<div class="hint">Há ainda '+qtf(depQ)+' '+un+' lançados em autos seguintes, que não entram nestas contas.</div>';
+    h+='<div class="rmDif '+(dx>0?'mais':'menos')+'">Controlo de produção: executado '+qtf(a.exeAnt)+' '+un+', faturado até ao Auto 16 '+qtf(fa0)+' '+un+' → '+(dx>0?'<b>'+qtf(dx)+' '+un+' por faturar</b> ('+eur(dx*pu)+' €)':'<b>'+qtf(-dx)+' '+un+' faturados a mais</b> ('+eur(-dx*pu)+' €)')+'</div>' }
+  if(depQ)h+='<div class="hint">Há ainda '+qtf(depQ)+' '+un+' em autos seguintes, fora destas contas.</div>';
 
-  /* por poste: acumulado anterior, este auto e acumulado atual de cada poste/PK */
-  (function(){
+  /* separadores */
+  var LIM=limitePoste(a), FZ=fasesDe(a), temPk=lancs.some(function(x){ return !x.hist&&String(x.pki||'').trim()&&x.pki!=='Autos fechados' });
+  var tabs=[]; if(LIM||temPk)tabs.push(['postes','Postes']); tabs.push(['lanc','Lançamentos']); tabs.push(['novo','Novo lançamento']);
+  if(!tabs.some(function(t){return t[0]===rmTab}))rmTab=tabs[0][0];
+  h+='<div class="rmTabs">'+tabs.map(function(t){ return '<button data-rmtab="'+t[0]+'" class="'+(rmTab===t[0]?'on':'')+'">'+t[1]+'</button>' }).join('')+'</div>';
+
+  if(rmTab==='postes'){
+    /* agrupa por poste; em cada poste, as fases já faturadas e em que auto */
     var P={}, ord=[];
-    lancs.forEach(function(x){ if(x.hist||x.auto>AU)return; var k=pkN(x.pki)||'—'; var r=P[k]; if(!r){ r=P[k]={pk:String(x.pki||'').trim()||'(sem poste)',ant:0,mes:0}; ord.push(k) } if(x.auto<AU)r.ant+=num(x.qt); else r.mes+=num(x.qt) });
-    if(!ord.length)return;
-    var lim=limitePoste(a); ord.sort(function(x,y){ return naturalCmp(P[x].pk,P[y].pk) });
-    var nC=0,nP=0,nX=0; ord.forEach(function(k){ var t=P[k].ant+P[k].mes; if(lim){ if(t>lim+1e-9)nX++; else if(t>=lim-1e-9)nC++; else nP++ } });
-    h+='<h3 class="sec">Por poste</h3>'+(lim?'<div class="hint" style="margin-bottom:6px">'+ord.length+' postes · <b>'+nC+'</b> a 100 %'+(nP?' · <b>'+nP+'</b> por completar':'')+(nX?' · <b style="color:var(--red)">'+nX+' acima de 100 %</b>':'')+'</div>':'');
-    h+='<div style="max-height:320px;overflow:auto;border:1px solid var(--rule);border-radius:6px"><table class="rmPostes"><thead><tr><th>Poste / PK</th><th class="num">Acumulado anterior</th><th class="num">'+esc(mesNome(AU))+'</th><th class="num">Acumulado atual</th>'+(lim?'<th class="num">Falta</th><th style="width:110px"></th>':'')+'</tr></thead><tbody>';
-    ord.forEach(function(k){ var r=P[k], t=r.ant+r.mes;
-      var f=lim?(lim-t):0, cor=lim?(t>lim+1e-9?'var(--red)':(t>=lim-1e-9?'var(--ok)':'var(--amber)')):'';
-      h+='<tr><td class="mono">'+esc(r.pk)+'</td><td class="num">'+(r.ant?(lim?postePctTxt(r.ant):qtf(r.ant)):'—')+'</td><td class="num">'+(r.mes?'<b>'+(lim?postePctTxt(r.mes):qtf(r.mes))+'</b>':'—')+'</td><td class="num"><b>'+(lim?postePctTxt(t):qtf(t))+'</b></td>'+
-        (lim?'<td class="num" style="color:'+cor+'">'+(f>1e-9?postePctTxt(f):(f<-1e-9?'+'+postePctTxt(-f):'—'))+'</td><td><span style="display:block;height:7px;background:var(--soft);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:'+Math.min(100,t/lim*100).toFixed(1)+'%;background:'+cor+'"></span></span></td>':'')+'</tr>' });
+    lancs.forEach(function(x){ if(x.hist||x.auto>AU)return; var pk=String(x.pki||'').trim(); if(!pk)pk='(sem poste)'; var k=pkN(pk); var r=P[k]; if(!r){ r=P[k]={pk:pk,ant:0,mes:0,fases:{},resto:[]}; ord.push(k) }
+      if(x.auto<AU)r.ant+=num(x.qt); else r.mes+=num(x.qt);
+      if(FZ){ var fi=(x.fase!=null&&FZ[x.fase])?x.fase:-1;
+        if(fi<0){ FZ.forEach(function(f,i){ if(fi<0&&Math.abs(num(f.pct)/100-num(x.qt))<1e-6)fi=i }) }
+        if(fi<0&&Math.abs(num(x.qt)-1)<1e-6){ FZ.forEach(function(f,i){ r.fases[i]=r.fases[i]||x }) }
+        else if(fi>=0)r.fases[fi]=x; else r.resto.push(x) } });
+    ord.sort(function(x,y){ return naturalCmp(P[x].pk,P[y].pk) });
+    var est=function(r){ var t=r.ant+r.mes; return !LIM?'':t>LIM+1e-9?'x':t>=LIM-1e-9?'c':t>0?'p':'n' };
+    var cont={c:0,p:0,x:0}; ord.forEach(function(k){ var e=est(P[k]); if(cont[e]!=null)cont[e]++ });
+    h+='<div class="rmBar"><label class="hint">Data dos trabalhos <input type="date" id="rmPData" value="'+esc(rmPData||dataPad)+'"></label>'+
+      (LIM?'<span class="rmFil">'+[['','Todos ('+ord.length+')'],['p','Por completar ('+cont.p+')'],['c','Completos ('+cont.c+')']].concat(cont.x?[['x','Acima de 100 % ('+cont.x+')']]:[]).map(function(f){ return '<button data-rmfil="'+f[0]+'" class="'+(rmFil===f[0]?'on':'')+'">'+f[1]+'</button>' }).join('')+'</span>':'')+
+      '<input id="rmPBusca" placeholder="Procurar poste…" value="'+esc(rmPBusca)+'" style="width:150px"></div>';
+    var mesCurto=function(m){ var N=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']; return N[+m.slice(5,7)-1]+'/'+m.slice(2,4) };
+    h+='<div class="rmPWrap"><table class="rmPostes"><thead><tr><th>Poste / PK</th>'+
+      (FZ&&LIM?FZ.map(function(f){ return '<th>'+esc(f.nome)+' <span class="hint">'+esc(String(f.pct).replace('.',','))+' %</span></th>' }).join(''):'')+
+      '<th class="num">Anterior</th><th class="num">'+esc(mesCurto(AU))+'</th><th class="num">Atual</th>'+(LIM?'<th>Estado</th>':'')+'</tr></thead><tbody>';
+    var q=pkN(rmPBusca), nVis=0;
+    ord.forEach(function(k){ var r=P[k], e=est(r);
+      if(rmFil&&e!==rmFil)return; if(q&&k.indexOf(q)<0)return; nVis++;
+      var t=r.ant+r.mes, fmt=function(v){ return v?(LIM?postePctTxt(v/LIM):qtf(v)):'—' };
+      h+='<tr><td class="mono"><b>'+esc(r.pk)+'</b></td>';
+      if(FZ&&LIM)FZ.forEach(function(f,i){ var x=r.fases[i];
+        if(x){ var agora=x.auto===AU, podeTirar=agora&&!pdBloqId(x.pdId);
+          h+='<td><span class="rmF '+(agora?'agora':'feito')+'" title="'+esc(ptbr(x.data)+' · '+tipoNome(x.pdTipo)+' '+x.pdNum)+'">✓ '+esc(mesCurto(x.auto))+'</span>'+(podeTirar?' <button class="x" data-rmdes="'+x.pdId+'|'+x.lineIx+'" title="Tirar deste auto">×</button>':'')+'</td>' }
+        else h+='<td>'+(t+num(f.pct)/100>LIM+1e-9?'<span class="hint">—</span>':'<button class="rmFat" data-rmfat="'+esc(r.pk)+'|'+i+'">Faturar</button>')+'</td>' });
+      h+='<td class="num">'+fmt(r.ant)+'</td><td class="num">'+(r.mes?'<b>'+fmt(r.mes)+'</b>':'—')+'</td><td class="num"><b>'+fmt(t)+'</b></td>'+
+        (LIM?'<td>'+(e==='c'?'<span class="chip ok">completo</span>':e==='x'?'<span class="chip bad">'+postePctTxt(t)+'</span>':'<span class="chip warn">falta '+postePctTxt(LIM-t)+'</span>')+'</td>':'')+'</tr>' });
+    if(!nVis)h+='<tr><td colspan="9"><div class="empty">Nenhum poste com este filtro.</div></td></tr>';
     h+='</tbody></table></div>';
-  })();
+    if(LIM)h+='<div class="rmNovoP"><span class="hint">Poste que ainda não está na lista:</span> <input id="rmNPk" placeholder="ex.: 201-03" style="width:120px">'+(FZ?' '+FZ.map(function(f,i){ return '<button class="rmFat" data-rmfatn="'+i+'">Faturar '+esc(f.nome.toLowerCase())+'</button>' }).join(' '):' <button class="rmFat" data-rmfatn="">Faturar</button>')+'</div>';
+  }
 
-  h+='<h3 class="sec">Histórico</h3>';
+  if(rmTab==='lanc'){
   if(!lancs.length&&!ini)h+='<div class="empty">Ainda não há nenhum lançamento nesta rubrica.</div>';
   else{
     h+='<table><thead><tr><th>Data</th><th>Auto</th><th>Poste / PK</th><th class="num">Quantidade</th><th class="num">Valor</th><th>Parte diária</th><th class="w1"></th></tr></thead><tbody>';
@@ -4036,8 +4070,10 @@ function renderRubricaModal(){
        tot('Acumulado atual (com '+esc(mesNome(AU).toLowerCase())+')',atuQ,true);
     h+='</tbody></table>';
   }
+  }
 
-  h+='<h3 class="sec">Novo lançamento</h3><div class="fields" style="align-items:end">'+
+  if(rmTab==='novo'){
+  h+='<div class="fields" style="align-items:end;margin-top:6px">'+
     fld('Data','<input type="date" id="rmData" value="'+esc(autoDe(hoje())===AU?hoje():(AU+'-'+('0'+(+ST.diaAuto||20)).slice(-2)))+'">')+
     fld('Poste / PK','<input id="rmPk" style="width:130px" autocomplete="off"><span class="hint" id="rmPkInfo" style="min-height:15px"></span>')+
     fld('Quantidade','<input class="num" id="rmQt" style="width:110px">')+
@@ -4054,8 +4090,11 @@ function renderRubricaModal(){
     '<textarea id="rlTxt" rows="6" style="width:100%" placeholder="10+500&#10;10+540; 2&#10;10+580"></textarea></div>'+
     '<div id="rlPrev" class="hint" style="margin:6px 0">Cola a lista de postes.</div>'+
     '<button id="rlOk" class="pri" disabled>Lançar</button></details>';
+  }
 
+  var scY=($('#rubricaModalBox .rmPWrap')||{}).scrollTop||0;
   $('#rubricaModalBox').innerHTML=h;
+  var pw=$('#rubricaModalBox .rmPWrap'); if(pw)pw.scrollTop=scY;
 
   bind('#rubricaModalBox','input',function(e){
     if(e.target.id==='rmPk'||e.target.id==='rmQt'){
@@ -4073,8 +4112,28 @@ function renderRubricaModal(){
     $('#rlPrev').textContent=lista.length?(lista.length+' linhas, total '+fmtT(tot)+' '+(a.un||'')+' — '+lista.slice(0,4).map(function(x){return x.pk+' → '+fmtT(x.qt)}).join(' · ')+(lista.length>4?' …':'')):'Cola a lista de postes.';
     $('#rlOk').disabled=!lista.length;
   });
+  function faturaPoste(pk,fi){
+    pk=String(pk||'').trim(); if(!pk){ toast('Escreve o poste.'); return }
+    var d=($('#rmPData')||{}).value||dataPad; if(!d){ toast('Escolhe a data dos trabalhos.'); return }
+    var FZ2=fasesDe(a), L2=limitePoste(a)||1, f=(FZ2&&fi!==''&&fi!=null)?FZ2[+fi]:null;
+    var ja=jaNoPoste(a.cod,a.origem,pk,null), q=f?num(f.pct)/100*L2:Math.max(0,L2-ja);
+    if(!q){ toast('O poste '+pk+' já está completo nesta rubrica.'); return }
+    if(ja+q>L2+1e-9&&!confirm('O poste '+pk+' já tem '+postePctTxt(ja/L2)+'. Com esta fase fica '+postePctTxt((ja+q)/L2)+', acima de 100 %. Faturar na mesma?'))return;
+    var pdN=pdDoDia(a.tipo,d); if(pdBloq(pdN)){ avisoBloq(pdN); return }
+    var nl={cod:a.cod,origem:a.origem||'contrato',des:'',un:'',qt:Math.round(q*1e6)/1e6,pki:pk,pkf:'',estado:'fechada'};
+    if(f){ nl.fase=+fi; nl.qb=1 }
+    pdN.lin.push(nl); render(); toast('Poste '+pk+(f?' · '+f.nome:'')+' faturado em '+mesNome(autoDe(d))+' ('+tipoNome(a.tipo)+' '+pdN.num+').');
+  }
+  bind('#rubricaModalBox','change',function(e){ if(e.target.id==='rmPData'){ rmPData=e.target.value; if(autoDe(rmPData)!==AU)toast('Atenção: essa data é do auto de '+mesNome(autoDe(rmPData))+'.',4000) } });
+  bind('#rubricaModalBox','keyup',function(e){ if(e.target.id==='rmPBusca'){ rmPBusca=e.target.value; var pos=e.target.selectionStart; renderRubricaModal(); var b=$('#rmPBusca'); if(b){ b.focus(); try{ b.setSelectionRange(pos,pos) }catch(_){} } } });
   bind('#rubricaModalBox','click',function(e){
     if(e.target.id==='rmFechar'){ rubricaAberta=null; render(); return }
+    var tb=e.target.closest('[data-rmtab]'); if(tb){ rmTab=tb.dataset.rmtab; renderRubricaModal(); return }
+    var fl=e.target.closest('[data-rmfil]'); if(fl){ rmFil=fl.dataset.rmfil; renderRubricaModal(); return }
+    var ft=e.target.closest('[data-rmfat]'); if(ft){ var pp=ft.dataset.rmfat.split('|'); faturaPoste(pp.slice(0,-1).join('|'),pp[pp.length-1]); return }
+    var fn=e.target.closest('[data-rmfatn]'); if(fn){ faturaPoste(($('#rmNPk')||{}).value,fn.dataset.rmfatn); return }
+    var dz=e.target.closest('[data-rmdes]'); if(dz){ var qd=dz.dataset.rmdes.split('|'), pdd=porId(ST.pd,qd[0]); if(!pdd)return; if(pdBloq(pdd)){ avisoBloq(pdd); return }
+      pdd.lin.splice(+qd[1],1); render(); toast('Tirado do auto. ↶ desfaz.'); return }
     var ee=e.target.closest('[data-lancedit]');
     if(ee){ var pe=ee.dataset.lancedit.split('|'); lancEdit={pdId:pe[0],ix:+pe[1]}; renderRubricaModal(); return }
     if(e.target.id==='leNo'){ lancEdit=null; renderRubricaModal(); return }
