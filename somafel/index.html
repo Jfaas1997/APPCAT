@@ -1060,11 +1060,12 @@ function titulo(t,chip){$('#hT').textContent=t;const c=$('#hCC');c.hidden=!chip;
 
 const pTot=l=>(l||[]).reduce((t,c)=>t+(+c.valor||0),0);
 function pResumo(o){const r=S.RES[o.id]||{},P=r.prod,E=r.med;let F=0,C=0;
-  if(P)(P.autos||[]).forEach(a=>{F+=a.proveito;C+=a.pessoal+a.equip+a.material});
+  /* margem só nos autos com custos registados na app (os autos antigos, carregados do papel, não têm custos) */
+  let FM=0;if(P)(P.autos||[]).forEach(a=>{F+=a.proveito;const c=a.pessoal+a.equip+a.material;C+=c;if(c>0)FM+=a.proveito});
   const tot=pTot(o.contratos)||(P&&P.contrato&&P.contrato.total)||0;
   /* «feito» = executado acumulado (saldo inicial + partes diárias) sobre o total; se a Produção não tiver resumo, faturado nos autos da app ou postes executados na Medição */
   const pc=(P&&P.contrato&&P.contrato.total)?P.contrato.executado/P.contrato.total:tot?F/tot:(E&&E.postes?E.executados/E.postes:0);
-  return {fat:F,marg:F-C,pct:Math.max(0,Math.min(1,pc||0)),tem:!!(P||r.mat||E),tot}}
+  return {fat:F,marg:FM-C,pct:Math.max(0,Math.min(1,pc||0)),tem:!!(P||r.mat||E),tot}}
 S.RES={};
 /* o mesmo pedido de resumos feito duas vezes seguidas (visão geral + quadro das apps) passa a ser um só */
 const RESQ={};function carregaRes(id){const k=id||'*',c=RESQ[k];if(c&&Date.now()-c.t<2000)return c.p;const p=carregaRes0(id);RESQ[k]={t:Date.now(),p};return p}

@@ -1551,7 +1551,7 @@ function corOrig(id){ var ids=['contrato'].concat((ST.adicionais||[]).map(functi
 function rvOk(r){ return (!rv.tipo||(r.tipo||'cat')===rv.tipo)&&(!rv.orig||(r.origem||'contrato')===rv.orig) }
 function rvRitmo(){
   var dias={};
-  ST.pd.forEach(function(p){ if(rv.tipo&&(p.tipo||'cat')!==rv.tipo)return; (p.lin||[]).forEach(function(l){ if((l.estado||'fechada')!=='fechada'||!l.cod)return; if(rv.orig&&(l.origem||'contrato')!==rv.orig)return; dias[p.data]=(dias[p.data]||0)+valLin(l) }) });
+  ST.pd.forEach(function(p){ if(pdAuto(p))return; if(rv.tipo&&(p.tipo||'cat')!==rv.tipo)return; (p.lin||[]).forEach(function(l){ if((l.estado||'fechada')!=='fechada'||!l.cod)return; if(rv.orig&&(l.origem||'contrato')!==rv.orig)return; dias[p.data]=(dias[p.data]||0)+valLin(l) }) });
   var ds=Object.keys(dias).sort(); if(!ds.length)return 0;
   var fim=ds[ds.length-1], hj=hoje(); if(hj>fim&&addD(fim,28)>=hj)fim=hj;
   var ini=addD(fim,-27), t=0; ds.forEach(function(d){ if(d>=ini&&d<=fim)t+=dias[d] });
@@ -5058,7 +5058,7 @@ function horasPD(p){ var h=0; (p.ints||[]).forEach(function(id){ var i=porId(ST.
 function valLin(l){ var a=look(l.cod,l.origem); return num(l.qt)*(a?num(a.pu):0) }
 function ritmoTipo(tipoId){
   var dias={};
-  ST.pd.forEach(function(p){ if((p.tipo||'cat')!==tipoId)return; (p.lin||[]).forEach(function(l){ if((l.estado||'fechada')!=='fechada'||!l.cod)return; dias[p.data]=(dias[p.data]||0)+valLin(l) }) });
+  ST.pd.forEach(function(p){ if(pdAuto(p))return; if((p.tipo||'cat')!==tipoId)return; (p.lin||[]).forEach(function(l){ if((l.estado||'fechada')!=='fechada'||!l.cod)return; dias[p.data]=(dias[p.data]||0)+valLin(l) }) });
   var ds=Object.keys(dias).sort(); if(!ds.length)return {sem:0,ate:''};
   var fim=ds[ds.length-1], hj=hoje(); if(hj>fim&&addD(fim,28)>=hj)fim=hj;
   var ini=addD(fim,-27), tot=0; ds.forEach(function(d){ if(d>=ini&&d<=fim)tot+=dias[d] });
@@ -5076,7 +5076,7 @@ function renderAna(){
   /* rendimentos */
   var sem={};
   ST.pd.forEach(function(p){
-    if(!p.data)return; var w=semIni(p.data), o=sem[w]||(sem[w]={val:0,h:0});
+    if(!p.data||pdAuto(p))return; var w=semIni(p.data), o=sem[w]||(sem[w]={val:0,h:0});
     o.h+=horasPD(p); (p.lin||[]).forEach(function(l){ if((l.estado||'fechada')==='fechada'&&l.cod)o.val+=valLin(l) });
   });
   var ws=Object.keys(sem).sort().slice(-12).reverse();
@@ -7267,7 +7267,7 @@ function nmAjuda(){ nmModal({titulo:'Ajuda · Controlo de produção',corpo:
   +'<table><tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Guardar</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Desfazer / refazer</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Procurar</td></tr></table>',botoes:[{t:'Fechar',v:true,p:true}]}) }
 $('#bAjuda').onclick=nmAjuda;
 nmUi();
-window.__nm={dbg:function(){return JSON.stringify({saveq:!!SAVEQ,eq:estadoHash()===LASTHASH,l:LASTHASH,h:estadoHash(),on:navigator.onLine,ob:!!NM.ob,dirty:DIRTY})},ST:function(){return ST},render:function(){render()},NM:NM,nmAuto:nmAuto,nmFlush:nmFlush,nmCarrega:nmCarrega,pdHtml:function(p){return pdModeloHtml(p)},ready:null};
+window.__nm={dbg:function(){return JSON.stringify({saveq:!!SAVEQ,eq:estadoHash()===LASTHASH,l:LASTHASH,h:estadoHash(),on:navigator.onLine,ob:!!NM.ob,dirty:DIRTY})},ST:function(){return ST},render:function(){render()},NM:NM,nmAuto:nmAuto,nmFlush:nmFlush,nmCarrega:nmCarrega,pdHtml:function(p){return pdModeloHtml(p)},resumo:function(){return nmResumoProd()},ready:null};
 window.__nm.ready=nmArranque().catch(function(e){ console.error(e); nmEcra('<div class="box"><h2>Erro</h2><p>'+esc(e.message||String(e))+'</p></div>') });
 
 /* ================= Partes diárias em calendário ================= */
