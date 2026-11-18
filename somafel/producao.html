@@ -333,6 +333,16 @@ td .chip{margin-right:5px}
 [hidden]{display:none!important}
 .modalBox{background:var(--sheet);border-radius:6px;max-width:680px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 .modalBox h3{margin:0 0 2px;font-size:16px}
+.modalBox.rmBig{max-width:1080px;max-height:92vh}
+.rmRes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0 4px}
+.rmRes>div{border:1px solid var(--rule);border-radius:6px;padding:8px 10px;background:var(--soft)}
+.rmRes>div.hi{border-color:var(--brand);background:var(--sheet);box-shadow:inset 3px 0 0 var(--brand)}
+.rmRes small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.rmRes b{display:block;font-size:17px;font-variant-numeric:tabular-nums;margin-top:2px}
+.rmRes span{display:block;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rmTot td{font-weight:600;background:var(--soft)}
+.rmTot.hi td{background:var(--sheet);border-top:2px solid var(--brand)}
+tr.rmHist td{color:var(--muted)}
 .gridWrap{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
 table.grelha{border-collapse:collapse;font-size:12px}
 table.grelha th,table.grelha td{border:1px solid var(--rule);padding:0;text-align:center}
@@ -1102,7 +1112,7 @@ button.pri:hover{box-shadow:0 2px 10px rgba(0,0,0,.14)}
 <div id="eqpModal" class="modalOverlay" hidden><div class="modalBox" id="eqpModalBox"></div></div>
 <div id="selModal" class="modalOverlay" hidden><div class="modalBox" id="selModalBox"></div></div>
 <div id="rubSel" class="modalOverlay" hidden><div class="modalBox" id="rubSelBox" style="max-width:900px"></div></div>
-<div id="rubricaModal" class="modalOverlay" hidden><div class="modalBox" id="rubricaModalBox"></div></div>
+<div id="rubricaModal" class="modalOverlay" hidden><div class="modalBox rmBig" id="rubricaModalBox"></div></div>
 
 <script src="xlsx.full.min.js"></script>
 <script>
@@ -1921,17 +1931,17 @@ function renderPd(){
     var des=(p.lin||[]).map(function(l){return (l.des||(look(l.cod,l.origem)||{}).des||l.cod||'')}).filter(Boolean);
     var fal=pdFalta(p);
     h+='<tr><td class="mono" style="white-space:nowrap"><a href="#" data-abre="'+p.id+'">'+esc(p.num||'—')+'</a></td>'+
-       '<td class="w1">'+(p.bloq?'<span class="chip none" title="Impressa em '+esc(dataPT(p.impEm||''))+'">🔒</span> ':'')+(fal.length?'<span class="chip warn" title="Falta: '+esc(fal.join(', '))+'">incompleta · '+esc(fal.join(', '))+'</span>':'<span class="chip ok">completa</span>')+'</td>'+
+       '<td class="w1">'+(p.bloq?'<span class="chip none" title="Impressa em '+esc(dataPT(p.impEm||''))+'">🔒</span> ':'')+(p.historico?'<span class="chip none" title="Parte diária digitalizada: o que tem já está no saldo inicial (executado até ao último auto), por isso não volta a contar">histórica</span>':fal.length?'<span class="chip warn" title="Falta: '+esc(fal.join(', '))+'">incompleta · '+esc(fal.join(', '))+'</span>':'<span class="chip ok">completa</span>')+'</td>'+
        '<td class="mono">'+ptbr(p.data)+'</td><td>'+diaSem(p.data).slice(0,3)+'</td>'+
        '<td>'+esc(des.slice(0,3).join(' · ').slice(0,90))+(des.length>3?' <span class="chip none">+'+(des.length-3)+'</span>':'')+'</td>'+
-       '<td class="num">'+des.length+'</td><td class="num">'+eur(valorPD(p))+'</td>'+
+       '<td class="num">'+des.length+'</td><td class="num"'+(p.historico?' style="color:var(--muted)" title="Já incluído no saldo inicial">':'>')+eur(valorPD(p))+'</td>'+
        '<td class="num">'+(hs?hdec(hs):'—')+'</td><td class="num">'+(nmo||'—')+'</td>'+
        '<td class="w1"><button class="x" data-del="'+p.id+'" title="Apagar">×</button></td></tr>';
   });
   h+='</tbody></table>';
   $('#pdLista').innerHTML=h;
   $('#nPd').textContent=rows.length+' de '+ST.pd.length;
-  var vt=0, ninc=0; rows.forEach(function(p){vt+=valorPD(p); if(pdFalta(p).length)ninc++});
+  var vt=0, ninc=0; rows.forEach(function(p){ if(!p.historico)vt+=valorPD(p); if(pdFalta(p).length)ninc++});
   $('#ftPd').innerHTML='<b class="mono">'+rows.length+'</b> partes diárias · valor <b class="mono">'+eur(vt)+' €</b>'+(ninc?' · <span class="chip warn">'+ninc+' incompletas</span>':'');
   bind('#pdLista','click',function(e){
     var a=e.target.closest('[data-abre]');
@@ -1943,7 +1953,7 @@ function renderPd(){
   });
 }
 function pdFalta(p){
-  var f=[];
+  var f=[]; if(p&&p.historico)return f;
   if(!Object.keys(pessoalPD(p)).length)f.push('pessoal');
   if(!(p.eqIds||[]).length)f.push('meios');
   if(p.turno!=='dia'&&!(p.ints||[]).length)f.push('interdição');
@@ -2010,7 +2020,7 @@ function novaPD(base){
 function lockBar(p){
   var ult=(p.hist||[]).filter(function(x){return x.a==='desbloqueada'}).slice(-1)[0];
   if(p.bloq){
-    var h='<div class="lockbar"><span>🔒 <b>Bloqueada</b> — impressa a '+esc(dataPT(p.impEm||''))+'. Para alterar, é preciso desbloquear com um motivo.</span><span class="lb"><button id="pdUnlock">Desbloquear…</button></span>';
+    var h='<div class="lockbar"><span>🔒 <b>Bloqueada</b> — '+(p.historico?'parte diária histórica, carregada do papel assinado':'impressa a '+esc(dataPT(p.impEm||'')))+'. Para alterar, é preciso desbloquear com um motivo.</span><span class="lb"><button id="pdUnlock">Desbloquear…</button></span>';
     if(pdDesbl)h+='<div class="lockform"><label class="hint" style="color:inherit">Motivo do desbloqueio (fica registado)</label><textarea id="pdMotivo" rows="2" placeholder="ex.: fiscalização pediu correção do PK"></textarea>'+
       '<label class="hint" style="color:inherit">Para confirmar, escreve o número da parte diária: <b>'+esc(p.num||'')+'</b></label><input id="pdConf" autocomplete="off">'+
       '<div><button id="pdUnlockOk" class="pri">Desbloquear</button> <button id="pdUnlockNo">Cancelar</button></div></div>';
@@ -2027,6 +2037,14 @@ function renderPDedit(){
     '<span class="chip '+( (p.lin||[]).length?'ok':'none')+'">'+((p.lin||[]).length? eur(valorPD(p))+' €':'sem trabalhos')+'</span>'+
     (pdFalta(p).filter(function(x){return x!=='trabalhos'}).length?'<span class="chip warn" title="Associa o que falta nas caixas abaixo">incompleta · falta '+esc(pdFalta(p).filter(function(x){return x!=='trabalhos'}).join(', '))+'</span>':'<span class="chip ok">completa</span>')+
     '<span class="hint">'+diaSem(p.data)+', '+ptbr(p.data)+'</span></div>';
+  if(p.historico){
+    h+='<div class="box"><div class="bh">Parte diária histórica<span class="sp"></span><span class="chip none">'+esc(p.fonte||'digitalizada')+'</span></div><div class="bb">'+
+      '<p class="hint" style="margin:0 0 6px;padding:8px 12px 0">Carregada a partir do papel assinado. As quantidades já estão no saldo inicial dos artigos (executado até ao último auto), por isso estas linhas <b>não contam</b> outra vez para o executado nem para os autos.</p>'+
+      ((p.moHist||[]).length||(p.eqHist||[]).length?'<p class="hint" style="margin:0;padding:0 12px 10px">'+
+        ((p.moHist||[]).length?'<b>Mão de obra:</b> '+esc(p.moHist.map(function(x){return x.qt+' '+x.cat}).join(', '))+'. ':'')+
+        ((p.eqHist||[]).length?'<b>Meios:</b> '+esc(p.eqHist.map(function(x){return x.qt+' '+x.nome}).join(', '))+'.':'')+'</p>':'')+
+      '</div></div>';
+  }
 
   h+='<div class="fields">'+
     fld('Nº','<input data-k="num" value="'+esc(p.num)+'" style="width:210px" title="A numeração «'+esc((tipoAtual()||{}).prefixo||'CAT')+' - n» é por cliente e especialidade e acompanha a data. Se escreveres outro formato, fica como escreveste.">')+
@@ -2109,8 +2127,8 @@ function renderPDedit(){
        '<td><input data-l="'+ix+'" data-k="pki" value="'+esc(l.pki||'')+'" class="mono"></td>'+
        '<td><input data-l="'+ix+'" data-k="pkf" value="'+esc(l.pkf||'')+'" class="mono"></td>'+
        '<td class="num w1">'+(a?eur(num(l.qt)*num(a.pu)):'—')+'</td>'+
-       '<td class="w1">'+(fechadaL?'<input type="month" data-l="'+ix+'" data-k="auto" value="'+esc(l.auto||autoDe(p.data))+'">':'—')+'</td>'+
-       '<td class="w1">'+(l.frenteId?(aberta?'<span class="chip wait">em curso</span><button data-fecha-linha="'+ix+'">Fechar</button>':'<span class="chip ok">fechada</span><button data-reabre-linha="'+ix+'">Reabrir</button>'):'')+'</td>'+
+       '<td class="w1">'+(fechadaL&&l.estado!=='historica'?'<input type="month" data-l="'+ix+'" data-k="auto" value="'+esc(l.auto||autoDe(p.data))+'">':'—')+'</td>'+
+       '<td class="w1">'+(l.estado==='historica'?'<span class="chip none" title="Já incluída no saldo inicial">histórica</span>':l.frenteId?(aberta?'<span class="chip wait">em curso</span><button data-fecha-linha="'+ix+'">Fechar</button>':'<span class="chip ok">fechada</span><button data-reabre-linha="'+ix+'">Reabrir</button>'):'')+'</td>'+
        '<td class="w1"><button class="x" data-lin-del="'+ix+'">×</button></td></tr>';
     if(autoDif){
       h+='<tr><td colspan="10" style="padding:2px 8px 8px"><span class="chip warn">passou para '+esc(mesNome(l.auto))+'</span> '+
@@ -3871,10 +3889,10 @@ function lancamentosRubrica(cod,origem){
   var out=[];
   ST.pd.forEach(function(p){
     (p.lin||[]).forEach(function(l,ix){
-      if((l.estado||'fechada')!=='fechada')return;
+      var est=l.estado||'fechada'; if(est!=='fechada'&&est!=='historica')return;
       if(String(l.cod||'').trim().toUpperCase()!==String(cod).trim().toUpperCase())return;
       if((l.origem||'contrato')!==(origem||'contrato'))return;
-      out.push({pdId:p.id,pdNum:p.num,pdTipo:p.tipo,data:p.data,pki:l.pki||'',qt:l.qt,lineIx:ix});
+      out.push({pdId:p.id,pdNum:p.num,pdTipo:p.tipo,data:p.data,pki:l.pki||'',qt:l.qt,lineIx:ix,auto:l.auto||autoDe(p.data),hist:est==='historica'});
     });
   });
   return out.sort(function(a,b){return (b.data||'').localeCompare(a.data||'')});
@@ -3902,38 +3920,61 @@ function renderRubricaModal(){
   if(!a){ rubricaAberta=null; ov.hidden=true; return }
   ov.hidden=false;
   var lancs=lancamentosRubrica(a.cod,a.origem);
-  var totQt=lancs.reduce(function(s,x){return s+num(x.qt)},0);
+  /* auto em preenchimento: o escolhido no Mapa de produção, senão o do dia de hoje */
+  var AU=flt.mapMes||autoDe(hoje()), un=esc(a.un||''), pu=num(a.pu), qc=num(a.qt);
+  var ini=num(a.aini), antPD=0, mesQ=0, depQ=0;
+  lancs.forEach(function(x){ if(x.hist)return; var q=num(x.qt); if(x.auto<AU)antPD+=q; else if(x.auto===AU)mesQ+=q; else depQ+=q });
+  var antQ=ini+antPD, atuQ=antQ+mesQ;
+  function cel(t,q,sub,hi){ return '<div'+(hi?' class="hi"':'')+'><small>'+t+'</small><b>'+qtf(q)+' '+un+'</b><span>'+eur(q*pu)+' €'+(sub||'')+'</span></div>' }
+  function pc(q){ return qc?' · '+pct(q/qc):'' }
   var h='<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">'+
     '<div><h3>'+esc(a.cod)+'</h3><div class="hint">'+esc(a.des)+'</div></div>'+
     '<button id="rmFechar">Fechar</button></div>';
   h+='<div class="fields" style="margin-top:10px">'+
     '<span class="chip '+((a.origem||'contrato')==='contrato'?'none':'warn')+'">'+esc(origemNome(a.origem))+'</span>'+
-    '<span class="ts">Contrato: '+qtf(a.qt)+' '+esc(a.un||'')+' · Executado: '+qtf(totQt)+' '+esc(a.un||'')+
-    (num(a.qt)?' ('+pct(totQt/num(a.qt))+')':'')+'</span></div>';
+    '<span class="ts">Preço unitário: <b class="mono">'+eur(pu)+' €</b> · Auto em preenchimento: <b>'+esc(mesNome(AU))+'</b> <span class="hint">('+esc(autoIntervalo(AU))+')</span></span></div>';
+  h+='<div class="rmRes">'+
+    cel('Contrato',qc)+
+    cel('Acumulado anterior',antQ,pc(antQ))+
+    cel('A carregar no auto de '+esc(mesNome(AU).toLowerCase()),mesQ,'',true)+
+    cel('Acumulado atual',atuQ,pc(atuQ))+
+    cel(atuQ>qc+1e-9?'Acima do contrato':'Falta executar',Math.abs(qc-atuQ))+
+  '</div>';
+  if(ini)h+='<div class="hint">O acumulado anterior inclui o saldo inicial de '+qtf(ini)+' '+un+' (executado até ao último auto carregado).</div>';
+  if(depQ)h+='<div class="hint">Há ainda '+qtf(depQ)+' '+un+' lançados em autos seguintes, que não entram nestas contas.</div>';
 
   h+='<h3 class="sec">Histórico</h3>';
-  if(!lancs.length)h+='<div class="empty">Ainda não há nenhum lançamento nesta rubrica.</div>';
+  if(!lancs.length&&!ini)h+='<div class="empty">Ainda não há nenhum lançamento nesta rubrica.</div>';
   else{
-    h+='<table><thead><tr><th>Data</th><th>Poste / PK</th><th class="num">Quantidade</th><th>Parte diária</th><th class="w1"></th></tr></thead><tbody>';
+    h+='<table><thead><tr><th>Data</th><th>Auto</th><th>Poste / PK</th><th class="num">Quantidade</th><th class="num">Valor</th><th>Parte diária</th><th class="w1"></th></tr></thead><tbody>';
     lancs.forEach(function(x){
+      if(x.hist){
+        h+='<tr class="rmHist" title="Parte diária histórica: já está no saldo inicial, não volta a contar"><td class="mono">'+ptbr(x.data)+'</td><td>'+esc(mesNome(x.auto))+'</td><td class="mono">'+esc(x.pki||'—')+'</td><td class="num">'+qtf(x.qt)+'</td><td class="num">—</td>'+
+           '<td>'+esc(tipoNome(x.pdTipo))+' '+esc(x.pdNum)+' <span class="chip none">histórica</span></td><td class="w1">🔒</td></tr>';
+        return;
+      }
       var ed=lancEdit&&lancEdit.pdId===x.pdId&&lancEdit.ix===x.lineIx;
       if(ed){
-        h+='<tr class="linaberta"><td><input type="date" id="leData" value="'+esc(x.data)+'"></td>'+
+        h+='<tr class="linaberta"><td><input type="date" id="leData" value="'+esc(x.data)+'"></td><td>'+esc(mesNome(x.auto))+'</td>'+
            '<td><input id="lePk" value="'+esc(x.pki)+'" style="width:110px"></td>'+
-           '<td class="num"><input class="num" id="leQt" value="'+esc(String(num(x.qt)).replace('.',','))+'" style="width:80px"></td>'+
+           '<td class="num"><input class="num" id="leQt" value="'+esc(String(num(x.qt)).replace('.',','))+'" style="width:80px"></td><td></td>'+
            '<td>'+esc(tipoNome(x.pdTipo))+' '+esc(x.pdNum)+'</td>'+
            '<td class="w1" style="white-space:nowrap"><button id="leOk" class="pri">✓</button><button id="leNo">✕</button></td></tr>';
       }else{
-        h+='<tr><td class="mono">'+ptbr(x.data)+'</td><td class="mono">'+esc(x.pki||'—')+'</td><td class="num">'+qtf(x.qt)+'</td>'+
+        h+='<tr'+(x.auto===AU?' style="background:color-mix(in srgb,var(--brand) 7%,transparent)"':'')+'><td class="mono">'+ptbr(x.data)+'</td><td>'+esc(mesNome(x.auto))+'</td><td class="mono">'+esc(x.pki||'—')+'</td><td class="num">'+qtf(x.qt)+'</td><td class="num">'+eur(num(x.qt)*pu)+'</td>'+
            '<td>'+esc(tipoNome(x.pdTipo))+' '+esc(x.pdNum)+'</td>'+
            '<td class="w1" style="white-space:nowrap">'+(pdBloqId(x.pdId)?'<span title="Parte diária impressa e bloqueada">🔒</span>':'<button data-lancedit="'+x.pdId+'|'+x.lineIx+'" title="Corrigir data, poste ou quantidade">✎</button><button class="x" data-lancdel="'+x.pdId+'|'+x.lineIx+'">×</button>')+'</td></tr>';
       }
     });
+    function tot(t,q,hi){ return '<tr class="rmTot'+(hi?' hi':'')+'"><td colspan="3">'+t+'</td><td class="num">'+qtf(q)+' '+un+'</td><td class="num">'+eur(q*pu)+' €</td><td colspan="2">'+(qc?pct(q/qc)+' do contrato':'')+'</td></tr>' }
+    h+=tot('Acumulado anterior (sem '+esc(mesNome(AU).toLowerCase())+')',antQ)+
+       '<tr class="rmTot"><td colspan="3">A carregar no auto de '+esc(mesNome(AU).toLowerCase())+'</td><td class="num">'+qtf(mesQ)+' '+un+'</td><td class="num">'+eur(mesQ*pu)+' €</td><td colspan="2"></td></tr>'+
+       tot('Acumulado atual (com '+esc(mesNome(AU).toLowerCase())+')',atuQ,true);
     h+='</tbody></table>';
   }
 
   h+='<h3 class="sec">Novo lançamento</h3><div class="fields" style="align-items:end">'+
-    fld('Data','<input type="date" id="rmData" value="'+esc(hoje())+'">')+
+    fld('Data','<input type="date" id="rmData" value="'+esc(autoDe(hoje())===AU?hoje():(AU+'-'+('0'+(+ST.diaAuto||20)).slice(-2)))+'">')+
     fld('Poste / PK','<input id="rmPk" style="width:130px" autocomplete="off"><span class="hint" id="rmPkInfo" style="min-height:15px"></span>')+
     fld('Quantidade','<input class="num" id="rmQt" style="width:110px">')+
     '<button id="rmOk" class="pri">+ Lançar</button>'+
