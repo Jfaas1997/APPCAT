@@ -1198,7 +1198,12 @@ function clientesObra(){ var r=[], add=function(c){ c=String(c||'').trim(); if(c
 function cliAtual(){ var cs=clientesObra(); return cs.indexOf(flt.cli)>=0?flt.cli:(cs[0]||'') }
 function pdCli(p){ return (p&&p.cli)||clientesObra()[0]||'' }
 function multiCli(){ return clientesObra().length>1 }
-function pdDoGrupo(p,tipoId,cli){ return (p.tipo||'cat')===tipoId&&(!multiCli()||pdCli(p)===cli) }
+/* autos oficiais já fechados (faturados antes da app): guardados como «partes» internas, uma por auto e especialidade,
+   com p.autoOficial = n.º do auto. Contam no executado e nos autos, mas não aparecem como partes diárias. */
+function pdAuto(p){ return !!(p&&p.autoOficial) }
+function fatOficial(cod,origem){ var k=chaveRub(cod,origem), t=0; ST.pd.forEach(function(p){ if(!pdAuto(p))return; (p.lin||[]).forEach(function(l){ if(chaveRub(l.cod,l.origem)===k)t+=num(l.qt) }) }); return t }
+function fatAnt(a){ return num(a.aini)+fatOficial(a.cod,a.origem) }
+function pdDoGrupo(p,tipoId,cli){ return !pdAuto(p)&&(p.tipo||'cat')===tipoId&&(!multiCli()||pdCli(p)===cli) }
 function tipoAtual(){ return (ST.tipos||[]).filter(function(t){return t.id===flt.tipo})[0]||(ST.tipos||[])[0]||null }
 function tipoNome(id){ var t=(ST.tipos||[]).filter(function(x){return x.id===id})[0]; return t?t.nome:(id||'—') }
 
@@ -1798,7 +1803,7 @@ function resHtml(){
     (fi.n?[['Previsto',fi.pt,'var(--muted)'],['Concedido',fi.conc,'var(--s3)'],['Trabalhado',fi.trab,'var(--s1)']].map(function(x){ return rvHB(x[0],x[2],x[1]/mxh,hdec(x[1])+' h',x[0]+': '+hdec(x[1])+' h','') }).join('')+
       '<div class="rvn" style="margin:10px 0 0"><div><b>'+(fi.conc?pct(fi.trab/fi.conc):'—')+'</b>aproveitamento</div><div><b>'+hdec(fi.perdPlan)+' h</b>perdidas até à concessão</div><div><b>'+hdec(fi.perdConc)+' h</b>perdidas depois</div></div>':'<div class="empty">Sem interdições fechadas neste auto.</div>')+'</div>';
   /* pessoal no auto em foco */
-  var pes={}, dias=0, extra=0, desl=0, kmP=0, pds=ST.pd.filter(function(p){ return p.data&&autoDe(p.data)===F.a&&(!rv.tipo||(p.tipo||'cat')===rv.tipo) }).length;
+  var pes={}, dias=0, extra=0, desl=0, kmP=0, pds=ST.pd.filter(function(p){ return p.data&&!pdAuto(p)&&autoDe(p.data)===F.a&&(!rv.tipo||(p.tipo||'cat')===rv.tipo) }).length;
   var porM={}; (ST.ponto||[]).forEach(function(pt){ var m=moPorId(pt.moId); if(m&&m.direto===false)return; var a=autoDe(pt.data); porM[a]=(porM[a]||0)+1; if(a===F.a){ dias++; pes[pt.moId]=1; extra+=num(pt.extra); desl+=num(pt.deslocacao); kmP+=num(pt.km) } });
   var pvPes=M.map(function(m){ return pesPrevMes(m.a) }), temPvPes=pvPes.some(function(x){return x>0}), pvF=pesPrevMes(F.a);
   var spark=rvSpark(M,M.map(function(m){return porM[m.a]||0}),'var(--s3)',function(m,i,v,tk){ return mesNome(m.a)+'\n'+v+' dias de pessoal'+(tk>0?'\nPrevisto: '+qtf(tk)+' dias\nDesvio: '+((v-tk>0?'+':'')+qtf(v-tk)):'') },temPvPes?pvPes:null,'Dias de pessoal por auto');
@@ -1830,7 +1835,7 @@ function renderRes(){
   var vm=0,va=0; Object.keys(ex).forEach(function(k){vm+=ex[k].val}); Object.keys(acu).forEach(function(k){va+=acu[k].val});
   var tot=totContrato();
   var tiT=totaisInt('');
-  var pdM=ST.pd.filter(function(p){return autoDe(p.data)===mc}).length;
+  var pdM=ST.pd.filter(function(p){return !pdAuto(p)&&autoDe(p.data)===mc}).length;
 
   var h=resHtml();
 
@@ -1927,6 +1932,7 @@ function renderPd(){
   var rows=ST.pd.slice().sort(function(a,b){return (b.data||'').localeCompare(a.data||'')||String(b.num||'').localeCompare(String(a.num||''))});
   var cliF=cliAtual(), mc=multiCli();
   rows=rows.filter(function(p){
+    if(pdAuto(p))return false;
     if((p.tipo||'cat')!==flt.tipo)return false;
     if(mc&&pdCli(p)!==cliF)return false;
     if(flt.pdMes&&autoDe(p.data)!==flt.pdMes)return false;
@@ -1953,7 +1959,7 @@ function renderPd(){
   });
   h+='</tbody></table>';
   $('#pdLista').innerHTML=h;
-  $('#nPd').textContent=rows.length+' de '+ST.pd.length;
+  $('#nPd').textContent=rows.length+' de '+ST.pd.filter(function(p){return !pdAuto(p)}).length;
   var vt=0, ninc=0; rows.forEach(function(p){ if(!p.historico)vt+=valorPD(p); if(pdFalta(p).length)ninc++});
   $('#ftPd').innerHTML='<b class="mono">'+rows.length+'</b> partes diárias · valor <b class="mono">'+eur(vt)+' €</b>'+(ninc?' · <span class="chip warn">'+ninc+' incompletas</span>':'');
   bind('#pdLista','click',function(e){
@@ -1966,7 +1972,7 @@ function renderPd(){
   });
 }
 function pdFalta(p){
-  var f=[]; if(p&&p.historico)return f;
+  var f=[]; if(p&&(p.historico||p.autoOficial))return f;
   if(!Object.keys(pessoalPD(p)).length)f.push('pessoal');
   if(!(p.eqIds||[]).length)f.push('meios');
   if(p.turno!=='dia'&&!(p.ints||[]).length)f.push('interdição');
@@ -2774,7 +2780,7 @@ $('#bRecNorm').addEventListener('click',function(){
 
 /* ---------- PONTO (grelha: pessoas/equipamento nas linhas, dias nas colunas) ---------- */
 function dataAlvoPD(data,turno){ return turno==='noite'?addD(data,1):data }
-function pdsNaData(data){ return ST.pd.filter(function(p){return p.data===data}) }
+function pdsNaData(data){ return ST.pd.filter(function(p){return p.data===data&&!pdAuto(p)}) }
 function pontoDe(moId,data){ return (ST.ponto||[]).filter(function(pt){return pt.moId===moId&&pt.data===data})[0]||null }
 function localPorId(id){ return (ST.locais||[]).filter(function(l){return l.id===id})[0]||null }
 function aplicaDeslPt(pt){
@@ -3958,9 +3964,10 @@ function renderRubricaModal(){
     cel('Acumulado atual',atuQ,pc(atuQ))+
     cel(atuQ>qc+1e-9?'Acima do contrato':'Falta executar',Math.abs(qc-atuQ))+
   '</div>';
-  if(ini)h+='<div class="hint">O acumulado anterior inclui o saldo inicial de '+qtf(ini)+' '+un+' (faturado até ao último auto carregado).</div>';
-  if(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-ini)>1e-9){ var dx=num(a.exeAnt)-ini;
-    h+='<div class="rmDif '+(dx>0?'mais':'menos')+'"><b>Executado '+qtf(a.exeAnt)+' '+un+' · faturado '+qtf(ini)+' '+un+'</b> — '+(dx>0?'há '+qtf(dx)+' '+un+' executados por faturar ('+eur(dx*pu)+' €)':'faturou-se '+qtf(-dx)+' '+un+' a mais do que o executado ('+eur(-dx*pu)+' €)')+'. <span class="hint">Segundo '+esc((ST.exeAntFonte&&ST.exeAntFonte.nome)||'o controlo de produção')+'.</span></div>' }
+  if(ini)h+='<div class="hint">O acumulado anterior inclui o saldo inicial de '+qtf(ini)+' '+un+'.</div>';
+  var fa0=fatAnt(a);
+  if(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-fa0)>1e-9){ var dx=num(a.exeAnt)-fa0;
+    h+='<div class="rmDif '+(dx>0?'mais':'menos')+'"><b>Executado '+qtf(a.exeAnt)+' '+un+' · faturado até ao Auto 16 '+qtf(fa0)+' '+un+'</b> — '+(dx>0?'há '+qtf(dx)+' '+un+' executados por faturar ('+eur(dx*pu)+' €)':'faturou-se '+qtf(-dx)+' '+un+' a mais do que o executado ('+eur(-dx*pu)+' €)')+'. <span class="hint">Segundo '+esc((ST.exeAntFonte&&ST.exeAntFonte.nome)||'o controlo de produção')+'.</span></div>' }
   if(fasesDe(a))h+='<div class="hint">Taxas de execução: '+esc(fasesTxt(a))+'.</div>';
   if(depQ)h+='<div class="hint">Há ainda '+qtf(depQ)+' '+un+' lançados em autos seguintes, que não entram nestas contas.</div>';
 
@@ -4222,7 +4229,7 @@ function renderMap(){
        '<td class="mono" style="white-space:nowrap">'+(mapRet?'<input type="checkbox" class="retCk" tabindex="-1"'+(selR?' checked':'')+'> ':'')+esc(a.cod)+'</td><td><span class="mapDes" title="'+esc(a.des)+'">'+esc(a.des)+'</span>'+tcChip(a)+'</td><td class="w1 mono">'+esc(a.un||'')+'</td>'+
        '<td class="w1">'+((a.origem||'contrato')==='contrato'?'<span class="chip none">'+esc(origemNome('contrato'))+'</span>':'<span class="chip warn">'+esc(origemNome(a.origem))+'</span>')+'</td>'+
        '<td class="num">'+qtf(a.qt)+'</td><td class="num">'+eur(a.pu)+'</td><td class="num">'+eur(tot)+'</td>'+
-       '<td class="num">'+(num(a.aini)?qtf(a.aini):'—')+(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-num(a.aini))>1e-9?'<small style="display:block;color:'+(num(a.exeAnt)>num(a.aini)?'var(--amber)':'var(--red)')+'" title="Executado segundo o controlo de produção (o anterior é o faturado)">exec. '+qtf(a.exeAnt)+'</small>':'')+'</td>'+
+       '<td class="num">'+(fatAnt(a)?qtf(fatAnt(a)):'—')+(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-fatAnt(a))>1e-9?'<small style="display:block;color:'+(num(a.exeAnt)>fatAnt(a)?'var(--amber)':'var(--red)')+'" title="Executado segundo o controlo de produção (o anterior é o faturado)">exec. '+qtf(a.exeAnt)+'</small>':'')+'</td>'+
    (m?'<td class="num">'+(m.qt?qtf(m.qt):'—')+'</td><td class="num">'+(m.val?eur(m.val):'—')+'</td>':'')+
        '<td class="num">'+(e.qt?qtf(e.qt):'—')+'</td><td class="num">'+(e.val?eur(e.val):'—')+'</td>'+
        '<td class="num">'+(num(a.qt)?pct(p):'—')+'</td>'+
@@ -4258,7 +4265,7 @@ function renderMap(){
   $('#ftMap').innerHTML='Contrato <b class="mono">'+eur(T.tot)+' €</b>'+
     (doMes?' · auto '+mesNome(flt.mapMes)+' <b class="mono">'+eur(T.vm)+' €</b>':'')+
     ' · acumulado <b class="mono">'+eur(T.va)+' €</b> ('+(T.tot?pct(T.va/T.tot):'—')+')'+
-    (function(){ var d=0,n=0; rows.forEach(function(a){ if(a.exeAnt!=null){ var x=num(a.exeAnt)-num(a.aini); if(Math.abs(x)>1e-9){ d+=x*num(a.pu); n++ } } }); return n?' · executado − faturado no saldo inicial <b class="mono" title="'+n+' rubricas com diferença">'+(d>=0?'+':'−')+eur(Math.abs(d))+' €</b>':'' })()+filtrado;
+    (function(){ var d=0,n=0; rows.forEach(function(a){ if(a.exeAnt!=null){ var x=num(a.exeAnt)-fatAnt(a); if(Math.abs(x)>1e-9){ d+=x*num(a.pu); n++ } } }); return n?' · executado − faturado até ao Auto 16 <b class="mono" title="'+n+' rubricas com diferença">'+(d>=0?'+':'−')+eur(Math.abs(d))+' €</b>':'' })()+filtrado;
   bind('#mapBox','click',function(e){
     var vm=e.target.closest('[data-vmais]'); if(vm){ LIMV.map=vm.dataset.todas?1e9:LIMV.map+150; renderMap(); return }
     if(mapRet){
@@ -4550,7 +4557,7 @@ function funilInt(rows){
 }
 function fechoAuto(a){
   var ini=autoIniIso(a), fim=autoFimIso(a), h0=hoje();
-  var pds=ST.pd.filter(function(p){ return p.data&&autoDe(p.data)===a });
+  var pds=ST.pd.filter(function(p){ return p.data&&!pdAuto(p)&&autoDe(p.data)===a });
   var vazias=pds.filter(function(p){ return !(p.lin||[]).length });
   var fr=frentesAbertas('').filter(function(f){ return f.desde<=fim });
   var pj=pontosPorJustificar().filter(function(pt){ return pt.data>=ini&&pt.data<=fim });
@@ -5723,7 +5730,7 @@ function renderArt(){
        '<td class="num"><input class="num" data-a="'+r.i+'" data-k="qt" value="'+esc(a.qt==null?'':a.qt)+'"></td>'+
        '<td class="num"><input class="num" data-a="'+r.i+'" data-k="pu" value="'+esc(a.pu0!=null?a.pu0:(a.pu==null?'':a.pu))+'">'+(respDe(a)<100?'<small class="hint" style="display:block;text-align:right" title="Preço que conta para a Somafel">→ '+eur(a.pu)+'</small>':'')+'</td>'+
        '<td class="num">'+eur(t)+'</td>'+
-       '<td class="num"><input class="num" data-a="'+r.i+'" data-k="aini" value="'+esc(a.aini==null?'':a.aini)+'">'+(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-num(a.aini))>1e-9?'<small class="hint" style="display:block;text-align:right;color:'+(num(a.exeAnt)>num(a.aini)?'var(--amber)':'var(--red)')+'" title="Executado segundo o controlo de produção">exec. '+qtf(a.exeAnt)+'</small>':'')+'</td>'+
+       '<td class="num"><input class="num" data-a="'+r.i+'" data-k="aini" value="'+esc(a.aini==null?'':a.aini)+'">'+(fatOficial(a.cod,a.origem)?'<small class="hint" style="display:block;text-align:right" title="Quantidade nos autos oficiais já fechados (separador Autos)">autos fechados '+qtf(fatOficial(a.cod,a.origem))+'</small>':'')+(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-fatAnt(a))>1e-9?'<small class="hint" style="display:block;text-align:right;color:'+(num(a.exeAnt)>fatAnt(a)?'var(--amber)':'var(--red)')+'" title="Executado segundo o controlo de produção">exec. '+qtf(a.exeAnt)+'</small>':'')+'</td>'+
        '<td><input data-a="'+r.i+'" data-k="fases" value="'+esc(fasesTxt(a))+'" placeholder="100 %" title="Ex.: Material rececionado 40; Montagem 60"></td>'+
        '<td class="w1"><button data-adupl="'+r.i+'" title="Duplicar esta rubrica para outra origem (ex.: criar a mesma peça como Adicional)">⧉</button></td>'+
        '<td class="w1"><button class="x" data-adel="'+r.i+'">×</button></td></tr>';
@@ -7110,7 +7117,7 @@ function nmResumoProd(){
     var ce=0; ST.pd.forEach(function(p){ if(autoDe(p.data)!==a)return; (p.eqIds||[]).forEach(function(id){ var q=eqPorId(id); if(q)ce+=num(q.custo) }) });
     var fim=autoFimIso(a);
     return {auto:a,rotulo:autoLabel(a),fim:fim,proveito:prov,pessoal:cp,equip:ce,material:num((ST.materialAuto||{})[a]),previsto:planoAteData(ST.plano||[],fim),enviado:(ST.autosEnviados||[]).some(function(e){return e.auto===a})} });
-  return {app:'producao',contrato:{total:tot,executado:ex,pct:tot?ex/tot:0},origens:origens,autos:linhas,partes:(ST.pd||[]).length,
+  return {app:'producao',contrato:{total:tot,executado:ex,pct:tot?ex/tot:0},origens:origens,autos:linhas,partes:(ST.pd||[]).filter(function(p){return !pdAuto(p)}).length,
     ints:(ST.int||[]).filter(function(i){return i.os||i.data}).map(function(i){return {os:String(i.os||''),data:i.data||'',via:i.via||'',de:i.de||'',ate:i.ate||'',pI:i.ptI||'',pF:i.ptF||'',cI:i.cI||'',cF:i.cF||'',ini:i.cI||i.ptI||'',fim:i.cF||i.ptF||'',motivo:i.motivo||'',tipo:i.tipo||'cat'}})} }
 
 /* ---- servidor ---- */
@@ -7270,6 +7277,7 @@ function pcalFiltra(){
   var f=lower(flt.pd||'');
   var cliF=cliAtual(), mc=multiCli();
   return ST.pd.filter(function(p){
+    if(pdAuto(p))return false;
     if((p.tipo||'cat')!==flt.tipo)return false;
     if(mc&&pdCli(p)!==cliF)return false;
     if(flt.pdEst==='inc'&&!pdFalta(p).length)return false;
