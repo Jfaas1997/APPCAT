@@ -343,6 +343,9 @@ td .chip{margin-right:5px}
 .rmTot td{font-weight:600;background:var(--soft)}
 .rmTot.hi td{background:var(--sheet);border-top:2px solid var(--brand)}
 tr.rmHist td{color:var(--muted)}
+.rmDif{margin:8px 0 0;padding:8px 10px;border-radius:6px;font-size:13px;border:1px solid var(--rule)}
+.rmDif.mais{background:var(--amberbg);border-color:var(--amber)}
+.rmDif.menos{background:var(--redbg);border-color:var(--red)}
 .gridWrap{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
 table.grelha{border-collapse:collapse;font-size:12px}
 table.grelha th,table.grelha td{border:1px solid var(--rule);padding:0;text-align:center}
@@ -1269,6 +1272,16 @@ var pastaListagem=null; /* nomes dos .xlsx encontrados na pasta de trabalho, par
 var PASTA=null, FICH=null, SAVEQ=null, DIRTY=false, LASTHASH='', DRAFTHASH='', LASTBACKUP=0;
 
 /* ---------- cálculos ---------- */
+/* taxas de execução: a rubrica é faturada por fases (ex.: poste 40 % com o material rececionado + 60 % montado).
+   a.fases=[{nome,pct}]; na linha da PD, l.fase = índice, l.qb = quantidade física, l.qt = qb × pct */
+function fasesDe(a){ return (a&&Array.isArray(a.fases)&&a.fases.length)?a.fases:null }
+function fasesTxt(a){ var f=fasesDe(a); return f?f.map(function(x){ return x.nome+' '+String(x.pct).replace('.',',')+'%' }).join(' + '):'' }
+function fasesLe(txt){
+  var out=[]; String(txt||'').split(/[;+\n]/).forEach(function(t){ t=t.trim(); if(!t)return; var m=t.match(/^(.*?)[\s:=]*(\d+(?:[.,]\d+)?)\s*%?$/); if(!m)return; out.push({nome:(m[1]||'').trim()||('Fase '+(out.length+1)),pct:num(m[2])}) });
+  return out;
+}
+function linFase(l){ var a=look(l.cod,l.origem), f=fasesDe(a); if(!f||l.fase==null||!f[l.fase])return null; return f[l.fase] }
+function linRecalc(l){ var f=linFase(l); if(f){ if(l.qb==null)l.qb=1; l.qt=Math.round(num(l.qb)*num(f.pct)/100*1e6)/1e6 } }
 function chaveRub(cod,origem){ return String(cod||'').trim().toUpperCase()+'|'+(origem||'contrato') }
 function execArt(codMes,tipo,origem){
   /* devolve {cod|origem:{qt, valor}} de produção; codMes = '' (tudo) ou 'YYYY-MM' (período do auto); tipo/origem = '' para todos */
@@ -2099,7 +2112,7 @@ function renderPDedit(){
      '<button data-act="linAddSR" title="Trabalho necessário mas sem rubrica no contrato e não faturável. Fica na parte diária (unidade vg, quantidade 1) e registado no separador «Sem rubrica».">+ Sem rubrica</button>'+
      '<button data-act="linAddAberta" title="Regista uma frente que ainda não tens quantidade para fechar. Podes continuá-la numa próxima parte diária.">+ Frente em curso</button></div><div class="bb">'+
      '<table><thead><tr><th style="width:185px">N.º Art.º</th><th>Designação</th><th class="w1">Unid.</th>'+
-     '<th class="num" style="width:80px">Quant.</th><th style="width:90px">PK/Poste início</th><th style="width:90px">Fim</th>'+
+     '<th class="num" style="width:118px">Quant.</th><th style="width:90px">PK/Poste início</th><th style="width:90px">Fim</th>'+
      '<th class="num w1">Valor</th><th style="width:128px" title="Período do auto de medição a que esta quantidade fica atribuída">Auto</th>'+
      '<th style="width:100px">Estado</th><th class="w1"></th></tr></thead><tbody>';
   if(!(p.lin||[]).length)h+='<tr><td colspan="10"><div class="empty">Sem trabalhos registados.</div></td></tr>';
@@ -2123,7 +2136,10 @@ function renderPDedit(){
        '<td>'+(a?'<span title="'+esc(a.des)+'">'+esc(a.des)+'</span>':'<input data-l="'+ix+'" data-k="des" value="'+esc(l.des||'')+'" placeholder="designação livre">')+
          (l.cod&&(a||alt.length)?'<div class="linOri">'+(alt.length>1?'<select data-l="'+ix+'" data-k="origem" title="Esta rubrica existe em mais de um contrato/adicional: escolhe de onde vem">'+alt.map(function(o){ var ao=look(l.cod,o); return '<option value="'+esc(o)+'"'+((l.origem||'contrato')===o?' selected':'')+'>'+esc(o==='contrato'?'Contrato':origemNome(o).replace(/\s*—.*$/,''))+(ao&&ao.tc?' · '+esc(tcTxt(ao.tc)):'')+(ao&&respDe(ao)<100?' · '+respDe(ao)+' %':'')+'</option>' }).join('')+'</select>':origemChip(l.origem||'contrato',a))+'</div>':'')+'</td>'+
        '<td class="w1 mono">'+esc(a?a.un:(l.un||''))+'</td>'+
-       '<td><input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'"></td>'+
+       '<td>'+(fasesDe(a)&&l.estado!=='historica'?
+          '<select data-l="'+ix+'" data-k="fase" title="Taxa de execução: em que fase está esta quantidade" style="width:100%;margin-bottom:3px"><option value="">100 %</option>'+fasesDe(a).map(function(f,fi){ return '<option value="'+fi+'"'+(l.fase===fi?' selected':'')+'>'+esc(f.nome)+' · '+esc(String(f.pct).replace('.',','))+'%</option>' }).join('')+'</select>'+
+          (l.fase!=null&&linFase(l)?'<input class="num" data-l="'+ix+'" data-k="qb" value="'+esc(l.qb==null?'':l.qb)+'" title="Quantidade física (postes, metros…)"><small class="hint" style="display:block;text-align:right">conta '+qtf(l.qt)+'</small>':'<input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'">')
+        :'<input class="num" data-l="'+ix+'" data-k="qt" value="'+esc(l.qt==null?'':l.qt)+'">')+'</td>'+
        '<td><input data-l="'+ix+'" data-k="pki" value="'+esc(l.pki||'')+'" class="mono"></td>'+
        '<td><input data-l="'+ix+'" data-k="pkf" value="'+esc(l.pkf||'')+'" class="mono"></td>'+
        '<td class="num w1">'+(a?eur(num(l.qt)*num(a.pu)):'—')+'</td>'+
@@ -2430,6 +2446,8 @@ function ligaPD(p){
     if(p.bloq)return;
     var t=e.target,k=t.dataset.k;
     if(t.dataset.ti){ var it=porId(ST.int,t.dataset.ti); if(it){ it[t.dataset.tk]=(hm(t.value)==null?'':hstr(hm(t.value))) } setTimeout(function(){renderPDedit();encheMeses()},0); return }
+    if(t.dataset.l!=null&&k==='fase'){ var lf=p.lin[+t.dataset.l]; if(t.value===''){ if(lf.qb!=null)lf.qt=num(lf.qb); delete lf.fase; delete lf.qb } else { if(lf.fase==null)lf.qb=num(lf.qt)||1; lf.fase=+t.value; linRecalc(lf) } setTimeout(renderPDedit,0); return }
+    if(t.dataset.l!=null&&k==='qb'){ var lq=p.lin[+t.dataset.l]; lq.qb=num(t.value); linRecalc(lq); setTimeout(renderPDedit,0); return }
     if(t.dataset.l!=null&&k){ var l=p.lin[+t.dataset.l]; l[k]=k==='qt'?num(t.value):t.value;
       if(k==='cod'){ var pdo=porId(ST.pd,pdAberta), okO=pdo?origensPD(pdo):['contrato'], oo=okO.filter(function(o){ return look(t.value,o) }); if(oo.length&&oo.indexOf(l.origem||'contrato')<0)l.origem=oo[0]; var a=look(t.value,l.origem); if(a){l.des='';l.un=a.un} } setTimeout(renderPDedit,0); return }
     if(t.dataset.r&&k){ var arr=p[t.dataset.r]; var o=arr[+t.dataset.i];
@@ -3940,7 +3958,10 @@ function renderRubricaModal(){
     cel('Acumulado atual',atuQ,pc(atuQ))+
     cel(atuQ>qc+1e-9?'Acima do contrato':'Falta executar',Math.abs(qc-atuQ))+
   '</div>';
-  if(ini)h+='<div class="hint">O acumulado anterior inclui o saldo inicial de '+qtf(ini)+' '+un+' (executado até ao último auto carregado).</div>';
+  if(ini)h+='<div class="hint">O acumulado anterior inclui o saldo inicial de '+qtf(ini)+' '+un+' (faturado até ao último auto carregado).</div>';
+  if(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-ini)>1e-9){ var dx=num(a.exeAnt)-ini;
+    h+='<div class="rmDif '+(dx>0?'mais':'menos')+'"><b>Executado '+qtf(a.exeAnt)+' '+un+' · faturado '+qtf(ini)+' '+un+'</b> — '+(dx>0?'há '+qtf(dx)+' '+un+' executados por faturar ('+eur(dx*pu)+' €)':'faturou-se '+qtf(-dx)+' '+un+' a mais do que o executado ('+eur(-dx*pu)+' €)')+'. <span class="hint">Segundo '+esc((ST.exeAntFonte&&ST.exeAntFonte.nome)||'o controlo de produção')+'.</span></div>' }
+  if(fasesDe(a))h+='<div class="hint">Taxas de execução: '+esc(fasesTxt(a))+'.</div>';
   if(depQ)h+='<div class="hint">Há ainda '+qtf(depQ)+' '+un+' lançados em autos seguintes, que não entram nestas contas.</div>';
 
   h+='<h3 class="sec">Histórico</h3>';
@@ -3977,6 +3998,7 @@ function renderRubricaModal(){
     fld('Data','<input type="date" id="rmData" value="'+esc(autoDe(hoje())===AU?hoje():(AU+'-'+('0'+(+ST.diaAuto||20)).slice(-2)))+'">')+
     fld('Poste / PK','<input id="rmPk" style="width:130px" autocomplete="off"><span class="hint" id="rmPkInfo" style="min-height:15px"></span>')+
     fld('Quantidade','<input class="num" id="rmQt" style="width:110px">')+
+    (fasesDe(a)?fld('Taxa de execução','<select id="rmFase"><option value="">100 %</option>'+fasesDe(a).map(function(f,fi){ return '<option value="'+fi+'">'+esc(f.nome)+' · '+esc(String(f.pct).replace('.',','))+'%</option>' }).join('')+'</select>'):'')+
     '<button id="rmOk" class="pri">+ Lançar</button>'+
   '</div>';
 
@@ -4058,7 +4080,9 @@ function renderRubricaModal(){
       var lim=limitePoste(look(a.cod,a.origem)), ja=pk?somaPk(lancs,pk):0;
       if(pk&&(lim?ja+q>lim+1e-9:ja>0)&&!confirm(lim?'O poste «'+pk+'» já tem '+qtf(ja)+' lançado; com este fica '+qtf(ja+q)+', mais do que '+lim+'. Continuar na mesma?':'Já há um lançamento nesta rubrica no poste/PK «'+pk+'». Continuar na mesma?'))return;
       var pdN=pdDoDia(a.tipo,d); if(pdBloq(pdN)){ avisoBloq(pdN); return }
-      pdN.lin.push({cod:a.cod,origem:a.origem||'contrato',des:'',un:'',qt:q,pki:pk,pkf:'',estado:'fechada'});
+      var nl={cod:a.cod,origem:a.origem||'contrato',des:'',un:'',qt:q,pki:pk,pkf:'',estado:'fechada'};
+      var fs=$('#rmFase'); if(fs&&fs.value!==''){ nl.fase=+fs.value; nl.qb=q; linRecalc(nl) }
+      pdN.lin.push(nl);
       render(); toast('Lançado em '+tipoNome(a.tipo)+' '+pdN.num+'.'+pdAviso(pdN));
       return;
     }
@@ -4198,7 +4222,7 @@ function renderMap(){
        '<td class="mono" style="white-space:nowrap">'+(mapRet?'<input type="checkbox" class="retCk" tabindex="-1"'+(selR?' checked':'')+'> ':'')+esc(a.cod)+'</td><td><span class="mapDes" title="'+esc(a.des)+'">'+esc(a.des)+'</span>'+tcChip(a)+'</td><td class="w1 mono">'+esc(a.un||'')+'</td>'+
        '<td class="w1">'+((a.origem||'contrato')==='contrato'?'<span class="chip none">'+esc(origemNome('contrato'))+'</span>':'<span class="chip warn">'+esc(origemNome(a.origem))+'</span>')+'</td>'+
        '<td class="num">'+qtf(a.qt)+'</td><td class="num">'+eur(a.pu)+'</td><td class="num">'+eur(tot)+'</td>'+
-       '<td class="num">'+(num(a.aini)?qtf(a.aini):'—')+'</td>'+
+       '<td class="num">'+(num(a.aini)?qtf(a.aini):'—')+(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-num(a.aini))>1e-9?'<small style="display:block;color:'+(num(a.exeAnt)>num(a.aini)?'var(--amber)':'var(--red)')+'" title="Executado segundo o controlo de produção (o anterior é o faturado)">exec. '+qtf(a.exeAnt)+'</small>':'')+'</td>'+
    (m?'<td class="num">'+(m.qt?qtf(m.qt):'—')+'</td><td class="num">'+(m.val?eur(m.val):'—')+'</td>':'')+
        '<td class="num">'+(e.qt?qtf(e.qt):'—')+'</td><td class="num">'+(e.val?eur(e.val):'—')+'</td>'+
        '<td class="num">'+(num(a.qt)?pct(p):'—')+'</td>'+
@@ -4233,7 +4257,8 @@ function renderMap(){
   var filtrado=(f||flt.mapQue)?' <span class="chip none">valores só das linhas mostradas</span>':'';
   $('#ftMap').innerHTML='Contrato <b class="mono">'+eur(T.tot)+' €</b>'+
     (doMes?' · auto '+mesNome(flt.mapMes)+' <b class="mono">'+eur(T.vm)+' €</b>':'')+
-    ' · acumulado <b class="mono">'+eur(T.va)+' €</b> ('+(T.tot?pct(T.va/T.tot):'—')+')'+filtrado;
+    ' · acumulado <b class="mono">'+eur(T.va)+' €</b> ('+(T.tot?pct(T.va/T.tot):'—')+')'+
+    (function(){ var d=0,n=0; rows.forEach(function(a){ if(a.exeAnt!=null){ var x=num(a.exeAnt)-num(a.aini); if(Math.abs(x)>1e-9){ d+=x*num(a.pu); n++ } } }); return n?' · executado − faturado no saldo inicial <b class="mono" title="'+n+' rubricas com diferença">'+(d>=0?'+':'−')+eur(Math.abs(d))+' €</b>':'' })()+filtrado;
   bind('#mapBox','click',function(e){
     var vm=e.target.closest('[data-vmais]'); if(vm){ LIMV.map=vm.dataset.todas?1e9:LIMV.map+150; renderMap(); return }
     if(mapRet){
@@ -5682,13 +5707,13 @@ function renderArt(){
   var h='<table><thead><tr><th style="width:175px">N.º Art.º</th><th>Designação</th><th class="w1" style="width:60px">Un.</th><th style="width:150px">Origem</th>'+
     '<th class="w1" style="width:80px" title="N.º do trabalho complementar (TC) associado">TC</th><th class="num w1" style="width:70px" title="Responsabilidade: com 50 % só conta metade do valor">Resp. %</th>'+
     '<th class="num w1">Quantidade</th><th class="num w1" title="Preço do mapa do cliente">Preço unit.</th><th class="num w1" title="Quantidade × preço × responsabilidade">Total</th>'+
-    '<th class="num w1" title="Produção já executada antes de começar a usar esta app">Acum. anterior</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
-  if(!rows.length)h+='<tr><td colspan="12"><div class="empty">Sem artigos'+(flt.origem?' nesta origem':'')+'. Usa <b>Importar mapa…</b> (Excel com N.º Art.º, Designação, Un., Qtd. e P.U.; o botão <b>Modelo do mapa</b> dá um exemplo) ou acrescenta linhas com <b>+ Artigo</b>.</div></td></tr>';
+    '<th class="num w1" title="Quantidade já faturada antes de começar a usar esta app (saldo inicial)">Acum. anterior</th><th style="width:150px" title="Taxas de execução: a rubrica fatura-se por fases. Escreve por exemplo «Material rececionado 40; Montagem 60»">Taxas de execução</th><th class="w1"></th><th class="w1"></th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="13"><div class="empty">Sem artigos'+(flt.origem?' nesta origem':'')+'. Usa <b>Importar mapa…</b> (Excel com N.º Art.º, Designação, Un., Qtd. e P.U.; o botão <b>Modelo do mapa</b> dá um exemplo) ou acrescenta linhas com <b>+ Artigo</b>.</div></td></tr>';
   var T=0, nArt=0, CM=capMapa(), CV={};
   rows.forEach(function(r){
     var a=r.a,t=num(a.qt)*num(a.pu); T+=t;
     if(++nArt>LIMV.art)return;
-    h+=capCabecalhos(a.cod,CM,CV,12);
+    h+=capCabecalhos(a.cod,CM,CV,13);
     h+='<tr><td><input data-a="'+r.i+'" data-k="cod" value="'+esc(a.cod||'')+'" class="mono"></td>'+
        '<td><input data-a="'+r.i+'" data-k="des" value="'+esc(a.des||'')+'"></td>'+
        '<td><input data-a="'+r.i+'" data-k="un" value="'+esc(a.un||'')+'" class="mono"></td>'+
@@ -5698,11 +5723,12 @@ function renderArt(){
        '<td class="num"><input class="num" data-a="'+r.i+'" data-k="qt" value="'+esc(a.qt==null?'':a.qt)+'"></td>'+
        '<td class="num"><input class="num" data-a="'+r.i+'" data-k="pu" value="'+esc(a.pu0!=null?a.pu0:(a.pu==null?'':a.pu))+'">'+(respDe(a)<100?'<small class="hint" style="display:block;text-align:right" title="Preço que conta para a Somafel">→ '+eur(a.pu)+'</small>':'')+'</td>'+
        '<td class="num">'+eur(t)+'</td>'+
-       '<td class="num"><input class="num" data-a="'+r.i+'" data-k="aini" value="'+esc(a.aini==null?'':a.aini)+'"></td>'+
+       '<td class="num"><input class="num" data-a="'+r.i+'" data-k="aini" value="'+esc(a.aini==null?'':a.aini)+'">'+(a.exeAnt!=null&&Math.abs(num(a.exeAnt)-num(a.aini))>1e-9?'<small class="hint" style="display:block;text-align:right;color:'+(num(a.exeAnt)>num(a.aini)?'var(--amber)':'var(--red)')+'" title="Executado segundo o controlo de produção">exec. '+qtf(a.exeAnt)+'</small>':'')+'</td>'+
+       '<td><input data-a="'+r.i+'" data-k="fases" value="'+esc(fasesTxt(a))+'" placeholder="100 %" title="Ex.: Material rececionado 40; Montagem 60"></td>'+
        '<td class="w1"><button data-adupl="'+r.i+'" title="Duplicar esta rubrica para outra origem (ex.: criar a mesma peça como Adicional)">⧉</button></td>'+
        '<td class="w1"><button class="x" data-adel="'+r.i+'">×</button></td></tr>';
   });
-  h+=maisLinhasHtml('art',rows.length-LIMV.art,12);
+  h+=maisLinhasHtml('art',rows.length-LIMV.art,13);
   h+='</tbody></table>';
   var ro=!podeArt();
   $('#artBox').innerHTML=(ro?'<div class="artRO">🔒 Só o <b>Diretor de Obra</b> ou o <b>administrador</b> podem alterar os artigos do contrato (rubricas, quantidades, preços, TC e responsabilidade). Aqui só podes consultar.</div>':'')+oh+h;
@@ -5725,6 +5751,8 @@ function renderArt(){
     if(k==='pu'){ a.pu0=num(t.value); aplicaResp(a) }
     else if(k==='resp'){ var rv=String(t.value).replace('%','').trim(); a.resp=rv===''?100:Math.max(0,Math.min(100,num(rv))); aplicaResp(a); if(a.resp<100)toast('Responsabilidade '+a.resp+' %: esta rubrica só conta '+a.resp+' % do valor.') }
     else if(k==='tc'){ a.tc=t.value.trim() }
+    else if(k==='fases'){ var fz=fasesLe(t.value), sp=fz.reduce(function(x,y){return x+num(y.pct)},0);
+      if(!fz.length){ delete a.fases } else { a.fases=fz; if(Math.abs(sp-100)>0.01)toast('Atenção: as taxas somam '+String(sp).replace('.',',')+' %, não 100 %.',4000) } }
     else a[k]=(k==='qt'||k==='aini')?num(t.value):t.value;
     buildIX(); setTimeout(render,0);
   });
