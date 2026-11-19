@@ -4679,7 +4679,7 @@ function imprimeJust(auto,orig){
   var h='<div class="eqpl"><div class="eqHd"><div class="eqLogo"><img src="'+logo+'" alt=""></div>'+
     '<div class="eqTit"><div class="t1">Justificativo do Auto</div><div class="t2">'+esc(ST.nome||'')+(ST.contrato?' · Contrato '+esc(autOrig&&autOrig!=='contrato'?origemNome(autOrig):ST.contrato):'')+(clienteDe(autOrig)||ST.cliente?' · '+esc(clienteDe(autOrig)||ST.cliente):'')+'</div><div class="t3">'+esc(mesNome(auto).toUpperCase())+'</div></div>'+
     '<div class="eqInf"><div><small>Origem</small><b>'+esc(origemNome(orig))+'</b></div><div><small>Período</small>'+esc(autoIntervalo(auto))+'</div>'+
-    '<div><small>Estado</small>'+(env?'Submetido · versão '+env.versao+' · '+esc(dataPT(env.data)):'Rascunho (ainda não submetido)')+'</div><div><small>Total a faturar</small><b>'+eur(D.val)+' €</b></div></div></div></div>';
+    '<div><small>Total a faturar</small><b>'+eur(D.val)+' €</b></div></div></div></div>';
   h='<table class="jsW"><thead><tr><td>'+h+'</td></tr></thead><tbody><tr><td>';
   h+='<div class="jst">'+justTabelaHtml(D,autJPk,true)+'<div class="nt">Por rubrica e por poste/PK: acumulado anterior, quantidade deste auto e acumulado atual, conforme as partes diárias fechadas e os autos anteriores. Emitido em '+esc(ptbr(hoje()))+'.</div></div></td></tr></tbody></table>';
   $('#print').innerHTML=h;
