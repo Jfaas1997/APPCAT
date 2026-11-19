@@ -1420,7 +1420,8 @@ function autosUsados(){
   var s={}; ST.pd.forEach(function(p){ if(p.data)s[autoDe(p.data)]=1; (p.lin||[]).forEach(function(l){ if(l.auto)s[l.auto]=1 }) });
   return Object.keys(s).sort();
 }
-function autoCorrente(){ var m=autosUsados(); return m.length?m[m.length-1]:autoDe(hoje()) }
+/* o auto em curso é o de hoje; partes diárias já criadas para dias futuros não fazem saltar para o auto seguinte */
+function autoCorrente(){ var h=autoDe(hoje()), m=autosUsados(); if(!m.length||m.indexOf(h)>=0)return h; var ant=m.filter(function(x){return x<=h}); return ant.length?ant[ant.length-1]:m[0] }
 
 /* ---------- render geral ---------- */
 function garanteIds(arr){ (arr||[]).forEach(function(x){ if(!x.id)x.id=uid(); if(x.direto==null)x.direto=true }) }
