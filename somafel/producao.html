@@ -262,6 +262,7 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
   #print .jst td.n{text-align:right}
   #print .jst tr.jdx td{font-size:7.5pt;color:#333;padding-left:5mm}
   #print .jst tr.sv td{background:#f2f2f2}
+  #print .jst tr.jsm td{color:#444;background:none!important}
   #print .jst .nt{font-size:7.5pt;color:#333;margin-top:2mm}
   #print .eqpl{font-family:Arial,Helvetica,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:7pt}
   #print .eqpl .eqHd{display:flex;border:1.3pt solid #000;margin-bottom:1.6mm}
@@ -533,6 +534,7 @@ table.jt tr.st td{font-weight:600;background:var(--paper)}
 table.jt tr.aj td{color:var(--amber)}
 table.jt tr.jdx td{font-size:12px;color:var(--muted);padding-left:22px}
 table.jt tr.sv td{font-weight:500}
+table.jt tr.jsm td{color:var(--muted)}
 table.jt tr.tot td{font-weight:700;background:var(--soft);border-top:2px solid var(--ink)}
 .org.st{cursor:default}.org.st:hover{border-color:var(--rule)}
 .prvW{overflow:auto;max-width:100%;border:1px solid var(--rule);border-radius:var(--r)}
@@ -4556,25 +4558,28 @@ function justDados(auto,orig){
     if(j.auto===auto){ var r=g(j.tipo||'cat',j.cod,j.origem); r.aj.push({data:j.data||'',qt:-q,texto:(j.destino==='seguinte'?'Cortado, passa para o auto de '+mesNome(proxAuto(j.auto)):'Cortado de vez (recusado)'),motivo:j.motivo||''}); r.qt-=q }
     if(j.destino==='seguinte'&&proxAuto(j.auto)===auto){ var r2=g(j.tipo||'cat',j.cod,j.origem); r2.aj.push({data:j.data||'',qt:q,texto:'Veio do auto de '+mesNome(j.auto),motivo:j.motivo||''}); r2.qt+=q }
   });
-  /* 2.º: acumulado anterior dos mesmos postes */
+  /* 2.º: acumulado anterior — todas as rubricas e todos os postes com quantidade */
   ST.pd.forEach(function(p){ (p.lin||[]).forEach(function(l){
     if((l.estado||'fechada')!=='fechada'||!l.cod)return;
     if((l.origem||'contrato')!==orig)return;
     if((l.auto||autoDe(p.data))>=auto)return;
-    var r=R[(p.tipo||'cat')+'|'+chaveRub(l.cod,l.origem)]; if(!r)return;
-    var o=r.P[pkN(pkLbl(l))]; if(o)o.ant+=num(l.qt);
+    var q=num(l.qt); if(!q)return;
+    var r=g(p.tipo||'cat',l.cod,l.origem);
+    pole(r,pkLbl(l)).ant+=q;
   }) });
+  Object.keys(AL).forEach(function(k){ var x=AL[k]; if(Math.abs(x.ant)>1e-9||Math.abs(x.fat)>1e-9)g(x.tipo,x.cod,x.origem) });
   ord.sort(ordRub);
   var tot=0, totAnt=0;
   ord.forEach(function(r){
     r.exec.sort(function(a,b){ return (a.data||'').localeCompare(b.data||'')||naturalCmp(a.pd,b.pd)||naturalCmp(a.pki,b.pki) });
-    r.postes=Object.keys(r.P).map(function(k){ var o=r.P[k]; o.acum=o.ant+o.mes; return o }).sort(function(a,b){ return naturalCmp(a.pk,b.pk) });
+    r.postes=Object.keys(r.P).map(function(k){ var o=r.P[k]; o.acum=o.ant+o.mes; return o }).filter(function(o){ return Math.abs(o.ant)>1e-9||Math.abs(o.mes)>1e-9 }).sort(function(a,b){ return naturalCmp(a.pk,b.pk) });
     var al=AL[r.tipo+'|'+chaveRub(r.cod,r.origem)];
     r.ant=al?al.ant:0; r.acum=r.ant+r.qt; r.contr=al?al.contr:0;
     r.val=r.qt*r.pu; r.valAnt=r.ant*r.pu; r.valAcum=r.acum*r.pu;
     tot+=r.val; totAnt+=r.valAnt;
   });
-  return {blocos:ord.filter(function(r){return r.exec.length||r.aj.length}),val:tot,valAnt:totAnt,valAcum:totAnt+tot};
+  var bl=ord.filter(function(r){return r.exec.length||r.aj.length||Math.abs(r.ant)>1e-9});
+  return {blocos:bl,val:tot,valAnt:totAnt,valAcum:totAnt+tot,comMov:bl.filter(function(r){return r.exec.length||r.aj.length}).length};
 }
 function justPk(x){ return (x.pki||'')+(x.pkf?' – '+x.pkf:'') }
 /* pk = mostrar também as datas e partes diárias de cada poste */
@@ -4583,12 +4588,12 @@ function justTabelaHtml(D,pk,imp){
   if(imp)h+='<colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup>';
   h+='<thead><tr><th>Poste / PK</th><th class="num">Acumulado anterior</th><th class="num">Este auto</th><th class="num">Acumulado atual</th></tr></thead>';
   if(!D.blocos.length)return h+'<tbody><tr><td colspan="4"><div class="empty">Sem produção neste auto.</div></td></tr></tbody></table>';
-  function q3(a,m,c){ return '<td class="num n">'+(a?qtf(a):'—')+'</td><td class="num n"><b>'+qtf(m)+'</b></td><td class="num n">'+qtf(c)+'</td>' }
+  function q3(a,m,c){ return '<td class="num n">'+(a?qtf(a):'—')+'</td><td class="num n">'+(m?'<b>'+qtf(m)+'</b>':'—')+'</td><td class="num n">'+qtf(c)+'</td>' }
   D.blocos.forEach(function(r){
     var un=esc(r.un||'');
-    h+='<tbody><tr class="gh"><td colspan="4">'+esc(r.cod)+' — '+esc(r.des)+' · '+un+' · P.U. '+eur(r.pu)+' €'+((r.origem||'contrato')==='contrato'?'':' · '+esc(origemNome(r.origem)))+'</td></tr>';
+    h+='<tbody><tr class="gh"><td colspan="4">'+esc(r.cod)+' — '+esc(r.des)+' · '+un+' · P.U. '+eur(r.pu)+' €'+((r.origem||'contrato')==='contrato'?'':' · '+esc(origemNome(r.origem)))+(r.exec.length||r.aj.length?'':' · sem quantidade neste auto')+'</td></tr>';
     r.postes.forEach(function(o){
-      h+='<tr><td class="mono">'+esc(o.pk)+'</td>'+q3(o.ant,o.mes,o.acum)+'</tr>';
+      h+='<tr'+(o.mes?'':' class="jsm"')+'><td class="mono">'+esc(o.pk)+'</td>'+q3(o.ant,o.mes,o.acum)+'</tr>';
       if(pk)o.exec.forEach(function(x){ h+='<tr class="jdx"><td colspan="2">'+esc(ptbr(x.data))+' · '+esc(x.pd)+(x.movida?' (auto alterado)':'')+'</td><td class="num n">'+qtf(x.qt)+'</td><td></td></tr>' });
     });
     r.aj.forEach(function(a){
@@ -4597,7 +4602,7 @@ function justTabelaHtml(D,pk,imp){
     h+='<tr class="st"><td>Total da rubrica ('+un+')</td>'+q3(r.ant,r.qt,r.acum)+'</tr>';
     h+='<tr class="st sv"><td>Valor (€)'+(r.contr?' · '+pct(r.acum/r.contr)+' do contrato':'')+'</td><td class="num n">'+eur(r.valAnt)+'</td><td class="num n"><b>'+eur(r.val)+'</b></td><td class="num n">'+eur(r.valAcum)+'</td></tr></tbody>';
   });
-  h+='<tbody><tr class="tot"><td>TOTAL ('+D.blocos.length+(D.blocos.length===1?' rubrica':' rubricas')+')</td><td class="num n">'+eur(D.valAnt)+' €</td><td class="num n">'+eur(D.val)+' €</td><td class="num n">'+eur(D.valAcum)+' €</td></tr></tbody></table>';
+  h+='<tbody><tr class="tot"><td>TOTAL ('+D.blocos.length+(D.blocos.length===1?' rubrica':' rubricas')+(D.comMov!==D.blocos.length?', '+D.comMov+' com quantidade neste auto':'')+')</td><td class="num n">'+eur(D.valAnt)+' €</td><td class="num n">'+eur(D.val)+' €</td><td class="num n">'+eur(D.valAcum)+' €</td></tr></tbody></table>';
   return h;
 }
 function justAoa(auto,orig,pk){
