@@ -264,6 +264,8 @@ tr.grp0 td{background:var(--verdbg);font-weight:600;padding:7px 8px;border-top:2
   #print .jst tr.sv td{background:#f2f2f2}
   #print .jst tr.jsm td{color:#444;background:none!important}
   #print .jst .nt{font-size:7.5pt;color:#333;margin-top:2mm}
+  #print .jst .jobs{border:.5pt solid #000;padding:1.5mm 2mm;margin-top:2.5mm;font-size:8.5pt;break-inside:avoid;page-break-inside:avoid}
+  #print .jst .jobs b{display:block;margin-bottom:1mm}
   #print table.jsW{width:100%;border-collapse:collapse;border:0}
   #print table.jsW>thead{display:table-header-group}
   #print table.jsW>thead>tr>td,#print table.jsW>tbody>tr>td{border:0;padding:0}
@@ -543,6 +545,8 @@ table.jt tr.aj td{color:var(--amber)}
 table.jt tr.jdx td{font-size:12px;color:var(--muted);padding-left:22px}
 table.jt tr.sv td{font-weight:500}
 table.jt tr.jsm td{color:var(--muted)}
+.jObsBox{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.jObsBox textarea{width:100%;min-height:90px;resize:vertical;font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink)}
 table.jt tr.tot td{font-weight:700;background:var(--soft);border-top:2px solid var(--ink)}
 .org.st{cursor:default}.org.st:hover{border-color:var(--rule)}
 .prvW{overflow:auto;max-width:100%;border:1px solid var(--rule);border-radius:var(--r)}
@@ -4592,6 +4596,9 @@ function justDados(auto,orig){
   var vA=0,vM=0; bl.forEach(function(r){ vA+=r.valAnt; vM+=r.val });
   return {blocos:bl,val:vM,valAnt:vA,valAcum:vA+vM,comMov:bl.length};
 }
+/* observações livres do justificativo, por auto e origem (contrato/adicional) */
+function justObs(auto,orig){ return ((ST.justObs||{})[auto+'|'+(orig||'contrato')])||'' }
+function justObsHtmlImp(t){ return t.trim()?'<div class="jobs"><b>Observações</b><div>'+esc(t.trim()).replace(/\n/g,'<br>')+'</div></div>':'' }
 function justPk(x){ return (x.pki||'')+(x.pkf?' – '+x.pkf:'') }
 /* pk = mostrar também as datas e partes diárias de cada poste */
 function justTabelaHtml(D,pk,imp){
@@ -4653,6 +4660,7 @@ function justAoa(auto,orig,pk){
     A.push([r.cod,'Total da rubrica',r.un,r.pu||null,'',r6(r.ant),r6(r.qt),r6(r.acum),r2(r.valAnt),r2(r.val),r2(r.valAcum)].concat(pk?['']:[]));
   });
   A.push(['TOTAL','','','','','','','',r2(D.valAnt),r2(D.val),r2(D.valAcum)].concat(pk?['']:[]));
+  var ob=justObs(auto,orig).trim(); if(ob){ A.push([]); A.push(['Observações']); ob.split(/\n/).forEach(function(t){ A.push([t]) }) }
   return A;
 }
 
@@ -4681,7 +4689,7 @@ function imprimeJust(auto,orig){
     '<div class="eqInf"><div><small>Origem</small><b>'+esc(origemNome(orig))+'</b></div><div><small>Período</small>'+esc(autoIntervalo(auto))+'</div>'+
     '<div><small>Total a faturar</small><b>'+eur(D.val)+' €</b></div></div></div></div>';
   h='<table class="jsW"><thead><tr><td>'+h+'</td></tr></thead><tbody><tr><td>';
-  h+='<div class="jst">'+justTabelaHtml(D,autJPk,true)+'<div class="nt">Por rubrica e por poste/PK: acumulado anterior, quantidade deste auto e acumulado atual, conforme as partes diárias fechadas e os autos anteriores. Emitido em '+esc(ptbr(hoje()))+'.</div></div></td></tr></tbody></table>';
+  h+='<div class="jst">'+justTabelaHtml(D,autJPk,true)+justObsHtmlImp(justObs(auto,orig))+'<div class="nt">Por rubrica e por poste/PK: acumulado anterior, quantidade deste auto e acumulado atual, conforme as partes diárias fechadas e os autos anteriores. Emitido em '+esc(ptbr(hoje()))+'.</div></div></td></tr></tbody></table>';
   $('#print').innerHTML=h;
   var fim_=function(){ window.removeEventListener('afterprint',fim_) };
   window.addEventListener('afterprint',fim_);
@@ -4909,7 +4917,9 @@ function renderAut(){
   h+='<div style="display:flex;gap:10px;align-items:center;margin:0 0 12px;flex-wrap:wrap"><span class="seg"><button data-avis="aut" class="'+(autVis==='aut'?'on':'')+'">Auto</button><button data-avis="just" class="'+(autVis==='just'?'on':'')+'">Justificativo</button></span>'+
      (autVis==='just'?'<button id="bJImp" class="pri">Imprimir justificativo</button><button id="bJXls">Exportar justificativo (Excel)</button><label class="ts" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="jPk"'+(autJPk?' checked':'')+'> mostrar datas e partes diárias</label>':'')+'</div>';
   if(autVis==='just'){
-    h+=justTabelaHtml(justDados(autSel,autOrig),autJPk,false)+'<div class="hint" style="margin-top:8px">O justificativo acompanha o auto: para cada rubrica e para cada poste/PK, o acumulado anterior, o que entra neste auto e o acumulado atual, mais os ajustes (cortes e o que veio do auto anterior). O total «Este auto» bate com «a faturar». Também vai numa folha do Excel quando exportas o auto.</div>';
+    h+=justTabelaHtml(justDados(autSel,autOrig),autJPk,false)+
+      '<div class="jObsBox"><label for="jObs"><b>Observações</b> <span class="hint">texto livre que sai no justificativo impresso e no Excel (ex.: explicar um ajuste, uma medição ou um trabalho a mais)</span></label>'+
+      '<textarea id="jObs" rows="4" placeholder="Escreve aqui o que for preciso justificar…">'+esc(justObs(autSel,autOrig))+'</textarea></div>'+'<div class="hint" style="margin-top:8px">O justificativo acompanha o auto: para cada rubrica e para cada poste/PK, o acumulado anterior, o que entra neste auto e o acumulado atual, mais os ajustes (cortes e o que veio do auto anterior). O total «Este auto» bate com «a faturar». Também vai numa folha do Excel quando exportas o auto.</div>';
   } else {
   h+='<table><thead><tr><th>Tipo</th><th>Código</th><th>Designação</th><th class="w1">Un.</th><th class="num w1">P.U.</th><th class="num w1">Anterior</th><th class="num w1">Neste auto</th><th class="num w1">Ajustes</th><th class="num w1">A faturar</th><th class="num w1">Valor (€)</th><th class="num w1">Acumulado</th>'+(env?'<th class="num w1">Enviado</th>':'')+'</tr></thead><tbody>';
   if(!linhas.length)h+='<tr><td colspan="12"><div class="empty">Sem produção neste auto'+(multi?' ('+esc(onome)+')':'')+'.</div></td></tr>';
@@ -4975,6 +4985,9 @@ function renderAut(){
   bind('#autBox','change',function(e){
     if(e.target.id==='rcBloco'){ rcAt().bloco=+e.target.value; renderAut() }
     if(e.target.id==='jPk'){ autJPk=e.target.checked; renderAut() }
+  });
+  bind('#autBox','input',function(e){
+    if(e.target.id==='jObs'){ if(!ST.justObs)ST.justObs={}; var kj=autSel+'|'+(autOrig||'contrato'), vj=e.target.value; if(vj.trim())ST.justObs[kj]=vj; else delete ST.justObs[kj] }
   });
   bind('#autBox','click',function(e){
     var og=e.target.closest('[data-org]'); if(og){ autOrig=og.dataset.org; renderAut(); return }
