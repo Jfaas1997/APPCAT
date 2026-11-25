@@ -546,6 +546,10 @@ table.jt tr.jdx td{font-size:12px;color:var(--muted);padding-left:22px}
 table.jt tr.sv td{font-weight:500}
 table.jt tr.jsm td{color:var(--muted)}
 .jObsBox{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+table.jt td.jobc{padding:2px 6px}
+table.jt input.jObsP{width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font:inherit;color:var(--ink)}
+table.jt input.jObsP:hover{border-color:var(--rule)}
+table.jt input.jObsP:focus{border-color:var(--brand);background:var(--sheet);outline:0}
 .jObsBox textarea{width:100%;min-height:90px;resize:vertical;font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink)}
 table.jt tr.tot td{font-weight:700;background:var(--soft);border-top:2px solid var(--ink)}
 .org.st{cursor:default}.org.st:hover{border-color:var(--rule)}
@@ -4594,72 +4598,78 @@ function justDados(auto,orig){
   /* só as rubricas e os postes com quantidade neste auto; o anterior e o atual de cada um vêm de todo o histórico */
   var bl=ord.filter(function(r){return r.exec.length||r.aj.length});
   var vA=0,vM=0; bl.forEach(function(r){ vA+=r.valAnt; vM+=r.val });
-  return {blocos:bl,val:vM,valAnt:vA,valAcum:vA+vM,comMov:bl.length};
+  return {blocos:bl,val:vM,valAnt:vA,valAcum:vA+vM,comMov:bl.length,auto:auto,orig:orig};
 }
 /* observações livres do justificativo, por auto e origem (contrato/adicional) */
 function justObs(auto,orig){ return ((ST.justObs||{})[auto+'|'+(orig||'contrato')])||'' }
+/* observação de um poste/PK numa rubrica, neste auto */
+function justObsK(D,r,o){ return D.auto+'|'+(D.orig||'contrato')+'|'+r.tipo+'|'+chaveRub(r.cod,r.origem)+'|'+pkN(o.pk) }
+function justObsP(D,r,o){ return ((ST.justObsP||{})[justObsK(D,r,o)])||'' }
 function justObsHtmlImp(t){ return t.trim()?'<div class="jobs"><b>Observações</b><div>'+esc(t.trim()).replace(/\n/g,'<br>')+'</div></div>':'' }
 function justPk(x){ return (x.pki||'')+(x.pkf?' – '+x.pkf:'') }
 /* pk = mostrar também as datas e partes diárias de cada poste */
 function justTabelaHtml(D,pk,imp){
   if(imp)return justTabelaImp(D,pk);
   var h='<table class="jt">';
-  if(imp)h+='<colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup>';
-  h+='<thead><tr><th>Poste / PK</th><th class="num">Acumulado anterior</th><th class="num">Este auto</th><th class="num">Acumulado atual</th></tr></thead>';
-  if(!D.blocos.length)return h+'<tbody><tr><td colspan="4"><div class="empty">Sem produção neste auto.</div></td></tr></tbody></table>';
+  h+='<thead><tr><th style="width:150px">Poste / PK</th><th class="num" style="width:130px">Acumulado anterior</th><th class="num" style="width:110px">Este auto</th><th class="num" style="width:130px">Acumulado atual</th><th>Observações / justificação</th></tr></thead>';
+  if(!D.blocos.length)return h+'<tbody><tr><td colspan="5"><div class="empty">Sem produção neste auto.</div></td></tr></tbody></table>';
   function q3(a,m,c){ return '<td class="num n">'+(a?qtf(a):'—')+'</td><td class="num n">'+(m?'<b>'+qtf(m)+'</b>':'—')+'</td><td class="num n">'+qtf(c)+'</td>' }
   D.blocos.forEach(function(r){
     var un=esc(r.un||'');
-    h+='<tbody><tr class="gh"><td colspan="4">'+esc(r.cod)+' — '+esc(r.des)+' · '+un+' · P.U. '+eur(r.pu)+' €'+((r.origem||'contrato')==='contrato'?'':' · '+esc(origemNome(r.origem)))+(r.exec.length||r.aj.length?'':' · sem quantidade neste auto')+'</td></tr>';
+    h+='<tbody><tr class="gh"><td colspan="5">'+esc(r.cod)+' — '+esc(r.des)+' · '+un+' · P.U. '+eur(r.pu)+' €'+((r.origem||'contrato')==='contrato'?'':' · '+esc(origemNome(r.origem)))+'</td></tr>';
     r.postes.forEach(function(o){
-      h+='<tr'+(o.mes?'':' class="jsm"')+'><td class="mono">'+esc(o.pk)+'</td>'+q3(o.ant,o.mes,o.acum)+'</tr>';
-      if(pk)o.exec.forEach(function(x){ h+='<tr class="jdx"><td colspan="2">'+esc(ptbr(x.data))+' · '+esc(x.pd)+(x.movida?' (auto alterado)':'')+'</td><td class="num n">'+qtf(x.qt)+'</td><td></td></tr>' });
+      h+='<tr><td class="mono">'+esc(o.pk)+'</td>'+q3(o.ant,o.mes,o.acum)+'<td class="jobc"><input class="jObsP" data-jk="'+esc(justObsK(D,r,o))+'" value="'+esc(justObsP(D,r,o))+'" placeholder="—"></td></tr>';
+      if(pk)o.exec.forEach(function(x){ h+='<tr class="jdx"><td colspan="2">'+esc(ptbr(x.data))+' · '+esc(x.pd)+(x.movida?' (auto alterado)':'')+'</td><td class="num n">'+qtf(x.qt)+'</td><td></td><td></td></tr>' });
     });
     r.aj.forEach(function(a){
-      h+='<tr class="aj"><td colspan="2">'+esc(ptbr(a.data))+' · Ajuste: '+esc(a.texto)+(a.motivo?' — '+esc(a.motivo):'')+'</td><td class="num n">'+(a.qt>0?'+':'−')+qtf(Math.abs(a.qt))+'</td><td></td></tr>';
+      h+='<tr class="aj"><td colspan="2">'+esc(ptbr(a.data))+' · Ajuste: '+esc(a.texto)+(a.motivo?' — '+esc(a.motivo):'')+'</td><td class="num n">'+(a.qt>0?'+':'−')+qtf(Math.abs(a.qt))+'</td><td></td><td></td></tr>';
     });
-    h+='<tr class="st"><td>Total da rubrica ('+un+')</td>'+q3(r.ant,r.qt,r.acum)+'</tr>';
-    h+='<tr class="st sv"><td>Valor (€)'+(r.contr?' · '+pct(r.acum/r.contr)+' do contrato':'')+'</td><td class="num n">'+eur(r.valAnt)+'</td><td class="num n"><b>'+eur(r.val)+'</b></td><td class="num n">'+eur(r.valAcum)+'</td></tr></tbody>';
+    h+='<tr class="st"><td>Total da rubrica ('+un+')</td>'+q3(r.ant,r.qt,r.acum)+'<td></td></tr>';
+    h+='<tr class="st sv"><td>Valor (€)'+(r.contr?' · '+pct(r.acum/r.contr)+' do contrato':'')+'</td><td class="num n">'+eur(r.valAnt)+'</td><td class="num n"><b>'+eur(r.val)+'</b></td><td class="num n">'+eur(r.valAcum)+'</td><td></td></tr></tbody>';
   });
-  h+='<tbody><tr class="tot"><td>TOTAL ('+D.blocos.length+(D.blocos.length===1?' rubrica':' rubricas')+(D.comMov!==D.blocos.length?', '+D.comMov+' com quantidade neste auto':'')+')</td><td class="num n">'+eur(D.valAnt)+' €</td><td class="num n">'+eur(D.val)+' €</td><td class="num n">'+eur(D.valAcum)+' €</td></tr></tbody></table>';
+  h+='<tbody><tr class="tot"><td>TOTAL ('+D.blocos.length+(D.blocos.length===1?' rubrica':' rubricas')+')</td><td class="num n">'+eur(D.valAnt)+' €</td><td class="num n">'+eur(D.val)+' €</td><td class="num n">'+eur(D.valAcum)+' €</td><td></td></tr></tbody></table>';
   return h;
 }
 function justTabelaImp(D,pk){
-  var cg='<colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup>';
-  var ch='<tr><th>Poste / PK</th><th>Acumulado anterior</th><th>Este auto</th><th>Acumulado atual</th></tr>';
-  if(!D.blocos.length)return '<table>'+cg+'<thead>'+ch+'</thead><tbody><tr><td colspan="4">Sem produção neste auto.</td></tr></tbody></table>';
+  /* a coluna das observações só aparece se houver alguma escrita neste auto */
+  var temObs=D.blocos.some(function(r){ return r.postes.some(function(o){ return justObsP(D,r,o).trim() }) });
+  var nc=temObs?5:4;
+  var cg=temObs?'<colgroup><col style="width:17%"><col style="width:14%"><col style="width:12%"><col style="width:14%"><col style="width:43%"></colgroup>':'<colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup>';
+  var ch='<tr><th>Poste / PK</th><th>'+(temObs?'Acum. anterior':'Acumulado anterior')+'</th><th>Este auto</th><th>'+(temObs?'Acum. atual':'Acumulado atual')+'</th>'+(temObs?'<th>Observações / justificação</th>':'')+'</tr>';
+  var e1=temObs?'<td></td>':'';
+  if(!D.blocos.length)return '<table>'+cg+'<thead>'+ch+'</thead><tbody><tr><td colspan="'+nc+'">Sem produção neste auto.</td></tr></tbody></table>';
   function q3(a,m,c){ return '<td class="n">'+(a?qtf(a):'—')+'</td><td class="n">'+(m?'<b>'+qtf(m)+'</b>':'—')+'</td><td class="n">'+qtf(c)+'</td>' }
   var h='';
   D.blocos.forEach(function(r){
     var un=esc(r.un||'');
-    h+='<table class="jr">'+cg+'<thead><tr class="gh"><td colspan="4">'+esc(r.cod)+' — '+esc(r.des)+' · '+un+' · P.U. '+eur(r.pu)+' €'+((r.origem||'contrato')==='contrato'?'':' · '+esc(origemNome(r.origem)))+'</td></tr>'+ch+'</thead>';
+    h+='<table class="jr">'+cg+'<thead><tr class="gh"><td colspan="'+nc+'">'+esc(r.cod)+' — '+esc(r.des)+' · '+un+' · P.U. '+eur(r.pu)+' €'+((r.origem||'contrato')==='contrato'?'':' · '+esc(origemNome(r.origem)))+'</td></tr>'+ch+'</thead>';
     r.postes.forEach(function(o){
-      h+='<tbody class="jpo"><tr><td class="mono">'+esc(o.pk)+'</td>'+q3(o.ant,o.mes,o.acum)+'</tr>';
-      if(pk)o.exec.forEach(function(x){ h+='<tr class="jdx"><td colspan="2">'+esc(ptbr(x.data))+' · '+esc(x.pd)+(x.movida?' (auto alterado)':'')+'</td><td class="n">'+qtf(x.qt)+'</td><td></td></tr>' });
+      h+='<tbody class="jpo"><tr><td class="mono">'+esc(o.pk)+'</td>'+q3(o.ant,o.mes,o.acum)+(temObs?'<td>'+esc(justObsP(D,r,o))+'</td>':'')+'</tr>';
+      if(pk)o.exec.forEach(function(x){ h+='<tr class="jdx"><td colspan="2">'+esc(ptbr(x.data))+' · '+esc(x.pd)+(x.movida?' (auto alterado)':'')+'</td><td class="n">'+qtf(x.qt)+'</td><td></td>'+e1+'</tr>' });
       h+='</tbody>';
     });
     h+='<tbody class="jpo">';
-    r.aj.forEach(function(a){ h+='<tr class="aj"><td colspan="2">'+esc(ptbr(a.data))+' · Ajuste: '+esc(a.texto)+(a.motivo?' — '+esc(a.motivo):'')+'</td><td class="n">'+(a.qt>0?'+':'−')+qtf(Math.abs(a.qt))+'</td><td></td></tr>' });
-    h+='<tr class="st"><td>Total da rubrica ('+un+')</td>'+q3(r.ant,r.qt,r.acum)+'</tr>';
-    h+='<tr class="st sv"><td>Valor (€)'+(r.contr?' · '+pct(r.acum/r.contr)+' do contrato':'')+'</td><td class="n">'+eur(r.valAnt)+'</td><td class="n"><b>'+eur(r.val)+'</b></td><td class="n">'+eur(r.valAcum)+'</td></tr></tbody></table>';
+    r.aj.forEach(function(a){ h+='<tr class="aj"><td colspan="2">'+esc(ptbr(a.data))+' · Ajuste: '+esc(a.texto)+(a.motivo?' — '+esc(a.motivo):'')+'</td><td class="n">'+(a.qt>0?'+':'−')+qtf(Math.abs(a.qt))+'</td><td></td>'+e1+'</tr>' });
+    h+='<tr class="st"><td>Total da rubrica ('+un+')</td>'+q3(r.ant,r.qt,r.acum)+e1+'</tr>';
+    h+='<tr class="st sv"><td>Valor (€)'+(r.contr?' · '+pct(r.acum/r.contr)+' do contrato':'')+'</td><td class="n">'+eur(r.valAnt)+'</td><td class="n"><b>'+eur(r.val)+'</b></td><td class="n">'+eur(r.valAcum)+'</td>'+e1+'</tr></tbody></table>';
   });
-  h+='<table class="jr">'+cg+'<tbody><tr class="tot"><td>TOTAL ('+D.blocos.length+(D.blocos.length===1?' rubrica':' rubricas')+')</td><td class="n">'+eur(D.valAnt)+' €</td><td class="n">'+eur(D.val)+' €</td><td class="n">'+eur(D.valAcum)+' €</td></tr></tbody></table>';
+  h+='<table class="jr">'+cg+'<tbody><tr class="tot"><td>TOTAL ('+D.blocos.length+(D.blocos.length===1?' rubrica':' rubricas')+')</td><td class="n">'+eur(D.valAnt)+' €</td><td class="n">'+eur(D.val)+' €</td><td class="n">'+eur(D.valAcum)+' €</td>'+e1+'</tr></tbody></table>';
   return h;
 }
 function justAoa(auto,orig,pk){
-  var D=justDados(auto,orig), A=[['Código','Designação','Un.','P.U.','Poste / PK','Qtd. acumulada anterior','Qtd. este auto','Qtd. acumulada atual','Valor acumulado anterior (€)','Valor este auto (€)','Valor acumulado atual (€)'].concat(pk?['Datas e partes diárias']:[])];
+  var D=justDados(auto,orig), A=[['Código','Designação','Un.','P.U.','Poste / PK','Qtd. acumulada anterior','Qtd. este auto','Qtd. acumulada atual','Valor acumulado anterior (€)','Valor este auto (€)','Valor acumulado atual (€)','Observações / justificação'].concat(pk?['Datas e partes diárias']:[])];
   function r2(v){ return +(+v).toFixed(2) }
   function r6(v){ return Math.round(v*1e6)/1e6 }
   D.blocos.forEach(function(r){
     r.postes.forEach(function(o){
-      var l=[r.cod,r.des,r.un,r.pu||null,o.pk,r6(o.ant)||null,r6(o.mes),r6(o.acum),r2(o.ant*r.pu)||null,r2(o.mes*r.pu),r2(o.acum*r.pu)];
+      var l=[r.cod,r.des,r.un,r.pu||null,o.pk,r6(o.ant)||null,r6(o.mes),r6(o.acum),r2(o.ant*r.pu)||null,r2(o.mes*r.pu),r2(o.acum*r.pu),justObsP(D,r,o)];
       if(pk)l.push(o.exec.map(function(x){ return ptbr(x.data)+' '+x.pd+' ('+qtf(x.qt)+')' }).join('; '));
       A.push(l);
     });
-    r.aj.forEach(function(a){ var l=[r.cod,r.des,r.un,r.pu||null,'Ajuste: '+a.texto+(a.motivo?' — '+a.motivo:''),null,a.qt,null,null,r2(a.qt*r.pu),null]; if(pk)l.push(ptbr(a.data)); A.push(l) });
-    A.push([r.cod,'Total da rubrica',r.un,r.pu||null,'',r6(r.ant),r6(r.qt),r6(r.acum),r2(r.valAnt),r2(r.val),r2(r.valAcum)].concat(pk?['']:[]));
+    r.aj.forEach(function(a){ var l=[r.cod,r.des,r.un,r.pu||null,'Ajuste: '+a.texto+(a.motivo?' — '+a.motivo:''),null,a.qt,null,null,r2(a.qt*r.pu),null,'']; if(pk)l.push(ptbr(a.data)); A.push(l) });
+    A.push([r.cod,'Total da rubrica',r.un,r.pu||null,'',r6(r.ant),r6(r.qt),r6(r.acum),r2(r.valAnt),r2(r.val),r2(r.valAcum),''].concat(pk?['']:[]));
   });
-  A.push(['TOTAL','','','','','','','',r2(D.valAnt),r2(D.val),r2(D.valAcum)].concat(pk?['']:[]));
+  A.push(['TOTAL','','','','','','','',r2(D.valAnt),r2(D.val),r2(D.valAcum),''].concat(pk?['']:[]));
   var ob=justObs(auto,orig).trim(); if(ob){ A.push([]); A.push(['Observações']); ob.split(/\n/).forEach(function(t){ A.push([t]) }) }
   return A;
 }
@@ -4715,7 +4725,7 @@ function exportaAuto(auto,orig){
     A.push(['TOTAL','','','','','',+T[0].toFixed(2),'',+T[1].toFixed(2),'',+T[2].toFixed(2),'',+T[3].toFixed(2),T[0]?+(T[3]/T[0]).toFixed(4):null]);
     var ws=XLSX.utils.aoa_to_sheet(A); ws['!cols']=[16,16,50,6,10,12,16,12,16,12,16,12,16,12].map(function(w){return {wch:w}});
     XLSX.utils.book_append_sheet(wb,ws,nomeFolha(origemNome(o),usados));
-    var wj=XLSX.utils.aoa_to_sheet(justAoa(auto,o,true)); wj['!cols']=[16,46,6,10,22,12,12,12,14,14,14,60].map(function(w){return {wch:w}});
+    var wj=XLSX.utils.aoa_to_sheet(justAoa(auto,o,true)); wj['!cols']=[16,46,6,10,22,12,12,12,14,14,14,50,60].map(function(w){return {wch:w}});
     XLSX.utils.book_append_sheet(wb,wj,nomeFolha('Just. '+origemNome(o),usados));
   });
   if(!wb.SheetNames.length){ toast('Este auto ainda não tem produção.'); return false }
@@ -4918,8 +4928,8 @@ function renderAut(){
      (autVis==='just'?'<button id="bJImp" class="pri">Imprimir justificativo</button><button id="bJXls">Exportar justificativo (Excel)</button><label class="ts" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="jPk"'+(autJPk?' checked':'')+'> mostrar datas e partes diárias</label>':'')+'</div>';
   if(autVis==='just'){
     h+=justTabelaHtml(justDados(autSel,autOrig),autJPk,false)+
-      '<div class="jObsBox"><label for="jObs"><b>Observações</b> <span class="hint">texto livre que sai no justificativo impresso e no Excel (ex.: explicar um ajuste, uma medição ou um trabalho a mais)</span></label>'+
-      '<textarea id="jObs" rows="4" placeholder="Escreve aqui o que for preciso justificar…">'+esc(justObs(autSel,autOrig))+'</textarea></div>'+'<div class="hint" style="margin-top:8px">O justificativo acompanha o auto: para cada rubrica e para cada poste/PK, o acumulado anterior, o que entra neste auto e o acumulado atual, mais os ajustes (cortes e o que veio do auto anterior). O total «Este auto» bate com «a faturar». Também vai numa folha do Excel quando exportas o auto.</div>';
+      '<div class="jObsBox"><label for="jObs"><b>Observações gerais</b> <span class="hint">opcional: o que não for de um poste/PK. A justificação de cada poste escreve-se na coluna «Observações» da tabela.</span></label>'+
+      '<textarea id="jObs" rows="2" placeholder="Escreve aqui o que for preciso justificar…">'+esc(justObs(autSel,autOrig))+'</textarea></div>'+'<div class="hint" style="margin-top:8px">O justificativo acompanha o auto: para cada rubrica e para cada poste/PK, o acumulado anterior, o que entra neste auto e o acumulado atual, mais os ajustes (cortes e o que veio do auto anterior). O total «Este auto» bate com «a faturar». Também vai numa folha do Excel quando exportas o auto.</div>';
   } else {
   h+='<table><thead><tr><th>Tipo</th><th>Código</th><th>Designação</th><th class="w1">Un.</th><th class="num w1">P.U.</th><th class="num w1">Anterior</th><th class="num w1">Neste auto</th><th class="num w1">Ajustes</th><th class="num w1">A faturar</th><th class="num w1">Valor (€)</th><th class="num w1">Acumulado</th>'+(env?'<th class="num w1">Enviado</th>':'')+'</tr></thead><tbody>';
   if(!linhas.length)h+='<tr><td colspan="12"><div class="empty">Sem produção neste auto'+(multi?' ('+esc(onome)+')':'')+'.</div></td></tr>';
@@ -4987,6 +4997,7 @@ function renderAut(){
     if(e.target.id==='jPk'){ autJPk=e.target.checked; renderAut() }
   });
   bind('#autBox','input',function(e){
+    if(e.target.classList&&e.target.classList.contains('jObsP')){ if(!ST.justObsP)ST.justObsP={}; var kp=e.target.dataset.jk, vp=e.target.value; if(vp.trim())ST.justObsP[kp]=vp; else delete ST.justObsP[kp]; return }
     if(e.target.id==='jObs'){ if(!ST.justObs)ST.justObs={}; var kj=autSel+'|'+(autOrig||'contrato'), vj=e.target.value; if(vj.trim())ST.justObs[kj]=vj; else delete ST.justObs[kj] }
   });
   bind('#autBox','click',function(e){
@@ -4995,7 +5006,7 @@ function renderAut(){
     if(e.target.id==='bJImp'){ imprimeJust(autSel,autOrig); return }
     if(e.target.id==='bJXls'){
       var wbj=XLSX.utils.book_new(), wsj=XLSX.utils.aoa_to_sheet(justAoa(autSel,autOrig,autJPk));
-      wsj['!cols']=[16,46,6,10,22,12,12,12,14,14,14].concat(autJPk?[60]:[]).map(function(w){return {wch:w}});
+      wsj['!cols']=[16,46,6,10,22,12,12,12,14,14,14,50].concat(autJPk?[60]:[]).map(function(w){return {wch:w}});
       XLSX.utils.book_append_sheet(wbj,wsj,'Justificativo');
       var fnj='Justificativo '+mesNome(autSel)+' - '+nomeFolha(origemNome(autOrig),[])+'.xlsx'; XLSX.writeFile(wbj,fnj); toast('Exportado «'+fnj+'».'); return;
     }
